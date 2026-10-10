@@ -822,11 +822,9 @@
     <string name="share_target_external">Anti-Vocale (External)</string>
     <string name="share_shortcut_transcribe_with">Transcribir con %1$s</string>
     <string name="external_none_imported">No hay modelos externos importados</string>
-    <string name="external_section_title">Modelos externos</string>
+    <string name="external_section_title">Añadir más modelos de transcripción</string>
     <string name="model_advanced_section">Avanzado</string>
     <string name="model_advanced_description">Importaciones externas y descargas de Gemma</string>
-    <string name="external_import_folder">Importar desde una carpeta</string>
-    <string name="external_import_url">Importar desde un enlace</string>
     <string name="external_url_hint">URL de repositorio HuggingFace o JSON de catálogo</string>
     <string name="external_import">Importar</string>
     <string name="external_importing">Importando modelo…</string>
@@ -1071,13 +1069,16 @@
     <string name="refinement_model_description">El modelo que usa la segunda pasada. Deja en heredar para usar el modelo activo.</string>
     <string name="refinement_model_inherit">Heredar modelo activo</string>
     <string name="export_model_bundle">Compartir modelo para transferencia sin conexión</string>
-    <string name="external_import_bundle">Importar un paquete de transferencia</string>
+    <string name="external_family_advanced">Elegir la familia del modelo manualmente</string>
+    <string name="external_import_device">Importar desde este dispositivo</string>
+    <string name="litert_card_description">Añade manualmente un archivo de modelo Gemma (.litertlm) que ya tengas, desde este dispositivo o mediante una URL de Hugging Face. La mayoría de los usuarios prefieren las descargas de arriba.</string>
+    <string name="external_import_catalog">Explorar nuestro catálogo de modelos</string>
     <string name="external_models_intro">Esta sección contiene modelos alternativos: versiones pequeñas para teléfonos con poca memoria y modelos optimizados para idiomas concretos. Muchos vienen del catálogo comunitario que mantenemos, pero también puedes apuntar la app a un catálogo de terceros u organizar el tuyo.</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">Añadir un modelo Gemma (LiteRT)</string>
-    <string name="gemma_entry_title">Descargas de Gemma</string>
-    <string name="gemma_entry_subtitle">Explora y descarga los modelos Gemma oficiales</string>
-    <string name="external_section_subtitle">Archivos de modelo que añades tú (carpeta, URL o paquete de transferencia) además de las descargas de Gemma LiteRT-LM; funcionan junto al catálogo integrado.</string>
+    <string name="gemma_entry_title">Modelos Gemma de IA</string>
+    <string name="gemma_entry_subtitle">Modelos de asistencia completos: transcripción de voz + resúmenes de texto, refinado en dos pasadas, chat sin conexión</string>
+    <string name="external_section_subtitle">Modelos de transcripción de voz extra que añades tú. Funcionan junto a los integrados y aparecen en la lista de abajo al importarlos.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
     <string name="folder_watch_title">Vigilancia programada de carpetas</string>

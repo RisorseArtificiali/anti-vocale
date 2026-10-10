@@ -191,23 +191,9 @@ fun ModelTab(
             importFolder(picked, family)
         }
     }
-    // TASK-742 (GH #124): the offline-transfer share. The chosen target URI
-    // and the pending export (model dir + metadata) are remembered; the
-    // launcher callback streams the bundle into the user-picked file.
-    // TASK-742 (GH #124): the offline-transfer IMPORT. OpenDocument picks
-    // the .zip; the VM verifies (sha256, format) into a staging dir and
-    // registers through the normal import core.
-    val bundleImportPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri?.let { picked ->
-            // TASK-761: no persistable grant at all. The picker's transient
-            // grant covers this one-shot read (the old callback-side take
-            // was never released and burned grant slots).
-            viewModel.importExternalFromBundle(context, picked)
-        }
-    }
-
+    // TASK-742 (GH #124): the offline-transfer share. The chosen target URI,
+    // the pending export (model dir + metadata), and the launcher callback
+    // that streams the bundle into the user-picked file.
     // TASK-742 (GH #124): the offline-transfer share. The remembered
     // pending write streams the bundle once the user picks a target.
     // TASK-763: the pending export travels as SAVEABLE primitives, not a
@@ -281,8 +267,30 @@ fun ModelTab(
                             ambiguousPick = AmbiguousFamilyPick(picked, detection.candidates)
                         }
                     }
-                    ModelFamilyDetector.Result.Unknown ->
-                        importFolder(picked, externalImport.family)
+                    ModelFamilyDetector.Result.Unknown -> {
+                        // TASK-796 round 3 (maintainer): one import path,
+                        // no user-facing choice. A folder that is not
+                        // itself a model dir may be where a bundle lives
+                        // (Downloads, say): EXACTLY one .zip child imports
+                        // as the bundle (several zips is not our call to
+                        // make; the folder import then reports what is
+                        // missing). The scan runs in the VM on IO
+                        // (review F1/F2); a broken grant must not escape
+                        // this scope either.
+                        val bundleChild = runCatching {
+                            viewModel.singleBundleChild(context, picked)
+                        }.getOrElse { null }
+                        if (bundleChild != null) {
+                            // TASK-761 hygiene (review F5): the folder
+                            // picker persisted a read grant; the import
+                            // reads through the transient one, so release
+                            // the persisted slot before importing.
+                            com.antivocale.app.util.TreeUris.releasePersistableReadGrant(context, picked)
+                            viewModel.importExternalFromBundle(context, bundleChild)
+                        } else {
+                            importFolder(picked, externalImport.family)
+                        }
+                    }
                 }
             }
         }
@@ -832,6 +840,17 @@ fun ModelTab(
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.primary)
                                 }
+                                // TASK-796 review F2: the .litertlm import's
+                                // only progress UI moved into the sub-page;
+                                // a user closing it mid-import would see
+                                // nothing anywhere, so the entry card shows
+                                // it too.
+                                if (uiState.litertLmImporting) {
+                                    Text(
+                                        text = stringResource(R.string.litertlm_importing),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary)
+                                }
                             }
                             Icon(
                                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -841,76 +860,8 @@ fun ModelTab(
                     }
                 }
 
-                // LiteRT-LM (Gemma): same double-container structure as ONNX Sherpa.
-                // SAF (OpenDocument) grants its own URI access, no storage permission
-                // needed (TASK-301). TASK-746: the Gemma download section joins
-                // its ecosystem's card here (the maintainer's direction): the
-                // .litertlm downloads are not catalog entries, so the external
-                // group is where they live; the download machinery is unchanged.
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        CardTitleRow(
-                            icon = Icons.Default.Memory,
-                            // TASK-779: was the hardcoded "LiteRT-LM", jargon
-                            // to anyone outside the project.
-                            title = stringResource(R.string.litert_card_title),
-                            iconTint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = { viewModel.openFilePicker() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            ImportActionLabel(Icons.Default.FolderOpen, R.string.select_model_from_device)
-                        }
-                        OutlinedButton(
-                            onClick = { showLitertLmUrlDialog = true },
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                            enabled = !uiState.litertLmImporting
-                        ) {
-                            ImportActionLabel(Icons.Default.CloudDownload, R.string.litertlm_import_from_url)
-                        }
-                        if (uiState.litertLmImporting) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp
-                                )
-                                // TASK-384: spinner alone is silent for talkback users
-                                Text(
-                                    stringResource(R.string.litertlm_importing),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Maintainer direction (2026-10-07 road test): the intro text
-                // leads the sherpa block itself (above the family selector
-                // and import actions), so "this section" covers the
-                // imports, the imported models, and the catalog dialog the
-                // link import opens. As the whole section's caption it sat
-                // above the Gemma entry, which is neither small nor
-                // language-specific.
-                Text(
-                    text = stringResource(R.string.external_models_intro),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
                 // ONNX (sherpa): the section Card carries the header; no
                 // separate label needed here.
                 ExternalModelsSection(
@@ -923,7 +874,6 @@ fun ModelTab(
                     selection = externalImport,
                     onSelectionChange = { externalImport = it; detectedExternalFamily = null },
                     onDeleteRequest = { externalToDelete = it },
-                    onImportBundle = { bundleImportPicker.launch(arrayOf("application/zip")) },
                     onBenchmark = { record ->
                         benchmarkViewModel.startBenchmark(
                             record.backendId, record.dir, record.displayName)
@@ -1000,9 +950,10 @@ fun ModelTab(
                         .padding(horizontal = 16.dp),
                 ) {
                     com.antivocale.app.ui.components.SettingsSubPageHeader(
-                        // TASK-779: matches the entry card that opens this
-                        // page ("Gemma downloads"); the inner section card
-                        // keeps its own "Gemma Models" title.
+                        // TASK-796: matches the entry card that opens this
+                        // page (gemma_entry_title, now "Gemma AI models");
+                        // the inner downloads section carries its own
+                        // download_models title.
                         titleRes = R.string.gemma_entry_title,
                         onBack = { showGemmaDownloads = false },
                     )
@@ -1017,6 +968,68 @@ fun ModelTab(
                             onInfoClick = { modelInfoVariant = it },
                         )
                     }
+                    // SAF (OpenDocument) grants its own URI access, no storage permission
+                    // needed (TASK-301). TASK-746: the downloads live with this card.
+                    // TASK-796 (maintainer design review): moved INTO the Gemma
+                    // sub-page, so the Advanced surface shows one Gemma entry and
+                    // this page owns the whole Gemma world.
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            CardTitleRow(
+                                icon = Icons.Default.Memory,
+                                // TASK-779: was the hardcoded "LiteRT-LM", jargon
+                                // to anyone outside the project.
+                                title = stringResource(R.string.litert_card_title),
+                                iconTint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            // TASK-796 trial round 2 (maintainer): the card
+                            // states what it is for before the buttons.
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                stringResource(R.string.litert_card_description),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = { viewModel.openFilePicker() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                ImportActionLabel(Icons.Default.FolderOpen, R.string.select_model_from_device)
+                            }
+                            OutlinedButton(
+                                onClick = { showLitertLmUrlDialog = true },
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                enabled = !uiState.litertLmImporting
+                            ) {
+                                ImportActionLabel(Icons.Default.CloudDownload, R.string.litertlm_import_from_url)
+                            }
+                            if (uiState.litertLmImporting) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    // TASK-384: spinner alone is silent for talkback users
+                                    Text(
+                                        stringResource(R.string.litertlm_importing),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(200.dp))
                 }
             }
@@ -1985,7 +1998,6 @@ private fun ExternalModelsSection(
     detectedFamily: ModelFamily? = null,
     onDeleteRequest: (ExternalModelRecord) -> Unit,
     /** TASK-742: opens the bundle (.zip) import picker. */
-    onImportBundle: () -> Unit = {},
     /** 2026-10-08: benchmark rides the kebab (the BenchmarkViewModel now
      *  has an external-record branch building ExternalConfig). */
     onBenchmark: ((ExternalModelRecord) -> Unit)? = null,
@@ -2018,124 +2030,8 @@ private fun ExternalModelsSection(
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Section header: the shared card-title idiom.
-            CardTitleRow(
-                icon = Icons.Default.GraphicEq,
-                title = "ONNX Sherpa",
-                iconTint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Family selector visible for BOTH import paths (folder and URL). Each
-            // entry carries a help line listing the expected files, mirroring the
-            // label + description pattern of the advanced-section button.
-            ExposedDropdownMenuBox(
-                expanded = dropdownExpanded,
-                onExpandedChange = { dropdownExpanded = it },
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                OutlinedTextField(
-                    value = familyLabel(selection.family),
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(stringResource(R.string.external_family)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
-                    // TASK-755: a wrapped value grew the field vertically
-                    // (the maintainer's report); every read-only dropdown in
-                    // this file carries the same one-line guard.
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
-                )
-                ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
-                    FAMILY_OPTIONS.forEach { (value, labelRes, helpRes) ->
-                        DropdownMenuItem(
-                            text = {
-                                Column {
-                                    Text(stringResource(labelRes))
-                                    Text(
-                                        stringResource(helpRes),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            },
-                            onClick = {
-                                onSelectionChange(selection.withFamily(value))
-                                dropdownExpanded = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Conditional options panel below the selector.
-            when (selection.family) {
-                ModelFamily.CANARY -> CanaryLanguageDropdown(
-                    selected = selection.decodeLanguage,
-                    onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                )
-                ModelFamily.WHISPER -> LanguageEndonymDropdown(
-                    selected = selection.decodeLanguage,
-                    onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
-                    label = stringResource(R.string.external_decode_language),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    blankText = stringResource(R.string.external_decode_auto)
-                )
-                ModelFamily.SENSE_VOICE -> {
-                    LanguageEndonymDropdown(
-                        selected = selection.decodeLanguage,
-                        onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
-                        label = stringResource(R.string.external_decode_language),
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                        blankText = stringResource(R.string.external_decode_auto)
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            stringResource(R.string.external_option_itn),
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Switch(
-                            checked = selection.sensevoiceItn,
-                            onCheckedChange = { onSelectionChange(selection.copy(sensevoiceItn = it)) }
-                        )
-                    }
-                }
-                ModelFamily.CTC -> ExposedDropdownMenuBox(
-                    expanded = ctcExpanded,
-                    onExpandedChange = { ctcExpanded = it },
-                    modifier = Modifier.padding(bottom = 8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = stringResource(
-                            CTC_SUBTYPE_LABELS.firstOrNull { it.first == selection.ctcModelType }
-                                ?.second ?: R.string.external_ctc_subtype_nemo),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.external_ctc_subtype)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = ctcExpanded) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
-                    )
-                    ExposedDropdownMenu(expanded = ctcExpanded, onDismissRequest = { ctcExpanded = false }) {
-                        CTC_SUBTYPE_LABELS.forEach { (subtype, labelRes) ->
-                            DropdownMenuItem(
-                                text = { Text(stringResource(labelRes)) },
-                                onClick = {
-                                    onSelectionChange(selection.copy(ctcModelType = subtype))
-                                    ctcExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-                else -> {}
-            }
+            // TASK-796 (D1): the hardcoded "ONNX Sherpa" card header is
+            // gone; the outer section title + subtitle announce this card.
 
             detectedFamily?.let { detected ->
                 // TASK-513 (GH #93): the detected-family chip. The import
@@ -2168,28 +2064,156 @@ private fun ExternalModelsSection(
             // vertically, one full-width row each, with task-oriented
             // labels; the 744 two-per-row split still ellipsized the
             // labels on narrow screens and named nothing the user does.
+            // TASK-796 (maintainer design review): the catalog is the
+            // featured path (the only filled button, first); folder and
+            // the phone-transfer bundle are outlined equals below.
             Button(
-                onClick = folderPicker,
+                onClick = { urlDialogOpen = true },
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                ImportActionLabel(Icons.Default.FolderOpen, R.string.external_import_folder)
+                ImportActionLabel(Icons.Default.Link, R.string.external_import_catalog)
             }
+            // TASK-796 trial round 3 (maintainer): ONE import path, no
+            // choice dialog. The tree picker opens; a model folder imports
+            // as itself, a folder holding an Anti-Vocale bundle zip
+            // imports the bundle (the Unknown branch auto-detects).
             OutlinedButton(
-                onClick = { urlDialogOpen = true },
+                onClick = folderPicker,
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             ) {
-                ImportActionLabel(Icons.Default.Link, R.string.external_import_url)
+                ImportActionLabel(Icons.Default.FolderOpen, R.string.external_import_device)
             }
-            // TASK-742 (GH #124): the offline-transfer bundle import
-            // (a bundle another device exported through Share/Export).
-            OutlinedButton(
-                onClick = onImportBundle,
-                enabled = importState !is ModelViewModel.ExternalImportState.Importing,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            ) {
-                ImportActionLabel(Icons.Default.Inventory2, R.string.external_import_bundle)
+
+            // TASK-796 (D2, maintainer design review): the family selector
+            // demoted behind an advanced disclosure. Manual choice is the
+            // rare path: catalog entries carry their family, folder picks
+            // detect it (the chip above), and the manual-link import is the
+            // one flow that still consumes this hidden selection (plus a
+            // folder pick whose detection stays Unknown, which falls back
+            // to the selector's default).
+            var familyAdvanced by remember { mutableStateOf(false) }
+            TextButton(onClick = { familyAdvanced = !familyAdvanced }) {
+                Icon(
+                    // AutoMirrored: the collapsed chevron must flip in RTL
+                    // like the Gemma entry arrow (review F2).
+                    if (familyAdvanced) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(R.string.external_family_advanced))
+            }
+            if (familyAdvanced) {
+                // Family selector visible for BOTH import paths (folder and URL). Each
+                // entry carries a help line listing the expected files, mirroring the
+                // label + description pattern of the advanced-section button.
+                ExposedDropdownMenuBox(
+                    expanded = dropdownExpanded,
+                    onExpandedChange = { dropdownExpanded = it },
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = familyLabel(selection.family),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.external_family)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
+                        // TASK-755: a wrapped value grew the field vertically
+                        // (the maintainer's report); every read-only dropdown in
+                        // this file carries the same one-line guard.
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    )
+                    ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
+                        FAMILY_OPTIONS.forEach { (value, labelRes, helpRes) ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(stringResource(labelRes))
+                                        Text(
+                                            stringResource(helpRes),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    onSelectionChange(selection.withFamily(value))
+                                    dropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Conditional options panel below the selector.
+                when (selection.family) {
+                    ModelFamily.CANARY -> CanaryLanguageDropdown(
+                        selected = selection.decodeLanguage,
+                        onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    )
+                    ModelFamily.WHISPER -> LanguageEndonymDropdown(
+                        selected = selection.decodeLanguage,
+                        onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
+                        label = stringResource(R.string.external_decode_language),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        blankText = stringResource(R.string.external_decode_auto)
+                    )
+                    ModelFamily.SENSE_VOICE -> {
+                        LanguageEndonymDropdown(
+                            selected = selection.decodeLanguage,
+                            onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
+                            label = stringResource(R.string.external_decode_language),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            blankText = stringResource(R.string.external_decode_auto)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                stringResource(R.string.external_option_itn),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(
+                                checked = selection.sensevoiceItn,
+                                onCheckedChange = { onSelectionChange(selection.copy(sensevoiceItn = it)) }
+                            )
+                        }
+                    }
+                    ModelFamily.CTC -> ExposedDropdownMenuBox(
+                        expanded = ctcExpanded,
+                        onExpandedChange = { ctcExpanded = it },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = stringResource(
+                                CTC_SUBTYPE_LABELS.firstOrNull { it.first == selection.ctcModelType }
+                                    ?.second ?: R.string.external_ctc_subtype_nemo),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.external_ctc_subtype)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = ctcExpanded) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(expanded = ctcExpanded, onDismissRequest = { ctcExpanded = false }) {
+                            CTC_SUBTYPE_LABELS.forEach { (subtype, labelRes) ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(labelRes)) },
+                                    onClick = {
+                                        onSelectionChange(selection.copy(ctcModelType = subtype))
+                                        ctcExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    else -> {}
+                }
             }
 
 

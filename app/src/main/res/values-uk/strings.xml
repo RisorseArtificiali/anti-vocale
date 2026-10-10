@@ -985,11 +985,9 @@
     <string name="share_target_external">Anti-Vocale (External)</string>
     <string name="share_shortcut_transcribe_with">Розшифрувати за допомогою %1$s</string>
     <string name="external_none_imported">Зовнішніх моделей не імпортовано</string>
-    <string name="external_section_title">Зовнішні моделі</string>
+    <string name="external_section_title">Додати інші моделі розшифровки</string>
     <string name="model_advanced_section">Розширені</string>
     <string name="model_advanced_description">Зовнішній імпорт і завантаження Gemma</string>
-    <string name="external_import_folder">Імпорт із папки</string>
-    <string name="external_import_url">Імпорт за посиланням</string>
     <string name="external_url_hint">URL репозиторію HuggingFace або JSON запису каталогу</string>
     <string name="external_import">Імпортувати</string>
     <string name="external_importing">Імпортування моделі…</string>
@@ -1229,13 +1227,16 @@
     <string name="refinement_model_description">Модель другого проходу. Залиште «успадкувати», щоб використовувати активну модель.</string>
     <string name="refinement_model_inherit">Успадкувати активну модель</string>
     <string name="export_model_bundle">Поділитися моделлю для перенесення без мережі</string>
-    <string name="external_import_bundle">Імпорт пакета перенесення</string>
+    <string name="external_family_advanced">Вибрати сімейство моделі вручну</string>
+    <string name="external_import_device">Імпортувати з цього пристрою</string>
+    <string name="litert_card_description">Додайте вручну наявний файл моделі Gemma (.litertlm): з цього пристрою або за URL Hugging Face. Більшості користувачів достатньо завантажень вище.</string>
+    <string name="external_import_catalog">Перегляньте наш каталог моделей</string>
     <string name="external_models_intro">Цей розділ містить альтернативні моделі: невеликі для телефонів із малою пам\'яттю та моделі, оптимізовані під конкретні мови. Багато з них беруться з кураторського каталогу спільноти, але застосунок можна спрямувати й на сторонній каталог або власний.</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">Додати модель Gemma (LiteRT)</string>
-    <string name="gemma_entry_title">Завантаження Gemma</string>
-    <string name="gemma_entry_subtitle">Перегляд і завантаження офіційних моделей Gemma</string>
-    <string name="external_section_subtitle">Файли моделей, які ви додаєте самі (тека, URL або пакет перенесення), а також завантаження Gemma LiteRT-LM; працюють поруч із вбудованим каталогом.</string>
+    <string name="gemma_entry_title">Моделі Gemma ШІ</string>
+    <string name="gemma_entry_subtitle">Повні ШІ-асистенти: розшифровка голосу + підсумки тексту, дворівневе уточнення, офлайн-чат</string>
+    <string name="external_section_subtitle">Додаткові моделі розшифровки голосу, які ви додаєте самі. Працюють разом із вбудованими та з\'являються у списку нижче після імпорту.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
     <string name="folder_watch_title">Заплановане спостереження за папками</string>

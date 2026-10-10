@@ -84,7 +84,7 @@ fun ModelInfoOverlay(
 
 private data class LanguageItem(
     val code: String,
-    val sortKey: String
+    val name: String
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -101,13 +101,17 @@ private fun LanguagesSection(languageCodes: Set<String>) {
 
     if (languageCodes.isEmpty()) return
 
-    val items = remember(languageCodes) {
-        languageCodes.map { code ->
-            val sortKey = java.util.Locale(code)
-                .getDisplayLanguage(java.util.Locale.ENGLISH)
-                .ifEmpty { code }
-            LanguageItem(code = code, sortKey = sortKey)
-        }.sortedBy { it.sortKey.lowercase() }
+    // TASK-796 trial 2b (maintainer): sort by the DISPLAYED endonym with
+    // the ACTIVE APP locale's collation (the entriesByEndonym discipline,
+    // TASK-353/790). The old sort keyed on hidden English names, so the
+    // chips read out of order in every locale.
+    val appLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val items = remember(languageCodes, appLocale) {
+        val collator = java.text.Collator.getInstance(appLocale)
+        collator.strength = java.text.Collator.PRIMARY
+        languageCodes
+            .map { code -> LanguageItem(code, LanguageNames.nativeLanguageName(code)) }
+            .sortedWith(compareBy(collator) { it.name })
     }
 
     FlowRow(
@@ -118,7 +122,7 @@ private fun LanguagesSection(languageCodes: Set<String>) {
         items.forEach { item ->
             LanguageChip(
                 flag = LanguageFlags.getFlag(item.code),
-                name = LanguageNames.nativeLanguageName(item.code)
+                name = item.name
             )
         }
     }

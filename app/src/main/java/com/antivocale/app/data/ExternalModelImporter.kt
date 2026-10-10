@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 import com.antivocale.app.transcription.Language
 import com.antivocale.app.data.download.DownloadConfig
@@ -66,6 +68,10 @@ interface ExternalModelImportOperations {
      *  implement it; the real importer overrides. */
     suspend fun listTreeFileNames(context: Context, treeUri: Uri): List<String> =
         throw UnsupportedOperationException("listTreeFileNames")
+
+    /** TASK-796 round 3: see the implementation's KDoc. */
+    suspend fun bundleZipChildren(context: Context, treeUri: Uri): List<Uri> =
+        throw UnsupportedOperationException("bundleZipChildren")
 }
 
 /** Per-file download telemetry for URL imports (TASK-398): (fileIndex, fileCount, fileName, bytes, totalBytes). */
@@ -244,6 +250,19 @@ class ExternalModelImporter(
 
     override suspend fun listTreeFileNames(context: Context, treeUri: Uri): List<String> =
         treeChildren(context, treeUri).second.mapNotNull { it.name }
+
+    /**
+     * TASK-796 round 3: the picked folder's bundle candidates, on IO with
+     * the [treeChildren] isFile filter (a directory named *.zip must not
+     * count). Returns the candidate URIs in provider order; the caller
+     * applies the exactly-one rule.
+     */
+    override suspend fun bundleZipChildren(context: Context, treeUri: Uri): List<Uri> =
+        withContext(Dispatchers.IO) {
+            treeChildren(context, treeUri).second
+                .filter { it.name?.endsWith(".zip", ignoreCase = true) == true }
+                .map { it.uri }
+        }
 
     /** SAF folder import: the primary v2a entry point. */
     override suspend fun importFromTreeUri(

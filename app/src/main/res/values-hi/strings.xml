@@ -921,11 +921,9 @@
     <string name="share_target_external">Anti-Vocale (External)</string>
     <string name="share_shortcut_transcribe_with">%1$s से ट्रांसक्राइब करें</string>
     <string name="external_none_imported">कोई बाहरी मॉडल इंपोर्ट नहीं हुआ</string>
-    <string name="external_section_title">बाहरी मॉडल</string>
+    <string name="external_section_title">और ट्रांसक्रिप्शन मॉडल जोड़ें</string>
     <string name="model_advanced_section">अतिरिक्त सेटिंग</string>
     <string name="model_advanced_description">बाहरी इंपोर्ट और Gemma डाउनलोड</string>
-    <string name="external_import_folder">फ़ोल्डर से आयात करें</string>
-    <string name="external_import_url">लिंक से आयात करें</string>
     <string name="external_url_hint">HuggingFace रेपो या कैटलॉग-एंट्री JSON URL</string>
     <string name="external_import">इंपोर्ट करें</string>
     <string name="external_importing">मॉडल इंपोर्ट हो रहा है…</string>
@@ -1202,13 +1200,16 @@
     <string name="refinement_model_description">दूसरे चरण द्वारा उपयोग किया जाने वाला मॉडल। सक्रिय मॉडल का उपयोग करने के लिए इनहेरिट पर छोड़ें।</string>
     <string name="refinement_model_inherit">सक्रिय मॉडल इनहेरिट करें</string>
     <string name="export_model_bundle">ऑफ़लाइन ट्रांसफ़र के लिए मॉडल साझा करें</string>
-    <string name="external_import_bundle">ट्रांसफ़र बंडल आयात करें</string>
+    <string name="external_family_advanced">मॉडल फ़ैमिली मैन्युअल रूप से चुनें</string>
+    <string name="external_import_device">इस डिवाइस से इंपोर्ट करें</string>
+    <string name="litert_card_description">अपने पास मौजूद Gemma मॉडल फ़ाइल (.litertlm) को मैन्युअल रूप से जोड़ें, इस डिवाइस से या Hugging Face URL से। ज़्यादातर उपयोगकर्ता ऊपर दिए डाउनलोड चाहते हैं।</string>
+    <string name="external_import_catalog">हमारा मॉडल कैटलॉग देखें</string>
     <string name="external_models_intro">इस सेक्शन में वैकल्पिक मॉडल हैं: कम मेमोरी वाले फ़ोन के लिए छोटे संस्करण, और खास भाषाओं के लिए अनुकूलित मॉडल। कई हमारे संचालित कम्युनिटी कैटलॉग से आते हैं, लेकिन आप ऐप को किसी तृतीय-पक्ष कैटलॉग पर भी इशारा कर सकते हैं या अपना कैटलॉग होस्ट कर सकते हैं।</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">Gemma मॉडल जोड़ें (LiteRT)</string>
-    <string name="gemma_entry_title">Gemma डाउनलोड</string>
-    <string name="gemma_entry_subtitle">आधिकारिक Gemma मॉडल देखें और डाउनलोड करें</string>
-    <string name="external_section_subtitle">आपके अपने जोड़े हुए मॉडल फ़ाइलें (फ़ोल्डर, URL या ट्रांसफ़र बंडल) और Gemma LiteRT-LM डाउनलोड; बिल्ट-इन कैटलॉग के साथ चलती हैं।</string>
+    <string name="gemma_entry_title">Gemma AI मॉडल</string>
+    <string name="gemma_entry_subtitle">पूर्ण AI सहायक मॉडल: वॉयस ट्रांसक्रिप्शन + टेक्स्ट सारांश, दो-चरण संशोधन, ऑफ़लाइन चैट</string>
+    <string name="external_section_subtitle">अतिरिक्त वॉयस-ट्रांसक्रिप्शन मॉडल जो आप खुद जोड़ते हैं। ये बिल्ट-इन मॉडलों के साथ चलते हैं और इंपोर्ट होने पर नीचे की सूची में दिखते हैं।</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
     <string name="folder_watch_title">शेड्यूल्ड फ़ोल्डर निगरानी</string>

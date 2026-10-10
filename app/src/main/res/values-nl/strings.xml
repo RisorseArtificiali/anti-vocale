@@ -987,18 +987,19 @@
     <string name="share_target_external">Anti-Vocale (Extern)</string>
     <string name="share_shortcut_transcribe_with">Transcriberen met %1$s</string>
     <string name="external_none_imported">Geen externe modellen geïmporteerd</string>
-    <string name="external_section_title">Externe modellen</string>
-    <string name="external_section_subtitle">Modelbestanden die je zelf toevoegt (map, URL of overdrachtsbundel) plus de Gemma LiteRT-LM-downloads; ze draaien naast de ingebouwde catalogus.</string>
+    <string name="external_section_title">Meer transcriptiemodellen toevoegen</string>
+    <string name="external_section_subtitle">Extra spraaktranscriptiemodellen die je zelf toevoegt. Ze draaien naast de ingebouwde en verschijnen na importeren in de lijst hieronder.</string>
     <string name="model_advanced_section">Geavanceerd</string>
     <string name="model_advanced_description">Externe imports en Gemma-downloads</string>
-    <string name="external_import_folder">Importeren vanuit een map</string>
-    <string name="external_import_bundle">Overdrachtsbundel importeren</string>
+    <string name="external_family_advanced">Kies de modelfamilie handmatig</string>
+    <string name="external_import_device">Vanaf dit apparaat importeren</string>
+    <string name="litert_card_description">Voeg handmatig een Gemma-modelbestand (.litertlm) toe dat je al hebt, vanaf dit apparaat of via een Hugging Face-URL. De meeste gebruikers willen de downloads hierboven.</string>
+    <string name="external_import_catalog">Bekijk onze modelcatalogus</string>
     <string name="external_models_intro">Deze sectie bevat alternatieve modellen: kleine voor telefoons met weinig geheugen, en modellen afgestemd op specifieke talen. Velen komen uit de communitycatalogus die wij beheren, en je kunt de app ook naar een catalogus van derden wijzen of er zelf een hosten.</string>
     <!-- TASK-779: task-oriented labels for the import actions and the Gemma entry (maintainer road test) -->
     <string name="litert_card_title">Gemma-model toevoegen (LiteRT)</string>
-    <string name="gemma_entry_title">Gemma-downloads</string>
-    <string name="gemma_entry_subtitle">De officiële Gemma-modellen bekijken en downloaden</string>
-    <string name="external_import_url">Importeren vanuit een link</string>
+    <string name="gemma_entry_title">Gemma AI-modellen</string>
+    <string name="gemma_entry_subtitle">Volledige AI-assistenten: spraaktranscriptie + tekstsamenvattingen, verfijning in twee stappen, offline chat</string>
     <string name="external_url_hint">HuggingFace-repo of URL van een catalogusitem-JSON</string>
     <string name="external_import">Importeren</string>
     <string name="external_importing">Model importeren…</string>

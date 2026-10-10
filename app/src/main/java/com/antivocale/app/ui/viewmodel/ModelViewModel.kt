@@ -1639,6 +1639,17 @@ class ModelViewModel @Inject constructor(
             }
         }
     }
+    /**
+     * TASK-796 round 3: the single-picker bundle auto-detect. Returns the
+     * ONLY .zip child's URI when the picked folder holds exactly one (a
+     * random archive among many must not hijack the flow: several zips
+     * means the user must pick the specific folder). Null = no bundle
+     * candidate, the folder import proceeds with its own reporting.
+     * Binder work on IO inside the importer; the UI branch only decides.
+     */
+    suspend fun singleBundleChild(context: Context, treeUri: Uri): Uri? =
+        externalModelImporter.bundleZipChildren(context, treeUri).singleOrNull()
+
 
     /** TASK-513: lists a picked SAF folder and detects the family, so the
      *  import dialog can prefill it instead of failing a transducer-shaped
@@ -1680,10 +1691,10 @@ class ModelViewModel @Inject constructor(
      */
     fun importExternalFromBundle(context: Context, bundleUri: Uri) =
         runExternalImport("Bundle", onProgress = null) {
-            // TASK-761: the picker's TEMPORARY read grant covers this
-            // one-shot read; no persistable grant is taken, so nothing can
-            // leak (the old callback-side take was never released and
-            // burned one of the 128 grant slots per import).
+            // TASK-761/796: since round 3 the bundle arrives through the
+            // FOLDER picker; the caller releases the persisted read grant
+            // before invoking this, so the one-shot read rides the
+            // picker's transient grant again (nothing persists).
             val staging = File(context.cacheDir, "bundle-import-${System.currentTimeMillis()}")
             try {
                 val manifest = context.contentResolver.openInputStream(bundleUri)?.use { input ->

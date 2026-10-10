@@ -801,18 +801,19 @@
     <string name="share_target_external">Anti-Vocale（外部）</string>
     <string name="share_shortcut_transcribe_with">用 %1$s 转写</string>
     <string name="external_none_imported">尚未导入外部模型</string>
-    <string name="external_section_title">外部模型</string>
-    <string name="external_section_subtitle">您自行添加的模型文件（文件夹、URL 或传输包）以及 Gemma LiteRT-LM 下载。</string>
+    <string name="external_section_title">添加更多转写模型</string>
+    <string name="external_section_subtitle">你自行添加的额外语音转写模型。它们与内置模型并行运行，导入后会出现在下方列表中。</string>
     <string name="model_advanced_section">高级</string>
     <string name="model_advanced_description">外部导入和 Gemma 下载</string>
-    <string name="external_import_folder">从文件夹导入</string>
-    <string name="external_import_bundle">导入传输包</string>
+    <string name="external_family_advanced">手动选择模型家族</string>
+    <string name="external_import_device">从此设备导入</string>
+    <string name="litert_card_description">手动添加你已有的 Gemma 模型文件（.litertlm），可从此设备或 Hugging Face URL 导入。大多数用户使用上方的下载即可。</string>
+    <string name="external_import_catalog">浏览我们的模型目录</string>
     <string name="external_models_intro">本区块是备选模型：适合内存较小手机的小体积版本，以及针对特定语言优化的模型。其中许多来自我们维护的社区目录，但你也可以让应用指向第三方目录，或自建目录。</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">添加 Gemma 模型（LiteRT）</string>
-    <string name="gemma_entry_title">Gemma 下载</string>
-    <string name="gemma_entry_subtitle">浏览并下载官方 Gemma 模型</string>
-    <string name="external_import_url">从链接导入</string>
+    <string name="gemma_entry_title">Gemma AI 模型</string>
+    <string name="gemma_entry_subtitle">完整的 AI 助手模型：语音转写 + 文本摘要、两遍精修、离线聊天</string>
     <string name="external_url_hint">HuggingFace 仓库或目录条目 JSON URL</string>
     <string name="external_import">导入</string>
     <string name="external_importing">正在导入模型…</string>

@@ -987,18 +987,19 @@
     <string name="share_target_external">Anti-Vocale (External)</string>
     <string name="share_shortcut_transcribe_with">Transcribe with %1$s</string>
     <string name="external_none_imported">No external models imported</string>
-    <string name="external_section_title">External models</string>
-    <string name="external_section_subtitle">Model files you add yourself (folder, URL, or transfer bundle) plus the Gemma LiteRT-LM downloads; they run alongside the built-in catalog.</string>
+    <string name="external_section_title">Add more transcription models</string>
+    <string name="external_section_subtitle">Extra voice-transcription models you add yourself. They run alongside the built-in ones and appear in the list below once imported.</string>
     <string name="model_advanced_section">Advanced</string>
     <string name="model_advanced_description">External imports and Gemma downloads</string>
-    <string name="external_import_folder">Import from a folder</string>
-    <string name="external_import_bundle">Import a transfer bundle</string>
     <string name="external_models_intro">This section holds alternative models: small ones for phones with little memory, and models tuned for specific languages. Many come from the community catalog we curate, and you can also point the app at a third-party catalog or host your own.</string>
     <!-- TASK-779: task-oriented labels for the import actions and the Gemma entry (maintainer road test) -->
     <string name="litert_card_title">Add a Gemma model (LiteRT)</string>
-    <string name="gemma_entry_title">Gemma downloads</string>
-    <string name="gemma_entry_subtitle">Browse and download the official Gemma models</string>
-    <string name="external_import_url">Import from a link</string>
+    <string name="gemma_entry_title">Gemma AI models</string>
+    <string name="gemma_entry_subtitle">Full AI assistant models: voice transcribers + text summaries, two-pass refinement, offline chat</string>
+    <string name="external_import_catalog">Browse our model catalog</string>
+    <string name="external_family_advanced">Choose the model family manually</string>
+    <string name="external_import_device">Import from this device</string>
+    <string name="litert_card_description">Manually add a Gemma model file (.litertlm) you already have, from this device or a Hugging Face URL. Most users want the downloads above.</string>
     <string name="external_url_hint">HuggingFace repo or catalog-entry JSON URL</string>
     <string name="external_import">Import</string>
     <string name="external_importing">Importing model…</string>

@@ -971,11 +971,9 @@
     <string name="share_target_external">Anti-Vocale (חיצוני)</string>
     <string name="share_shortcut_transcribe_with">תמלול עם %1$s</string>
     <string name="external_none_imported">לא יובאו מודלים חיצוניים</string>
-    <string name="external_section_title">מודלים חיצוניים</string>
+    <string name="external_section_title">הוספת מודלי תמלול נוספים</string>
     <string name="model_advanced_section">מתקדם</string>
     <string name="model_advanced_description">ייבוא חיצוני והורדות Gemma</string>
-    <string name="external_import_folder">ייבוא מתיקייה</string>
-    <string name="external_import_url">ייבוא מקישור</string>
     <string name="external_url_hint">מאגר HuggingFace או כתובת URL של רשומת קטלוג JSON</string>
     <string name="external_import">ייבוא</string>
     <string name="external_importing">מייבא מודל…</string>
@@ -1213,13 +1211,16 @@
     <string name="refinement_model_description">המודל ששלב השני משתמש בו. השאר על ירושה כדי להשתמש במודל הפעיל.</string>
     <string name="refinement_model_inherit">רשת מודל פעיל</string>
     <string name="export_model_bundle">שיתוף המודל להעברה ללא רשת</string>
-    <string name="external_import_bundle">ייבוא חבילת העברה</string>
+    <string name="external_family_advanced">בחירת משפחת המודל באופן ידני</string>
+    <string name="external_import_device">ייבוא מהמכשיר הזה</string>
+    <string name="litert_card_description">הוסיפו ידנית קובץ מודל Gemma‏ (.litertlm) שכבר יש לכם, מהמכשיר הזה או מכתובת Hugging Face. רוב המשתמשים צריכים את ההורדות למעלה.</string>
+    <string name="external_import_catalog">עיינו בקטלוג המודלים שלנו</string>
     <string name="external_models_intro">המדור הזה מכיל מודלים חלופיים: גרסאות קטנות לטלפונים עם זיכרון מועט ומודלים הממוטבים לשפות ספציפיות. רבים מגיעים מקטלוג הקהילה שאנחנו מנהלים, אבל אפשר גם להפנות את האפליקציה לקטלוג של ספק חיצוני או לארח קטלוג משלכם.</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">הוספת מודל Gemma (LiteRT)</string>
-    <string name="gemma_entry_title">הורדות Gemma</string>
-    <string name="gemma_entry_subtitle">עיינו והורידו את מודלי Gemma הרשמיים</string>
-    <string name="external_section_subtitle">קובצי מודל שאתם מוסיפים בעצמכם (תיקייה, כתובת או חבילת העברה) בתוספת הורדות Gemma LiteRT-LM; פועלים לצד הקטלוג המובנה.</string>
+    <string name="gemma_entry_title">מודלי AI של Gemma</string>
+    <string name="gemma_entry_subtitle">מודלי עוזר AI מלאים: תמלול קול + סיכומי טקסט, ליטוש דו-שלבי, צ\'אט ללא חיבור</string>
+    <string name="external_section_subtitle">מודלי תמלול קול נוספים שאתם מוסיפים בעצמכם. הם פועלים לצד המודלים המובנים ומופיעים ברשימה למטה לאחר הייבוא.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
     <string name="folder_watch_title">מעקב מתוזמן אחר תיקיות</string>

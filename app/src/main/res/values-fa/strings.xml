@@ -930,11 +930,9 @@
     <string name="share_target_external">Anti-Vocale (خارجی)</string>
     <string name="share_shortcut_transcribe_with">رونویسی با %1$s</string>
     <string name="external_none_imported">هیچ مدل خارجی وارد نشده است</string>
-    <string name="external_section_title">مدل‌های خارجی</string>
+    <string name="external_section_title">افزودن مدل‌های تبدیل گفتار بیشتر</string>
     <string name="model_advanced_section">پیشرفته</string>
     <string name="model_advanced_description">وارد کردن‌های خارجی و دانلودهای Gemma</string>
-    <string name="external_import_folder">وارد کردن از پوشه</string>
-    <string name="external_import_url">وارد کردن از پیوند</string>
     <string name="external_url_hint">نشانی مخزن HuggingFace یا نشانی JSON یک مدخل کاتالوگ</string>
     <string name="external_import">وارد کردن</string>
     <string name="external_importing">در حال وارد کردن مدل…</string>
@@ -1208,13 +1206,16 @@
     <string name="refinement_model_description">مدلی که مرحله دوم استفاده می‌کند. برای استفاده از مدل فعال روی ارث‌بردن بگذارید.</string>
     <string name="refinement_model_inherit">ارث‌بردن مدل فعال</string>
     <string name="export_model_bundle">اشتراک‌گذاری مدل برای انتقال آفلاین</string>
-    <string name="external_import_bundle">وارد کردن بسته انتقال</string>
+    <string name="external_family_advanced">انتخاب دستی خانواده مدل</string>
+    <string name="external_import_device">وارد کردن از این دستگاه</string>
+    <string name="litert_card_description">یک فایل مدل Gemma (.litertlm) که از قبل دارید را دستی اضافه کنید، از این دستگاه یا با نشانی Hugging Face. بیشتر کاربران دانلودهای بالا را می‌خواهند.</string>
+    <string name="external_import_catalog">مرور کاتالوگ مدل‌های ما</string>
     <string name="external_models_intro">این بخش مدل‌های جایگزین را در بر دارد: نسخه‌های کوچک برای گوشی‌های با حافظه کم، و مدل‌های بهینه‌شده برای زبان‌های مشخص. بسیاری از آن‌ها از کاتالوگ جامعه‌ای که ما سرپرستی می‌کنیم می‌آیند، اما می‌توانید برنامه را به کاتالوگ شخص ثالث هم اشاره دهید یا کاتالوگ خودتان را میزبانی کنید.</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">افزودن مدل Gemma (LiteRT)</string>
-    <string name="gemma_entry_title">دانلودهای Gemma</string>
-    <string name="gemma_entry_subtitle">مرور و دانلود مدل‌های رسمی Gemma</string>
-    <string name="external_section_subtitle">فایل‌های مدلی که خودتان اضافه می‌کنید (پوشه، نشانی یا بسته انتقال) به‌همراه دانلودهای Gemma LiteRT-LM؛ در کنار کاتالوگ داخلی اجرا می‌شوند.</string>
+    <string name="gemma_entry_title">مدل‌های هوش مصنوعی Gemma</string>
+    <string name="gemma_entry_subtitle">دستیارهای کامل هوش مصنوعی: تبدیل گفتار به متن + خلاصه‌سازی متن، پالایش دومرحله‌ای، گفتگوی آفلاین</string>
+    <string name="external_section_subtitle">مدل‌های اضافی تبدیل گفتار که خودتان اضافه می‌کنید. در کنار مدل‌های داخلی اجرا می‌شوند و پس از وارد کردن در فهرست پایین ظاهر می‌شوند.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
     <string name="folder_watch_title">پایش زمان‌بندی‌شده پوشه</string>
