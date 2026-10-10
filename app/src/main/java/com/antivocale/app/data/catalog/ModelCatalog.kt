@@ -32,7 +32,10 @@ object ModelCatalogJson {
     /**
      * Flag keys the engine actually consumes, by field of [CatalogFlags]. A key not
      * in this set is a dead flag — parse-time rejection (rather than silent dropping)
-     * keeps dead flags from re-entering the catalog unnoticed.
+     * keeps dead flags from re-entering the catalog unnoticed. "The engine"
+     * is the BUILT-IN SherpaBackend: external-entry JSONs may declare these
+     * keys and the external backend ignores the qwen3-specific ones (an
+     * accepted no-op class; TASK-795 review F5).
      */
     private val CONSUMED_FLAG_KEYS = setOf(
         "defaultVariant",
@@ -45,6 +48,7 @@ object ModelCatalogJson {
         "whisperTailPaddings",
         "blankPenalty",
         "maxNewTokens",
+        "maxTotalLen",
         "chunkDurationSeconds",
         "maxAudioDurationSeconds",
     )
@@ -90,6 +94,17 @@ object ModelCatalogJson {
         val variants = buildList {
             for (i in 0 until variantArr.length()) add(parseVariant(variantArr.getJSONObject(i), id))
         }
+        val flags = parseFlags(o.optJSONObject("flags"))
+        // TASK-795 review F1: a qwen3_asr entry with an undeclared decode
+        // budget parses clean here and hard-aborts NATIVELY at model load
+        // (sherpa's Validate exits the process); the parser's own contract
+        // is a named, fail-fast error instead.
+        if (o.getString("modelType") == "qwen3_asr") {
+            require(flags.maxTotalLen > 0 && flags.maxNewTokens > 0) {
+                "entry $id: qwen3_asr must declare maxTotalLen and maxNewTokens > 0 " +
+                    "(sherpa rejects non-positive values with a native process exit)"
+            }
+        }
         return CatalogEntry(
             id = id,
             runtime = runtime,
@@ -104,7 +119,7 @@ object ModelCatalogJson {
             speedComparison = o.optBoolean("speedComparison", false),
             shareAlias = o.optString("shareAlias", ""),
             storageDir = o.optString("storageDir", "").ifBlank { null },
-            flags = parseFlags(o.optJSONObject("flags")),
+            flags = flags,
             languages = optStringList(o, "languages"),
             variants = variants,
         )
@@ -251,6 +266,7 @@ object ModelCatalogJson {
             whisperTailPaddings = o.optInt("whisperTailPaddings", 0),
             blankPenalty = o.optDouble("blankPenalty", 0.0),
             maxNewTokens = o.optInt("maxNewTokens", 0),
+            maxTotalLen = o.optInt("maxTotalLen", 0),
             chunkDurationSeconds = o.optInt("chunkDurationSeconds", 0),
             maxAudioDurationSeconds = o.optInt("maxAudioDurationSeconds", 0),
         )
@@ -370,8 +386,23 @@ data class CatalogFlags(
     val whisperTailPaddings: Int = 0,
     /** blankPenalty for the offline recognizer (Qwen3-ASR 1.0; 0.0 = sherpa default/disabled). */
     val blankPenalty: Double = 0.0,
-    /** maxNewTokens for the offline recognizer (Qwen3-ASR 2048; 0 = sherpa default). */
+    /** maxNewTokens for the offline recognizer (Qwen3-ASR 2048; sherpa
+     *  rejects 0 natively, so a qwen3_asr entry must declare it). */
     val maxNewTokens: Int = 0,
+    /**
+     * maxTotalLen for the Qwen3-ASR decoder: the shared prompt+audio+output
+     * budget. Two effects when it is too small (measured, TASK-795): audio
+     * placeholders are dropped beyond ~38s of audio (13 tokens/s; a 30s
+     * chunk is ~390 audio tokens + ~15 prompt), and generation stops early
+     * mid-word once the budget fills, with NO log (the silent one).
+     * 1024 covers a 30s chunk plus the 2048-token generation budget with
+     * 2x headroom. sherpa rejects values <= 0 and the backend always
+     * passes this field, so every qwen3_asr entry must declare it. The KV
+     * cache transient scales with it on dynamic-dim exports (the official
+     * 0.6B: ~110 MiB per 512 positions, float32, 28 layers): that is why
+     * 1024 over 2048. Static-KV-dim exports ignore the flag entirely.
+     */
+    val maxTotalLen: Int = 0,
     /**
      * Max chunk duration in seconds for the orchestrator: >0 chunks longer audio
      * (Whisper/Qwen3-ASR/GigaAM 30, Parakeet 60); 0 processes the whole clip

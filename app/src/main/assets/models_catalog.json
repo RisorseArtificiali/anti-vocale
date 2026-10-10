@@ -594,6 +594,7 @@
         "ensureParentDirs": true,
         "blankPenalty": 1.0,
         "maxNewTokens": 2048,
+        "maxTotalLen": 1024,
         "chunkDurationSeconds": 30,
         "maxAudioDurationSeconds": 30
       },

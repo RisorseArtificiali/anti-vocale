@@ -606,6 +606,7 @@ class SherpaBackend(
                     encoder = File(dir, roles.encoder).absolutePath,
                     decoder = File(dir, roles.decoder).absolutePath,
                     tokenizer = File(dir, requireNotNull(roles.tokenizerDir)).absolutePath,
+                    maxTotalLen = entry.flags.maxTotalLen,
                     maxNewTokens = entry.flags.maxNewTokens,
                 ),
                 modelType = entry.modelType,
