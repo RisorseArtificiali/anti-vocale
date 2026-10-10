@@ -100,7 +100,7 @@ class ResultNotificationSpecNavTest {
     }
 
     @Test
-    fun `the sixteen private key values are frozen (cross-version repost compat)`() {
+    fun `the seventeen private key values are frozen (cross-version repost compat)`() {
         // A retyped key keeps writeTo/readFrom symmetric and every other
         // test green, but strands every notification the currently shipped
         // version posted (they repost with the field at its default). The
@@ -122,6 +122,7 @@ class ResultNotificationSpecNavTest {
             "EXTRA_FAILED_CHUNK_COUNT" to "failed_chunk_count",
             "EXTRA_SAVE_FAILURE" to "save_failure",
             "EXTRA_SAVED_FOLDER" to "saved_folder",
+            "EXTRA_SAVED_FILE" to "saved_file",
         )
         val declared = ResultNotificationSpecNav::class.java.declaredFields
             .filter { it.type == String::class.java } // skip Kotlin's INSTANCE artifact

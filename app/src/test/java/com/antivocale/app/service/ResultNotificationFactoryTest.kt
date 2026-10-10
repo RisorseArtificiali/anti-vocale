@@ -180,8 +180,13 @@ class ResultNotificationFactoryTest {
     @Test
     fun `a successful auto-save names the destination folder (GH #128)`() {
         val n = factory.build(
+            spec("ciao come stai").copy(savedFolderName = "rec", savedFileName = "a.txt"), prefs)
+        assertEquals("Saved a.txt to rec", n.subTextCompat())
+        // TASK-798 review: a pre-update repost carries the folder but no
+        // file name; the nameless variant must render (not "").
+        val nameless = factory.build(
             spec("ciao come stai").copy(savedFolderName = "rec"), prefs)
-        assertEquals("Saved to rec", n.subTextCompat())
+        assertEquals("Saved to rec", nameless.subTextCompat())
         // the destination is a SUCCESS fact: a failure, when present, wins the
         // line instead (the two never ride together from one save).
         val failed = factory.build(

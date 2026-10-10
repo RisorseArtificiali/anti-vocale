@@ -30,7 +30,7 @@ class TranscriptFileSaverSaveResultTest {
     fun `failureOrNull is the one-line reduction the service sites use`() {
         assertEquals("create_refused",
             TranscriptFileSaver.SaveResult.Failed(TranscriptFileSaver.SaveResult.FAIL_CREATE_REFUSED).failureOrNull())
-        assertNull(TranscriptFileSaver.SaveResult.Saved("rec").failureOrNull())
+        assertNull(TranscriptFileSaver.SaveResult.Saved("rec", "a.txt").failureOrNull())
         assertNull(TranscriptFileSaver.SaveResult.NotConfigured.failureOrNull())
     }
 
@@ -39,7 +39,7 @@ class TranscriptFileSaverSaveResultTest {
         // non-null by construction: TreeUris.displayPath's fallback chain
         // ends at the raw URI, so a nameless provider still yields a label
         assertEquals("rec",
-            TranscriptFileSaver.SaveResult.Saved("rec").savedFolderOrNull())
+            TranscriptFileSaver.SaveResult.Saved("rec", "a.txt").savedFolderOrNull())
         assertNull(TranscriptFileSaver.SaveResult.Failed(
             TranscriptFileSaver.SaveResult.FAIL_EXCEPTION).savedFolderOrNull())
         assertNull(TranscriptFileSaver.SaveResult.NotConfigured.savedFolderOrNull())

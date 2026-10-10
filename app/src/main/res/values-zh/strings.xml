@@ -493,7 +493,8 @@
     <string name="early_preview_badge">预览</string>
     <string name="early_preview_requires_progressive">需要开启渐进显示</string>
     <string name="auto_save_failed">自动保存失败（%1$s）</string>
-    <string name="saved_to_folder">已保存到 %1$s</string>
+    <string name="saved_to_folder">已将 %1$s 保存到 %2$s</string>
+    <string name="saved_to_folder_nameless">已保存到 %1$s</string>
     <string name="default_prompt_title">默认提示词</string>
     <string name="default_prompt_description">转写期间给模型的指令。留空使用内置提示词。</string>
     <string name="default_prompt_placeholder">例如：转写这段语音：</string>

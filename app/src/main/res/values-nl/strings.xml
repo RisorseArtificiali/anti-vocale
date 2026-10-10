@@ -598,7 +598,8 @@
     <string name="early_preview_badge">Voorbeeld</string>
     <string name="early_preview_requires_progressive">Vereist progressieve weergave</string>
     <string name="auto_save_failed">Automatisch opslaan mislukt (%1$s)</string>
-    <string name="saved_to_folder">Opgeslagen in %1$s</string>
+    <string name="saved_to_folder">%1$s opgeslagen in %2$s</string>
+    <string name="saved_to_folder_nameless">Opgeslagen in %1$s</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Standaardprompt</string>

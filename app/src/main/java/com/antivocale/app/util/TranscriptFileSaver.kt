@@ -65,11 +65,14 @@ object TranscriptFileSaver {
      * the result notification subtext.
      */
     sealed class SaveResult {
-        /** GH #128: [folderName] is the SAF tree's display name, the ONE
-         *  identity of the destination the platform exposes; it rides the
-         *  success notification so a file landing in a twin folder ("rec"
-         *  vs "rec (1)") is visible where the user reads the result. */
-        data class Saved(val folderName: String) : SaveResult()
+        /**
+         * GH #128: [folderName] says WHERE (a twin folder reads right here:
+         * two granted trees can share a display name). TASK-798:
+         * [fileName] is the provider's name for the written document (it
+         * may differ from the requested one); surfaces on the notification
+         * so a user can search for the exact file.
+         */
+        data class Saved(val folderName: String, val fileName: String) : SaveResult()
         data class Failed(val failureReason: String) : SaveResult()
         data object NotConfigured : SaveResult()
 
@@ -80,6 +83,11 @@ object TranscriptFileSaver {
             const val FAIL_NOT_WRITABLE = "not_writable"
             const val FAIL_CREATE_REFUSED = "create_refused"
             const val FAIL_OPEN_STREAM = "open_stream_failed"
+            /** TASK-798: the write "succeeded" but the provider reports
+             *  the document empty or gone (virtual providers discard
+             *  silently). */
+            const val FAIL_VERIFY_EMPTY = "verify_empty"
+
             /** The catch-all: the exception's class name stays in logcat (the
              *  full stack is logged there); the user token is generic. */
             const val FAIL_EXCEPTION = "write_failed"
@@ -94,6 +102,9 @@ object TranscriptFileSaver {
          *  (null when the provider gave none), null otherwise: the success
          *  twin of [failureOrNull]. */
         fun savedFolderOrNull(): String? = (this as? Saved)?.folderName
+
+        /** TASK-798: the provider-side file name on Saved, null otherwise. */
+        fun savedFileNameOrNull(): String? = (this as? Saved)?.fileName
     }
 
     /** TASK-647: the disclaimer header for timed formats (a comment block
@@ -183,6 +194,21 @@ object TranscriptFileSaver {
                 Log.w(TAG, "openOutputStream returned null for ${file.uri}")
                 return SaveResult.Failed(SaveResult.FAIL_OPEN_STREAM)
             }
+            // TASK-798 (GH #128): a provider can accept createFile AND the
+            // write yet never materialize the file (virtual roots do this);
+            // the user saw "saved" notifications with no file on disk for
+            // months. Verify the provider's own view of the document after
+            // writing through the pure decision below (unit-tested): a
+            // reported zero, or a vanished document, is a FAILURE; an
+            // unknown size (COLUMN_SIZE null is contract-legal for
+            // cloud/async providers) or an empty export is a logged pass.
+            when (VerifyDecision.decide(reportedSize(context, file.uri), text.length)) {
+                VerifyDecision.Outcome.PASS -> Unit
+                VerifyDecision.Outcome.CANNOT_VERIFY ->
+                    Log.i(TAG, "Provider reports unknown size for ${file.uri}; cannot verify the write")
+                VerifyDecision.Outcome.FAIL ->
+                    return SaveResult.Failed(SaveResult.FAIL_VERIFY_EMPTY)
+            }
             // TASK-722 review: the affirmative success trace lives at the
             // single owner (both service twins collapsed their copies).
             // GH #128 (review): the destination rides BOTH surfaces through
@@ -191,8 +217,9 @@ object TranscriptFileSaver {
             // name otherwise, SAME derivation as the Settings export card),
             // and the success log carries the tree itself so a twin-folder
             // report pins to a concrete destination.
-            Log.i(TAG, "Saved transcript to output folder: ${file.name ?: name} (tree=$treeUri)")
-            SaveResult.Saved(TreeUris.displayPath(context, treeUri))
+            val actualName = file.name ?: name
+            Log.i(TAG, "Saved transcript to output folder: $actualName (tree=$treeUri)")
+            SaveResult.Saved(TreeUris.displayPath(context, treeUri), actualName)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to save transcript to $treeUri", e)
             SaveResult.Failed(SaveResult.FAIL_EXCEPTION)
@@ -212,6 +239,64 @@ object TranscriptFileSaver {
             val candidate = "${stem}_$i$ext"
             if (tree.findFile(candidate) == null) return candidate
             i++
+        }
+    }
+
+    /**
+     * TASK-798: the provider's own size report for a document, THREE-way:
+     * null row/cursor = [SizeReport.Missing], null COLUMN_SIZE (contract-
+     * legal "unknown") = [SizeReport.Unknown], else [SizeReport.Bytes].
+     * DocumentsContract only; a query failure reads as Unknown (the
+     * documentfile 1.0.0 length() collapses all three to 0, which is why
+     * this exists).
+     */
+    private fun reportedSize(context: Context, uri: Uri): SizeReport = try {
+        val cursor = context.contentResolver.query(
+            uri, arrayOf(android.provider.DocumentsContract.Document.COLUMN_SIZE),
+            null, null, null)
+        if (cursor == null) {
+            SizeReport.Unknown
+        } else {
+            cursor.use { c ->
+                when {
+                    !c.moveToFirst() -> SizeReport.Missing
+                    c.isNull(0) -> SizeReport.Unknown
+                    else -> SizeReport.Bytes(c.getLong(0))
+                }
+            }
+        }
+    } catch (e: Exception) {
+        Log.w(TAG, "Size query failed for $uri; treating as unknown", e)
+        SizeReport.Unknown
+    }
+
+    /** TASK-798: see [reportedSize]. */
+    internal sealed interface SizeReport {
+        data object Missing : SizeReport
+        data object Unknown : SizeReport
+        data class Bytes(val bytes: Long) : SizeReport
+    }
+
+    /**
+     * TASK-798: the pure post-write decision (unit-tested): reported zero
+     * bytes or a vanished document with non-empty content is the GH #128
+     * silent data-loss class; unknown size cannot verify (logged pass);
+     * empty exports legitimately report zero.
+     */
+    internal object VerifyDecision {
+        enum class Outcome { PASS, CANNOT_VERIFY, FAIL }
+
+        fun decide(report: SizeReport, textLength: Int): Outcome = when (report) {
+            SizeReport.Unknown -> Outcome.CANNOT_VERIFY
+            SizeReport.Missing ->
+                if (textLength > 0) Outcome.FAIL else Outcome.PASS
+            is SizeReport.Bytes ->
+                // Only an explicit 0 fails: some off-contract providers
+                // report -1 for "unknown/pending" and a negative must not
+                // false-fail a write that landed.
+                if (report.bytes == 0L && textLength > 0) Outcome.FAIL
+                else if (report.bytes < 0) Outcome.CANNOT_VERIFY
+                else Outcome.PASS
         }
     }
 }

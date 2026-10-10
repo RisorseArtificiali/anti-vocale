@@ -14,7 +14,7 @@ import com.antivocale.app.receiver.NotificationActionReceiver
  * value change strands them (a pre-field intent reposts with that field
  * at its default). Keys shared with other intents (transcription text,
  * source package, task id) keep their [NotificationActionReceiver]
- * constants; the other sixteen are private here.
+ * constants; the other seventeen are private here.
  */
 object ResultNotificationSpecNav {
 
@@ -34,6 +34,7 @@ object ResultNotificationSpecNav {
     private const val EXTRA_FAILED_CHUNK_COUNT = "failed_chunk_count"
     private const val EXTRA_SAVE_FAILURE = "save_failure"
     private const val EXTRA_SAVED_FOLDER = "saved_folder"
+    private const val EXTRA_SAVED_FILE = "saved_file"
 
     /**
      * Writes every round-tripping field of [spec] into [intent].
@@ -49,6 +50,7 @@ object ResultNotificationSpecNav {
             putExtra(EXTRA_SIGNATURE_POSITION, spec.signaturePosition)
             putExtra(EXTRA_PAGE_INDEX, currentPage)
             putExtra(EXTRA_SAVED_FOLDER, spec.savedFolderName)
+            spec.savedFileName?.let { putExtra(EXTRA_SAVED_FILE, it) }
             putExtra(EXTRA_NOTIFICATION_ID, spec.notificationId)
             putExtra(EXTRA_FIRST_POSTED_AT, spec.firstPostedAt)
             putExtra(EXTRA_SAVE_FAILURE, spec.saveFailureReason)
@@ -91,6 +93,7 @@ object ResultNotificationSpecNav {
             failedChunkCount = intent.getIntExtra(EXTRA_FAILED_CHUNK_COUNT, 0),
             saveFailureReason = intent.getStringExtra(EXTRA_SAVE_FAILURE),
             savedFolderName = intent.getStringExtra(EXTRA_SAVED_FOLDER),
+            savedFileName = intent.getStringExtra(EXTRA_SAVED_FILE),
             repetitionSuspected = intent.getBooleanExtra(EXTRA_REPETITION_SUSPECTED, false),
             copiedToClipboard = intent.getBooleanExtra(EXTRA_COPIED_TO_CLIPBOARD, false),
             streamedWithoutVad = intent.getBooleanExtra(EXTRA_STREAMED_WITHOUT_VAD, false),

@@ -60,6 +60,9 @@ data class ResultNotificationSpec(
     /** GH #128: the display name of the SAF folder the export landed in;
      *  success says WHERE, so a twin-folder mismatch reads right here. */
     val savedFolderName: String? = null,
+    /** TASK-798: the provider's name for the written document; the
+     *  notification names the exact file so a user can search for it. */
+    val savedFileName: String? = null,
     val firstPostedAt: Long = System.currentTimeMillis(),
     /** True when rebuilding after a prev/next tap: suppresses re-alerting. */
     val repost: Boolean = false
@@ -340,6 +343,7 @@ class ResultNotificationFactory(private val context: Context) {
             repetitionSuspected = repetitionSuspected,
             saveFailureReason = saveResult.failureOrNull(),
             savedFolderName = saveResult.savedFolderOrNull(),
+            savedFileName = saveResult.savedFileNameOrNull(),
             firstPostedAt = System.currentTimeMillis()
         )
         postIfPermitted(id, build(spec, prefs))
@@ -447,7 +451,9 @@ class ResultNotificationFactory(private val context: Context) {
             // GH #128: success names the destination folder, the fact that
             // separates "written" from "written where you are not looking".
             subTextParts.add(
-                context.getString(R.string.saved_to_folder, spec.savedFolderName))
+                spec.savedFileName?.let { name ->
+                    context.getString(R.string.saved_to_folder, name, spec.savedFolderName)
+                } ?: context.getString(R.string.saved_to_folder_nameless, spec.savedFolderName))
         }
         val langLabel = spec.detectedLanguage?.let { lang ->
             LanguageNames.nativeLanguageName(lang)

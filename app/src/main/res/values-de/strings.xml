@@ -545,7 +545,8 @@
     <string name="early_preview_badge">Vorschau</string>
     <string name="early_preview_requires_progressive">Benötigt die progressive Anzeige</string>
     <string name="auto_save_failed">Automatisches Speichern fehlgeschlagen (%1$s)</string>
-    <string name="saved_to_folder">Gespeichert in %1$s</string>
+    <string name="saved_to_folder">„%1$s“ in %2$s gespeichert</string>
+    <string name="saved_to_folder_nameless">In %1$s gespeichert</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Standard-Prompt</string>
