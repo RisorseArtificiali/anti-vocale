@@ -1701,7 +1701,7 @@ class ModelViewModel @Inject constructor(
                     ModelBundleCodec.import(input, staging)
                 } ?: error("cannot open the selected bundle")
                 val params = ModelBundleCodec.recordParams(manifest)
-                externalModelImporter.importFromDirectory(
+                val record = externalModelImporter.importFromDirectory(
                     src = staging,
                     modelType = params.modelType,
                     family = params.family,
@@ -1710,6 +1710,18 @@ class ModelViewModel @Inject constructor(
                     streaming = params.streaming,
                     displayName = params.displayName,
                 )
+                // TASK-797: a bundle exported from a BUILT-IN catalog entry
+                // links the built-in card to the imported copy: writing the
+                // entry's saved path makes the catalog card show installed
+                // instead of re-prompting the download (the report's exact
+                // complaint). The external record remains the store; a
+                // delete of one side does not touch the other (documented
+                // asymmetry, TASK-797).
+                params.catalogEntryId
+                    ?.let { id -> BundledCatalog.byId(id) }
+                    ?.takeIf { entry -> entry.modelType == params.modelType }
+                    ?.let { preferencesManager.saveSherpaModelPath(it.id, record.dir) }
+                record
             } finally {
                 staging.deleteRecursively()
             }
@@ -1748,6 +1760,9 @@ class ModelViewModel @Inject constructor(
                 streaming = entry.isStreaming,
                 options = emptyMap(),
                 appVersion = BuildConfig.VERSION_NAME,
+                // TASK-797: the built-in entry the bundle came from; the
+                // importing device links its catalog card to the copy.
+                catalogEntryId = entry.id,
             )
             ctx.contentResolver.openOutputStream(uri)?.use { out ->
                 ModelBundleCodec.export(dir, out, metadata)

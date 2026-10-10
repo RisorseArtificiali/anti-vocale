@@ -73,6 +73,9 @@ object ModelBundleCodec {
                 .put("streaming", metadata.streaming)
                 .put("options", JSONObject(metadata.options))
                 .put("files", pins)
+            // TASK-797: the built-in catalog entry the bundle came from,
+            // so the importing device can link its card to the copy.
+            metadata.catalogEntryId?.let { manifest.put("catalogEntryId", it) }
             zip.putNextEntry(ZipEntry(MANIFEST_ENTRY))
             zip.write(manifest.toString().toByteArray())
             zip.closeEntry()
@@ -210,6 +213,7 @@ object ModelBundleCodec {
             displayName = manifest.optString("name").ifBlank { null },
             modelType = manifest.optString("modelType").ifBlank { null },
             family = family,
+            catalogEntryId = manifest.optString("catalogEntryId").ifBlank { null },
             options = optionsJson?.let { o -> buildMap { o.keys().forEach { k -> put(k, o.getString(k)) } } }
                 ?: emptyMap(),
             languages = languagesJson?.let { a -> (0 until a.length()).map { a.getString(it) } }
@@ -222,6 +226,8 @@ object ModelBundleCodec {
         val displayName: String?,
         val modelType: String?,
         val family: ModelFamily,
+        /** TASK-797: the built-in entry the bundle came from, when any. */
+        val catalogEntryId: String? = null,
         val options: Map<String, String>,
         val languages: List<String>,
         val streaming: Boolean,
@@ -236,5 +242,9 @@ object ModelBundleCodec {
         val streaming: Boolean,
         val options: Map<String, String>,
         val appVersion: String,
+        /** TASK-797: present when the bundle came from a BUILT-IN catalog
+         *  entry; the importing device uses it to link the built-in card's
+         *  install state to the imported copy. Absent for external exports. */
+        val catalogEntryId: String? = null,
     )
 }
