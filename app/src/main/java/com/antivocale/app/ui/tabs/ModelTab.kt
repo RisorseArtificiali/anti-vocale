@@ -2539,8 +2539,12 @@ private fun ExternalModelCard(
                             // Maintainer direction (2026-10-08): size first
                             // (the deciding fact before a download/use),
                             // then the family, then languages when known.
+                            // TASK-797 (GH #128): the family renders through
+                            // familyLabel like every import surface - the
+                            // raw record.modelType ("nemo_transducer") is
+                            // engine data, not display text.
                             (listOf(com.antivocale.app.util.formatFileSize(record.sizeBytes),
-                                record.typeLabel) +
+                                familyLabel(record.family)) +
                                 listOfNotNull(record.languages.joinToString(", ") { code ->
                                     // Display names like every other language
                                     // surface (the filter dropdown; code
