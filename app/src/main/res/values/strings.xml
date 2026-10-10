@@ -599,6 +599,13 @@
     <string name="early_preview_requires_progressive">Requires Progressive Display</string>
     <string name="auto_save_failed">Auto-save failed (%1$s)</string>
     <string name="saved_to_folder">Saved %1$s to %2$s</string>
+    <string name="share_format_title">Share as</string>
+    <string name="share_transcription_more">Share…</string>
+    <string name="share_format_txt">Plain text</string>
+    <string name="share_format_timed">Text with timestamps</string>
+    <string name="share_format_srt">Subtitles (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">This entry has no timestamps stored; the timed options will share plain text.</string>
     <string name="saved_to_folder_nameless">Saved to %1$s</string>
 
     <!-- Settings Tab - Default Prompt -->
@@ -1077,6 +1084,8 @@
     <string name="retranscribe_active_badge">Active</string>
     <string name="retranscribe_setting_title">Re-transcribe Button</string>
     <string name="retranscribe_setting_description">Show a button on audio transcriptions to retry with a different model.</string>
+    <string name="advanced_share_formats_title">Share as…</string>
+    <string name="advanced_share_formats_description">Adds a second Share… button on results that offers subtitle and timestamped formats, in addition to the default plain-text share.</string>
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Subtitles found</string>

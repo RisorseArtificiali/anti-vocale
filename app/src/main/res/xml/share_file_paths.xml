@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TASK-800: the in-app share picker writes timed formats (SRT/VTT) to a
+     cache file and shares it via FileProvider; cache cleaned by the OS. -->
+<paths>
+    <cache-path name="share" path="share/" />
+</paths>

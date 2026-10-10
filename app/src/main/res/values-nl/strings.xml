@@ -600,6 +600,13 @@
     <string name="auto_save_failed">Automatisch opslaan mislukt (%1$s)</string>
     <string name="saved_to_folder">%1$s opgeslagen in %2$s</string>
     <string name="saved_to_folder_nameless">Opgeslagen in %1$s</string>
+    <string name="share_format_title">Delen als</string>
+    <string name="share_transcription_more">Delen…</string>
+    <string name="share_format_txt">Platte tekst</string>
+    <string name="share_format_timed">Tekst met tijdstempels</string>
+    <string name="share_format_srt">Ondertitels (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">Dit item heeft geen opgeslagen tijdstempels; de tijdstempelopties delen platte tekst.</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Standaardprompt</string>
@@ -1077,6 +1084,8 @@
     <string name="retranscribe_active_badge">Actief</string>
     <string name="retranscribe_setting_title">Knop Opnieuw transcriberen</string>
     <string name="retranscribe_setting_description">Toon op audiotranscripties een knop om het met een ander model opnieuw te proberen.</string>
+    <string name="advanced_share_formats_title">Delen als…</string>
+    <string name="advanced_share_formats_description">Voegt een tweede Delen…-knop toe aan resultaten die ondertitel- en tijdstempelformaten aanbiedt, naast de gebruikelijke tekstshare.</string>
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Ondertitels gevonden</string>

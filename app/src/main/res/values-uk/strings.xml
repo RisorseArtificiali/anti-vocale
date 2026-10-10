@@ -588,6 +588,13 @@
     <string name="auto_save_failed">Не вдалося автозберегти (%1$s)</string>
     <string name="saved_to_folder">%1$s збережено в %2$s</string>
     <string name="saved_to_folder_nameless">Збережено в %1$s</string>
+    <string name="share_format_title">Поділитися як</string>
+    <string name="share_transcription_more">Поділитися…</string>
+    <string name="share_format_txt">Звичайний текст</string>
+    <string name="share_format_timed">Текст із мітками часу</string>
+    <string name="share_format_srt">Субтитри (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">У цьому записі немає збережених міток часу; параметри з часом поділять звичайний текст.</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Типовий запит розшифровки</string>
@@ -1067,6 +1074,8 @@
     <string name="retranscribe_active_badge">Активна</string>
     <string name="retranscribe_setting_title">Кнопка повторної розшифровки</string>
     <string name="retranscribe_setting_description">Показувати кнопку повторного розпізнавання іншою моделлю для готових результатів.</string>
+    <string name="advanced_share_formats_title">Поділитися як…</string>
+    <string name="advanced_share_formats_description">Додає другу кнопку Поділитися… у результатах, яка пропонує формати субтитрів і з мітками часу, понад звичайний текстовий поділ.</string>
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Знайдено субтитри</string>

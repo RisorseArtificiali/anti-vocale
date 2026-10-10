@@ -494,6 +494,13 @@
     <string name="auto_save_failed">Falha ao salvar automaticamente (%1$s)</string>
     <string name="saved_to_folder">%1$s salvo em %2$s</string>
     <string name="saved_to_folder_nameless">Salvo em %1$s</string>
+    <string name="share_format_title">Compartilhar como</string>
+    <string name="share_transcription_more">Compartilhar…</string>
+    <string name="share_format_txt">Texto simples</string>
+    <string name="share_format_timed">Texto com marcações de tempo</string>
+    <string name="share_format_srt">Legendas (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">Esta entrada não tem marcações de tempo salvas; as opções com tempo compartilharão texto simples.</string>
     <string name="default_prompt_title">Prompt padrão</string>
     <string name="default_prompt_description">Instrução dada ao modelo durante a transcrição. Vazio usa o prompt integrado.</string>
     <string name="default_prompt_placeholder">ex. Transcreva este discurso:</string>
@@ -896,6 +903,8 @@
     <string name="retranscribe_active_badge">Ativo</string>
     <string name="retranscribe_setting_title">Botão re-transcrever</string>
     <string name="retranscribe_setting_description">Mostra um botão nas transcrições de áudio para tentar novamente com outro modelo.</string>
+    <string name="advanced_share_formats_title">Compartilhar como…</string>
+    <string name="advanced_share_formats_description">Adiciona um segundo botão Compartilhar… nos resultados que oferece formatos de legenda e com marcações de tempo, além do compartilhamento normal em texto simples.</string>
     <string name="subtitles_found_title">Legendas encontradas</string>
     <string name="subtitles_found_text">Usar as legendas incorporadas (%1$s) ou transcrever o áudio? Sem escolha, a transcrição começa após %2$s.</string>
     <string name="subtitles_language_unknown">desconhecido</string>

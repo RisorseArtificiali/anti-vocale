@@ -766,6 +766,13 @@
     <string name="auto_save_failed">Salvataggio automatico non riuscito (%1$s)</string>
     <string name="saved_to_folder">Salvato %1$s in %2$s</string>
     <string name="saved_to_folder_nameless">Salvato in %1$s</string>
+    <string name="share_format_title">Condividi come</string>
+    <string name="share_transcription_more">Condividi…</string>
+    <string name="share_format_txt">Testo semplice</string>
+    <string name="share_format_timed">Testo con timestamp</string>
+    <string name="share_format_srt">Sottotitoli (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">Questa voce non ha timestamp salvati; le opzioni con i tempi condivideranno testo semplice.</string>
     <string name="progressive_initial">Preparazione del testo; risultato finale al completamento</string>
     <string name="processing_segment_progress">Segmento %1$d di %2$d…</string>
 
@@ -1009,6 +1016,8 @@
     <string name="retranscribe_active_badge">Attivo</string>
     <string name="retranscribe_setting_title">Pulsante Ri-trascrivi</string>
     <string name="retranscribe_setting_description">Mostra un pulsante sulle trascrizioni audio per riprovare con un modello diverso.</string>
+    <string name="advanced_share_formats_title">Condividi come…</string>
+    <string name="advanced_share_formats_description">Aggiunge un secondo pulsante Condividi… sui risultati che offre i formati sottotitoli e con timestamp, oltre alla normale condivisione in testo semplice.</string>
 
     <!-- Scelta estrazione sottotitoli (TASK-228) -->
     <string name="subtitles_found_title">Sottotitoli trovati</string>

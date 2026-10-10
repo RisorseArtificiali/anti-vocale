@@ -702,6 +702,17 @@
         android:foregroundServiceType="dataSync"
         tools:node="merge" />
 
+        <!-- TASK-800 (GH #128 pt 3): serves the SRT/VTT share files written
+             under cacheDir/share (no persisted storage touched). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/share_file_paths" />
+        </provider>
     </application>
 
 </manifest>

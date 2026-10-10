@@ -95,6 +95,7 @@ class PreferencesManagerImpl(
         private val SHOW_TECHNICAL_DETAILS = booleanPreferencesKey("show_technical_details")
         private val ADVANCED_SHARING_ENABLED = booleanPreferencesKey("advanced_sharing_enabled")
         private val SHOW_RETRANSCRIBE_BUTTON = booleanPreferencesKey("show_retranscribe_button")
+        private val ADVANCED_SHARE_FORMATS = booleanPreferencesKey("advanced_share_formats")
         // TASK-631: replaces the old force-load key with NO migration; that key's only
         // signal was an opt-out of the block, which the new default (no block) grants
         // to everyone, so a stored old value is deliberately never read again.
@@ -167,6 +168,7 @@ class PreferencesManagerImpl(
         val showTechnicalDetails: Boolean = PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS,
         val advancedSharingEnabled: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         val showRetranscribeButton: Boolean = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
+        val advancedShareFormats: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS,
         val memoryProtection: Boolean = PreferencesManager.DEFAULT_MEMORY_PROTECTION,
         val externalAutomationEnabled: Boolean = PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED,
         val openTranscribeEnabled: Boolean = PreferencesManager.DEFAULT_OPEN_TRANSCRIBE_ENABLED,
@@ -232,6 +234,7 @@ class PreferencesManagerImpl(
         showTechnicalDetails = this[SHOW_TECHNICAL_DETAILS] ?: PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS,
         advancedSharingEnabled = this[ADVANCED_SHARING_ENABLED] ?: PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         showRetranscribeButton = this[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
+        advancedShareFormats = this[ADVANCED_SHARE_FORMATS] ?: PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS,
         memoryProtection = this[MEMORY_PROTECTION] ?: PreferencesManager.DEFAULT_MEMORY_PROTECTION,
         externalAutomationEnabled = this[EXTERNAL_AUTOMATION_ENABLED] ?: PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED,
         openTranscribeEnabled = this[OPEN_TRANSCRIBE_ENABLED] ?: PreferencesManager.DEFAULT_OPEN_TRANSCRIBE_ENABLED,
@@ -829,6 +832,16 @@ class PreferencesManagerImpl(
             preferences[SHOW_RETRANSCRIBE_BUTTON] = enabled
         }
         cache.updateAndGet { it.copy(showRetranscribeButton = enabled) }
+    }
+
+    override val advancedShareFormats: Flow<Boolean> = dataStore.data.map { it[ADVANCED_SHARE_FORMATS] ?: PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS }
+        .onStart { emit(cache.get().advancedShareFormats) }
+
+    override suspend fun saveAdvancedShareFormats(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[ADVANCED_SHARE_FORMATS] = enabled
+        }
+        cache.updateAndGet { it.copy(advancedShareFormats = enabled) }
     }
 
     override val memoryProtection: Flow<Boolean> = dataStore.data.map { it[MEMORY_PROTECTION] ?: PreferencesManager.DEFAULT_MEMORY_PROTECTION }

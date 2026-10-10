@@ -494,6 +494,13 @@
     <string name="auto_save_failed">Error al guardar automáticamente (%1$s)</string>
     <string name="saved_to_folder">Guardado %1$s en %2$s</string>
     <string name="saved_to_folder_nameless">Guardado en %1$s</string>
+    <string name="share_format_title">Compartir como</string>
+    <string name="share_transcription_more">Compartir…</string>
+    <string name="share_format_txt">Texto sin formato</string>
+    <string name="share_format_timed">Texto con marcas de tiempo</string>
+    <string name="share_format_srt">Subtítulos (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">Esta entrada no tiene marcas de tiempo guardadas; las opciones con tiempo compartirán texto sin formato.</string>
     <string name="default_prompt_title">Prompt predeterminado</string>
     <string name="default_prompt_description">Instrucción para el modelo durante la transcripción. Si se deja vacío, se usa el prompt integrado.</string>
     <string name="default_prompt_placeholder">ej. Transcribe este discurso:</string>
@@ -896,6 +903,8 @@
     <string name="retranscribe_active_badge">Activo</string>
     <string name="retranscribe_setting_title">Botón re-transcribir</string>
     <string name="retranscribe_setting_description">Muestra un botón en las transcripciones de audio para reintentar con otro modelo.</string>
+    <string name="advanced_share_formats_title">Compartir como…</string>
+    <string name="advanced_share_formats_description">Añade un segundo botón Compartir… en los resultados que ofrece formatos de subtítulos y con marcas de tiempo, además del texto simple habitual.</string>
     <string name="subtitles_found_title">Subtítulos encontrados</string>
     <string name="subtitles_found_text">¿Usar los subtítulos incorporados (%1$s) o transcribir el audio? Si no eliges, la transcripción empieza tras %2$s.</string>
     <string name="subtitles_language_unknown">desconocido</string>

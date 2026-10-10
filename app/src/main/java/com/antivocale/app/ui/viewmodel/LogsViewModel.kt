@@ -556,6 +556,10 @@ class LogsViewModel @Inject constructor(
     val compactResultActions: StateFlow<Boolean> = preferencesManager.compactResultActions
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS)
 
+    /** TASK-800: the Share… format picker button; default OFF. */
+    val advancedShareFormats: StateFlow<Boolean> = preferencesManager.advancedShareFormats
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS)
+
     /** TASK-546: the detected-language chip toggle (maintainer directive:
      *  the chip is conditional on a Settings flag). */
     val languageChipEnabled: StateFlow<Boolean> = preferencesManager.languageChipEnabled

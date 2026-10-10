@@ -38,6 +38,7 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material.icons.filled.Memory
@@ -150,6 +151,7 @@ fun SettingsTab(
     val groupLogsByConversation by viewModel.groupLogsByConversation.collectAsState()
     val advancedSharingEnabled by viewModel.advancedSharingEnabled.collectAsState()
     val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
+    val advancedShareFormats by viewModel.advancedShareFormats.collectAsState()
     val compactResultActions by viewModel.compactResultActions.collectAsState()
     val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
     // TASK-546: the chip flag (maintainer directive: the flag lives here).
@@ -1384,6 +1386,18 @@ fun SettingsTab(
                     description = retranscribeDescription,
                     checked = showRetranscribeButton,
                     onCheckedChange = { viewModel.saveShowRetranscribeButton(it) }
+                )
+            }
+
+            // TASK-800 (GH #128 pt 3, maintainer direction): the advanced
+            // Share… button is opt-in, default off.
+            SearchFilterRow(searchQuery, SettingsSearchId.ADVANCED_SHARE_FORMATS, searchState) {
+                ToggleSettingCard(
+                    icon = Icons.AutoMirrored.Filled.Send,
+                    title = stringResource(R.string.advanced_share_formats_title),
+                    description = stringResource(R.string.advanced_share_formats_description),
+                    checked = advancedShareFormats,
+                    onCheckedChange = { viewModel.saveAdvancedShareFormats(it) }
                 )
             }
         }
@@ -2919,35 +2933,33 @@ private fun OutputFolderSettingCard(
         }
     }
 
+    // TASK-800 trial (maintainer, 2026-10-10): the action sits BELOW
+    // the text block, not beside it, inside the card surface.
     Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                CardTitleRow(
-                    icon = Icons.Default.Folder,
-                    title = stringResource(R.string.output_folder_title)
-                )
+            CardTitleRow(
+                icon = Icons.Default.Folder,
+                title = stringResource(R.string.output_folder_title)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.output_folder_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (folderLabel != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = stringResource(R.string.output_folder_description),
+                    text = folderLabel,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.primary
                 )
-                if (folderLabel != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = folderLabel,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             if (outputFolderUri != null) {
                 TextButton(onClick = onClear) {
                     Text(stringResource(R.string.output_folder_clear))
@@ -3049,7 +3061,7 @@ internal enum class SettingsSearchId {
     DEFAULT_PROMPT, KEEP_ALIVE_TIMEOUT,
     // Appearance
     THEME, APP_ICON, APP_LANGUAGE, SWIPE_ACTION, CONVERSATION_GROUPING,
-    COMPACT_RESULT_ACTIONS, TECHNICAL_DETAILS, LANGUAGE_CHIP, RETRANSCRIBE,
+    COMPACT_RESULT_ACTIONS, TECHNICAL_DETAILS, LANGUAGE_CHIP, RETRANSCRIBE, ADVANCED_SHARE_FORMATS,
     // Advanced
     BATTERY_EXEMPTION, HUGGINGFACE_AUTH, PERFORMANCE_HUB,
     SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, VOICE_NOTE_IDENTITY, PER_APP_SETTINGS,
@@ -3358,6 +3370,11 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     SettingsSearchCard(
         SettingsSearchId.RETRANSCRIBE, SettingsSearchSection.APPEARANCE,
         listOf(R.string.retranscribe_setting_title, R.string.retranscribe_setting_description),
+        group = SettingsSearchGroup.HISTORY,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.ADVANCED_SHARE_FORMATS, SettingsSearchSection.APPEARANCE,
+        listOf(R.string.advanced_share_formats_title, R.string.advanced_share_formats_description),
         group = SettingsSearchGroup.HISTORY,
     ),
     // --- Advanced ---

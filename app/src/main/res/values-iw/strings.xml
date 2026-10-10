@@ -579,6 +579,13 @@
     <string name="auto_save_failed">השמירה האוטומטית נכשלה (%1$s)</string>
     <string name="saved_to_folder">%1$s נשמר ב־%2$s</string>
     <string name="saved_to_folder_nameless">נשמר ב־%1$s</string>
+    <string name="share_format_title">שיתוף בתור</string>
+    <string name="share_transcription_more">שיתוף…</string>
+    <string name="share_format_txt">טקסט רגיל</string>
+    <string name="share_format_timed">טקסט עם חותמות זמן</string>
+    <string name="share_format_srt">כתוביות (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">לרשומה זו אין חותמות זמן שמורות; אפשרויות התזמון ישתפו טקסט רגיל.</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">פרומפט ברירת מחדל</string>
@@ -1052,6 +1059,8 @@
     <string name="retranscribe_active_badge">פעיל</string>
     <string name="retranscribe_setting_title">כפתור תמלול חוזר</string>
     <string name="retranscribe_setting_description">מציג כפתור על תמלולי אודיו לניסיון חוזר עם מודל אחר.</string>
+    <string name="advanced_share_formats_title">שיתוף בתור…</string>
+    <string name="advanced_share_formats_description">מוסיף לחצן שיתוף… שני בתוצאות שמציע פורמטים של כתוביות וחותמות זמן, בנוסף לשיתוף הטקסט הרגיל.</string>
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">נמצאו כתוביות</string>

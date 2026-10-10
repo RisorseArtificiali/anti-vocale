@@ -765,6 +765,13 @@
     <string name="auto_save_failed">ذخیره خودکار ناموفق بود (%1$s)</string>
     <string name="saved_to_folder">%1$s در %2$s ذخیره شد</string>
     <string name="saved_to_folder_nameless">در %1$s ذخیره شد</string>
+    <string name="share_format_title">اشتراک به‌صورت</string>
+    <string name="share_transcription_more">اشتراک…</string>
+    <string name="share_format_txt">متن ساده</string>
+    <string name="share_format_timed">متن با مهر زمانی</string>
+    <string name="share_format_srt">زیرنویس (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">این مورد هیچ مهر زمانی ذخیره‌شده ندارد؛ گزینه‌های زمان‌دار متن ساده را به اشتراک می‌گذارند.</string>
     <string name="progressive_initial">در حال آماده‌سازی متن؛ نتیجه نهایی در پایان</string>
     <string name="processing_segment_progress">قطعه %1$d از %2$d…</string>
 
@@ -1008,6 +1015,8 @@
     <string name="retranscribe_active_badge">فعال</string>
     <string name="retranscribe_setting_title">دکمه رونویسی دوباره</string>
     <string name="retranscribe_setting_description">روی رونویسی‌های صوتی دکمه‌ای نشان می‌دهد تا با مدل دیگری دوباره امتحان کنید.</string>
+    <string name="advanced_share_formats_title">اشتراک به‌صورت…</string>
+    <string name="advanced_share_formats_description">یک دکمه دوم «اشتراک…» به نتایج اضافه می‌کند که فرمت‌های زیرنویس و مهر زمانی را در کنار اشتراک متنی معمول پیشنهاد می‌دهد.</string>
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">زیرنویس پیدا شد</string>

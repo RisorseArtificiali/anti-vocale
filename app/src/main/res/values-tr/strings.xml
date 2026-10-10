@@ -578,6 +578,13 @@
     <string name="auto_save_failed">Otomatik kaydetme başarısız (%1$s)</string>
     <string name="saved_to_folder">%1$s, %2$s konumuna kaydedildi</string>
     <string name="saved_to_folder_nameless">%1$s konumuna kaydedildi</string>
+    <string name="share_format_title">Şu olarak paylaş</string>
+    <string name="share_transcription_more">Paylaş…</string>
+    <string name="share_format_txt">Düz metin</string>
+    <string name="share_format_timed">Zaman damgalı metin</string>
+    <string name="share_format_srt">Altyazılar (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">Bu kayıtta saklı zaman damgası yok; zaman damgalı seçenekler düz metin paylaşacak.</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Varsayılan Komut</string>
@@ -1045,6 +1052,8 @@
     <string name="retranscribe_active_badge">Etkin</string>
     <string name="retranscribe_setting_title">Yeniden Metne Çıkarma Düğmesi</string>
     <string name="retranscribe_setting_description">Sesli metin çıkarmalarında farklı bir modelle yeniden denemek için bir düğme göster.</string>
+    <string name="advanced_share_formats_title">Şu olarak paylaş…</string>
+    <string name="advanced_share_formats_description">Sonuçlara, normal düz metin paylaşımına ek olarak altyazı ve zaman damgalı biçimler sunan ikinci bir Paylaş… düğmesi ekler.</string>
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Altyazılar bulundu</string>

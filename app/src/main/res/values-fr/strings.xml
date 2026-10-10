@@ -494,6 +494,13 @@
     <string name="auto_save_failed">Échec de l\'enregistrement automatique (%1$s)</string>
     <string name="saved_to_folder">%1$s enregistré dans %2$s</string>
     <string name="saved_to_folder_nameless">Enregistré dans %1$s</string>
+    <string name="share_format_title">Partager au format</string>
+    <string name="share_transcription_more">Partager…</string>
+    <string name="share_format_txt">Texte brut</string>
+    <string name="share_format_timed">Texte avec horodatages</string>
+    <string name="share_format_srt">Sous-titres (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">Cette entrée n’a pas d’horodatages enregistrés ; les options horodatées partageront du texte brut.</string>
     <string name="default_prompt_title">Invite par défaut</string>
     <string name="default_prompt_description">Consigne donnée au modèle pendant la transcription. Laisser vide pour utiliser l\'invite intégrée.</string>
     <string name="default_prompt_placeholder">ex. Transcris ce discours :</string>
@@ -896,6 +903,8 @@
     <string name="retranscribe_active_badge">Actif</string>
     <string name="retranscribe_setting_title">Bouton de re-transcription</string>
     <string name="retranscribe_setting_description">Affiche un bouton sur les transcriptions audio pour réessayer avec un autre modèle.</string>
+    <string name="advanced_share_formats_title">Partager au format…</string>
+    <string name="advanced_share_formats_description">Ajoute un second bouton Partager… sur les résultats qui propose les formats sous-titres et horodatés, en plus du partage en texte brut habituel.</string>
     <string name="subtitles_found_title">Sous-titres trouvés</string>
     <string name="subtitles_found_text">Utiliser les sous-titres intégrés (%1$s) ou transcrire l\'audio ? Sans choix, la transcription démarre après %2$s.</string>
     <string name="subtitles_language_unknown">inconnue</string>

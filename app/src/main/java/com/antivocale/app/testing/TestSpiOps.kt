@@ -131,6 +131,7 @@ internal class TestSpiOps(
             // manual selection clears them; device tests only need to read).
             .put("demotedBackends", JSONArray(preferences.demotedBackends.first()))
             .put("advancedSharingEnabled", preferences.advancedSharingEnabled.first())
+            .put("advancedShareFormats", preferences.advancedShareFormats.first())
             .put("showRetranscribeButton", preferences.showRetranscribeButton.first())
             .put("groupLogsByConversation", preferences.groupLogsByConversation.first())
             .put("showTechnicalDetails", preferences.showTechnicalDetails.first())
@@ -201,6 +202,7 @@ internal class TestSpiOps(
         "onboarding" to preferences::saveOnboardingCompleted,
         "group_logs" to preferences::saveGroupLogsByConversation,
         "advanced_sharing" to preferences::saveAdvancedSharingEnabled,
+        "advanced_share_formats" to preferences::saveAdvancedShareFormats,
         "show_retranscribe" to preferences::saveShowRetranscribeButton,
         "memory_protection" to preferences::saveMemoryProtection,
         // TASK-274: consent gate for the exported automation receivers.

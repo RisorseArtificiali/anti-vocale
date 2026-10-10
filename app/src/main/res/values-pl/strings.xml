@@ -586,6 +586,13 @@
     <string name="auto_save_failed">Automatyczny zapis nie powiódł się (%1$s)</string>
     <string name="saved_to_folder">Zapisano %1$s w %2$s</string>
     <string name="saved_to_folder_nameless">Zapisano w %1$s</string>
+    <string name="share_format_title">Udostępnij jako</string>
+    <string name="share_transcription_more">Udostępnij…</string>
+    <string name="share_format_txt">Zwykły tekst</string>
+    <string name="share_format_timed">Tekst ze znacznikami czasu</string>
+    <string name="share_format_srt">Napisy (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">Ten wpis nie ma zapisanych znaczników czasu; opcje czasowe udostępnią zwykły tekst.</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Domyślny prompt</string>
@@ -1065,6 +1072,8 @@
     <string name="retranscribe_active_badge">Aktywny</string>
     <string name="retranscribe_setting_title">Przycisk ponownego przepisania</string>
     <string name="retranscribe_setting_description">Pokazuj przycisk na transkrypcjach audio, aby ponowić z innym modelem.</string>
+    <string name="advanced_share_formats_title">Udostępnij jako…</string>
+    <string name="advanced_share_formats_description">Dodaje drugi przycisk Udostępnij… w wynikach, oferujący formaty napisów i ze znacznikami czasu, oprócz zwykłego udostępniania tekstu.</string>
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Znaleziono napisy</string>

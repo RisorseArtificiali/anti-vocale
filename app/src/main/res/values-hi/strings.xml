@@ -546,6 +546,13 @@
     <string name="auto_save_failed">स्वतः सहेजना विफल (%1$s)</string>
     <string name="saved_to_folder">%1$s को %2$s में सहेजा गया</string>
     <string name="saved_to_folder_nameless">%1$s में सहेजा गया</string>
+    <string name="share_format_title">इस रूप में साझा करें</string>
+    <string name="share_transcription_more">साझा करें…</string>
+    <string name="share_format_txt">सादा पाठ</string>
+    <string name="share_format_timed">टाइमस्टैम्प सहित पाठ</string>
+    <string name="share_format_srt">सबटाइटल (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">इस प्रविष्टि में कोई टाइमस्टैम्प संग्रहीत नहीं है; समय-संबंधी विकल्प सादा पाठ साझा करेंगे।</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">डिफ़ॉल्ट प्रॉम्प्ट</string>
@@ -997,6 +1004,8 @@
     <string name="retranscribe_active_badge">सक्रिय</string>
     <string name="retranscribe_setting_title">फिर-ट्रांसक्राइब बटन</string>
     <string name="retranscribe_setting_description">ऑडियो ट्रांसक्रिप्शन पर दूसरे मॉडल से फिर कोशिश करने का बटन दिखाएं।</string>
+    <string name="advanced_share_formats_title">इस रूप में साझा करें…</string>
+    <string name="advanced_share_formats_description">परिणामों पर दूसरा Share… बटन जोड़ता है जो सामान्य प्लेन-टेक्स्ट साझाकरण के अतिरिक्त सबटाइटल और टाइमस्टैम्प प्रारूप देता है।</string>
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">सबटाइटल मिले</string>

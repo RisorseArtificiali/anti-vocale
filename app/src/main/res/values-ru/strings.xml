@@ -568,6 +568,13 @@
     <string name="auto_save_failed">Не удалось автосохранить (%1$s)</string>
     <string name="saved_to_folder">%1$s сохранён в %2$s</string>
     <string name="saved_to_folder_nameless">Сохранено в %1$s</string>
+    <string name="share_format_title">Поделиться как</string>
+    <string name="share_transcription_more">Поделиться…</string>
+    <string name="share_format_txt">Обычный текст</string>
+    <string name="share_format_timed">Текст с временными метками</string>
+    <string name="share_format_srt">Субтитры (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">В этой записи нет сохранённых временных меток; параметры с временем поделят обычным текстом.</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Запрос по умолчанию</string>
@@ -1047,6 +1054,8 @@
     <string name="retranscribe_active_badge">Активна</string>
     <string name="retranscribe_setting_title">Кнопка повторного распознавания</string>
     <string name="retranscribe_setting_description">Показывать кнопку повторного распознавания другой моделью для готовых результатов.</string>
+    <string name="advanced_share_formats_title">Поделиться как…</string>
+    <string name="advanced_share_formats_description">Добавляет вторую кнопку Поделиться… в результатах, предлагающую форматы субтитров и с временными метками, помимо обычной отправки текста.</string>
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Найдены субтитры</string>

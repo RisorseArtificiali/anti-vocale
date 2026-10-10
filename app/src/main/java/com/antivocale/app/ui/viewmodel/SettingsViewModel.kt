@@ -555,6 +555,20 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /** TASK-800: the advanced Share… button toggle; default off. */
+    val advancedShareFormats: StateFlow<Boolean> = preferencesManager.advancedShareFormats
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS
+        )
+
+    fun saveAdvancedShareFormats(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveAdvancedShareFormats(enabled)
+        }
+    }
+
     val memoryProtection: StateFlow<Boolean> = preferencesManager.memoryProtection
         .stateIn(
             scope = viewModelScope,

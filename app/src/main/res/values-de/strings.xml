@@ -547,6 +547,13 @@
     <string name="auto_save_failed">Automatisches Speichern fehlgeschlagen (%1$s)</string>
     <string name="saved_to_folder">„%1$s“ in %2$s gespeichert</string>
     <string name="saved_to_folder_nameless">In %1$s gespeichert</string>
+    <string name="share_format_title">Teilen als</string>
+    <string name="share_transcription_more">Teilen…</string>
+    <string name="share_format_txt">Klartext</string>
+    <string name="share_format_timed">Text mit Zeitmarken</string>
+    <string name="share_format_srt">Untertitel (.srt)</string>
+    <string name="share_format_vtt">WebVTT (.vtt)</string>
+    <string name="share_format_no_cues">Dieser Eintrag hat keine gespeicherten Zeitmarken; die Optionen mit Zeitbezug teilen Klartext.</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Standard-Prompt</string>
@@ -998,6 +1005,8 @@
     <string name="retranscribe_active_badge">Aktiv</string>
     <string name="retranscribe_setting_title">Schaltfläche für erneutes Transskribieren</string>
     <string name="retranscribe_setting_description">Zeigt eine Schaltfläche auf Audio-Transkriptionen, um es mit einem anderen Modell erneut zu versuchen.</string>
+    <string name="advanced_share_formats_title">Teilen als…</string>
+    <string name="advanced_share_formats_description">Fügt bei Ergebnissen eine zweite Teilen…-Schaltfläche hinzu, die Untertitel- und Zeitformat-Einstellungen bietet, zusätzlich zur normalen Textfreigabe.</string>
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Untertitel gefunden</string>
