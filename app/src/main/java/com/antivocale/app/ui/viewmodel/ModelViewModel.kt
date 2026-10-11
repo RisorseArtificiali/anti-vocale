@@ -1862,12 +1862,18 @@ class ModelViewModel @Inject constructor(
                     // forgets the gate.
                     ?: error("model type '${entry.modelType}' is not bundle-transferable"),
                 modelType = entry.modelType,
-                languages = BundledCatalog
-                    .byId(entry.id)?.variants
+                languages = BundledCatalog.byId(entry.id)?.let { catalogEntry ->
                     // The UI variantName is the catalog variant NAME ("v3"),
                     // never the dirName ("gigaam-v3"): comparing dirNames here
                     // silently exported empty language lists (TASK-801 review).
-                    ?.firstOrNull { it.name == variant.variantName }?.languages ?: emptyList(),
+                    // Entries may also declare their languages at entry level
+                    // only (gigaam: ['ru'], no per-variant list).
+                    catalogEntry.variants
+                        .firstOrNull { it.name == variant.variantName }
+                        ?.languages
+                        ?.takeIf { it.isNotEmpty() }
+                        ?: catalogEntry.languages
+                } ?: emptyList(),
                 streaming = entry.isStreaming,
                 options = emptyMap(),
                 appVersion = BuildConfig.VERSION_NAME,
