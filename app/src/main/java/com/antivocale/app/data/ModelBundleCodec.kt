@@ -20,7 +20,8 @@ import java.util.zip.ZipOutputStream
  * FORMAT (stable, versioned):
  *   manifest.json          { formatVersion, appVersion, name, family,
  *                            modelType, languages, files: {name: sha256},
- *                            streaming, options, catalogEntryId? }
+ *                            streaming, options, catalogEntryId?,
+ *                            catalogVariantDir? }
  *   files/<original name>  the model's files verbatim
  *
  * WHAT IT DOES NOT DO (deliberate):
@@ -73,10 +74,12 @@ object ModelBundleCodec {
                 .put("streaming", metadata.streaming)
                 .put("options", JSONObject(metadata.options))
                 .put("files", pins)
-            // TASK-797: the built-in catalog entry the bundle came from;
-            // recorded for the future residency link (the import does not
-            // act on it: the copy-plan names differ from the catalog's).
+            // TASK-797/801: the built-in catalog identity the bundle came
+            // from; the import links the record to the entry's card (entity
+            // link, never a path alias: the copy-plan names differ from the
+            // catalog's).
             metadata.catalogEntryId?.let { manifest.put("catalogEntryId", it) }
+            metadata.catalogVariantDir?.let { manifest.put("catalogVariantDir", it) }
             zip.putNextEntry(ZipEntry(MANIFEST_ENTRY))
             zip.write(manifest.toString().toByteArray())
             zip.closeEntry()
@@ -215,6 +218,7 @@ object ModelBundleCodec {
             modelType = manifest.optString("modelType").ifBlank { null },
             family = family,
             catalogEntryId = manifest.optString("catalogEntryId").ifBlank { null },
+            catalogVariantDir = manifest.optString("catalogVariantDir").ifBlank { null },
             options = optionsJson?.let { o -> buildMap { o.keys().forEach { k -> put(k, o.getString(k)) } } }
                 ?: emptyMap(),
             languages = languagesJson?.let { a -> (0 until a.length()).map { a.getString(it) } }
@@ -229,6 +233,10 @@ object ModelBundleCodec {
         val family: ModelFamily,
         /** TASK-797: the built-in entry the bundle came from, when any. */
         val catalogEntryId: String? = null,
+        /** TASK-801: the exporting variant's catalog dirName, when any
+         *  (absent in pre-801 manifests; the import resolves the variant
+         *  through it or the entry's single variant). */
+        val catalogVariantDir: String? = null,
         val options: Map<String, String>,
         val languages: List<String>,
         val streaming: Boolean,
@@ -244,10 +252,11 @@ object ModelBundleCodec {
         val options: Map<String, String>,
         val appVersion: String,
         /** TASK-797: present when the bundle came from a BUILT-IN catalog
-         *  entry; recorded for the future catalog-card residency link (the
-         *  import deliberately does not act on it yet: the copy-plan file
-         *  names differ from the catalog's, device trial 2026-10-11).
-         *  Absent for external exports. */
+         *  entry; TASK-801: the import links the resulting record to that
+         *  entry's card (entity link, no path aliasing). Absent for
+         *  external exports. */
         val catalogEntryId: String? = null,
+        /** The exported variant's catalog dirName; sibling of [catalogEntryId]. */
+        val catalogVariantDir: String? = null,
     )
 }

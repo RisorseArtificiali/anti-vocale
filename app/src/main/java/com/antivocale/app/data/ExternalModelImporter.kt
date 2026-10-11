@@ -32,7 +32,10 @@ interface ExternalModelImportOperations {
     /** TASK-742: register an already-verified local directory as a record.
      *  [displayName] overrides the src-derived name (the bundle's manifest
      *  carries the exporter's name; without it a re-import would rename a
-     *  properly named record to the staging directory's name). */
+     *  properly named record to the staging directory's name).
+     *  [linkedCatalog] (TASK-801) carries the resolved catalog identity for
+     *  bundle imports; it is stamped on the record and backfilled onto a
+     *  same-pins dedupe match. */
     suspend fun importFromDirectory(
         src: File,
         modelType: String? = null,
@@ -41,6 +44,7 @@ interface ExternalModelImportOperations {
         languages: List<String> = emptyList(),
         streaming: Boolean = false,
         displayName: String? = null,
+        linkedCatalog: LinkedCatalogRef? = null,
     ): ExternalModelRecord
 
     suspend fun importFromTreeUri(
@@ -293,9 +297,10 @@ class ExternalModelImporter(
         languages: List<String>,
         streaming: Boolean,
         displayName: String?,
+        linkedCatalog: LinkedCatalogRef?,
     ): ExternalModelRecord {
         val children = src.listFiles()?.filter { it.isFile }?.map(::FileSource) ?: emptyList()
-        return importCore(children, modelType, displayName ?: src.name, family, options, languages, streaming)
+        return importCore(children, modelType, displayName ?: src.name, family, options, languages, streaming, linkedCatalog)
     }
 
     /**
@@ -395,6 +400,7 @@ class ExternalModelImporter(
         options: Map<String, String>,
         languages: List<String>,
         streaming: Boolean = false,
+        linkedCatalog: LinkedCatalogRef? = null,
     ): ExternalModelRecord {
         val resolvedModelType = resolveModelType(modelType, family)
         // 1. Copy plan by role, plus any ONNX split-file sidecars.
@@ -438,7 +444,7 @@ class ExternalModelImporter(
             }
 
             registerImported(targetDir, pins, family, resolvedModelType, options, languages,
-                ExternalModelSource.LOCAL, null, displayName, streaming)
+                ExternalModelSource.LOCAL, null, displayName, streaming, linkedCatalog)
         }
     }
 
@@ -533,6 +539,7 @@ class ExternalModelImporter(
         sourceUrl: String?,
         displayName: String,
         streaming: Boolean = false,
+        linkedCatalog: LinkedCatalogRef? = null,
     ): ExternalModelRecord {
         // Pre-native metadata validation BEFORE persisting: a wrong family is an
         // import-time error, never a transcription-time exit(255). Both the checked
@@ -615,6 +622,9 @@ class ExternalModelImporter(
                 // the reverse direction is symmetric).
                 sourceUrl = sourceUrl ?: existing.sourceUrl,
                 dir = if (existingDirValid) existing.dir else targetDir.absolutePath,
+                // TASK-801: backfill the catalog link only when absent (a
+                // plain folder re-import of the same files must not erase one).
+                linkedCatalog = existing.linkedCatalog ?: linkedCatalog,
             )
             store.update(updated)
             Log.i(TAG, "Re-import deduped onto existing record ${existing.backendId} (dirValid=$existingDirValid)")
@@ -635,6 +645,7 @@ class ExternalModelImporter(
             sizeBytes = sizeBytes,
             importedAt = System.currentTimeMillis(),
             streaming = streaming,
+            linkedCatalog = linkedCatalog,
         )
         store.add(record)
         Log.i(TAG, "Imported external model ${record.backendId} from $displayName ($sizeBytes bytes)")

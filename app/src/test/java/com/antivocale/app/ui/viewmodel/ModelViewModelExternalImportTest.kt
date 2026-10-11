@@ -86,6 +86,7 @@ class ModelViewModelExternalImportTest {
             languages: List<String>,
             streaming: Boolean,
             displayName: String?,
+            linkedCatalog: com.antivocale.app.data.LinkedCatalogRef?,
         ): ExternalModelRecord = throw UnsupportedOperationException("not used in this test")
 
         override suspend fun importFromTreeUri(

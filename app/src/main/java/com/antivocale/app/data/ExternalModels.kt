@@ -38,6 +38,20 @@ internal fun JSONArray.optStringList(): List<String> =
 
 data class FilePin(val sha256: String, val verified: Boolean)
 
+/**
+ * TASK-801 (GH #128): the entity link between an external record and the
+ * built-in catalog entry whose exported bundle it was imported from. The
+ * catalog card derives the variant's presence from the link and Use
+ * activates THIS record (external:<id>); the loader never sees the entry
+ * (no path aliasing: the external copy carries canonical file names the
+ * built-in loader cannot read, TASK-797 device trial).
+ */
+data class LinkedCatalogRef(
+    val catalogEntryId: String,
+    /** The linked variant's catalog dirName; only written once resolved against the entry. */
+    val variantDir: String,
+)
+
 data class ExternalModelRecord(
     val id: String,                 // uuid (independent of the dir fragment; both draw separate uuids)
     val displayName: String,
@@ -60,6 +74,8 @@ data class ExternalModelRecord(
      * the model is the re-enable path.
      */
     val quarantined: Boolean = false,
+    /** TASK-801: the catalog entry this record stands in for, when imported from its bundle. */
+    val linkedCatalog: LinkedCatalogRef? = null,
 ) {
     val backendId: String get() = BACKEND_ID_PREFIX + id
 
@@ -82,6 +98,12 @@ data class ExternalModelRecord(
         put("options", optsJson)
         put("streaming", streaming)
         put("quarantined", quarantined)
+        // A half-written link is dropped at parse rather than persisted as an
+        // ambiguous whole-entry claim: both fields must survive the round trip.
+        linkedCatalog?.let {
+            put("linkedCatalogEntryId", it.catalogEntryId)
+            put("linkedCatalogVariantDir", it.variantDir)
+        }
     }
 
     companion object {
@@ -112,6 +134,11 @@ data class ExternalModelRecord(
                 options = o.optStringMap("options"),
                 streaming = o.optBoolean("streaming", false),
                 quarantined = o.optBoolean("quarantined", false),
+                linkedCatalog = o.optString("linkedCatalogEntryId").takeIf { it.isNotBlank() }
+                    ?.let { id ->
+                        o.optString("linkedCatalogVariantDir").takeIf { it.isNotBlank() }
+                            ?.let { dir -> LinkedCatalogRef(id, dir) }
+                    },
             )
         } catch (e: Exception) {
             Log.w(TAG, "Malformed ExternalModelRecord; dropping this record only", e)
