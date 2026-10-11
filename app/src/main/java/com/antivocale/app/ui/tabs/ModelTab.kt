@@ -1644,8 +1644,10 @@ private fun CatalogModelSection(
                         variant = variant,
                         // The whole entry resolves to one active backend; mark the card active
                         // only if this entry is the active backend AND this variant's directory
-                        // is the saved (auto-resolved) one.
-                        isActive = isEntryActive && savedPath?.endsWith(variant.dirName) == true,
+                        // is the saved (auto-resolved) one, OR the active backend is this
+                        // variant's linked record (a bundle-imported copy, TASK-801).
+                        isActive = (isEntryActive && savedPath?.endsWith(variant.dirName) == true) ||
+                            activeBackendId == state.linkedVariantBackendIds[variant.dirName],
                         downloadProgress = variantState?.downloadProgress ?: 0f,
                         downloadState = variantState?.downloadState ?: DownloadState.Idle,
                         errorMessage = variantState?.errorMessage,
@@ -1759,7 +1761,8 @@ private fun CatalogModelSection(
         val variantDisplayName = variant?.let {
             countAwareStringResource(it.titleResId, it.titleFormatArg())
         } ?: countAwareStringResource(entryTitleResId, entryTitleCountArg)
-        val isVariantActive = isEntryActive && variant != null && savedPath?.endsWith(variant.dirName) == true
+        val isVariantActive = (isEntryActive && variant != null && savedPath?.endsWith(variant.dirName) == true) ||
+            (variant != null && activeBackendId == state.linkedVariantBackendIds[variant.dirName])
         DeleteConfirmationDialog(
             modelName = variantDisplayName,
             isTranscribing = isTranscribing,

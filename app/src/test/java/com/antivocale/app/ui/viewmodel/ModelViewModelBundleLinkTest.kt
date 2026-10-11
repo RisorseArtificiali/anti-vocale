@@ -193,10 +193,13 @@ class ModelViewModelBundleLinkTest {
     }
 
     /** A bundle zip of the transducer source, stamped with the given catalog identity. */
-    private fun gigaamBundle(entryId: String?, variantDir: String?): ByteArray {
+    private fun gigaamBundle(entryId: String?, variantDir: String?): ByteArray =
+        bundleFrom(gigaamSourceDir, entryId, variantDir)
+
+    private fun bundleFrom(dir: File, entryId: String?, variantDir: String?): ByteArray {
         val out = ByteArrayOutputStream()
         ModelBundleCodec.export(
-            gigaamSourceDir, out,
+            dir, out,
             ModelBundleCodec.BundleMetadata(
                 displayName = "GigaAM v3", family = "TRANSDUCER", modelType = "nemo_transducer",
                 languages = listOf("ru"), streaming = false, options = emptyMap(),
@@ -357,6 +360,25 @@ class ModelViewModelBundleLinkTest {
     fun `modelType mismatch imports plain without a link`() = runTest {
         // The manifest claims nemo_transducer; the named entry is whisper.
         importBundle(entryId = "whisper", variantDir = "sherpa-onnx-whisper-small")
+        await("bundle import registered") { storedRecords().isNotEmpty() }
+        assertEquals(null, store.records().single().linkedCatalog)
+    }
+
+    @Test
+    fun `a bundle riding extra canonical-named files imports plain without a link`() = runTest {
+        // Every catalog pin correct, plus one extra file under a canonical
+        // import name: key-set equality must refuse the link, or the importer's
+        // role matching could load the substitute while the card vouches for
+        // the catalog bytes.
+        val src = Files.createTempDirectory("bundle-extra").toFile()
+        gigaamSourceDir.listFiles().forEach { it.copyTo(File(src, it.name)) }
+        // A loadable substitute: the real encoder bytes under the canonical
+        // name (garbage bytes would fail the importer's metadata gate before
+        // the link decision, which is not what this test pins).
+        File(src, "encoder.int8.onnx").writeBytes(
+            File(gigaamSourceDir, "gigaam_v3_e2e_rnnt_encoder_int8.onnx").readBytes())
+        nextBundle = bundleFrom(src, "gigaam", "gigaam-v3")
+        viewModel.importExternalFromBundle(mockContext, Uri.parse("content://bundle/extra"))
         await("bundle import registered") { storedRecords().isNotEmpty() }
         assertEquals(null, store.records().single().linkedCatalog)
     }

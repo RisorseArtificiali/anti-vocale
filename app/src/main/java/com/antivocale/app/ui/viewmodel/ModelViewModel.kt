@@ -226,7 +226,10 @@ class ModelViewModel @Inject constructor(
         val selectedVariant: String? = null,
         val variantToDelete: String? = null,
         val variantsNeedingExtraction: Set<String> = emptySet(),
-        val orphanedVariants: Set<String> = emptySet()
+        val orphanedVariants: Set<String> = emptySet(),
+        /** TASK-801: variant dirName -> the linked record's backendId, for the
+         *  card's active dot when the record (not the catalog dir) is active. */
+        val linkedVariantBackendIds: Map<String, String> = emptyMap()
     ) {
         val isAnyDownloading: Boolean get() = variantDownloadStates.values.any { it.isDownloading }
     }
@@ -726,12 +729,16 @@ class ModelViewModel @Inject constructor(
         val manager = SherpaModelManager.of(entryId)
         // TASK-801: a valid linked record (a bundle imported from this entry)
         // marks its variant present exactly like a disk download. Validity is
-        // the provider's loadability predicate, so a quarantined record or a
-        // deleted dir reverts the card on the next refresh.
-        val linkedVariantDirs = entry.variants
-            .filter { linkedRecordFor(records, LinkedCatalogRef(entryId, it.dirName)) != null }
-            .map { it.dirName }
-            .toSet()
+        // the provider's loadability predicate at its last preference write:
+        // a quarantined record reverts the card on that write's emission,
+        // while a dir deleted outside the app keeps the card present until
+        // the next records write or restart (the registry's own descriptors
+        // share this freshness class).
+        val linkedVariantBackendIds = entry.variants.mapNotNull { v ->
+            linkedRecordFor(records, LinkedCatalogRef(entryId, v.dirName))
+                ?.let { v.dirName to it.backendId }
+        }.toMap()
+        val linkedVariantDirs = linkedVariantBackendIds.keys
         val downloadedVariants = entry.variants
             .filter { downloader.isModelDownloaded(context, it.name) || it.dirName in linkedVariantDirs }
             .map { it.name }
@@ -752,6 +759,7 @@ class ModelViewModel @Inject constructor(
                 modelPath = activePath,
                 variantsNeedingExtraction = needsExtraction,
                 orphanedVariants = orphaned,
+                linkedVariantBackendIds = linkedVariantBackendIds,
             )
         }
     }
@@ -1467,11 +1475,14 @@ class ModelViewModel @Inject constructor(
             // TASK-801: a variant present ONLY through a linked bundle import
             // (no on-disk catalog copy) activates THAT record via the external
             // path; a real download keeps the catalog ladder below, which also
-            // keeps precedence when both exist.
+            // keeps precedence when both exist. The record lookup runs first
+            // (a StateFlow read): the disk probe only happens for variants a
+            // record actually claims, so plain catalog taps stay IO-free up
+            // to the ladder (B2, TASK-342).
             val linkedDir = BundledCatalog.byId(entryId)?.variant(variantName)?.dirName
-            if (linkedDir != null && !SherpaModelDownloader.of(entryId).isModelDownloaded(context, variantName)) {
+            if (linkedDir != null) {
                 val linked = linkedRecordFor(recordsProvider.records.value, LinkedCatalogRef(entryId, linkedDir))
-                if (linked != null) {
+                if (linked != null && !SherpaModelDownloader.of(entryId).isModelDownloaded(context, variantName)) {
                     activateExternalModel(linked)
                     return@launch
                 }
@@ -1516,6 +1527,19 @@ class ModelViewModel @Inject constructor(
     fun deleteModel(entryId: String, variantName: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val context = ctx
+            // TASK-801: a variant present only through a linked record has no
+            // catalog dir to remove; the record IS the storage, so the delete
+            // routes there. Without this arm the downloader no-ops and reports
+            // success while the record re-lights the card on the next records
+            // emission (a confirmed delete that deleted nothing).
+            val linkedDir = BundledCatalog.byId(entryId)?.variant(variantName)?.dirName
+            if (linkedDir != null && !SherpaModelDownloader.of(entryId).isModelDownloaded(context, variantName)) {
+                val linked = linkedRecordFor(recordsProvider.records.value, LinkedCatalogRef(entryId, linkedDir))
+                if (linked != null) {
+                    deleteExternalModel(linked)
+                    return@launch
+                }
+            }
             val downloader = SherpaModelDownloader.of(entryId)
             val success = downloader.deleteModel(context, variantName)
             if (success) {
@@ -1797,12 +1821,16 @@ class ModelViewModel @Inject constructor(
             ?: entry.variants.singleOrNull()?.dirName
             ?: return null
         val variant = entry.variants.first { it.dirName == variantDir }
-        val pinsMatch = variant.files.all { catalogFile ->
-            val bundlePin = params.filePins[catalogFile.name]
-            // Unpinned catalog files (none today, TASK-661 pins all) only
-            // require the file to ride the bundle.
-            bundlePin != null && (catalogFile.sha256 == null || bundlePin == catalogFile.sha256)
-        }
+        // Key-set equality, not just coverage: an extra canonical-named file
+        // (encoder.int8.onnx) riding the bundle could win the importer's
+        // role matching over the verified catalog-named file, so the card
+        // would vouch for bytes the record never loads.
+        val pinsMatch = params.filePins.keys == variant.files.map { it.name }.toSet() &&
+            variant.files.all { catalogFile ->
+                // Unpinned catalog files (none today, TASK-661 pins all)
+                // ride unconstrained.
+                catalogFile.sha256 == null || params.filePins[catalogFile.name] == catalogFile.sha256
+            }
         if (!pinsMatch) return null
         return LinkedCatalogRef(entryId, variantDir)
     }
@@ -1836,7 +1864,10 @@ class ModelViewModel @Inject constructor(
                 modelType = entry.modelType,
                 languages = BundledCatalog
                     .byId(entry.id)?.variants
-                    ?.firstOrNull { it.dirName == variant.variantName }?.languages ?: emptyList(),
+                    // The UI variantName is the catalog variant NAME ("v3"),
+                    // never the dirName ("gigaam-v3"): comparing dirNames here
+                    // silently exported empty language lists (TASK-801 review).
+                    ?.firstOrNull { it.name == variant.variantName }?.languages ?: emptyList(),
                 streaming = entry.isStreaming,
                 options = emptyMap(),
                 appVersion = BuildConfig.VERSION_NAME,
