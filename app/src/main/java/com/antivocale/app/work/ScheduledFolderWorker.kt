@@ -11,6 +11,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -325,24 +326,32 @@ object ScheduledFolderScheduler {
     }
 
     /**
-     * The manual trigger (slice 4's Scan now button): an expedited one-shot.
-     * Overlap with a running periodic scan of the same folder is prevented
-     * by the worker's per-folder mutex, not by the name (a one-shot cannot
-     * share a periodic's unique slot without replacing the schedule).
+     * The manual trigger (slice 4's Scan now button): a plain one-shot.
+     * Deliberately NOT expedited (TASK-803): on API 26-30 WorkManager routes
+     * every expedited request through the foreground fallback and calls
+     * getForegroundInfo(), whose CoroutineWorker default throws; the work
+     * then resolves FAILED and the tapped scan silently never runs. Expedited
+     * buys nothing here (on 31+ this policy already falls back to a normal
+     * request under quota pressure), and overlap with a running periodic
+     * scan of the same folder is prevented by the worker's per-folder mutex,
+     * not by the name (a one-shot cannot share a periodic's unique slot
+     * without replacing the schedule).
      */
     fun scanNow(context: Context, treeUri: String) {
         WorkManager.getInstance(context).enqueueUniqueWork(
             "${uniqueName(treeUri)}_now",
             ExistingWorkPolicy.KEEP,
-            OneTimeWorkRequestBuilder<ScheduledFolderWorker>()
-                .setExpedited(androidx.work.OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-                .setInputData(
-                    Data.Builder()
-                        .putString(ScheduledFolderWorker.KEY_TREE_URI, treeUri)
-                        .putBoolean(ScheduledFolderWorker.KEY_SCAN_NOW, true)
-                        .build(),
-                )
-                .build(),
+            scanNowRequest(treeUri),
         )
     }
+
+    internal fun scanNowRequest(treeUri: String): OneTimeWorkRequest =
+        OneTimeWorkRequestBuilder<ScheduledFolderWorker>()
+            .setInputData(
+                Data.Builder()
+                    .putString(ScheduledFolderWorker.KEY_TREE_URI, treeUri)
+                    .putBoolean(ScheduledFolderWorker.KEY_SCAN_NOW, true)
+                    .build(),
+            )
+            .build()
 }
