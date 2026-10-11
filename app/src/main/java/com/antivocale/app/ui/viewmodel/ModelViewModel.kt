@@ -1710,17 +1710,15 @@ class ModelViewModel @Inject constructor(
                     streaming = params.streaming,
                     displayName = params.displayName,
                 )
-                // TASK-797: a bundle exported from a BUILT-IN catalog entry
-                // links the built-in card to the imported copy: writing the
-                // entry's saved path makes the catalog card show installed
-                // instead of re-prompting the download (the report's exact
-                // complaint). The external record remains the store; a
-                // delete of one side does not touch the other (documented
-                // asymmetry, TASK-797).
-                params.catalogEntryId
-                    ?.let { id -> BundledCatalog.byId(id) }
-                    ?.takeIf { entry -> entry.modelType == params.modelType }
-                    ?.let { preferencesManager.saveSherpaModelPath(it.id, record.dir) }
+                // TASK-797 (device trial 2026-10-11): the imported copy is
+                // deliberately NOT linked to the built-in card's saved path.
+                // The importer normalizes files to the external canonical
+                // names (encoder.int8.onnx, ...) while the built-in backend
+                // resolves the catalog file names (gigaam_v3_e2e_rnnt_*.onnx),
+                // so a path alias makes the card claim installed and the
+                // first request die in ModelLoadError. The manifest keeps
+                // catalogEntryId so a future residency link can bridge the
+                // two vocabularies properly.
                 record
             } finally {
                 staging.deleteRecursively()
@@ -1761,7 +1759,7 @@ class ModelViewModel @Inject constructor(
                 options = emptyMap(),
                 appVersion = BuildConfig.VERSION_NAME,
                 // TASK-797: the built-in entry the bundle came from; the
-                // importing device links its catalog card to the copy.
+                // receiver records it for the future residency link.
                 catalogEntryId = entry.id,
             )
             ctx.contentResolver.openOutputStream(uri)?.use { out ->

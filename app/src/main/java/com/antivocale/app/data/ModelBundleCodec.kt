@@ -20,7 +20,7 @@ import java.util.zip.ZipOutputStream
  * FORMAT (stable, versioned):
  *   manifest.json          { formatVersion, appVersion, name, family,
  *                            modelType, languages, files: {name: sha256},
- *                            streaming, options }
+ *                            streaming, options, catalogEntryId? }
  *   files/<original name>  the model's files verbatim
  *
  * WHAT IT DOES NOT DO (deliberate):
@@ -73,8 +73,9 @@ object ModelBundleCodec {
                 .put("streaming", metadata.streaming)
                 .put("options", JSONObject(metadata.options))
                 .put("files", pins)
-            // TASK-797: the built-in catalog entry the bundle came from,
-            // so the importing device can link its card to the copy.
+            // TASK-797: the built-in catalog entry the bundle came from;
+            // recorded for the future residency link (the import does not
+            // act on it: the copy-plan names differ from the catalog's).
             metadata.catalogEntryId?.let { manifest.put("catalogEntryId", it) }
             zip.putNextEntry(ZipEntry(MANIFEST_ENTRY))
             zip.write(manifest.toString().toByteArray())
@@ -243,8 +244,10 @@ object ModelBundleCodec {
         val options: Map<String, String>,
         val appVersion: String,
         /** TASK-797: present when the bundle came from a BUILT-IN catalog
-         *  entry; the importing device uses it to link the built-in card's
-         *  install state to the imported copy. Absent for external exports. */
+         *  entry; recorded for the future catalog-card residency link (the
+         *  import deliberately does not act on it yet: the copy-plan file
+         *  names differ from the catalog's, device trial 2026-10-11).
+         *  Absent for external exports. */
         val catalogEntryId: String? = null,
     )
 }
