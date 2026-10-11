@@ -387,12 +387,12 @@ jobs:
       # default (v5 changed single-artifact path behavior, v6 still defaulted
       # to Node 20).
       - name: Download Release AAB
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: app-release-aab
 
       - name: Download release notes
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: release-notes
           path: whats-new
@@ -401,7 +401,7 @@ jobs:
         # TASK-729: Play Vitals reads the deobfuscation file only if it
         # ships WITH the AAB (the action's mappingFile input); the build
         # job keeps the artifact from the same run as the AAB.
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: app-playstore-mapping
           path: mapping
