@@ -21,6 +21,7 @@ import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalCatalog
 import com.antivocale.app.data.ExternalCatalogRepository
 import com.antivocale.app.data.ExternalModelStore
+import com.antivocale.app.data.ExternalModelRecordsProvider
 import com.antivocale.app.data.LinkedCatalogRef
 import com.antivocale.app.data.LitertLmFile
 import com.antivocale.app.data.LitertLmUrlImporter
@@ -59,7 +60,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
@@ -85,6 +85,10 @@ class ModelViewModel @Inject constructor(
     @ApplicationContext private val ctx: Context,
     private val backendRegistry: BackendRegistry,
     private val externalModelStore: ExternalModelStore,
+    // TASK-801: the hot valid-records snapshot the registry already keeps
+    // fresh; collecting it here adds no second decode of the records
+    // preference and survives ViewModel re-creation for free.
+    private val recordsProvider: ExternalModelRecordsProvider,
     private val externalModelImporter: ExternalModelImportOperations,
     private val litertLmUrlImporter: LitertLmUrlImporter,
     private val externalCatalogRepository: ExternalCatalogRepository,
@@ -305,11 +309,11 @@ class ModelViewModel @Inject constructor(
         // TASK-801: the catalog cards re-derive presence whenever the valid
         // external records change: a linked bundle import marks the variant
         // present, and deleting or quarantining the record reverts the card
-        // with no per-site code (deleteExternalModel needs none).
+        // with no per-site code (deleteExternalModel needs none). The
+        // conflated StateFlow coalesces record-mutation bursts into one
+        // sweep, and the sweep runs inline in the collector (serialized).
         viewModelScope.launch(Dispatchers.IO) {
-            externalModelStore.validRecordsFlow
-                .distinctUntilChanged()
-                .collect { refreshCatalogEntries() }
+            recordsProvider.records.collect { refreshAllCatalogEntries() }
         }
         // Detect partial downloads
         detectPartialDownloads()
@@ -686,30 +690,47 @@ class ModelViewModel @Inject constructor(
 
     /** Refreshes download/path state for every catalog entry, off the main thread. */
     fun refreshCatalogEntries() {
-        viewModelScope.launch(Dispatchers.IO) {
-            for (entryId in BuiltInBackendIds.ALL) {
-                refreshCatalogEntry(entryId)
-            }
+        viewModelScope.launch(Dispatchers.IO) { refreshAllCatalogEntries() }
+    }
+
+    private suspend fun refreshAllCatalogEntries() {
+        // One records snapshot per sweep (not per entry); the provider's
+        // conflated snapshot is the same freshness class the registry's own
+        // descriptors derive from.
+        val records = recordsProvider.records.value
+        for (entryId in BuiltInBackendIds.ALL) {
+            refreshCatalogEntry(entryId, records)
         }
     }
+
+    /**
+     * TASK-801: the valid record linked to a catalog variant, or null. The
+     * single matching rule for both card-presence and Use dispatch; two
+     * records claiming the same variant can only exist as a hand-built
+     * re-bundle (the import's pins guard rejects byte-different copies), and
+     * then the store's first wins deterministically.
+     */
+    private fun linkedRecordFor(
+        records: List<ExternalModelRecord>,
+        ref: LinkedCatalogRef,
+    ): ExternalModelRecord? = records.firstOrNull { it.linkedCatalog == ref }
 
     /**
      * Discovers downloaded variants and resolves the active model path for one
      * catalog entry (auto-fallback semantics live in [SherpaModelManager]).
      */
-    private suspend fun refreshCatalogEntry(entryId: String) {
+    private suspend fun refreshCatalogEntry(entryId: String, records: List<ExternalModelRecord>) {
         val context = ctx
         val entry = BundledCatalog.byId(entryId) ?: return
         val downloader = SherpaModelDownloader.of(entryId)
         val manager = SherpaModelManager.of(entryId)
         // TASK-801: a valid linked record (a bundle imported from this entry)
         // marks its variant present exactly like a disk download. Validity is
-        // the store's loadability predicate, so a quarantined record or a
+        // the provider's loadability predicate, so a quarantined record or a
         // deleted dir reverts the card on the next refresh.
-        val linkedVariantDirs = externalModelStore.validRecords()
-            .mapNotNull { it.linkedCatalog }
-            .filter { it.catalogEntryId == entryId }
-            .map { it.variantDir }
+        val linkedVariantDirs = entry.variants
+            .filter { linkedRecordFor(records, LinkedCatalogRef(entryId, it.dirName)) != null }
+            .map { it.dirName }
             .toSet()
         val downloadedVariants = entry.variants
             .filter { downloader.isModelDownloaded(context, it.name) || it.dirName in linkedVariantDirs }
@@ -1449,8 +1470,7 @@ class ModelViewModel @Inject constructor(
             // keeps precedence when both exist.
             val linkedDir = BundledCatalog.byId(entryId)?.variant(variantName)?.dirName
             if (linkedDir != null && !SherpaModelDownloader.of(entryId).isModelDownloaded(context, variantName)) {
-                val linked = externalModelStore.validRecords()
-                    .firstOrNull { it.linkedCatalog == LinkedCatalogRef(entryId, linkedDir) }
+                val linked = linkedRecordFor(recordsProvider.records.value, LinkedCatalogRef(entryId, linkedDir))
                 if (linked != null) {
                     activateExternalModel(linked)
                     return@launch
@@ -1761,10 +1781,12 @@ class ModelViewModel @Inject constructor(
      * TASK-801: the catalog identity a bundle import links to, or null for a
      * plain import. Linked only when the manifest's entry still exists in THIS
      * device's bundled catalog, the modelTypes match (a relabeled or
-     * hand-edited manifest must not hijack an unrelated card), and the variant
-     * resolves: the manifest's dirName when it names one of the entry's
-     * variants, else the entry's only variant (pre-801 manifests carry no
-     * variant identity; a multi-variant entry is not linkable without one).
+     * hand-edited manifest must not hijack an unrelated card), the variant
+     * resolves (the manifest's dirName when it names one of the entry's
+     * variants, else the entry's only variant; pre-801 manifests carry no
+     * variant identity, and a multi-variant entry is not linkable without
+     * one), AND the bundle's pinned bytes are the catalog variant's pinned
+     * bytes: the card must not vouch for weights the catalog never named.
      */
     private fun linkedCatalogRefFor(params: ModelBundleCodec.RecordParams): LinkedCatalogRef? {
         val entryId = params.catalogEntryId ?: return null
@@ -1774,6 +1796,14 @@ class ModelViewModel @Inject constructor(
             ?.takeIf { dir -> entry.variants.any { it.dirName == dir } }
             ?: entry.variants.singleOrNull()?.dirName
             ?: return null
+        val variant = entry.variants.first { it.dirName == variantDir }
+        val pinsMatch = variant.files.all { catalogFile ->
+            val bundlePin = params.filePins[catalogFile.name]
+            // Unpinned catalog files (none today, TASK-661 pins all) only
+            // require the file to ride the bundle.
+            bundlePin != null && (catalogFile.sha256 == null || bundlePin == catalogFile.sha256)
+        }
+        if (!pinsMatch) return null
         return LinkedCatalogRef(entryId, variantDir)
     }
 

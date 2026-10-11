@@ -100,6 +100,7 @@ class ModelViewModelDemotionTest {
             ctx = mockContext,
             backendRegistry = staticRegistry(),
             externalModelStore = ExternalModelStore(prefs),
+            recordsProvider = com.antivocale.app.data.FakeExternalRecordsProvider(),
             externalModelImporter = ExternalModelImporter(
                 store = ExternalModelStore(prefs),
                 filesRoot = { Files.createTempDirectory("demote-ext").toFile() },

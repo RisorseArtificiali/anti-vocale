@@ -219,6 +219,12 @@ object ModelBundleCodec {
             family = family,
             catalogEntryId = manifest.optString("catalogEntryId").ifBlank { null },
             catalogVariantDir = manifest.optString("catalogVariantDir").ifBlank { null },
+            // TASK-801: the bundle's own pins, keyed by the exported file
+            // names (catalog names for built-in exports). The import's
+            // identity guard compares them against the catalog variant's.
+            filePins = manifest.optJSONObject("files")
+                ?.let { f -> buildMap { f.keys().forEach { k -> put(k, f.getString(k)) } } }
+                ?: emptyMap(),
             options = optionsJson?.let { o -> buildMap { o.keys().forEach { k -> put(k, o.getString(k)) } } }
                 ?: emptyMap(),
             languages = languagesJson?.let { a -> (0 until a.length()).map { a.getString(it) } }
@@ -237,6 +243,7 @@ object ModelBundleCodec {
          *  (absent in pre-801 manifests; the import resolves the variant
          *  through it or the entry's single variant). */
         val catalogVariantDir: String? = null,
+        val filePins: Map<String, String> = emptyMap(),
         val options: Map<String, String>,
         val languages: List<String>,
         val streaming: Boolean,

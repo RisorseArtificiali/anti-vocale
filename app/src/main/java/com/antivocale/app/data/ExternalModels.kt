@@ -98,8 +98,6 @@ data class ExternalModelRecord(
         put("options", optsJson)
         put("streaming", streaming)
         put("quarantined", quarantined)
-        // A half-written link is dropped at parse rather than persisted as an
-        // ambiguous whole-entry claim: both fields must survive the round trip.
         linkedCatalog?.let {
             put("linkedCatalogEntryId", it.catalogEntryId)
             put("linkedCatalogVariantDir", it.variantDir)
@@ -124,6 +122,10 @@ data class ExternalModelRecord(
                     put(name, FilePin(p.getString("sha256"), p.getBoolean("verified")))
                 }
             }
+            // A half-written link is dropped at parse rather than persisted
+            // as an ambiguous whole-entry claim: both fields must survive.
+            val linkedEntryId = o.optString("linkedCatalogEntryId")
+            val linkedVariantDir = o.optString("linkedCatalogVariantDir")
             ExternalModelRecord(
                 id = o.getString("id"), displayName = o.getString("displayName"), dir = o.getString("dir"),
                 family = ModelFamily.valueOf(o.getString("family")), modelType = o.getString("modelType"),
@@ -134,11 +136,9 @@ data class ExternalModelRecord(
                 options = o.optStringMap("options"),
                 streaming = o.optBoolean("streaming", false),
                 quarantined = o.optBoolean("quarantined", false),
-                linkedCatalog = o.optString("linkedCatalogEntryId").takeIf { it.isNotBlank() }
-                    ?.let { id ->
-                        o.optString("linkedCatalogVariantDir").takeIf { it.isNotBlank() }
-                            ?.let { dir -> LinkedCatalogRef(id, dir) }
-                    },
+                linkedCatalog = if (linkedEntryId.isNotBlank() && linkedVariantDir.isNotBlank()) {
+                    LinkedCatalogRef(linkedEntryId, linkedVariantDir)
+                } else null,
             )
         } catch (e: Exception) {
             Log.w(TAG, "Malformed ExternalModelRecord; dropping this record only", e)

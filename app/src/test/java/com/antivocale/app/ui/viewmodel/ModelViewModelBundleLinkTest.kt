@@ -63,6 +63,16 @@ class ModelViewModelBundleLinkTest {
     /** Served by the mocked ContentResolver for the next bundle import. */
     private var nextBundle: ByteArray = ByteArray(0)
 
+    /** Served by the mocked AssetManager; per-test override re-pins the catalog. */
+    private var nextCatalogJson: String = ""
+
+    /** The fixture-bytes source the served gigaam pins are hashed from. */
+    private lateinit var gigaamSourceDir: File
+
+    private fun hashFile(f: File): String =
+        java.security.MessageDigest.getInstance("SHA-256").digest(f.readBytes())
+            .joinToString("") { "%02x".format(it) }
+
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
@@ -72,14 +82,41 @@ class ModelViewModelBundleLinkTest {
         val appFilesDir = Files.createTempDirectory("bundle-link-files").toFile()
         val appCacheDir = Files.createTempDirectory("bundle-link-cache").toFile()
 
-        val catalogJson = run {
+        val realCatalogJson = run {
             val asset = File("src/main/assets/models_catalog.json")
                 .takeIf { it.exists() } ?: File("app/src/main/assets/models_catalog.json")
             asset.readText()
         }
+        // The served catalog re-pins the gigaam files onto the fixture bytes:
+        // the import's identity guard links only byte-identical bundles, and
+        // the real pins hash the real 326MB weights no test can ship. The
+        // pin-mismatch test re-attaches the unpatched catalog instead.
+        gigaamSourceDir = transducerSourceDir()
+        val catalogJson = run {
+            val catalog = org.json.JSONObject(realCatalogJson)
+            val entry = catalog.getJSONArray("models")
+                .let { arr -> (0 until arr.length()).map { arr.getJSONObject(it) } }
+                .first { it.optString("id") == "gigaam" }
+            val pins = gigaamSourceDir.listFiles().associate { it.name to hashFile(it) }
+            entry.getJSONArray("variants").let { variants ->
+                (0 until variants.length()).forEach { v ->
+                    val files = variants.getJSONObject(v).getJSONArray("files")
+                    (0 until files.length()).forEach { i ->
+                        val file = files.optJSONObject(i)
+                        val name = file?.optString("name") ?: files.optString(i)
+                        pins[name]?.let { pin ->
+                            if (file != null) file.put("sha256", pin)
+                            else files.put(i, org.json.JSONObject().put("name", name).put("sha256", pin))
+                        }
+                    }
+                }
+            }
+            catalog.toString()
+        }
+        nextCatalogJson = catalogJson
         val assetManager = mockk<android.content.res.AssetManager>(relaxed = true)
         every { assetManager.open(any()) } answers {
-            ByteArrayInputStream(catalogJson.toByteArray(Charsets.UTF_8))
+            ByteArrayInputStream(nextCatalogJson.toByteArray(Charsets.UTF_8))
         }
         val resolver = mockk<android.content.ContentResolver>(relaxed = true)
         every { resolver.openInputStream(any()) } answers { ByteArrayInputStream(nextBundle) }
@@ -109,6 +146,12 @@ class ModelViewModelBundleLinkTest {
             ctx = mockContext,
             backendRegistry = staticRegistry(),
             externalModelStore = store,
+            // The production provider over the real store: the record-driven
+            // refreshes this file pins ride the same hot seam the app uses.
+            recordsProvider = com.antivocale.app.data.DefaultExternalModelRecordsProvider(
+                store = store,
+                scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+            ),
             externalModelImporter = ExternalModelImporter(store = store, filesRoot = { importerRoot }),
             litertLmUrlImporter = mockk(relaxed = true),
             externalCatalogRepository = mockk(relaxed = true),
@@ -117,11 +160,20 @@ class ModelViewModelBundleLinkTest {
             modelActivator = com.antivocale.app.transcription.ModelActivator(
                 fakePrefs, sharedDemoter, store, staticRegistry()),
         )
+        // LAST: the registry helpers above seed the catalog singleton with
+        // the REAL entries; re-seed with the patched ones so the identity
+        // guard sees the fixture pins (BundledCatalog caches per process).
+        com.antivocale.app.data.catalog.BundledCatalog.seed(
+            com.antivocale.app.data.catalog.ModelCatalogJson.parseCatalog(catalogJson))
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        // The patched seed must not leak into later classes sharing this
+        // worker JVM (the catalog singleton caches per process).
+        com.antivocale.app.data.catalog.BundledCatalog.seed(
+            com.antivocale.app.transcription.bundledCatalogEntriesForTest())
     }
 
     /** Protobuf-framed metadata prop, as ExternalModelImporterTest's sourceDir builds. */
@@ -144,7 +196,7 @@ class ModelViewModelBundleLinkTest {
     private fun gigaamBundle(entryId: String?, variantDir: String?): ByteArray {
         val out = ByteArrayOutputStream()
         ModelBundleCodec.export(
-            transducerSourceDir(), out,
+            gigaamSourceDir, out,
             ModelBundleCodec.BundleMetadata(
                 displayName = "GigaAM v3", family = "TRANSDUCER", modelType = "nemo_transducer",
                 languages = listOf("ru"), streaming = false, options = emptyMap(),
@@ -307,6 +359,19 @@ class ModelViewModelBundleLinkTest {
         importBundle(entryId = "whisper", variantDir = "sherpa-onnx-whisper-small")
         await("bundle import registered") { storedRecords().isNotEmpty() }
         assertEquals(null, store.records().single().linkedCatalog)
+    }
+
+    @Test
+    fun `a bundle whose pins differ from the catalog variant imports plain without a link`() = runTest {
+        // The REAL catalog pins the real GigaAM weights; the fixture bytes
+        // hash differently, so the identity guard must refuse the card.
+        com.antivocale.app.data.catalog.BundledCatalog.seed(
+            com.antivocale.app.transcription.bundledCatalogEntriesForTest())
+        importBundle(entryId = "gigaam", variantDir = "gigaam-v3")
+        await("bundle import registered") { storedRecords().isNotEmpty() }
+        val record = store.records().single()
+        assertEquals(null, record.linkedCatalog)
+        assertEquals(null, fakePrefs._sherpaModelPath("gigaam").value)
     }
 
     @Test

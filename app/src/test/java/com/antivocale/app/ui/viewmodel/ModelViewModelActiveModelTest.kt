@@ -103,6 +103,7 @@ class ModelViewModelActiveModelTest {
             ctx = mockContext,
             backendRegistry = staticRegistry(),
             externalModelStore = com.antivocale.app.data.ExternalModelStore(fakePrefs),
+            recordsProvider = com.antivocale.app.data.FakeExternalRecordsProvider(),
             externalModelImporter = com.antivocale.app.data.ExternalModelImporter(
                 store = com.antivocale.app.data.ExternalModelStore(fakePrefs),
                 filesRoot = { filesRoot },

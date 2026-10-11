@@ -144,6 +144,7 @@ class ModelViewModelExternalImportTest {
             ctx = mockContext,
             backendRegistry = staticRegistry(),
             externalModelStore = com.antivocale.app.data.ExternalModelStore(fakePrefs),
+            recordsProvider = com.antivocale.app.data.FakeExternalRecordsProvider(),
             externalModelImporter = fakeImporter,
             litertLmUrlImporter = io.mockk.mockk(relaxed = true),
             externalCatalogRepository = io.mockk.mockk(relaxed = true),

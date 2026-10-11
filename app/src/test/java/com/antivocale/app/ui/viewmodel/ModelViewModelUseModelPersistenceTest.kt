@@ -108,6 +108,7 @@ class ModelViewModelUseModelPersistenceTest {
             ctx = mockContext,
             backendRegistry = staticRegistry(),
             externalModelStore = ExternalModelStore(prefs),
+            recordsProvider = com.antivocale.app.data.FakeExternalRecordsProvider(),
             externalModelImporter = ExternalModelImporter(
                 store = ExternalModelStore(prefs),
                 filesRoot = { Files.createTempDirectory("use-model-ext").toFile() },
