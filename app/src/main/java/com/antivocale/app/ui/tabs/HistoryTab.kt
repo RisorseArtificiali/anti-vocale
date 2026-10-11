@@ -1236,6 +1236,8 @@ fun LogEntryItem(
     firstPassLabel: String = "",
     /** TASK-595: the first-pass transcript via the lean per-row flow. */
     firstPassTranscript: String? = null,
+    /** TASK-800: the row's raw cue JSON (lean per-row read). */
+    rowSegmentsJson: String? = null,
     searchQuery: String = "",
     expanded: Boolean = false,
     onExpandChange: (Boolean) -> Unit = {},
@@ -1746,8 +1748,10 @@ fun LogEntryItem(
                                                 // rows stay enabled (the gate also protects
                                                 // failed-chunk rows) but a row with NO stored
                                                 // cues gets the reason under its options.
-                                                val hasCues = remember(log.segments) {
-                                                    !log.segments.isNullOrBlank()
+                                                val hasCues = remember(rowSegmentsJson, log.segments) {
+                                                    // Same source the dispatch reads: the list
+                                                    // projection keeps log.segments null.
+                                                    !(rowSegmentsJson ?: log.segments).isNullOrBlank()
                                                 }
                                                 listOf(
                                                     R.string.share_format_txt to com.antivocale.app.util.SubtitleFormatter.Format.TXT,
@@ -1764,7 +1768,7 @@ fun LogEntryItem(
                                                         // timed formats are cue-derived regardless.
                                                         shareInFormat(
                                                             rowScope, context, fmt,
-                                                            log.result, log.segments, log.failedChunkCount)
+                                                            log.result, rowSegmentsJson ?: log.segments, log.failedChunkCount)
                                                     }
                                                 }
                                                 if (!hasCues) {
@@ -2005,6 +2009,13 @@ private fun LogEntryWithSwipe(
     } else {
         null
     }
+    // TASK-800: the row's raw cues for the Share-as formats (the list
+    // projection keeps the column null; same lean read as firstPass).
+    val rowSegmentsJson = if (isExpanded) {
+        viewModel.segmentsFlow(log.id).collectAsState().value
+    } else {
+        null
+    }
     // TASK-601 via TASK-599: the first-pass header's display name, derived
     // here (remembered; the registry lookup rebuilds external descriptors
     // and the list re-emits on every interim write) and handed down as a
@@ -2061,6 +2072,7 @@ private fun LogEntryWithSwipe(
                 speakerAnnotated = speakerAnnotated,
                 firstPassLabel = firstPassLabel,
                 firstPassTranscript = firstPassTranscript,
+                rowSegmentsJson = rowSegmentsJson,
                 searchQuery = searchQuery,
                 expanded = isExpanded,
                 onExpandChange = { expanded ->
@@ -2124,6 +2136,7 @@ private fun LogEntryWithSwipe(
                 speakerAnnotated = speakerAnnotated,
                 firstPassLabel = firstPassLabel,
                 firstPassTranscript = firstPassTranscript,
+                rowSegmentsJson = rowSegmentsJson,
                 searchQuery = searchQuery,
                 expanded = isExpanded,
                 onExpandChange = onExpandChange,
