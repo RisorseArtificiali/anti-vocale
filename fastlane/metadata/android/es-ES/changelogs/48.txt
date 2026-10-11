@@ -1,0 +1,5 @@
+Nuevo: las carpetas vigiladas transcriben audio nuevo; offload remoto (experimental)
+Nuevo: comparte como texto con tiempos, SRT o VTT; exporta modelos como paquetes offline
+Nuevo: el guardado automático comprueba la escritura; la notificación nombra el archivo
+Mejorado: pestaña Avanzado: catálogo de comunidad en la app, importación en un flujo; interfaz china
+Corregido: fallo al expirar la elección de subtítulos; Qwen3 cortaba textos largos

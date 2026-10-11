@@ -1,0 +1,5 @@
+Neu: beobachtete Ordner transkribieren neue Audio automatisch; Remote-Offload (experimentell)
+Neu: Teilen als Text mit Zeitmarken, SRT oder VTT; Modelle als Offline-Bündel exportieren
+Neu: Auto-Speichern prüft das Schreiben; die Benachrichtigung nennt die Datei
+Verbessert: Tab „Erweitert“: Community-Katalog in der App, Import in einem Ablauf; chinesische UI
+Behoben: Absturz bei abgelaufener Untertitel-Auswahl; Qwen3 schnitt lange Texte ab

@@ -1,0 +1,5 @@
+Nuovo: le cartelle osservate trascrivono i nuovi audio; offload remoto (sperimentale)
+Nuovo: condividi come testo con tempi, SRT o VTT; esporta modelli come bundle offline
+Nuovo: il salvataggio automatico verifica la scrittura; la notifica indica il file
+Migliorato: tab Avanzate: catalogo community in app, import in un flusso; interfaccia cinese
+Corretto: crash allo scadere della richiesta sottotitoli; Qwen3 tagliava i testi lunghi

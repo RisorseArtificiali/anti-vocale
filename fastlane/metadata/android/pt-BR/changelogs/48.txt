@@ -1,0 +1,5 @@
+Novo: pastas assistidas transcrevem o novo áudio; offload remoto (experimental)
+Novo: compartilhe como texto com tempos, SRT ou VTT; exporte modelos como pacotes offline
+Novo: o salvamento automático confere a gravação; a notificação mostra o arquivo
+Melhorado: aba Avançado: catálogo da comunidade no app, importação em um fluxo; interface chinesa
+Corrigido: travamento ao expirar a escolha de legendas; Qwen3 cortava textos longos

@@ -1,0 +1,5 @@
+Yeni: izlenen klasörler yeni sesi kendiliğinden yazıya çevirir; uzak aktarım (deneysel)
+Yeni: zaman damgalı metin, SRT veya VTT olarak paylaşın; modelleri çevrimdışı paket olarak dışa aktarın
+Yeni: otomatik kaydetme yazmayı doğrular; bildirim dosya adını verir
+İyileştirildi: Gelişmiş sekmesi: uygulama içinde topluluk kataloğu, tek akışlı içe aktarma; Çince arayüz
+Düzeltildi: altyazı seçimi zaman aşımında çökme; Qwen3 uzun metinleri kesiyordu

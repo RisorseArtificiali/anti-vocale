@@ -1,0 +1,5 @@
+Nowość: obserwowane foldery same transkrybują nowe audio; zdalny offload (eksperymentalny)
+Nowość: udostępniaj jako tekst z czasami, SRT lub VTT; eksportuj modele jako pakiety offline
+Nowość: autozapis sprawdza zapis; powiadomienie podaje nazwę pliku
+Ulepszono: sekcja Zaawansowane: katalog społeczności w aplikacji, import w jednym przepływie; chiński interfejs
+Poprawiono: awaria po upływie wyboru napisów; Qwen3 ucinał długie teksty

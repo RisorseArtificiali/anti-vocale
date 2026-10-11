@@ -1,0 +1,5 @@
+Nouveau : les dossiers surveillés transcrivent le nouvel audio ; déport distant (expérimental)
+Nouveau : partage en texte horodaté, SRT ou VTT ; export des modèles hors ligne
+Nouveau : l’enregistrement auto vérifie l’écriture ; la notification nomme le fichier
+Amélioré : onglet Avancé : catalogue communauté dans l’appli, import en un flux ; en chinois
+Corrigé : plantage du choix des sous-titres expiré ; Qwen3 tronquait les longs textes

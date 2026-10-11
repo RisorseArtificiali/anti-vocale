@@ -1,0 +1,5 @@
+New: watched folders auto-transcribe new audio; remote offload (experimental)
+New: share as timed text, SRT or VTT; export models as offline bundles
+New: auto-save verifies the write; the notification names the file
+Improved: Advanced tab: in-app community catalog, one-flow import; Chinese UI
+Fixed: subtitle-prompt timeout crash; Qwen3 cutting long inputs

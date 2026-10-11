@@ -1,0 +1,5 @@
+Nieuw: gevolgde mappen transcriberen nieuwe audio automatisch; externe offload (experimenteel)
+Nieuw: deel als tekst met tijden, SRT of VTT; exporteer modellen als offline bundels
+Nieuw: automatisch opslaan controleert het schrijven; de melding noemt het bestand
+Verbeterd: tab Geavanceerd: communitycatalogus in de app, import in één stroom; Chinese interface
+Opgelost: crash bij verstrijken van de ondertitelkeuze; Qwen3 kapte lange teksten af

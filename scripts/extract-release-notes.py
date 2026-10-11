@@ -42,7 +42,7 @@ VERSION_HEADING = re.compile(
     r"Neuigkeiten in Version|Novedades de la versión|Nouveautés de la version|"
     r"Novidades da versão|Что нового в версии|Sürüm \S+ yenilikler|"
     r"Nowości w wersji|Новинки версії|संस्करण \S+ में नया क्या है|"
-    r"چه چیز جدید‌های نسخه \S+|\S+ 版本更新|מה חדש בגרסה \S+)：?\s",
+    r"چه چیز جدید‌های نسخه \S+|\S+ 版本更新|מה חדש בגרסה \S+)[：:]?\s",
     re.MULTILINE,
 )
 
