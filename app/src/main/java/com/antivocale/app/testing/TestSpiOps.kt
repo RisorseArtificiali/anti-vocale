@@ -632,6 +632,10 @@ internal class TestSpiOps(
                                 status.notification.actions.orEmpty().map { it.title?.toString() ?: "" }))
                         .put("title", extras.getCharSequence(android.app.Notification.EXTRA_TITLE)?.toString() ?: JSONObject.NULL)
                         .put("text", capped("text", extras.getCharSequence(android.app.Notification.EXTRA_TEXT)))
+                        // TASK-798 trial 3: the auto-save verdict ("Saved
+                        // <file> to <folder>") rides the subText; without
+                        // this field the op cannot prove it.
+                        .put("subText", capped("subText", extras.getCharSequence(android.app.Notification.EXTRA_SUB_TEXT)))
                         .put("bigText", capped("bigText", extras.getCharSequence(android.app.Notification.EXTRA_BIG_TEXT))))
             }
         return JSONObject().put("op", OP_NOTIFICATIONS).put("count", array.length()).put("items", array).toString()
