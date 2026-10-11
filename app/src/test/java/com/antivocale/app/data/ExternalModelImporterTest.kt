@@ -236,6 +236,33 @@ class ExternalModelImporterTest {
         assertEquals(1, filesRoot.listFiles()!!.size)
     }
 
+    // ---- catalog entity link (TASK-801) ----
+
+    @Test
+    fun `bundle import stamps the linked catalog ref on the record`() = runTest {
+        val record = importer.importFromDirectory(
+            sourceDir(), linkedCatalog = LinkedCatalogRef("gigaam", "gigaam-v3"))
+        assertEquals(LinkedCatalogRef("gigaam", "gigaam-v3"), record.linkedCatalog)
+        assertEquals(LinkedCatalogRef("gigaam", "gigaam-v3"), store.records().single().linkedCatalog)
+    }
+
+    @Test
+    fun `dedupe backfills the link onto the existing record only when absent`() = runTest {
+        // The first import is plain (a folder import or a pre-801 bundle); a
+        // same-pins re-import that CARRIES the link must backfill it...
+        val src = sourceDir()
+        val first = importer.importFromDirectory(src)
+        assertEquals(null, first.linkedCatalog)
+        val second = importer.importFromDirectory(
+            src, linkedCatalog = LinkedCatalogRef("gigaam", "gigaam-v3"))
+        assertEquals(first.id, second.id)
+        assertEquals(LinkedCatalogRef("gigaam", "gigaam-v3"), store.records().single().linkedCatalog)
+
+        // ...while a later plain re-import must not erase it.
+        val third = importer.importFromDirectory(src)
+        assertEquals(LinkedCatalogRef("gigaam", "gigaam-v3"), third.linkedCatalog)
+    }
+
     // ---- family-aware imports (TASK-331) ----
 
     /** Whisper source dir: encoder + decoder + tokens; the encoder tail names its model_type. */

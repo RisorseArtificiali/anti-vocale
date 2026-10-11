@@ -127,6 +127,25 @@ class ExternalModelStoreTest {
     }
 
     @Test
+    fun `linked catalog ref round-trips and pre-801 json decodes with no link`() = runTest {
+        // TASK-801: the entity link survives the preference round trip...
+        val rec = record().copy(linkedCatalog = LinkedCatalogRef("gigaam", "gigaam-v3"))
+        val decoded = ExternalModelRecord.fromJson(org.json.JSONObject(rec.toJson().toString()))!!
+        assertEquals(LinkedCatalogRef("gigaam", "gigaam-v3"), decoded.linkedCatalog)
+        // ...while records persisted before the field existed parse to null.
+        val legacy = record().toJson().toString()
+        assertNull(ExternalModelRecord.fromJson(org.json.JSONObject(legacy))!!.linkedCatalog)
+    }
+
+    @Test
+    fun `a variant dir without its entry is dropped at parse`() = runTest {
+        // The link is entry+variant or nothing: a half-written field pair must
+        // not survive as an ambiguous whole-entry claim.
+        val raw = record().toJson().put("linkedCatalogVariantDir", "gigaam-v3").toString()
+        assertNull(ExternalModelRecord.fromJson(org.json.JSONObject(raw))!!.linkedCatalog)
+    }
+
+    @Test
     fun `typeLabel falls back to the family name when modelType is blank`() {
         // WHISPER/SENSE_VOICE records carry a blank modelType by design; the card
         // must not render them as "zipformer" (bug seen on device, TASK-331).

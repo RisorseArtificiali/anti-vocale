@@ -126,6 +126,37 @@ class ModelBundleCodecTest {
     }
 
     @Test
+    fun `catalog identity round-trips through the manifest`() {
+        // TASK-801: a built-in export stamps entry id AND variant dir; the
+        // receiver parses both (the optional-field catalogEntryId precedent:
+        // no formatVersion bump).
+        val dir = modelDir("m.onnx" to "x")
+        val out = ByteArrayOutputStream()
+        ModelBundleCodec.export(dir, out, metadata().copy(
+            catalogEntryId = "gigaam", catalogVariantDir = "gigaam-v3"))
+        val target = File(tmp.newFolder(), "imported")
+        val manifest = ModelBundleCodec.import(ByteArrayInputStream(out.toByteArray()), target)
+        val params = ModelBundleCodec.recordParams(manifest)
+
+        assertEquals("gigaam", params.catalogEntryId)
+        assertEquals("gigaam-v3", params.catalogVariantDir)
+    }
+
+    @Test
+    fun `external export carries no catalog identity`() {
+        val dir = modelDir("m.onnx" to "x")
+        val out = ByteArrayOutputStream()
+        ModelBundleCodec.export(dir, out, metadata())
+        val target = File(tmp.newFolder(), "imported")
+        val manifest = ModelBundleCodec.import(ByteArrayInputStream(out.toByteArray()), target)
+
+        assertTrue(!manifest.has("catalogEntryId") && !manifest.has("catalogVariantDir"))
+        val params = ModelBundleCodec.recordParams(manifest)
+        assertEquals(null, params.catalogEntryId)
+        assertEquals(null, params.catalogVariantDir)
+    }
+
+    @Test
     fun `a pre-fix architecture-family bundle imports via the modelType bridge`() {
         // The first export build wrote the catalog's architecture string
         // ("ENCODER_ONLY_CTC"); those bundles must still import (the
