@@ -692,10 +692,13 @@
         </provider>
 
     <!--
-        WorkManager 2.10 SystemForegroundService on Android 14+ requires the
-        dataSync foreground service type to be explicitly declared. The
-        library manifest should carry it, but some OEM skins strip it during
-        merge; this override guarantees it (GH: WorkManager expedited work).
+        WorkManager 2.10's SystemForegroundService carries NO foreground
+        service type in its own manifest, and Android 14+ (targetSdk 34+)
+        both requires the manifest declaration and prohibits type-none
+        startForeground calls. This override supplies dataSync;
+        SubtitleChoiceTimeoutWorker.foregroundInfo must pass the matching
+        type (FOREGROUND_SERVICE_TYPE_DATA_SYNC) or the process dies in
+        SystemForegroundService.onStartCommand (Crashlytics 2026-10-11).
     -->
     <service
         android:name="androidx.work.impl.foreground.SystemForegroundService"

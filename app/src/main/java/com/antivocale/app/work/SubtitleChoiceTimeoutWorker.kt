@@ -138,19 +138,17 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
      * Builds the foreground-notification [ForegroundInfo] shown while the ASR fallback runs.
      * Uses the existing INFERENCE channel (IMPORTANCE_LOW, no badge) to match the service's
      * in-progress notification.
+     *
+     * The explicit DATA_SYNC type is mandatory (Crashlytics 2026-10-11, 1.13.2): WorkManager
+     * 2.10 passes the ForegroundInfo's type straight to Service.startForeground, and a type-0
+     * (NONE) call is prohibited for apps targeting 34+, killing the process inside
+     * SystemForegroundService.onStartCommand where nothing in this worker can catch it. The
+     * type must be a subset of the manifest override on SystemForegroundService (dataSync,
+     * declared in AndroidManifest.xml) and needs FOREGROUND_SERVICE_DATA_SYNC (both present).
+     * The type constant exists since API 29; below that the untyped 2-arg form is the only API.
      */
-    private fun buildForegroundInfo(): ForegroundInfo {
-        AppNotificationChannel.INFERENCE.create(applicationContext)
-        val notification = NotificationCompat.Builder(applicationContext, AppNotificationChannel.INFERENCE.id)
-            .setContentTitle(applicationContext.getString(R.string.app_name))
-            .setContentText(applicationContext.getString(R.string.processing_audio))
-            .setSmallIcon(android.R.drawable.ic_menu_manage)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
-            .setSilent(true)
-            .build()
-        return ForegroundInfo(NOTIFICATION_ID, notification)
-    }
+    private fun buildForegroundInfo(): ForegroundInfo =
+        foregroundInfo(applicationContext)
 
     companion object {
         private const val TAG = "SubtitleChoiceTimeoutWorker"
@@ -159,6 +157,30 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
         // ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE. Internal so
         // the contract test can pin this value.
         internal const val NOTIFICATION_ID = 1003
+
+        /** The FGS promotion's contract: a typed ForegroundInfo matching the
+         *  manifest's SystemForegroundService dataSync override (internal so
+         *  the pin test can reach it without a WorkerParameters fixture). */
+        internal fun foregroundInfo(context: Context): ForegroundInfo {
+            AppNotificationChannel.INFERENCE.create(context)
+            val notification = NotificationCompat.Builder(context, AppNotificationChannel.INFERENCE.id)
+                .setContentTitle(context.getString(R.string.app_name))
+                .setContentText(context.getString(R.string.processing_audio))
+                .setSmallIcon(android.R.drawable.ic_menu_manage)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(true)
+                .setSilent(true)
+                .build()
+            return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                ForegroundInfo(
+                    NOTIFICATION_ID,
+                    notification,
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+                )
+            } else {
+                ForegroundInfo(NOTIFICATION_ID, notification)
+            }
+        }
 
         const val KEY_FILE_PATH = "file_path"
         const val KEY_TASK_ID = "task_id"
