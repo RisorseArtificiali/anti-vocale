@@ -55,6 +55,18 @@ With **Auto-detect**, Whisper detects the language of the audio itself, and that
 
 Before version 1.12 the app silently applied the phone's language when the model supported forcing one. Many people speak a language different from their phone's, and for them that silent forcing produced the wrong output, so since 1.12 the default is Auto-detect for everyone: the model listens to the audio and decides. When that guess misfires, the transcript comes out in the wrong language. Every result shows the language it was transcribed in as a small chip on its History card (a star marks a detected language, no star means you pinned it); tapping the chip explains what happened and leads to the setting. If you transcribe mostly in one language, set it explicitly in **Settings → Transcription → Transcription Language**; an explicit choice applies to the models that accept it (the Whisper family and the streaming model), while Parakeet keeps detecting on its own.
 
+### Why does Parakeet transcribe my audio in the wrong language, and why is there no way to lock one?
+
+Parakeet TDT decides the language itself, segment by segment, from the acoustics of your audio. On heavily accented speech, or speech whose pronunciation drifts toward another language, that per-segment detection can latch onto the wrong one ([#146](https://github.com/RisorseArtificiali/anti-vocale/issues/146)). The Retry button only repeats the same deterministic pass: the model offers no language forcing, which is a property of the model, not a missing option in the app (the open upstream request is [nvidia/parakeet-tdt-0.6b-v3 #49](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3/discussions/49)).
+
+To actually lock a language, switch to a model that supports it:
+
+- **Whisper** (Small or larger, including the distilled variants): pick the language under **Settings, Transcription language**. Audio in another language can then come out degraded or translated, so prefer it when you know what your audio is.
+- **The streaming model (Nemotron)**: same setting, applied per stream.
+- **A single-language model from the community catalog** (for example a French-only Canary): it is that language by design, no pin needed.
+
+This conclusion is measured, not assumed. The model's vocabulary does contain language control tokens, the exact mechanism other models use for forcing, so we ran the experiments before giving up ([what we tried](docs/research/parakeet-language-forcing.md)): priming the decoder with the control tokens in seven shapes, feeding it French text prompts, and prepending spoken French markers from a single "Bonjour." up to nine seconds of speech. None of it changes the language of what follows; only the acoustics of each segment do. Degrading clean French speech with growing noise, telephone-band filtering and echo never flips the language either: the model keeps transcribing French and only loses content words. If your audio still comes out wrong with a pinned model, sharing the file on the issue lets us test it against this setup directly.
+
 ## Queue and concurrent requests
 
 ### What happens if I share a second audio while one is transcribing?
