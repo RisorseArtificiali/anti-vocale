@@ -81,7 +81,7 @@ object DegenerateRepetition {
      * the delivered-funnel collapse already handles the pure-loop shape.
      */
     fun trim(text: String): Trimmed {
-        val words = text.split(WHITESPACE).filter { it.isNotEmpty() }
+        val words = text.split(RepetitionCollapse.WHITESPACE).filter { it.isNotEmpty() }
         var current = words
         var droppedTotal = 0
         // Bounded: every fired iteration drops at least WINDOW_WORDS words.
@@ -99,11 +99,39 @@ object DegenerateRepetition {
         }
         if (droppedTotal == 0 || current.isEmpty()) return Trimmed(text, words.size, 0)
         return Trimmed(
-            text = current.joinToString(" "),
+            text = sliceThroughWord(text, current.size),
             keptWords = current.size,
             droppedWords = droppedTotal,
         )
     }
 
-    private val WHITESPACE = Regex("\\s+")
+    /**
+     * The kept prefix as a SLICE of the original string (never a rejoin):
+     * surviving lead-in text keeps its line breaks and spacing, the hazard
+     * RepetitionCollapse's review F5 documented for the applied path. The
+     * cut lands at the END of word [keptWordCount], word boundaries under
+     * the same \s set the split counts words with.
+     */
+    private fun sliceThroughWord(text: String, keptWordCount: Int): String {
+        var seen = 0
+        var i = 0
+        while (i < text.length) {
+            if (text[i].isRegexWhitespace()) {
+                i++
+                continue
+            }
+            var j = i
+            while (j < text.length && !text[j].isRegexWhitespace()) j++
+            seen++
+            if (seen == keptWordCount) return text.substring(0, j)
+            i = j
+        }
+        return text
+    }
+
+    /** The exact char set of the \s class the word split uses (not the
+     * broader Char.isWhitespace, which would disagree on Unicode spaces). */
+    private fun Char.isRegexWhitespace(): Boolean =
+        this == ' ' || this == '\t' || this == '\n' ||
+            this == '\u000B' || this == '\f' || this == '\r'
 }

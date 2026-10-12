@@ -97,14 +97,39 @@ def trim(text: str):
         del current[keep:]
     if dropped_total == 0 or not current:
         return text, len(words), 0
-    return " ".join(current), len(current), dropped_total
+    return _slice_through(text, len(current)), len(current), dropped_total
 
 
-# whisper-small joins the built-in BACKENDS table locally: same config
+_REGEX_WS = " \t\n\x0b\x0c\r"
+
+
+def _slice_through(text: str, kept: int) -> str:
+    """The kept prefix as a SLICE of the original (never a rejoin), so
+    surviving lead-in text keeps its line breaks and spacing (mirrors the
+    Kotlin sliceThroughWord, review F3)."""
+    seen = 0
+    i, n = 0, len(text)
+    while i < n:
+        if text[i] in _REGEX_WS:
+            i += 1
+            continue
+        j = i
+        while j < n and text[j] not in _REGEX_WS:
+            j += 1
+        seen += 1
+        if seen == kept:
+            return text[:j]
+        i = j
+    return text
+
+
+# whisper-small joins the built-in BACKENDS table and the CATALOG-MIRROR
+# mechanism (the TASK-714 drift class: literals that cannot follow the
+# catalog): registered BEFORE the mirror pass re-runs, so its windowing
+# tracks the shipped catalog like distil_it's (review F4). Same config
 # shape as distil_it (the app gates every whisper-family decode, built-in
 # catalog and external import alike).
-BACKENDS = dict(rb.BACKENDS)
-BACKENDS["whisper_small"] = {
+rb.BACKENDS["whisper_small"] = {
     "kind": "whisper",
     "dir": rb.MODELS_ROOT / "sherpa-onnx-whisper-small",
     "encoder": "small-encoder.int8.onnx",
@@ -115,6 +140,35 @@ BACKENDS["whisper_small"] = {
     "tail_paddings": 1000,
     "chunk_seconds": 29,
 }
+rb._CATALOG_ENTRY_BY_BACKEND["whisper_small"] = "whisper"
+rb._apply_catalog_mirrors()
+BACKENDS = dict(rb.BACKENDS)
+
+
+def recognize_offline_windows(recognizer, samples, cfg) -> list:
+    """The per-WINDOW texts of one offline decode, mirroring the app's
+    boundary (review F1): the guard fires inside transcribeAudio, once per
+    window, so the A/B must trim window texts, not the joined clip text
+    (a clean clip whose non-final window legitimately ends in a tight
+    repetitive tail is exactly the false-positive class this arm gates).
+    Same windowing/padding as rb.recognize_offline."""
+    import numpy as np
+    chunk_s = cfg.get("chunk_seconds", 0)
+    if chunk_s > 0 and len(samples) > chunk_s * rb.SAMPLE_RATE:
+        step = int(round(chunk_s * rb.SAMPLE_RATE))
+        windows = [samples[i:i + step] for i in range(0, len(samples), step)]
+    else:
+        windows = [samples]
+    tail = cfg.get("tail_pad_seconds", 0.0)
+    texts = []
+    for window in windows:
+        stream = recognizer.create_stream()
+        stream.accept_waveform(rb.SAMPLE_RATE, window)
+        if tail > 0:
+            stream.accept_waveform(rb.SAMPLE_RATE, rb._silence(tail, samples.dtype))
+        recognizer.decode_stream(stream)
+        texts.append((getattr(stream.result, "text", "") or "").strip())
+    return texts
 
 
 def conformance_gate(cases_path: Path):
@@ -184,12 +238,21 @@ def main() -> int:
         wer_off, wer_on, cer_off, cer_on = [], [], [], []
         for cid, audio_path, ref_text in pairs:
             samples = load_audio(audio_path, sample_rate=rb.SAMPLE_RATE)
-            hyp = (rb.recognize_online(rec, samples, cfg) if is_online
-                   else rb.recognize_offline(rec, samples, cfg))
-            out, _kept, dropped = trim(hyp)
-            if dropped:
-                fires += 1
-                print(f"    ✗ FIRE on clean clip {cid}/{name}: dropped {dropped} words")
+            if is_online:
+                window_texts = [rb.recognize_online(rec, samples, cfg)]
+            else:
+                window_texts = recognize_offline_windows(rec, samples, cfg)
+            # The app trims each window's text at the decode boundary and
+            # the orchestrator joins the trimmed texts: both arms derive
+            # from the SAME window texts (review F1).
+            hyp = " ".join(t for t in window_texts if t)
+            trimmed = [trim(t) for t in window_texts]
+            clip_fires = [t for t in trimmed if t[2] > 0]
+            if clip_fires:
+                fires += len(clip_fires)
+                for t in clip_fires:
+                    print(f"    ✗ FIRE on clean clip {cid}/{name} (one window): dropped {t[2]} words")
+            out = " ".join(t[0] for t in trimmed if t[0])
             ref_tokens = rb.tokenize(ref_text)
             ref_norm = rb.normalize_it(ref_text)
             wer_off.append(rb.wer(ref_tokens, rb.tokenize(hyp)))
@@ -223,7 +286,8 @@ def main() -> int:
     print(f"[3] DEGENERATE: {args.audio}")
     audio = Path(args.audio)
     if not audio.is_file():
-        print(f"    ⚠ clip not found; skipping arm 3 (clean arms still gate)")
+        print(f"    ✗ clip not found: the degenerate arm measured nothing")
+        failures += 1
     else:
         samples = load_audio(audio, sample_rate=rb.SAMPLE_RATE)
         rec, is_online, cfg = recognizers.get("distil_it", (None, None, None))

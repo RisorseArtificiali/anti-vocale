@@ -70,5 +70,11 @@
     "text": "ciao ciao ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm Ⅷ Ⅷ",
     "expected": "ciao ciao",
     "dropped": 24
+  },
+  {
+    "name": "kept prefix keeps its original spacing (slice, not rejoin)",
+    "text": "due  spazi\tpreservati ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm",
+    "expected": "due  spazi\tpreservati",
+    "dropped": 30
   }
 ]

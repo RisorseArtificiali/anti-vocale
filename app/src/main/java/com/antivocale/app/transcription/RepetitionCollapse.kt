@@ -144,7 +144,13 @@ object RepetitionCollapse {
             .lowercase()
             .ifEmpty { null }
 
-    private val WHITESPACE = Regex("\\s+")
+    /**
+     * The word-boundary contract the package's two repetition passes share
+     * (TASK-816 review: a second private \s+ here would let the two passes
+     * silently disagree on what a "word" is while both claim tokenKey
+     * identity). Internal for the same reason tokenKey is.
+     */
+    internal val WHITESPACE = Regex("\\s+")
 
     /** Non-greedy unit: the shortest repeating substring wins. */
     private val CHARACTER_LOOP =
