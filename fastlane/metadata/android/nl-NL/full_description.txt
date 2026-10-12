@@ -29,6 +29,7 @@ FUNCTIES
 - Tasker-integratie voor automatisering
 - Geplande mapcontrole: nieuwe audiobestanden in mappen die je kiest worden automatisch getranscribeerd (op Android 11+ zelfs de mediemap van een chat-app)
 - Extern laten draaien (experimenteel, standaard uit): lange transcripties uitbesteden aan je eigen OpenAI-compatibele server
+- Open Transcribe-provider (experimenteel): apps die het open contract spreken, zoals Forkgram, maken van Anti-Vocale hun ingebouwde spraaktranscriber
 
 PRIVACY
 

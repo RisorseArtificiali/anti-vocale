@@ -27,6 +27,7 @@ FUNZIONALITÀ
 - Rimozione dei silenzi ed elaborazione a blocchi in parallelo per la velocità
 - Accelerazione neurale (NNAPI) sui dispositivi supportati, con ritorno automatico su CPU
 - Integrazione Tasker per l'automazione
+- Provider Open Transcribe (sperimentale): le app che parlano il contratto aperto, come Forkgram, trasformano Anti-Vocale nel loro trascrittore vocale integrato
 - Sorveglianza cartella programmata: trascrivi automaticamente i nuovi file audio nelle cartelle che scegli (su Android 11+, anche la cartella media di un'app di messaggistica)
 - Offload remoto (sperimentale, spento di default): delega le trascrizioni lunghe al tuo server compatibile OpenAI
 

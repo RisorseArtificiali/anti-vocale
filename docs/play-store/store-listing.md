@@ -36,6 +36,7 @@ EVERYDAY COMFORTS
 - Video files too: the audio track is extracted and transcribed
 - Faster by design: silence stripping, parallel processing, and automatic use of your phone's AI chip when available
 - Per-app settings and Tasker automation
+- Voice transcription inside other apps: apps that support the Open Transcribe contract, like Forkgram, use Anti-Vocale as their transcriber (experimental)
 
 PRIVACY, FOR REAL
 No account, no ads, no tracking, no data collection. After you download a model it works fully offline. Your audio stays on your phone, always.
@@ -84,6 +85,7 @@ COMFORT QUOTIDIANI
 - Anche i video: la traccia audio viene estratta e trascritta
 - Veloce per progetto: silenzi rimossi, elaborazione in parallelo, e uso automatico del chip AI del telefono quando disponibile
 - Impostazioni per singola app e automazione con Tasker
+- Trascrizione vocale dentro altre app: le app che supportano il contratto Open Transcribe, come Forkgram, usano Anti-Vocale come loro trascrittore (sperimentale)
 
 PRIVACY, SUL SERIO
 Nessun account, nessuna pubblicità, nessun tracciamento, nessuna raccolta dati. Dopo il download del modello funziona completamente offline. Il tuo audio resta sul tuo telefono, sempre.
@@ -131,6 +133,7 @@ ALLTAGSKOMFORT
 - Auch Videos: die Tonspur wird extrahiert und transkribiert
 - Schnell von Haus aus: Stille wird entfernt, parallel verarbeitet, und der KI-Chip deines Telefons wird automatisch genutzt, wo verfügbar
 - Einstellungen pro App und Tasker-Automatisierung
+- Sprachtranskription in anderen Apps: Apps, die den Open-Transcribe-Vertrag unterstützen, wie Forkgram, nutzen Anti-Vocale als ihren Transkriptor (experimentell)
 
 DATENSCHUTZ, ERNST GEMEINT
 Kein Konto, keine Werbung, kein Tracking, keine Datensammlung. Nach dem Modell-Download läuft alles komplett offline. Deine Audios bleiben immer auf deinem Telefon.
@@ -170,6 +173,7 @@ ALLTAGSKOMFORT
 - Verlauf mit Suche, Auto-Kopieren und Auto-Speichern (Drive, Syncthing), auch Videos
 - Stille entfernen, parallel verarbeiten, KI-Chip automatisch nutzen, wo verfügbar
 - Einstellungen pro App und Tasker-Automatisierung
+- Sprachtranskription in anderen Apps: Apps, die den Open-Transcribe-Vertrag unterstützen, wie Forkgram, nutzen Anti-Vocale als ihren Transkriptor (experimentell)
 
 DATENSCHUTZ, ERNST GEMEINT
 Kein Konto, keine Werbung, kein Tracking, keine Datensammlung. Nach dem Modell-Download läuft alles offline. Deine Audios bleiben immer auf deinem Telefon.
@@ -217,6 +221,7 @@ CONFORT QUOTIDIEN
 - Les vidéos aussi : la piste audio est extraite et transcrite
 - Rapide par conception : silences supprimés, traitement parallèle, et la puce IA de votre téléphone est utilisée automatiquement quand elle existe
 - Réglages par application et automatisation Tasker
+- Transcription vocale dans d'autres applications : les apps qui prennent en charge le contrat Open Transcribe, comme Forkgram, utilisent Anti-Vocale comme transcripteur (expérimental)
 
 CONFIDENTIALITÉ, VRAIMENT
 Aucun compte, aucune publicité, aucun traçage, aucune collecte de données. Après le téléchargement d'un modèle, tout fonctionne hors ligne. Votre audio reste sur votre téléphone, toujours.
@@ -264,6 +269,7 @@ COMODIDADES DIARIAS
 - También vídeos: la pista de audio se extrae y se transcribe
 - Rápido por diseño: silencios eliminados, procesamiento en paralelo, y el chip de IA de tu teléfono se usa automáticamente cuando está disponible
 - Ajustes por aplicación y automatización con Tasker
+- Transcripción de voz dentro de otras apps: las apps compatibles con el contrato Open Transcribe, como Forkgram, usan Anti-Vocale como su transcriptor (experimental)
 
 PRIVACIDAD DE VERDAD
 Sin cuenta, sin anuncios, sin rastreo, sin recopilación de datos. Tras descargar un modelo, todo funciona sin conexión. Tu audio se queda en tu teléfono, siempre.
@@ -311,6 +317,7 @@ COMODIDADES DO DIA A DIA
 - Vídeos também: a faixa de áudio é extraída e transcrita
 - Rápido por projeto: silêncios removidos, processamento em paralelo, e o chip de IA do seu telefone é usado automaticamente quando disponível
 - Configurações por app e automação com Tasker
+- Transcrição de voz dentro de outros apps: apps compatíveis com o contrato Open Transcribe, como o Forkgram, usam o Anti-Vocale como transcritor (experimental)
 
 PRIVACIDADE DE VERDADE
 Sem conta, sem anúncios, sem rastreamento, sem coleta de dados. Depois de baixar um modelo, tudo funciona offline. Seu áudio fica no seu telefone, sempre.
@@ -358,6 +365,7 @@ Anti-Vocaleは、WhatsAppやTelegramなどあらゆるアプリのボイスメ�
 - 動画もOK：音声トラックを抽出して文字に
 - 設計からして速い：無音のカット、並列処理、AIチップがあれば自動活用
 - アプリごとの設定とTasker自動化
+- 他のアプリの中での音声書き起こし：Open Transcribe 規約に対応したアプリ（Forkgram など）は、Anti-Vocale を書き起こしエンジンとして使えます（実験的）
 
 本物のプライバシー
 アカウント不要、広告なし、追跡なし、データ収集なし。モデルのダウンロード後は完全オフラインで動作します。あなたの音声は、いつでもスマホの中に。
@@ -405,6 +413,7 @@ Anti-Vocale은 WhatsApp, Telegram 등 모든 앱의 음성 메시지를 휴대�
 - 동영상도 가능: 오디오 트랙을 추출해 텍스트로
 - 설계부터 빠르게: 무음 제거, 병렬 처리, AI 칩이 있으면 자동 활용
 - 앱별 설정과 Tasker 자동화
+- 다른 앱 안에서 음성 전사: Open Transcribe 계약을 지원하는 앱(Forkgram 등)이 Anti-Vocale를 전사기로 사용합니다(실험적)
 
 진짜 프라이버시
 계정 없음, 광고 없음, 추적 없음, 데이터 수집 없음. 모델을 내려받은 후에는 완전히 오프라인으로 동작합니다. 당신의 오디오는 언제나 휴대폰 안에.
@@ -452,6 +461,7 @@ Anti-Vocale 在手机本地直接把 WhatsApp、Telegram 等任何应用的语�
 - 视频也行：提取音轨后转写
 - 天生就快：静音裁剪、并行处理，手机有 AI 芯片时自动启用
 - 按应用单独设置，支持 Tasker 自动化
+- 在其他应用内转录语音：支持 Open Transcribe 契约的应用（如 Forkgram）可将 Anti-Vocale 用作其转录器（实验性）
 
 真正的隐私
 无账号、无广告、无追踪、无数据收集。下载模型之后完全离线运行。你的音频永远留在你的手机里。
@@ -500,6 +510,7 @@ Anti-Vocale расшифровывает голосовые сообщения �
 - Видео тоже: звуковая дорожка извлекается и расшифровывается
 - Быстро по конструкции: тишина вырезается, обработка параллельная, ИИ-чип телефона используется автоматически, если есть
 - Настройки для каждого приложения и автоматизация Tasker
+- Расшифровка голосовых внутри других приложений: приложения с поддержкой контракта Open Transcribe, такие как Forkgram, используют Anti-Vocale как транскрибатор (экспериментально)
 
 ПРИВАТНОСТЬ ВСЕРЬЁЗ
 Без аккаунта, без рекламы, без слежки, без сбора данных. После загрузки модели всё работает офлайн. Ваше аудио остаётся на вашем телефоне. Всегда.
@@ -547,6 +558,7 @@ DAGELIJKS COMFORT
 - Ook video: het audiospoor wordt geëxtraheerd en getranscribeerd
 - Snel van ontwerp: stilte verwijderd, parallelle verwerking, en de AI-chip van je telefoon wordt automatisch gebruikt waar beschikbaar
 - Instellingen per app en Tasker-automatisering
+- Spraaktranscriptie binnen andere apps: apps die het Open Transcribe-contract ondersteunen, zoals Forkgram, gebruiken Anti-Vocale als transcripteur (experimenteel)
 
 PRIVACY, ECHT
 Geen account, geen advertenties, geen tracking, geen dataverzameling. Na het downloaden van een model werkt alles offline. Je audio blijft op je telefoon. Altijd.
@@ -594,6 +606,7 @@ CODZIENNA WYGODA
 - Też wideo: ścieżka audio jest wyodrębniana i transkrybowana
 - Szyki z założenia: cisza usuwana, przetwarzanie równoległe, a chip AI telefonu używany automatycznie tam, gdzie dostępny
 - Ustawienia dla każdej aplikacji i automatyzacja Tasker
+- Transkrypcja głosu wewnątrz innych aplikacji: aplikacje obsługujące kontrakt Open Transcribe, jak Forkgram, używają Anti-Vocale jako transkrybatora (eksperymentalnie)
 
 PRYWATNOŚĆ NA SERIO
 Bez konta, bez reklam, bez śledzenia, bez zbierania danych. Po pobraniu modelu wszystko działa offline. Twoje audio zostaje na Twoim telefonie. Zawsze.
@@ -641,6 +654,7 @@ GÜNLÜK KOLAYLIKLAR
 - Videolar da olur: ses parçası çıkarılır ve metne çevrilir
 - Tasarımdan hızlı: sessizlik atılır, paralel işleme, ve telefonunuzun yapay zekâ çipi varsa otomatik kullanılır
 - Uygulama başına ayarlar ve Tasker otomasyonu
+- Diğer uygulamaların içinde ses transkripsiyonu: Open Transcribe sözleşmesini destekleyen uygulamalar (örneğin Forkgram) Anti-Vocale'i transkripter olarak kullanır (deneysel)
 
 GERÇEK GİZLİLİK
 Hesap yok, reklam yok, takip yok, veri toplama yok. Model indirildikten sonra her şey çevrimdışı çalışır. Sesiniz her zaman telefonunuzda kalır.
@@ -688,6 +702,7 @@ Android 8.0+ | 4 GB+ RAM önerilir | Modele göre 326 MB ile 4,2 GB depolama
 - الفيديو أيضًا: يُستخرج المسار الصوتي ويحوَّل إلى نص
 - سريع بالتصميم: حذف الصمت، معالجة متوازية، واستخدام شريحة الذكاء الاصطناعي في هاتفك تلقائيًا عند توفرها
 - إعدادات لكل تطبيق وأتمتة عبر Tasker
+- تفريغ صوتي داخل تطبيقات أخرى: التطبيقات التي تدعم عقد Open Transcribe، مثل Forkgram، تستخدم Anti-Vocale كمفرِّغ لها (تجريبي)
 
 خصوصية حقيقية
 بلا حساب، بلا إعلانات، بلا تتبع، بلا جمع بيانات. بعد تنزيل النموذج يعمل كل شيء دون اتصال. صوتك يبقى على هاتفك، دائمًا.
@@ -735,6 +750,7 @@ Anti-Vocale व्हाट्सएप, टेलीग्राम और ह�
 - वीडियो भी: ऑडियो ट्रैक निकालकर टेक्स्ट बनाया जाता है
 - डिज़ाइन से ही तेज़: मौन हटाया जाता है, समानांतर प्रोसेसिंग, और आपके फ़ोन का AI चिप उपलब्ध होने पर अपने आप उपयोग होता है
 - हर ऐप के लिए अलग सेटिंग और Tasker ऑटोमेशन
+- दूसरे ऐप्स के अंदर वॉयस ट्रांस्क्रिप्शन: Open Transcribe अनुबंध को सपोर्ट करने वाले ऐप्स (जैसे Forkgram) Anti-Vocale को अपना ट्रांस्क्राइबर इस्तेमाल करते हैं (प्रयोगात्मक)
 
 प्राइवेसी, सच में
 कोई खाता नहीं, कोई विज्ञापन नहीं, कोई ट्रैकिंग नहीं, कोई डेटा संग्रह नहीं। मॉडल डाउनलोड के बाद सब कुछ ऑफ़लाइन चलता है। आपका ऑडियो हमेशा आपके फ़ोन पर रहता है।

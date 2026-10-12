@@ -275,6 +275,10 @@ The app holds no storage permissions, so shared-storage paths like `/sdcard/Down
 
 See [docs/TASKER_GUIDE.md](docs/TASKER_GUIDE.md) for detailed automation setup.
 
+### Open Transcribe (experimental)
+
+Apps that implement the open [Open Transcribe contract](https://github.com/23rd/Scrib/blob/master/CONTRACT.md) can use Anti-Vocale as their in-place voice-message transcriber, the way [Forkgram](https://github.com/forkgram/TelegramAndroid) and Forkgram Classic do. Enable **Settings > Automation > Open Transcribe API** (off by default) and pick Anti-Vocale in the client's offline-transcription settings; the audio is transcribed with the app's own models and never leaves the device. Disabling the toggle removes the app from the clients' pickers again.
+
 ## License
 
 See [LICENSE](LICENSE) for details.

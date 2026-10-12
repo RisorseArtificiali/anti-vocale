@@ -29,6 +29,7 @@ FEATURES
 - Tasker integration for automation
 - Scheduled folder watch: transcribe new audio files in folders you choose automatically (on Android 11+, even a messaging app's media folder)
 - Remote offload (experimental, off by default): delegate long transcriptions to your own OpenAI-compatible server
+- Open Transcribe provider (experimental): apps that speak the open contract, like Forkgram, turn Anti-Vocale into their inline voice transcriber
 
 PRIVACY
 
