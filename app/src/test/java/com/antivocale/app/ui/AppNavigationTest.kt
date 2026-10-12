@@ -3,6 +3,7 @@ package com.antivocale.app.ui
 import com.antivocale.app.MainActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -33,16 +34,52 @@ class AppNavigationTest {
     }
 
     @Test
+    fun `scroll spec parses top bottom and viewport counts`() {
+        assertEquals(AppNavigation.ScrollDirective.ToTop, AppNavigation.parseScrollSpec("top"))
+        assertEquals(AppNavigation.ScrollDirective.ToBottom, AppNavigation.parseScrollSpec("bottom"))
+        assertEquals(AppNavigation.ScrollDirective.ByViewports(2f), AppNavigation.parseScrollSpec("+2"))
+        assertEquals(AppNavigation.ScrollDirective.ByViewports(2f), AppNavigation.parseScrollSpec("2"))
+        assertEquals(AppNavigation.ScrollDirective.ByViewports(-1f), AppNavigation.parseScrollSpec("-1"))
+        assertNull(AppNavigation.parseScrollSpec("sideways"))
+        // Integer contract: fractions and scientific notation are typos.
+        assertNull(AppNavigation.parseScrollSpec("+1.5"))
+        assertNull(AppNavigation.parseScrollSpec("1e1"))
+        assertNull(AppNavigation.parseScrollSpec(null))
+        // Out of range: an absurd viewport count is a typo, not a scroll.
+        assertNull(AppNavigation.parseScrollSpec("99"))
+    }
+
+    @Test
+    fun `scrollable destinations are the scroll sub-pages plus the gemma page`() {
+        // per_app is deliberately out of v1: its body is a LazyColumn.
+        assertEquals(
+            setOf("automation", "performance", "speaker", "prompt", "icon_picker", "export"),
+            AppNavigation.SUBPAGE_KEYS.filter { key ->
+                AppNavigation.isScrollableDest(AppNavigation.parse("settings:$key")!!)
+            }.toSet(),
+        )
+        assertTrue(AppNavigation.isScrollableDest(AppNavigation.parse("models:gemma")!!))
+        assertFalse(AppNavigation.isScrollableDest(AppNavigation.parse("models:import")!!))
+        assertFalse(AppNavigation.isScrollableDest(AppNavigation.parse("tab:history")!!))
+        // The SPI error message derives from the same helper: pin that the
+        // token list and the validation stay the same set.
+        assertEquals(
+            setOf("settings:automation", "settings:performance", "settings:speaker",
+                "settings:prompt", "settings:icon_picker", "settings:export", "models:gemma"),
+            AppNavigation.scrollableDestTokens().toSet())
+    }
+
+    @Test
     fun `settings sections and subpages parse with the settings prefix`() {
         AppNavigation.SECTION_KEYS.forEach { key ->
             assertEquals(
                 AppNavigation.Destination.SettingsSection(key),
-                AppNavigation.parse("settings:$key"))
+                AppNavigation.parse("settings:$key")!!)
         }
         AppNavigation.SUBPAGE_KEYS.forEach { key ->
             assertEquals(
                 AppNavigation.Destination.SettingsSubPage(key),
-                AppNavigation.parse("settings:$key"))
+                AppNavigation.parse("settings:$key")!!)
         }
     }
 

@@ -3,10 +3,7 @@ package com.antivocale.app.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.RecordVoiceOver
@@ -19,11 +16,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.antivocale.app.R
+import com.antivocale.app.ui.AppNavigation
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 import com.antivocale.app.ui.tabs.SpeakerIdentitiesCard
 import com.antivocale.app.ui.components.SettingsHubCard
 import com.antivocale.app.ui.components.ToggleSettingCard
-import com.antivocale.app.ui.components.SubPageScaffold
+import com.antivocale.app.ui.components.SubPageScrollScaffold
 
 /**
  * The diarization secondary page (maintainer decision 2026-09-30: related
@@ -42,6 +40,8 @@ import com.antivocale.app.ui.components.SubPageScaffold
 fun SpeakerSettingsScreen(
     viewModel: SettingsViewModel,
     speakerIdEnabled: Boolean,
+    initialScroll: AppNavigation.ScrollRequest? = null,
+    onScrollConsumed: () -> Unit = {},
     onBack: () -> Unit,
 ) {
     val speakerLabelsEnabled by viewModel.speakerLabelsEnabled.collectAsStateWithLifecycle()
@@ -50,17 +50,12 @@ fun SpeakerSettingsScreen(
 
     // TASK-752: the shared sub-page scaffold owns the nav-bar inset and
     // the header at the standard margin; this body only owns its scroll.
-    SubPageScaffold(
+    SubPageScrollScaffold(
         titleRes = R.string.speaker_settings_title,
         onBack = onBack,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+        scrollRequest = initialScroll,
+        onScrollConsumed = onScrollConsumed,
+    ) { _ ->
             ToggleSettingCard(
                 icon = Icons.Default.RecordVoiceOver,
                 title = speakerLabelsTitle,
@@ -76,6 +71,5 @@ fun SpeakerSettingsScreen(
             if (speakerIdEnabled) {
                 SpeakerIdentitiesCard(viewModel)
             }
-        }
     }
 }

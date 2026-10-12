@@ -82,7 +82,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.antivocale.app.ui.components.CardTitleRow
 import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
-import com.antivocale.app.ui.components.SubPageScaffold
+import com.antivocale.app.ui.components.SubPageScrollScaffold
 import com.antivocale.app.ui.components.InfoIconButton
 import com.antivocale.app.ui.components.VariantOverflowMenu
 import com.antivocale.app.ui.components.LanguageFilterBar
@@ -597,6 +597,8 @@ fun ModelTab(
     }
 
     var showGemmaDownloads by remember { mutableStateOf(false) }
+    // TASK-815: the programmatic scroll riding a models:gemma nav request.
+    var gemmaScroll by remember { mutableStateOf<AppNavigation.ScrollRequest?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -754,6 +756,7 @@ fun ModelTab(
                 // models:import stays consumed one level down and expands
                 // Advanced because the catalog dialog only composes then.
                 if (request.destination.key == AppNavigation.MODEL_KEY_GEMMA) {
+                    gemmaScroll = request.scroll
                     onNavConsumed()
                     showGemmaDownloads = true
                 } else {
@@ -959,24 +962,22 @@ fun ModelTab(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background,
             ) {
-                // TASK-752: the shared sub-page scaffold (nav-bar inset,
-                // header pinned at the standard margin; like the five other
-                // folded scroll pages, this header used to scroll away with
-                // the content).
-                SubPageScaffold(
+                // TASK-815: the scroll scaffold (nav-bar inset, pinned
+                // header, body wrapper, programmatic scroll); this header
+                // used to scroll away with the content before the 752 fold.
+                SubPageScrollScaffold(
                     // TASK-796: matches the entry card that opens this
                     // page (gemma_entry_title, now "Gemma AI models");
                     // the inner downloads section carries its own
                     // download_models title.
                     titleRes = R.string.gemma_entry_title,
                     onBack = { showGemmaDownloads = false },
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                    ) {
+                    scrollRequest = gemmaScroll,
+                    onScrollConsumed = { gemmaScroll = null },
+                    // The old body had no Arrangement; the downloads
+                    // section owns its internal spacing.
+                    bodySpacing = androidx.compose.foundation.layout.Arrangement.Top,
+                ) { _ ->
                         if (visibleGemmaVariants.isNotEmpty()) {
                             ModelDownloadSection(
                                 viewModel = viewModel,
@@ -1051,7 +1052,6 @@ fun ModelTab(
                         }
 
                         Spacer(modifier = Modifier.height(200.dp))
-                    }
                 }
             }
         }

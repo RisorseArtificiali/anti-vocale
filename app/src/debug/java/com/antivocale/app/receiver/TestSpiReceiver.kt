@@ -69,6 +69,9 @@ class TestSpiReceiver : BroadcastReceiver() {
 
         /** TASK-486: navigation destination; required by op=nav. */
         const val EXTRA_DEST = "dest"
+
+        /** TASK-815: optional scroll spec for op=nav (top|bottom|+N/-N). */
+        const val EXTRA_SCROLL = "scroll"
     }
 
     /**
@@ -77,7 +80,7 @@ class TestSpiReceiver : BroadcastReceiver() {
      * bar, a Settings sub-page, or a Settings section (expand + scroll).
      * Dest tokens are pinned by TestNavigationTest.
      */
-    private fun handleNav(context: Context, dest: String?): String {
+    private fun handleNav(context: Context, dest: String?, scroll: String?): String {
         // Same envelope as the ops engine: every outcome - including a
         // startActivity failure - answers with JSON on both channels.
         // JSONObject acks like the engine's: a dest with quotes/backslashes
@@ -85,20 +88,47 @@ class TestSpiReceiver : BroadcastReceiver() {
         fun ack(body: org.json.JSONObject.() -> Unit) =
             org.json.JSONObject().put("op", "nav").apply(body).toString()
         return runCatching {
-            if (com.antivocale.app.ui.AppNavigation.parse(dest) == null) {
+            val parsed = com.antivocale.app.ui.AppNavigation.parse(dest)
+            if (parsed == null) {
                 return ack {
                     put("error", "unknown dest '$dest' (expected tab:history|models|settings, " +
                         "models:import, models:gemma, settings:<section>, " +
                         "settings:<subpage>, or settings:<row>)")
                 }
             }
+            // TASK-815: a scroll extra only rides scrollable destinations;
+            // anything else answers the error contract instead of a silent
+            // no-op, and a malformed spec is named as such.
+            if (scroll != null) {
+                // Spec first: a malformed spec on a non-scrollable page must
+                // name the typo, not the page.
+                if (com.antivocale.app.ui.AppNavigation.parseScrollSpec(scroll) == null) {
+                    return ack {
+                        put("error", "invalid scroll '$scroll' (expected top, bottom, or a " +
+                            "signed viewport count like +2 / -1)")
+                    }
+                }
+                if (!com.antivocale.app.ui.AppNavigation.isScrollableDest(parsed)) {
+                    val scrollable =
+                        com.antivocale.app.ui.AppNavigation.scrollableDestTokens().joinToString("|")
+                    return ack {
+                        put("error", "scroll is not supported on '$dest' (scrollable: $scrollable)")
+                    }
+                }
+            }
             context.startActivity(
                 android.content.Intent(context, com.antivocale.app.MainActivity::class.java).apply {
                     putExtra(com.antivocale.app.ui.TestNavigation.EXTRA_TEST_NAV, dest)
+                    if (scroll != null) {
+                        putExtra(com.antivocale.app.ui.TestNavigation.EXTRA_TEST_NAV_SCROLL, scroll)
+                    }
                     addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 }
             )
-            ack { put("dest", dest) }
+            ack {
+                put("dest", dest)
+                if (scroll != null) put("scroll", scroll)
+            }
         }.getOrElse { e ->
             ack { put("error", "nav failed: ${e.message ?: e.javaClass.simpleName}") }
         }
@@ -127,6 +157,7 @@ class TestSpiReceiver : BroadcastReceiver() {
         val family = intent.getStringExtra(EXTRA_FAMILY)
         val modelType = intent.getStringExtra(EXTRA_MODEL_TYPE)
         val dest = intent.getStringExtra(EXTRA_DEST)
+        val scroll = intent.getStringExtra(EXTRA_SCROLL)
 
         // ModelPreloadReceiver idiom: goAsync plus a scope per receive,
         // finish() in finally. A local scope (not the @ApplicationScope one,
@@ -139,7 +170,7 @@ class TestSpiReceiver : BroadcastReceiver() {
                 // start, which the JVM-pure ops engine cannot do). The ack
                 // mirrors the ops JSON shape.
                 val json = if (op == "nav") {
-                    handleNav(context, dest)
+                    handleNav(context, dest, scroll)
                 } else {
                     // handle() answers every request with JSON, errors included.
                     ops.handle(op, key, value, entry, url, family, modelType)

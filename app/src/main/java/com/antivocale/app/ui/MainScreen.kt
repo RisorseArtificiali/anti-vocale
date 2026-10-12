@@ -160,9 +160,9 @@ fun MainScreen(
         selectedTabIndex = index
     }
 
-    fun openSettings(destination: AppNavigation.Destination) {
+    fun openSettings(destination: AppNavigation.Destination, scroll: AppNavigation.ScrollDirective? = null) {
         navigateToTab(AppNavigation.TAB_INDEX_SETTINGS)
-        settingsNavRequest = AppNavigation.NavRequest.next(destination)
+        settingsNavRequest = AppNavigation.NavRequest.next(destination, scroll)
     }
     // TASK-625/632: an intent-derived destination (today: the settings-row
     // deep link) routes through the ONE openSettings rule, which switches
@@ -175,15 +175,20 @@ fun MainScreen(
     LaunchedEffect(testNav) {
         val dest = testNav ?: return@LaunchedEffect
         TestNavigation.pending.value = null
+        // TASK-815: the scroll spec (when the SPI validated it against the
+        // destination) rides the same request.
+        val scrollSpec = TestNavigation.pendingScroll.value
+        TestNavigation.pendingScroll.value = null
+        val scroll = AppNavigation.parseScrollSpec(scrollSpec)
         when (val parsed = AppNavigation.parse(dest)) {
             is AppNavigation.Destination.Tab -> selectedTabIndex = parsed.index
             is AppNavigation.Destination.ModelTarget -> {
                 selectedTabIndex = AppNavigation.TAB_INDEX_MODELS
-                modelsNavRequest = AppNavigation.NavRequest.next(parsed)
+                modelsNavRequest = AppNavigation.NavRequest.next(parsed, scroll)
             }
             is AppNavigation.Destination.SettingsSubPage,
             is AppNavigation.Destination.SettingsSection,
-            is AppNavigation.Destination.SettingsRow -> openSettings(parsed)
+            is AppNavigation.Destination.SettingsRow -> openSettings(parsed, scroll)
             null -> Unit
         }
     }

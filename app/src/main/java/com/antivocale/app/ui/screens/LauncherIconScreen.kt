@@ -13,11 +13,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -44,9 +42,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
+import com.antivocale.app.ui.AppNavigation
 import com.antivocale.app.ui.appearance.LauncherIconVariant
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
-import com.antivocale.app.ui.components.SubPageScaffold
+import com.antivocale.app.ui.components.SubPageScrollScaffold
 
 /** The adaptive-icon layer canvas, in dp (see any adaptive-icon XML). */
 private const val ADAPTIVE_CANVAS = 108f
@@ -93,6 +92,8 @@ private const val SAFE_ZONE = 72f
 @Composable
 fun LauncherIconScreen(
     viewModel: SettingsViewModel,
+    initialScroll: AppNavigation.ScrollRequest? = null,
+    onScrollConsumed: () -> Unit = {},
     onBack: () -> Unit,
 ) {
     val current by viewModel.currentLauncherIcon.collectAsState()
@@ -109,17 +110,12 @@ fun LauncherIconScreen(
         // TASK-752: the shared scaffold owns the nav-bar inset and the
         // header at the standard margin. No statusBarsPadding: the host
         // MainScreen Column already applies it (749).
-        SubPageScaffold(
+        SubPageScrollScaffold(
             titleRes = R.string.app_icon_title,
             onBack = onBack,
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            ) {
+            scrollRequest = initialScroll,
+            onScrollConsumed = onScrollConsumed,
+        ) { _ ->
                 Text(
                     text = stringResource(R.string.app_icon_note),
                     style = MaterialTheme.typography.bodySmall,
@@ -179,7 +175,6 @@ fun LauncherIconScreen(
                                         },
                                 )
                             }
-                        }
                     }
                 }
             }

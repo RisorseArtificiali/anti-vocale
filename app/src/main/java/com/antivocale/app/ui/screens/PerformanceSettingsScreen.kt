@@ -7,11 +7,9 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Bolt
@@ -39,6 +37,7 @@ import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.components.SettingsHubCard
 import com.antivocale.app.ui.components.ToggleSettingCard
 import com.antivocale.app.ui.dialogs.PerformanceStatsDialog
+import com.antivocale.app.ui.AppNavigation
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 import com.antivocale.app.ui.tabs.SettingsRowFocus
 import com.antivocale.app.ui.components.SectionCard
@@ -48,7 +47,7 @@ import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.antivocale.app.ui.components.SubPageScaffold
+import com.antivocale.app.ui.components.SubPageScrollScaffold
 
 /**
  * The performance-and-memory secondary page (maintainer decision
@@ -75,6 +74,8 @@ fun PerformanceSettingsScreen(
     viewModel: SettingsViewModel,
     focusMemoryProtection: Boolean,
     onFocusConsumed: () -> Unit,
+    initialScroll: AppNavigation.ScrollRequest? = null,
+    onScrollConsumed: () -> Unit = {},
     onBack: () -> Unit,
 ) {
     val threadCount by viewModel.threadCount.collectAsStateWithLifecycle()
@@ -105,20 +106,17 @@ fun PerformanceSettingsScreen(
         mutableStateOf<List<CalibrationProfile>>(emptyList())
     }
 
-    // TASK-752: the shared sub-page scaffold owns the nav-bar inset and the
-    // header at the standard margin; this body only owns its scroll.
-    SubPageScaffold(
+    // TASK-815: the scroll scaffold owns the body wrapper and the
+    // programmatic scroll; the page keeps its own scroll state because the
+    // focus-flash effect above runs outside the content slot.
+    SubPageScrollScaffold(
         titleRes = R.string.performance_settings_title,
         onBack = onBack,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .onGloballyPositioned { scrollContentRootY = it.positionInRoot().y.toInt() }
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+        scrollRequest = initialScroll,
+        onScrollConsumed = onScrollConsumed,
+        onBodyPositioned = { scrollContentRootY = it },
+        scrollState = scrollState,
+    ) { _ ->
             val threadTitle = stringResource(R.string.thread_count_title)
             SectionCard(
                 icon = Icons.Default.Memory,
@@ -240,7 +238,6 @@ fun PerformanceSettingsScreen(
             }
 
             MemoryDiagnosticsCard(viewModel)
-        }
     }
 
     if (showStats) {

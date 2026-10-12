@@ -28,6 +28,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 object TestNavigation {
     const val EXTRA_TEST_NAV = "com.antivocale.app.TEST_NAV"
 
+    /**
+     * TASK-815: the optional scroll spec riding the same nav broadcast
+     * ("top" | "bottom" | signed viewport count). Same one-shot, debug-write
+     * contract as [pending]; MainScreen folds it into the NavRequest.
+     */
+    const val EXTRA_TEST_NAV_SCROLL = "com.antivocale.app.TEST_NAV_SCROLL"
+
     /** One-shot destination token; consumed (nulled) by MainScreen. */
     val pending = MutableStateFlow<String?>(null)
+
+    /** One-shot scroll spec; consumed (nulled) by MainScreen with [pending]. */
+    val pendingScroll = MutableStateFlow<String?>(null)
 }

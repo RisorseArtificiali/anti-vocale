@@ -2,8 +2,6 @@ package com.antivocale.app.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -33,14 +31,17 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
+import com.antivocale.app.ui.AppNavigation
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 import com.antivocale.app.util.ToastCompat
-import com.antivocale.app.ui.components.SubPageScaffold
+import com.antivocale.app.ui.components.SubPageScrollScaffold
 
 @Composable
 fun PromptSettingsScreen(
     viewModel: SettingsViewModel,
+    initialScroll: AppNavigation.ScrollRequest? = null,
+    onScrollConsumed: () -> Unit = {},
     onBack: () -> Unit
 ) {
     val defaultPrompt by viewModel.defaultPrompt.collectAsState()
@@ -51,17 +52,12 @@ fun PromptSettingsScreen(
         promptInput = defaultPrompt
     }
 
-    SubPageScaffold(
+    SubPageScrollScaffold(
         titleRes = R.string.default_prompt_title,
         onBack = onBack,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+        scrollRequest = initialScroll,
+        onScrollConsumed = onScrollConsumed,
+    ) { _ ->
             // Description
             Text(
                 text = stringResource(R.string.default_prompt_description),
@@ -213,6 +209,5 @@ fun PromptSettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-        }
     }
 }

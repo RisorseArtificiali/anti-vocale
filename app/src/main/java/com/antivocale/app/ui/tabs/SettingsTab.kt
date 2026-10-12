@@ -105,7 +105,7 @@ import com.antivocale.app.ui.screens.LauncherIconScreen
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.screens.PromptSettingsScreen
 import com.antivocale.app.ui.components.SettingsHubCard
-import com.antivocale.app.ui.components.SubPageScaffold
+import com.antivocale.app.ui.components.SubPageScrollScaffold
 import com.antivocale.app.ui.screens.SpeakerSettingsScreen
 import com.antivocale.app.ui.screens.PerformanceSettingsScreen
 import com.antivocale.app.ui.screens.AutomationSettingsScreen
@@ -195,6 +195,9 @@ fun SettingsTab(
     // TASK-625 deep-link carrier: the memory-failure notification action
     // opens the performance page with focus on its card (2026-09-30 regroup).
     var performanceFocusMemoryProtection by remember { mutableStateOf(false) }
+    // TASK-815: the programmatic scroll riding a sub-page nav request,
+    // same consume-once discipline as the focus flag above it.
+    var pendingSubPageScroll by remember { mutableStateOf<AppNavigation.ScrollRequest?>(null) }
 
     // TASK-542 (GH #98): live settings search. Blank = the normal tab.
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -221,6 +224,7 @@ fun SettingsTab(
         when (val dest = request.destination) {
             is AppNavigation.Destination.SettingsSubPage -> {
                 closeSubPages()
+                pendingSubPageScroll = request.scroll
                 when (dest.key) {
                     "icon_picker" -> showIconSettings = true
                     "prompt" -> showPromptSettings = true
@@ -352,6 +356,8 @@ fun SettingsTab(
     } else if (showIconSettings) {
         LauncherIconScreen(
             viewModel = viewModel,
+            initialScroll = pendingSubPageScroll,
+            onScrollConsumed = { pendingSubPageScroll = null },
             onBack = { showIconSettings = false }
         )
     } else if (showExportSettings) {
@@ -360,17 +366,23 @@ fun SettingsTab(
         ExportSettingsScreen(
             viewModel = viewModel,
             outputFolderUri = outputFolderUri,
+            initialScroll = pendingSubPageScroll,
+            onScrollConsumed = { pendingSubPageScroll = null },
             onBack = { showExportSettings = false }
         )
     } else if (showPromptSettings) {
         PromptSettingsScreen(
             viewModel = viewModel,
+            initialScroll = pendingSubPageScroll,
+            onScrollConsumed = { pendingSubPageScroll = null },
             onBack = { showPromptSettings = false }
         )
     } else if (showSpeakerSettings) {
         SpeakerSettingsScreen(
             viewModel = viewModel,
             speakerIdEnabled = speakerIdEnabled,
+            initialScroll = pendingSubPageScroll,
+            onScrollConsumed = { pendingSubPageScroll = null },
             onBack = { showSpeakerSettings = false }
         )
     } else if (showPerformanceSettings) {
@@ -378,11 +390,15 @@ fun SettingsTab(
             viewModel = viewModel,
             focusMemoryProtection = performanceFocusMemoryProtection,
             onFocusConsumed = { performanceFocusMemoryProtection = false },
+            initialScroll = pendingSubPageScroll,
+            onScrollConsumed = { pendingSubPageScroll = null },
             onBack = { showPerformanceSettings = false },
         )
     } else if (showAutomationSettings) {
         AutomationSettingsScreen(
             viewModel = viewModel,
+            initialScroll = pendingSubPageScroll,
+            onScrollConsumed = { pendingSubPageScroll = null },
             onBack = { showAutomationSettings = false },
         )
     } else {
@@ -3806,21 +3822,22 @@ internal fun rememberOutputFolderPickerLauncher(
 fun ExportSettingsScreen(
     viewModel: SettingsViewModel,
     outputFolderUri: String?,
+    initialScroll: AppNavigation.ScrollRequest? = null,
+    onScrollConsumed: () -> Unit = {},
     onBack: () -> Unit,
 ) {
     val outputFolderLauncher = rememberOutputFolderPickerLauncher(viewModel, "ExportSettings")
     val transcriptExportFormat by viewModel.transcriptExportFormat.collectAsState()
 
-    SubPageScaffold(
+    SubPageScrollScaffold(
         titleRes = R.string.export_settings_title,
         onBack = onBack,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-        ) {
+        scrollRequest = initialScroll,
+        onScrollConsumed = onScrollConsumed,
+        // The old body had no Arrangement: its gap is the explicit 12dp
+        // Spacer, not the shared 16dp rhythm.
+        bodySpacing = Arrangement.Top,
+    ) { _ ->
             // The two cards, verbatim from the inline transcription section
             OutputFolderSettingCard(
                 outputFolderUri = outputFolderUri,
@@ -3846,7 +3863,6 @@ fun ExportSettingsScreen(
                     enabled = outputFolderUri != null
                 )
             }
-        }
     }
 }
 

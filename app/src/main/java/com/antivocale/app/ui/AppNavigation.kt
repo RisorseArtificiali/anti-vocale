@@ -26,11 +26,70 @@ object AppNavigation {
      * (a guard remembered inside the consumer would die with the tab under
      * Crossfade and replay - found by review, 2026-09-12).
      */
-    data class NavRequest(val destination: Destination, val seq: Long) {
+    data class NavRequest(val destination: Destination, val seq: Long, val scroll: ScrollRequest? = null) {
         companion object {
-            fun next(destination: Destination) = NavRequest(destination, seqCounter.incrementAndGet())
+            fun next(destination: Destination, scrollDirective: ScrollDirective? = null) =
+                NavRequest(destination, seqCounter.incrementAndGet(),
+                    scrollDirective?.let { ScrollRequest(it, seqCounter.incrementAndGet()) })
         }
     }
+
+    /**
+     * TASK-815: the programmatic scroll a nav request may carry (device
+     * trials must not emulate touch swipes). The directive is the WHAT; the
+     * seq makes the same directive twice two distinct requests so the
+     * consumer's LaunchedEffect refires.
+     */
+    data class ScrollRequest(val directive: ScrollDirective, val seq: Long)
+
+    /** The scroll shapes a page can execute. */
+    sealed class ScrollDirective {
+        data object ToTop : ScrollDirective()
+        data object ToBottom : ScrollDirective()
+        /** Positive scrolls down; [viewports] is in page-height units. */
+        data class ByViewports(val viewports: Float) : ScrollDirective()
+    }
+
+    /**
+     * Parses the SPI `scroll` extra: "top", "bottom", or a signed integer
+     * viewport count ("+2", "-1", "1"). Null on anything else (the receiver
+     * turns that into the SPI error contract, never a silent no-op).
+     */
+    fun parseScrollSpec(raw: String?): ScrollDirective? = when {
+        raw == null -> null
+        raw == "top" -> ScrollDirective.ToTop
+        raw == "bottom" -> ScrollDirective.ToBottom
+        // toIntOrNull, not toFloatOrNull: the documented contract is a
+        // signed INTEGER viewport count; "1.5" and "1e1" are typos to name,
+        // not half-viewport scrolls to run.
+        else -> raw.toIntOrNull()?.let {
+            if (it == 0 || it !in -50..50) null else ScrollDirective.ByViewports(it.toFloat())
+        }
+    }
+
+    /**
+     * Destinations whose page owns a programmatic scroll target (the
+     * SubPageScrollScaffold bodies). Everything else (the tab roots and the
+     * per-app page's LazyColumn) is out of scope for v1 and answers the SPI
+     * error contract when a scroll extra targets it.
+     */
+    fun isScrollableDest(destination: Destination): Boolean = when (destination) {
+        is Destination.SettingsSubPage -> destination.key != SUBPAGE_KEY_PER_APP
+        is Destination.ModelTarget -> destination.key == MODEL_KEY_GEMMA
+        else -> false
+    }
+
+    /**
+     * The scrollable destinations as tokens, for the SPI's error message:
+     * one source with [isScrollableDest] so the message cannot drift from
+     * the validation.
+     */
+    fun scrollableDestTokens(): List<String> =
+        SUBPAGE_KEYS.filter { it != SUBPAGE_KEY_PER_APP }.map { "settings:$it" } +
+            "models:$MODEL_KEY_GEMMA"
+
+    /** The one non-scrollable sub-page key: its body is a LazyColumn. */
+    const val SUBPAGE_KEY_PER_APP = "per_app"
 
     /** Settings sections reachable by key (single source for parser + UI). */
     val SECTION_KEYS = setOf("transcription", "appearance", "advanced", "feedback")
