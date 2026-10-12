@@ -3,9 +3,7 @@ package com.antivocale.app.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -25,7 +23,7 @@ import com.antivocale.app.ui.viewmodel.SettingsViewModel
 import com.antivocale.app.ui.tabs.SpeakerIdentitiesCard
 import com.antivocale.app.ui.components.SettingsHubCard
 import com.antivocale.app.ui.components.ToggleSettingCard
-import com.antivocale.app.ui.components.SettingsSubPageHeader
+import com.antivocale.app.ui.components.SubPageScaffold
 
 /**
  * The diarization secondary page (maintainer decision 2026-09-30: related
@@ -50,31 +48,34 @@ fun SpeakerSettingsScreen(
     val speakerLabelsTitle = stringResource(R.string.speaker_labels_title)
     val speakerLabelsSummary = stringResource(R.string.speaker_labels_description)
 
-    // TASK-748: the sub-pages' shared chrome (plain Column + back-header
-    // Row, no Scaffold); the host tab already applies the status-bar inset.
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    // TASK-752: the shared sub-page scaffold owns the nav-bar inset and
+    // the header at the standard margin; this body only owns its scroll.
+    SubPageScaffold(
+        titleRes = R.string.speaker_settings_title,
+        onBack = onBack,
     ) {
-        SettingsSubPageHeader(titleRes = R.string.speaker_settings_title, onBack = onBack)
-        ToggleSettingCard(
-            icon = Icons.Default.RecordVoiceOver,
-            title = speakerLabelsTitle,
-            description = speakerLabelsSummary,
-            checked = speakerLabelsEnabled,
-            onCheckedChange = { enabled ->
-                viewModel.saveSpeakerLabelsEnabled(enabled)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            ToggleSettingCard(
+                icon = Icons.Default.RecordVoiceOver,
+                title = speakerLabelsTitle,
+                description = speakerLabelsSummary,
+                checked = speakerLabelsEnabled,
+                onCheckedChange = { enabled ->
+                    viewModel.saveSpeakerLabelsEnabled(enabled)
+                }
+            )
+            // TASK-670 (GH #83): named speaker identities, still gated by
+            // the default-off privacy gate; the gate's flag is threaded
+            // from the tab so the visibility rule is unchanged.
+            if (speakerIdEnabled) {
+                SpeakerIdentitiesCard(viewModel)
             }
-        )
-        // TASK-670 (GH #83): named speaker identities, still gated by
-        // the default-off privacy gate; the gate's flag is threaded
-        // from the tab so the visibility rule is unchanged.
-        if (speakerIdEnabled) {
-            SpeakerIdentitiesCard(viewModel)
         }
     }
 }

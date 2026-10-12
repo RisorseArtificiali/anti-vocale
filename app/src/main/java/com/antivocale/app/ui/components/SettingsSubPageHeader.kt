@@ -2,10 +2,14 @@ package com.antivocale.app.ui.components
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -29,9 +33,10 @@ import com.antivocale.app.R
  * composable also gives the header a recompose scope separate from the
  * screen root (PerApp re-rendered its header on every list-row tap).
  *
- * The caller owns insets and outer padding: most pages embed this as the
- * first child of their padded scroll Column with the default
- * fillMaxWidth; PerApp, whose body is a LazyColumn, pads it itself.
+ * TASK-752: [SubPageScaffold] is this component's only caller and owns
+ * the insets, the outer margin, and the PINNED placement (the header does
+ * not scroll away with a page's content); new sub-pages go through the
+ * scaffold, never hand-embed the header.
  *
  * The STATUS-BAR inset is owned one level higher still: the host
  * MainScreen Column already applies statusBarsPadding for every tab
@@ -63,5 +68,46 @@ fun SettingsSubPageHeader(
         )
         Spacer(modifier = Modifier.weight(1f))
         actions()
+    }
+}
+
+/**
+ * TASK-752: the ONE sub-page root (settings pages and the ModelTab Gemma
+ * page; navigation-bar inset + the
+ * shared header at the standard 16dp margin + a free-form body slot),
+ * replacing the seven hand-rolled root chains that had drifted into three
+ * different header-padding value sets (and LauncherIcon's own 4/8
+ * alignment). The one header-alignment rule (the 749 F2 question): the
+ * back glyph sits at the page margin on every page alike - IconButton's
+ * internal 12dp inset is the only extra indent, the tighter Launcher
+ * override is gone.
+ *
+ * The body slot stays the page's concern: scroll Column (with or without a
+ * captured scroll state), LazyColumn under a Box, plain Column. Body
+ * containers pad themselves on start/end/bottom; the header's bottom
+ * margin is the single header-to-content gap, so a body must NOT add a
+ * top padding of its own. The status-bar inset is still owned one level
+ * higher by the host MainScreen Column (see [SettingsSubPageHeader]).
+ */
+@Composable
+fun SubPageScaffold(
+    @StringRes titleRes: Int,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    headerActions: @Composable RowScope.() -> Unit = {},
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .navigationBarsPadding(),
+    ) {
+        SettingsSubPageHeader(
+            titleRes = titleRes,
+            onBack = onBack,
+            modifier = Modifier.padding(16.dp),
+            actions = headerActions,
+        )
+        content()
     }
 }

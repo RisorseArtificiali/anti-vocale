@@ -105,7 +105,7 @@ import com.antivocale.app.ui.screens.LauncherIconScreen
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.screens.PromptSettingsScreen
 import com.antivocale.app.ui.components.SettingsHubCard
-import com.antivocale.app.ui.components.SettingsSubPageHeader
+import com.antivocale.app.ui.components.SubPageScaffold
 import com.antivocale.app.ui.screens.SpeakerSettingsScreen
 import com.antivocale.app.ui.screens.PerformanceSettingsScreen
 import com.antivocale.app.ui.screens.AutomationSettingsScreen
@@ -3808,47 +3808,45 @@ fun ExportSettingsScreen(
     outputFolderUri: String?,
     onBack: () -> Unit,
 ) {
-    val context = LocalContext.current
     val outputFolderLauncher = rememberOutputFolderPickerLauncher(viewModel, "ExportSettings")
     val transcriptExportFormat by viewModel.transcriptExportFormat.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
+    SubPageScaffold(
+        titleRes = R.string.export_settings_title,
+        onBack = onBack,
     ) {
-        SettingsSubPageHeader(
-            titleRes = R.string.export_settings_title,
-            onBack = onBack,
-            modifier = Modifier.padding(vertical = 16.dp),
-        )
-
-        // The two cards, verbatim from the inline transcription section
-        OutputFolderSettingCard(
-            outputFolderUri = outputFolderUri,
-            onChoose = { outputFolderLauncher.launch(null) },
-            onClear = { viewModel.saveOutputFolderUri(null) }
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        SectionCard(
-            icon = Icons.Default.Subtitles,
-            title = stringResource(R.string.transcript_export_format_title),
-            description = stringResource(R.string.transcript_export_format_description)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
         ) {
-                val selectedFormat = SubtitleFormatter.Format.fromStored(transcriptExportFormat)
-                SettingsDropdown(
-                    currentValue = selectedFormat,
-                    options = SubtitleFormatter.Format.entries,
-                    currentValueDisplay = transcriptExportFormatLabel(selectedFormat),
-                    optionDisplay = { format -> transcriptExportFormatLabel(format) },
-                    onOptionSelected = { viewModel.saveTranscriptExportFormat(it.name) },
-                    label = stringResource(R.string.transcript_export_format_title),
-                    enabled = outputFolderUri != null
-                )
+
+            // The two cards, verbatim from the inline transcription section
+            OutputFolderSettingCard(
+                outputFolderUri = outputFolderUri,
+                onChoose = { outputFolderLauncher.launch(null) },
+                onClear = { viewModel.saveOutputFolderUri(null) }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SectionCard(
+                icon = Icons.Default.Subtitles,
+                title = stringResource(R.string.transcript_export_format_title),
+                description = stringResource(R.string.transcript_export_format_description)
+            ) {
+                    val selectedFormat = SubtitleFormatter.Format.fromStored(transcriptExportFormat)
+                    SettingsDropdown(
+                        currentValue = selectedFormat,
+                        options = SubtitleFormatter.Format.entries,
+                        currentValueDisplay = transcriptExportFormatLabel(selectedFormat),
+                        optionDisplay = { format -> transcriptExportFormatLabel(format) },
+                        onOptionSelected = { viewModel.saveTranscriptExportFormat(it.name) },
+                        label = stringResource(R.string.transcript_export_format_title),
+                        enabled = outputFolderUri != null
+                    )
+            }
         }
     }
 }

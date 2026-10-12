@@ -82,6 +82,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.antivocale.app.ui.components.CardTitleRow
 import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
+import com.antivocale.app.ui.components.SubPageScaffold
 import com.antivocale.app.ui.components.InfoIconButton
 import com.antivocale.app.ui.components.VariantOverflowMenu
 import com.antivocale.app.ui.components.LanguageFilterBar
@@ -946,95 +947,99 @@ fun ModelTab(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background,
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .navigationBarsPadding()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp),
+                // TASK-752: the shared sub-page scaffold (nav-bar inset,
+                // header pinned at the standard margin; like the five other
+                // folded scroll pages, this header used to scroll away with
+                // the content).
+                SubPageScaffold(
+                    // TASK-796: matches the entry card that opens this
+                    // page (gemma_entry_title, now "Gemma AI models");
+                    // the inner downloads section carries its own
+                    // download_models title.
+                    titleRes = R.string.gemma_entry_title,
+                    onBack = { showGemmaDownloads = false },
                 ) {
-                    com.antivocale.app.ui.components.SettingsSubPageHeader(
-                        // TASK-796: matches the entry card that opens this
-                        // page (gemma_entry_title, now "Gemma AI models");
-                        // the inner downloads section carries its own
-                        // download_models title.
-                        titleRes = R.string.gemma_entry_title,
-                        onBack = { showGemmaDownloads = false },
-                    )
-                    if (visibleGemmaVariants.isNotEmpty()) {
-                        ModelDownloadSection(
-                            viewModel = viewModel,
-                            context = context,
-                            onNavigateToSettings = onNavigateToSettings,
-                            activeModelName = uiState.modelName,
-                            visibleVariants = visibleGemmaVariants,
-                            guardedModelSwitch = { it() },
-                            onInfoClick = { modelInfoVariant = it },
-                        )
-                    }
-                    // SAF (OpenDocument) grants its own URI access, no storage permission
-                    // needed (TASK-301). TASK-746: the downloads live with this card.
-                    // TASK-796 (maintainer design review): moved INTO the Gemma
-                    // sub-page, so the Advanced surface shows one Gemma entry and
-                    // this page owns the whole Gemma world.
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            CardTitleRow(
-                                icon = Icons.Default.Memory,
-                                // TASK-779: was the hardcoded "LiteRT-LM", jargon
-                                // to anyone outside the project.
-                                title = stringResource(R.string.litert_card_title),
-                                iconTint = MaterialTheme.colorScheme.onSurfaceVariant
+                        if (visibleGemmaVariants.isNotEmpty()) {
+                            ModelDownloadSection(
+                                viewModel = viewModel,
+                                context = context,
+                                onNavigateToSettings = onNavigateToSettings,
+                                activeModelName = uiState.modelName,
+                                visibleVariants = visibleGemmaVariants,
+                                guardedModelSwitch = { it() },
+                                onInfoClick = { modelInfoVariant = it },
                             )
-                            // TASK-796 trial round 2 (maintainer): the card
-                            // states what it is for before the buttons.
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                stringResource(R.string.litert_card_description),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                        // SAF (OpenDocument) grants its own URI access, no storage permission
+                        // needed (TASK-301). TASK-746: the downloads live with this card.
+                        // TASK-796 (maintainer design review): moved INTO the Gemma
+                        // sub-page, so the Advanced surface shows one Gemma entry and
+                        // this page owns the whole Gemma world.
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
                             )
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                CardTitleRow(
+                                    icon = Icons.Default.Memory,
+                                    // TASK-779: was the hardcoded "LiteRT-LM", jargon
+                                    // to anyone outside the project.
+                                    title = stringResource(R.string.litert_card_title),
+                                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                // TASK-796 trial round 2 (maintainer): the card
+                                // states what it is for before the buttons.
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    stringResource(R.string.litert_card_description),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
 
-                            Spacer(modifier = Modifier.height(8.dp))
-                            OutlinedButton(
-                                onClick = { viewModel.openFilePicker() },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                ImportActionLabel(Icons.Default.FolderOpen, R.string.select_model_from_device)
-                            }
-                            OutlinedButton(
-                                onClick = { showLitertLmUrlDialog = true },
-                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                enabled = !uiState.litertLmImporting
-                            ) {
-                                ImportActionLabel(Icons.Default.CloudDownload, R.string.litertlm_import_from_url)
-                            }
-                            if (uiState.litertLmImporting) {
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                OutlinedButton(
+                                    onClick = { viewModel.openFilePicker() },
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(20.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                    // TASK-384: spinner alone is silent for talkback users
-                                    Text(
-                                        stringResource(R.string.litertlm_importing),
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
+                                    ImportActionLabel(Icons.Default.FolderOpen, R.string.select_model_from_device)
+                                }
+                                OutlinedButton(
+                                    onClick = { showLitertLmUrlDialog = true },
+                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                    enabled = !uiState.litertLmImporting
+                                ) {
+                                    ImportActionLabel(Icons.Default.CloudDownload, R.string.litertlm_import_from_url)
+                                }
+                                if (uiState.litertLmImporting) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                        // TASK-384: spinner alone is silent for talkback users
+                                        Text(
+                                            stringResource(R.string.litertlm_importing),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(200.dp))
+                        Spacer(modifier = Modifier.height(200.dp))
+                    }
                 }
             }
         }

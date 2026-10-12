@@ -36,7 +36,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import com.antivocale.app.ui.components.SettingsSubPageHeader
+import com.antivocale.app.ui.components.SubPageScaffold
 import androidx.compose.ui.text.font.FontWeight
 
 /**
@@ -123,34 +123,29 @@ fun PerAppSettingsScreen(
         preferencesState[packageName]
     }
 
-    // The sub-pages' idiom (back-header Row, add action trailing). No
-    // verticalScroll here: the body is a LazyColumn, and a scrollable
+    // No verticalScroll here: the body is a LazyColumn, and a scrollable
     // parent measuring it with infinite height crashes at composition.
-    Box {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .navigationBarsPadding()
-        ) {
-            SettingsSubPageHeader(
-                titleRes = R.string.per_app_settings_title,
-                onBack = onBack,
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp),
-                actions = {
-                    IconButton(onClick = { showAddAppDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = stringResource(R.string.add_app)
-                        )
-                    }
-                },
-            )
+    // TASK-752: the scaffold owns the nav-bar inset and the header margin.
+    SubPageScaffold(
+        titleRes = R.string.per_app_settings_title,
+        onBack = onBack,
+        headerActions = {
+            IconButton(onClick = { showAddAppDialog = true }) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(R.string.add_app)
+                )
+            }
+        },
+    ) {
+        // One Box is needed for the snackbar overlay (bottom-center over
+        // the list).
+        Box(modifier = Modifier.fillMaxSize()) {
             if (isLoading) {
                 // Loading state
                 Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                        .fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -164,10 +159,8 @@ fun PerAppSettingsScreen(
             } else {
                 // Preferences loaded
                 LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentPadding = PaddingValues(16.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
@@ -306,66 +299,66 @@ fun PerAppSettingsScreen(
                     }
                 }
             }
-        }
 
-        // Settings panel for selected app
-        if (selectedApp != null && selectedPrefs != null) {
-            val (packageName, appName) = selectedApp!!
+            // Settings panel for selected app
+            if (selectedApp != null && selectedPrefs != null) {
+                val (packageName, appName) = selectedApp!!
 
-            AppPreferencePanel(
-                packageName = packageName,
-                appName = appName,
-                autoCopy = selectedPrefs.autoCopy,
-                showShareAction = selectedPrefs.showShareAction,
-                quickShareBack = selectedPrefs.quickShareBack,
-                notificationSound = selectedPrefs.notificationSound,
-                onAutoCopyChanged = { enabled ->
-                    scope.launch {
-                        preferencesManager.updatePreferencesForPackage(packageName) {
-                            copy(autoCopy = enabled)
+                AppPreferencePanel(
+                    packageName = packageName,
+                    appName = appName,
+                    autoCopy = selectedPrefs.autoCopy,
+                    showShareAction = selectedPrefs.showShareAction,
+                    quickShareBack = selectedPrefs.quickShareBack,
+                    notificationSound = selectedPrefs.notificationSound,
+                    onAutoCopyChanged = { enabled ->
+                        scope.launch {
+                            preferencesManager.updatePreferencesForPackage(packageName) {
+                                copy(autoCopy = enabled)
+                            }
+                        }
+                    },
+                    onShowShareActionChanged = { enabled ->
+                        scope.launch {
+                            preferencesManager.updatePreferencesForPackage(packageName) {
+                                copy(showShareAction = enabled)
+                            }
+                        }
+                    },
+                    onQuickShareBackChanged = { enabled ->
+                        scope.launch {
+                            preferencesManager.updatePreferencesForPackage(packageName) {
+                                copy(quickShareBack = enabled)
+                            }
+                        }
+                    },
+                    onNotificationSoundChanged = { sound ->
+                        scope.launch {
+                            preferencesManager.updatePreferencesForPackage(packageName) {
+                                copy(notificationSound = sound)
+                            }
+                        }
+                    },
+                    onDismiss = { selectedApp = null },
+                    onResetToDefaults = {
+                        scope.launch {
+                            preferencesManager.clearPreferencesForPackage(packageName)
+                            selectedApp = null
+                            snackbarHostState.showSnackbar(
+                                message = resetDoneMessage
+                            )
                         }
                     }
-                },
-                onShowShareActionChanged = { enabled ->
-                    scope.launch {
-                        preferencesManager.updatePreferencesForPackage(packageName) {
-                            copy(showShareAction = enabled)
-                        }
-                    }
-                },
-                onQuickShareBackChanged = { enabled ->
-                    scope.launch {
-                        preferencesManager.updatePreferencesForPackage(packageName) {
-                            copy(quickShareBack = enabled)
-                        }
-                    }
-                },
-                onNotificationSoundChanged = { sound ->
-                    scope.launch {
-                        preferencesManager.updatePreferencesForPackage(packageName) {
-                            copy(notificationSound = sound)
-                        }
-                    }
-                },
-                onDismiss = { selectedApp = null },
-                onResetToDefaults = {
-                    scope.launch {
-                        preferencesManager.clearPreferencesForPackage(packageName)
-                        selectedApp = null
-                        snackbarHostState.showSnackbar(
-                            message = resetDoneMessage
-                        )
-                    }
-                }
+                )
+            }
+
+            // No own navigationBarsPadding: the scaffold root already applies
+            // and consumes it for descendants (TASK-752).
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter)
             )
-        }
-
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-        )
+            }
     }
 
     // Reset All confirmation dialog

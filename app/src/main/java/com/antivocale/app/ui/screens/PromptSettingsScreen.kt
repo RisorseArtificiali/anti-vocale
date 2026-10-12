@@ -36,7 +36,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 import com.antivocale.app.util.ToastCompat
-import com.antivocale.app.ui.components.SettingsSubPageHeader
+import com.antivocale.app.ui.components.SubPageScaffold
 
 @Composable
 fun PromptSettingsScreen(
@@ -51,166 +51,168 @@ fun PromptSettingsScreen(
         promptInput = defaultPrompt
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    SubPageScaffold(
+        titleRes = R.string.default_prompt_title,
+        onBack = onBack,
     ) {
-        SettingsSubPageHeader(titleRes = R.string.default_prompt_title, onBack = onBack)
-
-        // Description
-        Text(
-            text = stringResource(R.string.default_prompt_description),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        // Current default info
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = MaterialTheme.shapes.small
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            // Description
+            Text(
+                text = stringResource(R.string.default_prompt_description),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Current default info
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = MaterialTheme.shapes.small
             ) {
-                Text(
-                    text = stringResource(R.string.current_default_prompt_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = defaultPrompt.ifEmpty { stringResource(R.string.builtin_default_prompt) },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontStyle = if (defaultPrompt.isEmpty()) FontStyle.Italic else FontStyle.Normal
-                )
-            }
-        }
-
-        // Compatibility info banner
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-            shape = MaterialTheme.shapes.small
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    text = stringResource(R.string.default_prompt_compatibility_info),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-
-        // Prompt input field
-        OutlinedTextField(
-            value = promptInput,
-            onValueChange = { newValue ->
-                if (newValue.length <= PreferencesManager.PROMPT_CAP) {
-                    promptInput = newValue
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.default_prompt_placeholder)) },
-            minLines = 3,
-            maxLines = 6,
-            supportingText = {
-                Text(
-                    text = stringResource(R.string.default_prompt_chars, promptInput.length),
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.End
-                )
-            },
-            trailingIcon = {
-                if (promptInput != defaultPrompt) {
-                    IconButton(onClick = {
-                        viewModel.saveDefaultPrompt(promptInput)
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = stringResource(R.string.save)
-                        )
-                    }
-                }
-            }
-        )
-
-        HorizontalDivider()
-
-        // Example Prompts Section
-        Text(
-            text = stringResource(R.string.example_prompts_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = stringResource(R.string.example_prompts_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        val examplePrompts = listOf(
-            R.string.example_prompt_transcribe,
-            R.string.example_prompt_summarize,
-            R.string.example_prompt_formal,
-            R.string.example_prompt_translate_en,
-            R.string.example_prompt_translate_it,
-            R.string.example_prompt_notes
-        )
-
-        examplePrompts.forEach { promptResId ->
-            val promptText = stringResource(promptResId)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        promptInput = promptText
-                        viewModel.saveDefaultPrompt(promptText)
-                        ToastCompat.show(context, R.string.prompt_applied)
-                    },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (defaultPrompt == promptText)
-                        MaterialTheme.colorScheme.primaryContainer
-                    else
-                        MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Row(
+                Column(
                     modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    if (defaultPrompt == promptText) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
                     Text(
-                        text = promptText,
+                        text = stringResource(R.string.current_default_prompt_label),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = defaultPrompt.ifEmpty { stringResource(R.string.builtin_default_prompt) },
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f)
+                        fontStyle = if (defaultPrompt.isEmpty()) FontStyle.Italic else FontStyle.Normal
                     )
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(32.dp))
+            // Compatibility info banner
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                shape = MaterialTheme.shapes.small
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Text(
+                        text = stringResource(R.string.default_prompt_compatibility_info),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+
+            // Prompt input field
+            OutlinedTextField(
+                value = promptInput,
+                onValueChange = { newValue ->
+                    if (newValue.length <= PreferencesManager.PROMPT_CAP) {
+                        promptInput = newValue
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text(stringResource(R.string.default_prompt_placeholder)) },
+                minLines = 3,
+                maxLines = 6,
+                supportingText = {
+                    Text(
+                        text = stringResource(R.string.default_prompt_chars, promptInput.length),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.End
+                    )
+                },
+                trailingIcon = {
+                    if (promptInput != defaultPrompt) {
+                        IconButton(onClick = {
+                            viewModel.saveDefaultPrompt(promptInput)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = stringResource(R.string.save)
+                            )
+                        }
+                    }
+                }
+            )
+
+            HorizontalDivider()
+
+            // Example Prompts Section
+            Text(
+                text = stringResource(R.string.example_prompts_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = stringResource(R.string.example_prompts_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            val examplePrompts = listOf(
+                R.string.example_prompt_transcribe,
+                R.string.example_prompt_summarize,
+                R.string.example_prompt_formal,
+                R.string.example_prompt_translate_en,
+                R.string.example_prompt_translate_it,
+                R.string.example_prompt_notes
+            )
+
+            examplePrompts.forEach { promptResId ->
+                val promptText = stringResource(promptResId)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            promptInput = promptText
+                            viewModel.saveDefaultPrompt(promptText)
+                            ToastCompat.show(context, R.string.prompt_applied)
+                        },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (defaultPrompt == promptText)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        if (defaultPrompt == promptText) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            text = promptText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
     }
 }
