@@ -746,7 +746,19 @@ fun ModelTab(
             // AppNavigation KDoc's release-posture contract false.
             val request = navRequest ?: return@LaunchedEffect
             if (request.destination is AppNavigation.Destination.ModelTarget) {
-                advancedExpanded = true
+                // TASK-752 follow-up (maintainer directive: every reachable
+                // surface gets an SPI nav token): models:gemma consumes HERE
+                // and opens the Gemma sub-page, which overlays the tab and
+                // needs the Advanced section neither to open nor to render
+                // (expanding here would leak a state change on back-out).
+                // models:import stays consumed one level down and expands
+                // Advanced because the catalog dialog only composes then.
+                if (request.destination.key == AppNavigation.MODEL_KEY_GEMMA) {
+                    onNavConsumed()
+                    showGemmaDownloads = true
+                } else {
+                    advancedExpanded = true
+                }
             }
         }
         // TASK-746 (review F1): the Gemma downloads now live behind this
@@ -2025,9 +2037,11 @@ private fun ExternalModelsSection(
     // manual collapse/re-expand of Advanced cannot resurrect the request.
     LaunchedEffect(navRequest) {
         val request = navRequest ?: return@LaunchedEffect
-        onNavConsumed()
         if (request.destination is AppNavigation.Destination.ModelTarget) {
-            urlDialogOpen = true
+            onNavConsumed()
+            if (request.destination.key == AppNavigation.MODEL_KEY_IMPORT) {
+                urlDialogOpen = true
+            }
         }
     }
     var dropdownExpanded by remember { mutableStateOf(false) }

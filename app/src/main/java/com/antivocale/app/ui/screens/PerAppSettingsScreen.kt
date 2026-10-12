@@ -358,7 +358,7 @@ fun PerAppSettingsScreen(
                 hostState = snackbarHostState,
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
-            }
+        }
     }
 
     // Reset All confirmation dialog

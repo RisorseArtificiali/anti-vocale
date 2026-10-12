@@ -26,6 +26,10 @@ class AppNavigationTest {
         assertEquals(
             AppNavigation.Destination.ModelTarget("import"),
             AppNavigation.parse("models:import"))
+        // TASK-752 follow-up: the Gemma sub-page is SPI-reachable too.
+        assertEquals(
+            AppNavigation.Destination.ModelTarget("gemma"),
+            AppNavigation.parse("models:gemma"))
     }
 
     @Test
@@ -48,7 +52,7 @@ class AppNavigationTest {
         // a UI rename without a parser update (or the reverse) fails here.
         assertEquals(setOf("transcription", "appearance", "advanced", "feedback"), AppNavigation.SECTION_KEYS)
         assertEquals(setOf("icon_picker", "prompt", "per_app", "export", "speaker", "performance", "automation"), AppNavigation.SUBPAGE_KEYS)
-        assertEquals(setOf("import"), AppNavigation.MODEL_KEYS)
+        assertEquals(setOf("import", "gemma"), AppNavigation.MODEL_KEYS)
         assertEquals(listOf("history", "models", "settings"), AppNavigation.TAB_KEYS)
         // TASK-617 F2: the derived indices pin the TabRow ORDER, not just
         // membership; the load-time check in AppNavigation catches absence,

@@ -55,7 +55,13 @@ object AppNavigation {
         }
 
     /** Models-tab targets reachable by key (single source for parser + UI). */
-    val MODEL_KEYS = setOf("import")
+    /** TASK-752 follow-up: pinned literals; ModelTab dispatches on these
+     *  exact constants (a drifted literal there would navigate nowhere,
+     *  silently - the class the export key's KDoc warns about). */
+    const val MODEL_KEY_IMPORT = "import"
+    const val MODEL_KEY_GEMMA = "gemma"
+
+    val MODEL_KEYS = setOf(MODEL_KEY_IMPORT, MODEL_KEY_GEMMA)
 
     /** Main tabs by key, in TabRow order. */
     val TAB_KEYS = listOf("history", "models", "settings")

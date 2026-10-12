@@ -3821,7 +3821,6 @@ fun ExportSettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
         ) {
-
             // The two cards, verbatim from the inline transcription section
             OutputFolderSettingCard(
                 outputFolderUri = outputFolderUri,
@@ -3836,16 +3835,16 @@ fun ExportSettingsScreen(
                 title = stringResource(R.string.transcript_export_format_title),
                 description = stringResource(R.string.transcript_export_format_description)
             ) {
-                    val selectedFormat = SubtitleFormatter.Format.fromStored(transcriptExportFormat)
-                    SettingsDropdown(
-                        currentValue = selectedFormat,
-                        options = SubtitleFormatter.Format.entries,
-                        currentValueDisplay = transcriptExportFormatLabel(selectedFormat),
-                        optionDisplay = { format -> transcriptExportFormatLabel(format) },
-                        onOptionSelected = { viewModel.saveTranscriptExportFormat(it.name) },
-                        label = stringResource(R.string.transcript_export_format_title),
-                        enabled = outputFolderUri != null
-                    )
+                val selectedFormat = SubtitleFormatter.Format.fromStored(transcriptExportFormat)
+                SettingsDropdown(
+                    currentValue = selectedFormat,
+                    options = SubtitleFormatter.Format.entries,
+                    currentValueDisplay = transcriptExportFormatLabel(selectedFormat),
+                    optionDisplay = { format -> transcriptExportFormatLabel(format) },
+                    onOptionSelected = { viewModel.saveTranscriptExportFormat(it.name) },
+                    label = stringResource(R.string.transcript_export_format_title),
+                    enabled = outputFolderUri != null
+                )
             }
         }
     }

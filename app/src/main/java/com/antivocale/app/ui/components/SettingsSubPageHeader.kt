@@ -78,7 +78,7 @@ fun SettingsSubPageHeader(
  * replacing the seven hand-rolled root chains that had drifted into three
  * different header-padding value sets (and LauncherIcon's own 4/8
  * alignment). The one header-alignment rule (the 749 F2 question): the
- * back glyph sits at the page margin on every page alike - IconButton's
+ * back glyph sits at the page margin on every page alike; IconButton's
  * internal 12dp inset is the only extra indent, the tighter Launcher
  * override is gone.
  *

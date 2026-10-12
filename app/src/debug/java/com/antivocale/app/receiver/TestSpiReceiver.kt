@@ -88,7 +88,8 @@ class TestSpiReceiver : BroadcastReceiver() {
             if (com.antivocale.app.ui.AppNavigation.parse(dest) == null) {
                 return ack {
                     put("error", "unknown dest '$dest' (expected tab:history|models|settings, " +
-                        "models:import, settings:<section>, or settings:<subpage>)")
+                        "models:import, models:gemma, settings:<section>, " +
+                        "settings:<subpage>, or settings:<row>)")
                 }
             }
             context.startActivity(
