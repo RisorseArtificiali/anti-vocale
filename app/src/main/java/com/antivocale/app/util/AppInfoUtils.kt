@@ -70,6 +70,10 @@ object AppInfoUtils {
         KnownApp("org.telegram.plus", "Plus Messenger", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
         KnownApp("it.owlgram.android", "OwlGram", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
         KnownApp("com.iMe.android", "iMe", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
+        // Open Transcribe contract clients (TASK-812): both ids verified from
+        // their F-Droid package pages.
+        KnownApp("org.forkgram.messenger", "Forkgram", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
+        KnownApp("org.forkgram.classic", "Forkgram Classic", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
         KnownApp("org.telegram", null, PerAppPreferencesManager.TELEGRAM, byPrefix = true),
         // Standalone apps: Share Back returns to the exact source package.
         KnownApp(PerAppPreferencesManager.SIGNAL, "Signal"),

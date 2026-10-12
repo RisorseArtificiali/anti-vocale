@@ -38,6 +38,9 @@ class AppInfoUtilsKnownNamesTest {
         assertEquals("Nekogram", AppInfoUtils.knownAppName("tw.nekomimi.nekogram.beta"))
         assertEquals("exteraGram", AppInfoUtils.knownAppName("com.exteragram.messenger"))
         assertEquals("exteraGram", AppInfoUtils.knownAppName("com.exteragram.messenger.beta"))
+        assertEquals("Forkgram", AppInfoUtils.knownAppName("org.forkgram.messenger"))
+        assertEquals("Forkgram", AppInfoUtils.knownAppName("org.forkgram.messenger.beta"))
+        assertEquals("Forkgram Classic", AppInfoUtils.knownAppName("org.forkgram.classic"))
         assertEquals("Telegram X", AppInfoUtils.knownAppName("org.thunderdog.challegram"))
         assertEquals("Plus Messenger", AppInfoUtils.knownAppName("org.telegram.plus"))
         assertEquals("OwlGram", AppInfoUtils.knownAppName("it.owlgram.android"))
@@ -86,6 +89,8 @@ class AppInfoUtilsKnownNamesTest {
         assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("org.telegram.plus"))
         assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("it.owlgram.android"))
         assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("com.iMe.android"))
+        assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("org.forkgram.messenger"))
+        assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("org.forkgram.classic"))
         // Uncensused family members keep the pre-TASK-433 startsWith behavior.
         assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("org.telegram.BifToGram"))
     }
