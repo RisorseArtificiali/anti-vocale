@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.data.catalog.CatalogFile
 import com.antivocale.app.data.catalog.CatalogSource
 import com.antivocale.app.data.catalog.CatalogVariant
@@ -168,14 +169,5 @@ class SherpaBackendRolesTest {
     private fun parseRealCatalog() =
         ModelCatalogJson.parseCatalog(readRealAsset().readText())
 
-    private fun readRealAsset(): File {
-        val moduleRelative = File("src/main/assets/models_catalog.json")
-        val rootRelative = File("app/src/main/assets/models_catalog.json")
-        return when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException(
-                "Cannot locate models_catalog.json from ${File(".").absolutePath}")
-        }
-    }
+    private fun readRealAsset(): File = RepoFiles.resolve("src/main/assets/models_catalog.json")
 }

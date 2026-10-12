@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import android.content.Context
 import com.antivocale.app.R
 import com.antivocale.app.data.FakePreferencesManager
@@ -135,9 +136,7 @@ class BackendRegistryTest {
 
     /** The manifest's activity-alias android:name values, read from disk. */
     private fun readManifestShareAliases(): Set<String> {
-        val manifest = sequenceOf(File("src/main/AndroidManifest.xml"), File("app/src/main/AndroidManifest.xml"))
-            .firstOrNull { it.exists() }
-            ?: throw IllegalStateException("AndroidManifest.xml not found from ${File(".").absolutePath}")
+        val manifest = RepoFiles.resolve("src/main/AndroidManifest.xml")
         val factory = javax.xml.parsers.DocumentBuilderFactory.newInstance()
         val builder = factory.newDocumentBuilder()
         val nodes = builder.parse(manifest).getElementsByTagName("activity-alias")
@@ -386,9 +385,7 @@ class BackendRegistryTest {
      */
     @Test
     fun `static shortcuts pin the model-tab extra name and the MainActivity target`() {
-        val xml = sequenceOf(File("src/main/res/xml/static_shortcuts.xml"), File("app/src/main/res/xml/static_shortcuts.xml"))
-            .firstOrNull { it.exists() }
-            ?: throw IllegalStateException("static_shortcuts.xml not found from " + File(".").absolutePath)
+        val xml = RepoFiles.resolve("src/main/res/xml/static_shortcuts.xml")
         val builder = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder()
         val nodes = builder.parse(xml).getElementsByTagName("shortcut")
         val byId = (0 until nodes.length)

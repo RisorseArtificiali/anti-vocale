@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -11,7 +12,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.io.ByteArrayInputStream
-import java.io.File
 import io.mockk.every
 import io.mockk.mockk
 
@@ -30,11 +30,10 @@ class CountArgPolicyTest {
 
     @Before
     fun setUp() {
-        val asset = File("src/main/assets/models_catalog.json")
-            .takeIf { it.exists() } ?: File("app/src/main/assets/models_catalog.json")
+        val catalogJson = RepoFiles.readText("src/main/assets/models_catalog.json")
         val assetManager = mockk<android.content.res.AssetManager>(relaxed = true)
         every { assetManager.open(any()) } answers {
-            ByteArrayInputStream(asset.readText().toByteArray(Charsets.UTF_8))
+            ByteArrayInputStream(catalogJson.toByteArray(Charsets.UTF_8))
         }
         context = mockk(relaxed = true) {
             every { assets } returns assetManager

@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelSource
@@ -61,14 +62,7 @@ abstract class TranscriptionOrchestratorTestBase {
         // Managers/downloaders resolve model metadata through BundledCatalog; seed it
         // from the real asset (read from disk, same probing as BundledModelCatalogTest)
         // so no Android assets are needed in these non-Robolectric tests.
-        val moduleRelative = java.io.File("src/main/assets/models_catalog.json")
-        val rootRelative = java.io.File("app/src/main/assets/models_catalog.json")
-        val asset = when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException(
-                "Cannot locate models_catalog.json from ${java.io.File(".").absolutePath}")
-        }
+        val asset = RepoFiles.resolve("src/main/assets/models_catalog.json")
         com.antivocale.app.data.catalog.BundledCatalog.seed(
             com.antivocale.app.data.catalog.ModelCatalogJson.parseCatalog(asset.readText()))
 

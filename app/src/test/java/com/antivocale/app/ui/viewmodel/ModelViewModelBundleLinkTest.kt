@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.viewmodel
 
+import com.antivocale.app.testing.RepoFiles
 import android.app.Application
 import android.content.Context
 import android.net.Uri
@@ -82,11 +83,7 @@ class ModelViewModelBundleLinkTest {
         val appFilesDir = Files.createTempDirectory("bundle-link-files").toFile()
         val appCacheDir = Files.createTempDirectory("bundle-link-cache").toFile()
 
-        val realCatalogJson = run {
-            val asset = File("src/main/assets/models_catalog.json")
-                .takeIf { it.exists() } ?: File("app/src/main/assets/models_catalog.json")
-            asset.readText()
-        }
+        val realCatalogJson = RepoFiles.readText("src/main/assets/models_catalog.json")
         // The served catalog re-pins the gigaam files onto the fixture bytes:
         // the import's identity guard links only byte-identical bundles, and
         // the real pins hash the real 326MB weights no test can ship. The

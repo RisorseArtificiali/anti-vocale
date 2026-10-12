@@ -1,5 +1,6 @@
 package com.antivocale.app.data.catalog
 
+import com.antivocale.app.testing.RepoFiles
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -10,7 +11,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-import java.io.File
 import java.util.Locale
 
 /**
@@ -32,15 +32,9 @@ class Qwen3CatalogCountGuardTest {
         BundledCatalog.byId(BuiltInBackendIds.QWEN3_ASR)?.languages?.size
             ?: error("bundled catalog is missing qwen3-asr")
 
-    /** The shipped locale set, derived from values-* dirs (the FormattedResourcesPipelineTest idiom). */
+    /** The shipped locale set, derived from values-* dirs (the RepoFiles locator). */
     private fun shippedLocales(): List<String> {
-        val module = File("src/main/res")
-        val root = File("app/src/main/res")
-        val res = when {
-            module.exists() -> module
-            root.exists() -> root
-            else -> throw IllegalStateException("cannot locate src/main/res")
-        }
+        val res = RepoFiles.resolve("src/main/res")
         val localeShape = Regex("[a-z]{2,3}(-[A-Za-z0-9]{2,8})?")
         val tags = res.listFiles { f -> f.isDirectory }
             ?.map { it.name }

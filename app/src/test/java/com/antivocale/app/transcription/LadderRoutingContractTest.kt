@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,18 +16,8 @@ import java.io.File
  */
 class LadderRoutingContractTest {
 
-    private fun orchestratorSource(): File {
-        val moduleRelative =
-            File("src/main/java/com/antivocale/app/transcription/TranscriptionOrchestrator.kt")
-        val rootRelative =
-            File("app/src/main/java/com/antivocale/app/transcription/TranscriptionOrchestrator.kt")
-        return when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException(
-                "Cannot locate TranscriptionOrchestrator.kt from ${File(".").absolutePath}")
-        }
-    }
+    private fun orchestratorSource(): File =
+        RepoFiles.resolve("src/main/java/com/antivocale/app/transcription/TranscriptionOrchestrator.kt")
 
     @Test
     fun `every ladder call routes through recoverEmptyChunk`() {

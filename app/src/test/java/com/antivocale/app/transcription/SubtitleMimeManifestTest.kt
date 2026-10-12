@@ -1,6 +1,6 @@
 package com.antivocale.app.transcription
 
-import java.io.File
+import com.antivocale.app.testing.RepoFiles
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,9 +15,7 @@ class SubtitleMimeManifestTest {
 
     @Test
     fun `manifest subtitle SEND filters equal the code MIME set`() {
-        val manifest = sequenceOf(File("app/src/main/AndroidManifest.xml"), File("src/main/AndroidManifest.xml"))
-            .first { it.exists() }
-            .readText()
+        val manifest = RepoFiles.readText("src/main/AndroidManifest.xml")
         val manifestMimes = Regex("android:mimeType=\"([^\"]+)\"")
             .findAll(manifest)
             .map { it.groupValues[1] }

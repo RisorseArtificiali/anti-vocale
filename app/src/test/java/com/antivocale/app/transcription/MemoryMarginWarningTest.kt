@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import android.app.NotificationManager
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -41,7 +42,7 @@ class MemoryMarginWarningTest {
     fun setUp() {
         BundledCatalog.seed(
             ModelCatalogJson.parseCatalog(
-                java.io.File("src/main/assets/models_catalog.json").readText()))
+                RepoFiles.readText("src/main/assets/models_catalog.json")))
         context = ApplicationProvider.getApplicationContext()
         preferences = FakePreferencesManager()
         orchestrator = TranscriptionOrchestrator(

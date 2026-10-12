@@ -1,5 +1,6 @@
 package com.antivocale.app.util
 
+import com.antivocale.app.testing.RepoFiles
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -19,8 +20,7 @@ class StringFormatPlaceholdersTest {
 
     @Test
     fun `no string resource carries a positional placeholder without the dollar`() {
-        val resDir = java.io.File("src/main/res")
-            .let { if (it.isDirectory) it else java.io.File("app/src/main/res") }
+        val resDir = RepoFiles.resolve("src/main/res")
         val stringFiles = resDir.walkTopDown()
             .filter { it.isFile && it.parentFile?.name?.startsWith("values") == true && it.name == "strings.xml" }
             .toList()

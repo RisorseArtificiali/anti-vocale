@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.data.catalog.ModelCatalogJson
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -42,14 +43,5 @@ class ModelInfoProviderCatalogTest {
     private fun parseRealCatalog() =
         runCatching { ModelCatalogJson.parseCatalog(catalogAsset().readText()) }.getOrThrow()
 
-    private fun catalogAsset(): File {
-        val moduleRelative = File("src/main/assets/models_catalog.json")
-        val rootRelative = File("app/src/main/assets/models_catalog.json")
-        return when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException(
-                "Cannot locate models_catalog.json from ${File(".").absolutePath}")
-        }
-    }
+    private fun catalogAsset(): File = RepoFiles.resolve("src/main/assets/models_catalog.json")
 }

@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.viewmodel
 
+import com.antivocale.app.testing.RepoFiles
 import android.app.Application
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -72,11 +73,10 @@ class ModelViewModelDemotionTest {
         Dispatchers.setMain(testDispatcher)
         demoter = SilentModelDemoter(prefs)
 
-        val asset = File("src/main/assets/models_catalog.json")
-            .takeIf { it.exists() } ?: File("app/src/main/assets/models_catalog.json")
+        val catalogJson = RepoFiles.readText("src/main/assets/models_catalog.json")
         val assetManager = mockk<android.content.res.AssetManager>(relaxed = true)
         every { assetManager.open(any()) } answers {
-            ByteArrayInputStream(asset.readText().toByteArray(Charsets.UTF_8))
+            ByteArrayInputStream(catalogJson.toByteArray(Charsets.UTF_8))
         }
         val mockContext = mockk<Context>(relaxed = true) {
             every { filesDir } returns context.filesDir

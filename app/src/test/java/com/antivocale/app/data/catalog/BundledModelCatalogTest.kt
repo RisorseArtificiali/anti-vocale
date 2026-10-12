@@ -1,5 +1,6 @@
 package com.antivocale.app.data.catalog
 
+import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.R
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.Language
@@ -19,15 +20,7 @@ import org.junit.Test
  */
 class BundledModelCatalogTest {
 
-    private fun asset(): File {
-        val moduleRelative = File("src/main/assets/models_catalog.json")
-        val rootRelative = File("app/src/main/assets/models_catalog.json")
-        return when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException("Cannot locate models_catalog.json from ${File(".").absolutePath}")
-        }
-    }
+    private fun asset(): File = RepoFiles.resolve("src/main/assets/models_catalog.json")
 
     private fun catalog(): List<CatalogEntry> =
         ModelCatalogJson.parseCatalog(asset().readText())

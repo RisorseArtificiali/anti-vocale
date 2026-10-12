@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -100,13 +101,7 @@ class DualRefinementPolicyTest {
         // isStreaming, DualRefinementPolicy can only return null and the
         // whole feature silently no-ops. Pin the assumption against the real
         // asset (seeded by the test base like every orchestrator test).
-        val moduleRelative = java.io.File("src/main/assets/models_catalog.json")
-        val rootRelative = java.io.File("app/src/main/assets/models_catalog.json")
-        val asset = when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException("cannot locate models_catalog.json")
-        }
+        val asset = RepoFiles.resolve("src/main/assets/models_catalog.json")
         com.antivocale.app.data.catalog.BundledCatalog.seed(
             com.antivocale.app.data.catalog.ModelCatalogJson.parseCatalog(asset.readText()))
         val streaming = com.antivocale.app.data.catalog.BundledCatalog.entries()

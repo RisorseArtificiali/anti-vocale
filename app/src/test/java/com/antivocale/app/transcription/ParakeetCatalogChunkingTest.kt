@@ -1,10 +1,10 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.data.catalog.ModelCatalogJson
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.File
 
 /**
  * GH #44/#50: Parakeet TDT has a hard 400s attention cap (max_position_embeddings
@@ -15,13 +15,7 @@ import java.io.File
 class ParakeetCatalogChunkingTest {
 
     private fun catalog() {
-        val moduleRelative = File("src/main/assets/models_catalog.json")
-        val rootRelative = File("app/src/main/assets/models_catalog.json")
-        val asset = when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException("Cannot locate models_catalog.json")
-        }
+        val asset = RepoFiles.resolve("src/main/assets/models_catalog.json")
         BundledCatalog.seed(ModelCatalogJson.parseCatalog(asset.readText()))
     }
 

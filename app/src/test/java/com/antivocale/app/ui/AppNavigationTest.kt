@@ -1,6 +1,7 @@
 package com.antivocale.app.ui
 
 import com.antivocale.app.MainActivity
+import com.antivocale.app.testing.RepoFiles
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
@@ -100,19 +101,10 @@ class AppNavigationTest {
     }
 
     /**
-     * Dual-path source read (repo root or module subdirectory cwd), shared
-     * by the scans below. TASK-617 F8: names the cwd on failure, so a
-     * working-dir regression is diagnosable instead of a bare
-     * FileNotFoundException with no context.
+     * Source read shared by the scans below; the shared [RepoFiles]
+     * locator owns the resolution (and its cwd-naming failure contract).
      */
-    private fun sourceOf(relative: String): String {
-        val direct = java.io.File(relative)
-        val file = if (direct.isFile) direct else java.io.File("app/$relative")
-        check(file.isFile) {
-            "cannot locate '$relative' from cwd ${java.io.File(".").absolutePath}"
-        }
-        return file.readText()
-    }
+    private fun sourceOf(relative: String): String = RepoFiles.readText(relative)
 
     @Test
     fun `every section key is wired into the Settings UI`() {

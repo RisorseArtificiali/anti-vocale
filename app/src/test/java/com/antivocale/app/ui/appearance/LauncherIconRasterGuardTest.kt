@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.appearance
 
+import com.antivocale.app.testing.RepoFiles
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -36,12 +37,7 @@ class LauncherIconRasterGuardTest {
 
     private fun densityOf(file: File) = file.parentFile.name.removePrefix("mipmap-")
 
-    private fun resDir(): File {
-        val fromCwd = File("app/src/main/res")
-        if (fromCwd.isDirectory) return fromCwd
-        // Robolectric-layout runs land in app/; hop up to the module root.
-        return File("src/main/res")
-    }
+    private fun resDir(): File = RepoFiles.resolve("src/main/res")
 
     /** Lossless WebP (VP8L): RIFF..WEBP, chunk 'VP8L', 0x2f signature,
      *  then 14-bit little-endian width-1 and height-1. */

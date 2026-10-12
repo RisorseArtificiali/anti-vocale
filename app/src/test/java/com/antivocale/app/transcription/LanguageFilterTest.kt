@@ -1,7 +1,7 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.data.ModelDownloader
-import java.io.File
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -15,14 +15,7 @@ class LanguageFilterTest {
     fun setUp() {
         // Variants resolve through BundledCatalog; seed it from the real asset so no
         // Android assets are needed here.
-        val moduleRelative = File("src/main/assets/models_catalog.json")
-        val rootRelative = File("app/src/main/assets/models_catalog.json")
-        val asset = when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException(
-                "Cannot locate models_catalog.json from ${File(".").absolutePath}")
-        }
+        val asset = RepoFiles.resolve("src/main/assets/models_catalog.json")
         com.antivocale.app.data.catalog.BundledCatalog.seed(
             com.antivocale.app.data.catalog.ModelCatalogJson.parseCatalog(asset.readText()))
     }

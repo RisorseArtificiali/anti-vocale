@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.viewmodel
 
+import com.antivocale.app.testing.RepoFiles
 import android.app.Application
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -72,9 +73,7 @@ class ModelViewModelUseModelPersistenceTest {
     private lateinit var viewModel: ModelViewModel
 
     private fun catalogJson(): String {
-        val asset = File("src/main/assets/models_catalog.json")
-            .takeIf { it.exists() } ?: File("app/src/main/assets/models_catalog.json")
-        return asset.readText()
+        return RepoFiles.readText("src/main/assets/models_catalog.json")
     }
 
     @Before

@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.viewmodel
 
+import com.antivocale.app.testing.RepoFiles
 import android.content.Context
 import com.antivocale.app.R
 import com.antivocale.app.data.ActiveModelRepository
@@ -9,7 +10,6 @@ import com.antivocale.app.transcription.staticRegistry
 import io.mockk.every
 import io.mockk.mockk
 import java.io.ByteArrayInputStream
-import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,17 +54,8 @@ class ModelViewModelActiveModelTest {
     /** Real empty dir backing the mocked Context's filesDir. */
     private val filesRoot = Files.createTempDirectory("mvm-files").toFile()
 
-    private fun catalogJson(): String {
-        val moduleRelative = File("src/main/assets/models_catalog.json")
-        val rootRelative = File("app/src/main/assets/models_catalog.json")
-        val asset = when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException(
-                "Cannot locate models_catalog.json from ${File(".").absolutePath}")
-        }
-        return asset.readText()
-    }
+    private fun catalogJson(): String =
+        RepoFiles.readText("src/main/assets/models_catalog.json")
 
     private val mockContext: Context = mockk<Context>(relaxed = true) {
         every { filesDir } returns filesRoot

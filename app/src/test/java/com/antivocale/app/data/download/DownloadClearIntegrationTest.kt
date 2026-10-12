@@ -1,5 +1,6 @@
 package com.antivocale.app.data.download
 
+import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.transcription.SherpaModelManager
 import org.junit.Assert.*
 import org.junit.Before
@@ -20,13 +21,7 @@ class DownloadClearIntegrationTest {
     fun setUp() {
         // Managers validate via BundledCatalog; seed it from the real asset so no
         // Android assets are needed here.
-        val moduleRelative = File("src/main/assets/models_catalog.json")
-        val rootRelative = File("app/src/main/assets/models_catalog.json")
-        val asset = when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException("Cannot locate models_catalog.json from ${File(".").absolutePath}")
-        }
+        val asset = RepoFiles.resolve("src/main/assets/models_catalog.json")
         com.antivocale.app.data.catalog.BundledCatalog.seed(
             com.antivocale.app.data.catalog.ModelCatalogJson.parseCatalog(asset.readText()))
     }

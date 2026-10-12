@@ -1,10 +1,10 @@
 package com.antivocale.app.ui.viewmodel
 
+import com.antivocale.app.testing.RepoFiles
 import org.junit.Assert.*
 import org.junit.Test
 import com.antivocale.app.ui.components.languageOptionsFor
 import com.antivocale.app.ui.components.transcriptionPickerFor
-import java.io.File
 import java.util.Locale
 
 /**
@@ -23,11 +23,8 @@ class LanguageOptionsOrderTest {
         // the untranslated base, not a picker entry). Hebrew ships in its
         // legacy values-iw dir name but the picker keys the canonical "he"
         // (Android 15+ canonicalizes the tag; see appLanguageCodes).
-        // Dual probe: module-relative and repo-root-relative, the convention
-        // the sibling filesystem tests use so root-CWD launches also work.
-        val res = File("src/main/res").takeIf { it.isDirectory }
-            ?: File("app/src/main/res").takeIf { it.isDirectory }
-        assertTrue("res dir not found (CWD=${File(".").absolutePath})", res != null)
+        // TASK-818: the shared locator resolves the res dir from any test cwd.
+        val res = RepoFiles.resolve("src/main/res")
         val dirCodes = res!!.listFiles { f -> f.isDirectory && f.name.startsWith("values-") }!!
             .map { dir -> dir.name.removePrefix("values-") }
             // Only locale-shaped dirs vote: <lang> or <lang>-r<REGION>. A

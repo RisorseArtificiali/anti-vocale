@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.appearance
 
+import com.antivocale.app.testing.RepoFiles
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
@@ -26,15 +27,7 @@ import org.w3c.dom.Element
  */
 class LauncherIconManifestTest {
 
-    private fun manifestFile(): File {
-        val moduleRelative = File("src/main/AndroidManifest.xml")
-        val rootRelative = File("app/src/main/AndroidManifest.xml")
-        return when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException("Cannot locate src/main/AndroidManifest.xml from ${File(".").absolutePath}")
-        }
-    }
+    private fun manifestFile(): File = RepoFiles.resolve("src/main/AndroidManifest.xml")
 
     private fun launcherAliases(): List<Element> =
         parse(manifestFile())

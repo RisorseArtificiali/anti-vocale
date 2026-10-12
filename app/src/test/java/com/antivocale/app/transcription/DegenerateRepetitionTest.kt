@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import org.json.JSONArray
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -61,13 +62,10 @@ class DegenerateRepetitionTest {
         assertEquals(once.text, twice.text)
     }
 
-    /** Dual-path source read (repo root or module cwd), the AppNavigationTest pattern. */
-    private fun vectorFile(): String {
-        val direct = java.io.File("eval/loop-guard-cases.json")
-        val file = if (direct.isFile) direct else java.io.File("../eval/loop-guard-cases.json")
-        check(file.isFile) {
-            "cannot locate eval/loop-guard-cases.json from cwd ${java.io.File(".").absolutePath}"
-        }
-        return file.readText()
-    }
+    /**
+     * The vector lives OUTSIDE the app module, so the module-relative
+     * spelling carries the `../` (the one direction the pre-818 readers
+     * lacked). [RepoFiles] owns the resolution.
+     */
+    private fun vectorFile(): String = RepoFiles.readText("../eval/loop-guard-cases.json")
 }

@@ -1,5 +1,6 @@
 package com.antivocale.app.i18n
 
+import com.antivocale.app.testing.RepoFiles
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
@@ -19,15 +20,7 @@ import org.junit.Test
  */
 class StringResourceParityTest {
 
-    private fun stringsFile(path: String): File {
-        val moduleRelative = File(path)
-        val rootRelative = File("app/$path")
-        return when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException("Cannot locate $path from ${File(".").absolutePath}")
-        }
-    }
+    private fun stringsFile(path: String): File = RepoFiles.resolve(path)
 
     private fun keys(file: File): Set<String> {
         val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)

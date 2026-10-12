@@ -1,5 +1,6 @@
 package com.antivocale.app.data
 
+import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
 import java.io.File
 import io.mockk.mockk
@@ -221,15 +222,7 @@ class ModelAccuracyTest {
 
     // --- bundled asset guard (reads the shipped files from disk) ---
 
-    private fun repoFile(relative: String): File {
-        val moduleRelative = File(relative)
-        val rootRelative = File("app/$relative")
-        return when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException("Cannot locate $relative from ${File(".").absolutePath}")
-        }
-    }
+    private fun repoFile(relative: String): File = RepoFiles.resolve(relative)
 
     @Test
     fun `bundled asset decodes and every row is well-formed`() {

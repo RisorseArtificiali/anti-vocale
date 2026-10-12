@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.data.catalog.CatalogDisplay
 import com.antivocale.app.data.catalog.CatalogEntry
 import com.antivocale.app.data.catalog.CatalogFile
@@ -9,7 +10,6 @@ import com.antivocale.app.data.catalog.CatalogVariant
 import com.antivocale.app.data.catalog.ModelCatalogJson
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.io.File
 
 /**
  * Unit tests for [SherpaBackend.requiredMetadataKeys], the catalog-driven
@@ -111,14 +111,7 @@ class RequiredMetadataKeysTest {
         )
 
     private fun parseRealCatalog(): List<CatalogEntry> {
-        val moduleRelative = File("src/main/assets/models_catalog.json")
-        val rootRelative = File("app/src/main/assets/models_catalog.json")
-        val asset = when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException(
-                "Cannot locate models_catalog.json from ${File(".").absolutePath}")
-        }
+        val asset = RepoFiles.resolve("src/main/assets/models_catalog.json")
         return ModelCatalogJson.parseCatalog(asset.readText())
     }
 }

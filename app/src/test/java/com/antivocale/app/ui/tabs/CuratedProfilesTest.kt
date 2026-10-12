@@ -2,6 +2,7 @@ package com.antivocale.app.ui.tabs
 
 import com.antivocale.app.data.ExternalCatalog
 import com.antivocale.app.data.catalog.ModelCatalogJson
+import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.transcription.Language
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -23,15 +24,7 @@ import org.junit.Test
  */
 class CuratedProfilesTest {
 
-    private fun asset(path: String): File {
-        val moduleRelative = File(path)
-        val rootRelative = File("app/$path")
-        return when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException("Cannot locate $path from ${File(".").absolutePath}")
-        }
-    }
+    private fun asset(path: String): File = RepoFiles.resolve(path)
 
     private fun bundledCatalog() =
         ModelCatalogJson.parseCatalog(asset("src/main/assets/models_catalog.json").readText())

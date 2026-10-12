@@ -3,6 +3,7 @@ package com.antivocale.app.i18n
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.R
+import com.antivocale.app.testing.RepoFiles
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,15 +30,7 @@ import java.util.Locale
 @Config(sdk = [34], application = android.app.Application::class)
 class FormattedResourcesPipelineTest {
 
-    private fun repoFile(relative: String): File {
-        val module = File(relative)
-        val root = File("app/$relative")
-        return when {
-            module.exists() -> module
-            root.exists() -> root
-            else -> throw IllegalStateException("cannot locate $relative")
-        }
-    }
+    private fun repoFile(relative: String): File = RepoFiles.resolve(relative)
 
     /** The shipped locale set, derived from values-* dirs (plus the default). */
     private fun shippedLocales(): List<String> {
