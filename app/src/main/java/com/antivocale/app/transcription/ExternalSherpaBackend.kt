@@ -140,6 +140,10 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
     override val requiresVadAlignedChunking: Boolean
         get() = configuredFamily?.let(::familyForcesVadAlignedChunking) == true
 
+    /** TASK-816: the whisper family's loop guard (see SherpaBackend's twin). */
+    override val trimsDegenerateRepetition: Boolean
+        get() = configuredFamily == ModelFamily.WHISPER
+
     // @Volatile: a concurrent transcribeAudio on another thread must not read a stale
     // null recognizer after initialize completes (the unload-during-transcription window
     // is inherited from the sibling backends and unchanged).
@@ -365,8 +369,12 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
         try {
             // TASK-789 review T1: capture the case policy with the recognizer
             // local; unload() resets the field mid-bracket and an orphaned
-            // decode must not return wrongly-cased text.
+            // decode must not return wrongly-cased text. TASK-816 review F2:
+            // the loop-guard gate captures the same way (it reads the same
+            // volatile configuredFamily), so a decode orphaned by an
+            // unload mid-bracket still trims its loop tail.
             val lower = lowercaseOutput
+            val trimLoops = trimsDegenerateRepetition
             onlineRecognizer?.let { rec ->
                 return withContext(Dispatchers.IO) {
                     transcribeStreamingBatch(rec, samples, sampleRate, lower)
@@ -392,8 +400,18 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                 rec.decode(stream)
 
                 val result = rec.getResult(stream)
-                val transcription = applyTextCase(result.text, lower)
                 val detectedLang = TranscriptionResult.normalizedDetectedLanguage(result.lang)
+                // TASK-816 (TASK-792 option 2): the same degenerate-tail
+                // truncation SherpaBackend applies to built-in whisper
+                // decodes, for user-imported whisper-family models (the
+                // 792 incident's Hebrew turbo looped exactly like the
+                // built-in distil). Other external families stay ungated
+                // via the capability default. On fire the TOKEN channel
+                // drops with the tail (the cue builder's exact-match
+                // alignment; see applyDegenerateRepetition).
+                val degenerateTrim =
+                    if (trimLoops) applyDegenerateRepetition(applyTextCase(result.text, lower)) else null
+                val transcription = degenerateTrim?.text ?: applyTextCase(result.text, lower)
 
                 if (transcription.isBlank()) {
                     // GH #96: silence windows decode blank; see SherpaBackend.
@@ -405,7 +423,8 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                         text = transcription,
                         confidence = confidence,
                         detectedLanguage = detectedLang,
-                        tokens = TimedTokens.fromRecognizer(
+                        tokens = if (degenerateTrim?.fired == true) emptyList()
+                        else TimedTokens.fromRecognizer(
                             casedTokens(result.tokens, lower), result.timestamps, result.durations),
                     ))
                 }

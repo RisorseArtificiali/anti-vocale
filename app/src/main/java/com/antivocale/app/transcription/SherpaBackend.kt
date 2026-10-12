@@ -375,6 +375,14 @@ class SherpaBackend(
     override val maxChunkDurationSeconds: Int?
         get() = BundledCatalog.byId(entryId)?.flags?.chunkDurationSeconds?.takeIf { it > 0 }
 
+    /**
+     * TASK-816: only the whisper built-in loops (TASK-792 scoreboard); the
+     * qwen3 guard is native inside sherpa, the other modelTypes stay on the
+     * capability default.
+     */
+    override val trimsDegenerateRepetition: Boolean
+        get() = entry.modelType == "whisper"
+
     // @Volatile: the idle-unload timer frees these on Dispatchers.Default while
     // transcriptions start on Dispatchers.IO; a stale non-null read after an
     // unload would be a use-after-free on the native handle.
@@ -720,8 +728,20 @@ class SherpaBackend(
                 rec.decode(stream)
 
                 val result = rec.getResult(stream)
-                val transcription = result.text
                 val detectedLang = TranscriptionResult.normalizedDetectedLanguage(result.lang)
+                // TASK-816 (TASK-792 option 2): whisper-family decodes
+                // truncate a degenerate repetition tail HERE, at the decode
+                // boundary, so every downstream consumer (assembly paths,
+                // interim partials, firstPass storage, cues) sees clean
+                // text. qwen3 decodes get the same guard natively inside
+                // sherpa; the other built-ins do not loop (TASK-792
+                // scoreboard) and stay ungated via the capability default.
+                // On fire the TOKEN channel drops with the tail (see
+                // applyDegenerateRepetition): trimmed text next to untrimmed
+                // tokens fails the cue builder's exact-match alignment.
+                val degenerateTrim =
+                    if (trimsDegenerateRepetition) applyDegenerateRepetition(result.text) else null
+                val transcription = degenerateTrim?.text ?: result.text
 
                 // GH #92: token timestamps decide whether sentence-level subtitle
                 // cues are possible for this model (empty = chunk cues only), and
@@ -750,7 +770,8 @@ class SherpaBackend(
                         text = transcription,
                         confidence = confidence,
                         detectedLanguage = detectedLang,
-                        tokens = TimedTokens.fromRecognizer(result.tokens, result.timestamps, result.durations),
+                        tokens = if (degenerateTrim?.fired == true) emptyList()
+                        else TimedTokens.fromRecognizer(result.tokens, result.timestamps, result.durations),
                     ))
                 }
             } catch (e: Exception) {

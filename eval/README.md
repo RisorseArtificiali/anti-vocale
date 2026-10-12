@@ -168,8 +168,9 @@ import; sherpa/soundfile load lazily for `--transcribe`).
   difference between models on 40 clips is *suggestive*, not conclusive. Report with
   per-clip spread, not just means.
 - **Recognizer configs mirror the app but sherpa-onnx Python API nesting can vary
-  by version.** The script is pinned to `sherpa-onnx==1.13.5` to match the shipped
-  AAR. If a backend fails to construct, the config field shape is the first thing
+  by version.** The script is pinned to the `sherpa-onnx` version in
+  `requirements.txt` (matching the shipped AAR per `.sherpa-version`). If a backend
+  fails to construct, the config field shape is the first thing
   to check against the installed version's `OfflineRecognizerConfig` / `OnlineRecognizerConfig`.
 - **This measures current models.** The payoff: once a Whisper LoRA fine-tune
   exists, point `run_baseline.py` at it as a 4th backend and the same harness shows

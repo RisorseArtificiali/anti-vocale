@@ -76,6 +76,44 @@ interface TranscriptionBackend {
         get() = false
 
     /**
+     * TASK-816 (TASK-792 option 2): true for backends whose greedy decoder
+     * can collapse into a repetition loop on degenerate audio and therefore
+     * must run the decode-boundary degenerate-tail trim. The whisper family
+     * (built-in catalog entries and imported external models) sets this;
+     * a backend declaring the capability applies [applyDegenerateRepetition]
+     * inside its own decode path, so every downstream consumer (assembly
+     * paths, interim partials, firstPass storage, cues) sees clean text.
+     * The gate is this capability, not a backend id, mirroring
+     * [transcribesWholeContainer]'s rule.
+     */
+    val trimsDegenerateRepetition: Boolean
+        get() = false
+
+    /**
+     * TASK-816: the trim a [trimsDegenerateRepetition] backend applies to
+     * each decode's text. One owner for the fire-log wording (the qwen3
+     * mirror line); the algorithm itself stays pure Kotlin and
+     * JVM-testable in [DegenerateRepetition]. The caller checks [fired]
+     * and drops the decode's TOKEN channel with it: the cue builder aligns
+     * tokens to the text under an exact-match contract, so a trimmed text
+     * next to untrimmed tokens would fail the alignment and fall back to
+     * the full token join (the loop wall surviving in timed exports). An
+     * empty token list degrades that chunk to one chunk-span cue carrying
+     * the clean text (cuesForChunk's empty branch).
+     */
+    fun applyDegenerateRepetition(text: String): DegenerateRepetition.Trimmed {
+        val trimmed = DegenerateRepetition.trim(text)
+        if (trimmed.fired) {
+            android.util.Log.i(
+                javaClass.simpleName,
+                "Whisper decode collapsed into a repetition loop after " +
+                    "${trimmed.keptWords} words; truncating the repetition " +
+                    "(${trimmed.droppedWords} words dropped)")
+        }
+        return trimmed
+    }
+
+    /**
      * Initializes the backend with the given configuration.
      */
     suspend fun initialize(context: Context, config: BackendConfig): Result<Unit>

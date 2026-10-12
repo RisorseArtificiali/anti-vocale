@@ -1,0 +1,74 @@
+[
+  {
+    "name": "distil-it incident (792)",
+    "text": "Ciao Elisabetta! Ciao Elisabetta! Ciao Elisabetta! Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm... Ehm...",
+    "expected": "Ciao Elisabetta! Ciao Elisabetta! Ciao Elisabetta!",
+    "dropped": 46
+  },
+  {
+    "name": "hebrew turbo incident (792)",
+    "text": "צאו אליסאסטה צאו אליסאסטה צאו אליסאסטה אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי אי א",
+    "expected": "צאו אליסאסטה צאו אליסאסטה צאו אליסאסטה",
+    "dropped": 34
+  },
+  {
+    "name": "clean sentence no fire",
+    "text": "ieri sono andato al mercato e ho comprato delle mele rosse molto buone poi sono tornato a casa e ho preparato la cena per tutta la famiglia che era contenta del risultato",
+    "expected": null,
+    "dropped": 0
+  },
+  {
+    "name": "under-window pure loop no fire",
+    "text": "ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm",
+    "expected": null,
+    "dropped": 0
+  },
+  {
+    "name": "four-distinct phrase loop no fire (collapse's char pass)",
+    "text": "turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please turn it down please",
+    "expected": null,
+    "dropped": 0
+  },
+  {
+    "name": "whole-decode phrase loop never fires (empty trim falls back)",
+    "text": "ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta ciao elisabetta",
+    "expected": null,
+    "dropped": 0
+  },
+  {
+    "name": "whole-decode word loop never fires (empty trim falls back)",
+    "text": "ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao ciao",
+    "expected": null,
+    "dropped": 0
+  },
+  {
+    "name": "punctuation variants join one loop identity",
+    "text": "no no no Ehm... Ehm… ehm? Ehm... Ehm… ehm? Ehm... Ehm… ehm? Ehm... Ehm… ehm? Ehm... Ehm… ehm? Ehm... Ehm… ehm? Ehm... Ehm… ehm? Ehm... Ehm… ehm? Ehm... Ehm… ehm? Ehm... Ehm… ehm?",
+    "expected": "no no no",
+    "dropped": 30
+  },
+  {
+    "name": "punctuation-tail whole-decode loop never fires (empty trim falls back)",
+    "text": "ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ... ...",
+    "expected": null,
+    "dropped": 0
+  },
+  {
+    "name": "tandem loops both drop in one call",
+    "text": "hello world abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz",
+    "expected": "hello world",
+    "dropped": 60
+  },
+  {
+    "name": "pure tandem loop with no lead-in never fires (empty trim falls back)",
+    "text": "abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz",
+    "expected": null,
+    "dropped": 0
+  },
+  {
+    "name": "letter-number numeral keys to null like punctuation (Nl is not isLetterOrDigit)",
+    "text": "ciao ciao ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm ehm Ⅷ Ⅷ",
+    "expected": "ciao ciao",
+    "dropped": 24
+  }
+]
