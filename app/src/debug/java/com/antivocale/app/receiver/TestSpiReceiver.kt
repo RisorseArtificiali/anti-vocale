@@ -50,6 +50,7 @@ class TestSpiReceiver : BroadcastReceiver() {
     @Inject lateinit var externalModelStore: ExternalModelStore
     @Inject lateinit var importer: com.antivocale.app.data.ExternalModelImportOperations
     @Inject lateinit var voiceNoteIdentityCache: com.antivocale.app.receiver.VoiceNoteIdentityCache
+    @Inject lateinit var backendManager: com.antivocale.app.transcription.TranscriptionBackendManager
 
     companion object {
         const val TAG = "TestSpi"
@@ -114,7 +115,9 @@ class TestSpiReceiver : BroadcastReceiver() {
         val ops = TestSpiOps(
             preferencesManager, externalModelStore, importer, context.applicationContext,
             // TASK-736: the identity-cache dump op needs the live singleton.
-            voiceNoteIdentityCache)
+            voiceNoteIdentityCache,
+            // TASK-791: the unload op drives the production backend manager.
+            backendManager)
         val op = intent.getStringExtra(EXTRA_OP)
         val key = intent.getStringExtra(EXTRA_KEY)
         val value = intent.getStringExtra(EXTRA_VALUE)

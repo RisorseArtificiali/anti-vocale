@@ -435,12 +435,24 @@ class TestSpiOpsTest {
     }
 
     @Test
+    fun `unload without a backend manager answers the SPI error contract, not a throw`() = runTest {
+        // The unit fakes construct TestSpiOps without the manager (debug
+        // receiver passes the live singleton). handle()'s runCatching must
+        // convert the missing-dependency failure into the error JSON like
+        // every other op; this also pins the OP_UNLOAD dispatch arm (the
+        // reflection OPS test only proves the constant is listed).
+        val json = JSONObject(ops.handle(TestSpiOps.OP_UNLOAD))
+        assertEquals("unload", json.getString("op"))
+        assertTrue(json.getString("error").contains("backend manager"))
+    }
+
+    @Test
     fun `help lists ops set keys and the PROCESS_REQUEST pointer`() = runTest {
         val json = JSONObject(ops.handle(TestSpiOps.OP_HELP))
         // help is a known op: it must NOT carry the unknown-op error (device
         // verification 2026-09-03 caught the dispatch bug this pins).
         assertFalse(json.has("error"))
-        assertEquals(listOf("get", "set", "records", "identity_cache", "import", "notify_memory_error", "clipboard", "notifications", "help"), json.getJSONArray("ops").optStringList())
+        assertEquals(listOf("get", "set", "records", "identity_cache", "import", "notify_memory_error", "clipboard", "notifications", "unload", "help"), json.getJSONArray("ops").optStringList())
         assertEquals(ops.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))
         assertTrue(json.getString("transcription").contains("com.antivocale.app.PROCESS_REQUEST"))
