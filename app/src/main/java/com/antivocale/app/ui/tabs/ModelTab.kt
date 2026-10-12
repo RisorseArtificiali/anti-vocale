@@ -351,14 +351,18 @@ fun ModelTab(
     }
 
     // Collect one-time Snackbar events from ViewModel (Channel-based for guaranteed delivery)
+    // The collector is a non-composable coroutine, so both strings
+    // resolve here in composition.
+    val authRequiredMessage = stringResource(R.string.model_requires_auth)
+    val settingsActionLabel = stringResource(R.string.settings_action)
     LaunchedEffect(Unit) {
         viewModel.snackbarEvent.collect { event ->
             snackbarHostState.currentSnackbarData?.dismiss()
             when (event) {
                 is ModelViewModel.SnackbarEvent.AuthRequired -> {
                     snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.model_requires_auth),
-                        actionLabel = context.getString(R.string.settings_action),
+                        message = authRequiredMessage,
+                        actionLabel = settingsActionLabel,
                         duration = SnackbarDuration.Long
                     ).let { result ->
                         if (result == SnackbarResult.ActionPerformed) {

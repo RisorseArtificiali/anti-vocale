@@ -1989,13 +1989,16 @@ internal fun MemoryDiagnosticsCard(viewModel: SettingsViewModel) {
     }
     val diagnostics by viewModel.memoryDiagnostics.collectAsState()
     val state = diagnostics
+    // One resolution for the card title and the clipboard label, so the two
+    // can never diverge (the copy button fires from a non-composable onClick).
+    val diagnosticsTitle = stringResource(R.string.memory_diagnostics_title)
 
     // Simplify F1: the shared section-card scaffold (TASK-510), matching
     // every neighbor in the Advanced section and inheriting the compact-
     // search description suppression (TASK-628).
     com.antivocale.app.ui.components.SectionCard(
         icon = Icons.Default.Memory,
-        title = stringResource(R.string.memory_diagnostics_title),
+        title = diagnosticsTitle,
         description = stringResource(R.string.memory_diagnostics_subtitle),
     ) {
         Column(
@@ -2078,10 +2081,8 @@ internal fun MemoryDiagnosticsCard(viewModel: SettingsViewModel) {
                 enabled = state != null,
                 onClick = {
                     val bundle = state?.exportBundle() ?: return@TextButton
-                    ClipboardWriter.copy(
-                        context, context.getString(R.string.memory_diagnostics_title), bundle)
-                    com.antivocale.app.util.ToastCompat.show(
-                        context, context.getString(R.string.copied_to_clipboard))
+                    ClipboardWriter.copy(context, diagnosticsTitle, bundle)
+                    ToastCompat.show(context, R.string.copied_to_clipboard)
                 }
             ) {
                 Icon(
@@ -3593,9 +3594,9 @@ internal fun AutomationGuideCard(
                 onClick = {
                     ClipboardWriter.copy(
                         context,
-                        context.getString(R.string.automation_guide_title),
+                        title,
                         AutomationBroadcastSnippet.adbTextRequest(context.packageName))
-                    ToastCompat.show(context, context.getString(R.string.copied_to_clipboard))
+                    ToastCompat.show(context, R.string.copied_to_clipboard)
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -3611,8 +3612,7 @@ internal fun AutomationGuideCard(
                     }.onFailure {
                         // A de-Googled fdroid install can have no https
                         // viewer: the tap must not be a silent no-op.
-                        ToastCompat.show(
-                            context, context.getString(R.string.automation_guide_no_browser))
+                        ToastCompat.show(context, R.string.automation_guide_no_browser)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -3779,11 +3779,8 @@ internal fun rememberOutputFolderPickerLauncher(
             val tree = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
             if (tree?.canWrite() != true) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.error_folder_not_writable),
-                        Toast.LENGTH_LONG
-                    ).show()
+                    ToastCompat.show(
+                        context, R.string.error_folder_not_writable, Toast.LENGTH_LONG)
                 }
                 return@launch
             }
@@ -3795,11 +3792,8 @@ internal fun rememberOutputFolderPickerLauncher(
             } catch (e: Exception) {
                 Log.w(logTag, "Failed to take persistable URI permission", e)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.error_folder_not_writable),
-                        Toast.LENGTH_LONG
-                    ).show()
+                    ToastCompat.show(
+                        context, R.string.error_folder_not_writable, Toast.LENGTH_LONG)
                 }
                 return@launch
             }
@@ -3882,10 +3876,9 @@ internal fun ShareShortcutIconsCard(viewModel: SettingsViewModel) {
         pendingBackendId = null
         if (uri != null && backendId != null) {
             viewModel.onShortcutIconPicked(backendId, uri) { saved ->
-                com.antivocale.app.util.ToastCompat.show(
+                ToastCompat.show(
                     context,
-                    context.getString(
-                        if (saved) R.string.shortcut_icon_saved else R.string.shortcut_icon_error),
+                    if (saved) R.string.shortcut_icon_saved else R.string.shortcut_icon_error,
                 )
             }
         }

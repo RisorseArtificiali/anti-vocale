@@ -180,10 +180,7 @@ fun PromptSettingsScreen(
                     .clickable {
                         promptInput = promptText
                         viewModel.saveDefaultPrompt(promptText)
-                        ToastCompat.show(
-                            context,
-                            context.getString(R.string.prompt_applied)
-                        )
+                        ToastCompat.show(context, R.string.prompt_applied)
                     },
                 colors = CardDefaults.cardColors(
                     containerColor = if (defaultPrompt == promptText)

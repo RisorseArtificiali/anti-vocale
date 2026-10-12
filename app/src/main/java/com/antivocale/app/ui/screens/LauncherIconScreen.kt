@@ -61,6 +61,10 @@ private const val ADAPTIVE_CANVAS = 108f
  */
 private val tileBitmapCache = mutableMapOf<Int, ImageBitmap>()
 
+// The lint rule suggests painterResource/imageResource, but those silently
+// RENDER an XML vector while this tile contract must fail loudly on one
+// (a future tile swap must not silently degrade).
+@Suppress("LocalContextGetResourceValueCall")
 @Composable
 private fun cachedTileBitmap(@DrawableRes res: Int): ImageBitmap =
     tileBitmapCache.getOrPut(res) {

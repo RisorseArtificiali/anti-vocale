@@ -23,7 +23,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
@@ -51,8 +50,10 @@ fun PerAppSettingsScreen(
     preferencesManager: PerAppPreferencesManager,
     onBack: () -> Unit
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // Both reset snackbar arms consume this from non-composable coroutine
+    // lambdas, so it resolves here in composition.
+    val resetDoneMessage = stringResource(R.string.per_app_settings_reset_done)
 
     // List of known apps (can be extended to detect from shared history)
     // returns List<Pair<String,String>>; lint misresolves
@@ -352,7 +353,7 @@ fun PerAppSettingsScreen(
                         preferencesManager.clearPreferencesForPackage(packageName)
                         selectedApp = null
                         snackbarHostState.showSnackbar(
-                            message = context.getString(R.string.per_app_settings_reset_done)
+                            message = resetDoneMessage
                         )
                     }
                 }
@@ -385,7 +386,7 @@ fun PerAppSettingsScreen(
                         // Flow collectors in LaunchedEffect will automatically
                         // update preferencesState with the new default values
                         snackbarHostState.showSnackbar(
-                            message = context.getString(R.string.per_app_settings_reset_done)
+                            message = resetDoneMessage
                         )
                     }
                 }) {

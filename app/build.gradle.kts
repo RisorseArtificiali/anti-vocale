@@ -186,11 +186,6 @@ android {
         baseline = file("lint-baseline.xml")
         abortOnError = true
         warningsAsErrors = false
-        // compose-ui 1.11 ships LocalContextGetResourceValueCall at ERROR
-        // severity (TASK-754 bump exposed 18 pre-existing sites at once).
-        // Downgraded to warning pending the stringResource hoist sweep; the
-        // sites stay visible as warnings, not baseline-hidden.
-        disable += "LocalContextGetResourceValueCall"
     }
 
     testOptions {

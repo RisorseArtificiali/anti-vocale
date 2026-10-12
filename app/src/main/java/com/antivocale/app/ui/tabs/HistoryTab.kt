@@ -655,11 +655,15 @@ fun HistoryTab(
 
     // Undo deletion via Snackbar
     val snackbarHostState = remember { SnackbarHostState() }
+    // The undo prompt fires from a non-composable coroutine, so both
+    // strings resolve here in composition.
+    val entryDeletedMessage = stringResource(R.string.logs_entry_deleted)
+    val undoLabel = stringResource(R.string.logs_undo)
     LaunchedEffect(recentlyDeletedEntry) {
         val entry = recentlyDeletedEntry ?: return@LaunchedEffect
         val result = snackbarHostState.showSnackbar(
-            message = context.getString(R.string.logs_entry_deleted),
-            actionLabel = context.getString(R.string.logs_undo),
+            message = entryDeletedMessage,
+            actionLabel = undoLabel,
             duration = SnackbarDuration.Short
         )
         if (result == SnackbarResult.ActionPerformed) {
@@ -2047,16 +2051,20 @@ private fun LogEntryWithSwipe(
         }
 
         val colorScheme = MaterialTheme.colorScheme
-        val actions = remember(log.id, log.status, log.result, speakerAnnotated, colorScheme) {
+        // Keyed into the remember so a locale change rebuilds the actions.
+        val copyLabel = stringResource(R.string.swipe_action_copy_description)
+        val shareLabel = stringResource(R.string.swipe_action_share_description)
+        val deleteLabel = stringResource(R.string.swipe_action_delete_description)
+        val actions = remember(log.id, log.status, log.result, speakerAnnotated, colorScheme, copyLabel, shareLabel, deleteLabel) {
             buildSwipeActions(
                 log = log,
                 context = context,
                 viewModel = viewModel,
                 speakerAnnotated = speakerAnnotated,
                 onDeleted = onDeleted,
-                copyLabel = context.getString(R.string.swipe_action_copy_description),
-                shareLabel = context.getString(R.string.swipe_action_share_description),
-                deleteLabel = context.getString(R.string.swipe_action_delete_description),
+                copyLabel = copyLabel,
+                shareLabel = shareLabel,
+                deleteLabel = deleteLabel,
                 colors = colorScheme
             )
         }
