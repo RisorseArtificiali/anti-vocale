@@ -70,7 +70,9 @@ fun LanguageFilterBar(
             }
     }
 
-    val matchedEntries = remember(searchQuery) {
+    // TASK-790 follow-up: allEntries is locale-dependent now, so a locale
+    // switch with a non-blank query must re-collate the filtered list too.
+    val matchedEntries = remember(allEntries, searchQuery) {
         if (searchQuery.isBlank()) allEntries
         else allEntries.filter { e ->
             e.nativeName.contains(searchQuery, ignoreCase = true) ||
