@@ -60,6 +60,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.update
@@ -634,6 +635,16 @@ class SettingsViewModel @Inject constructor(
             preferencesManager.saveVoiceNoteTreeUri(uri)
         }
     }
+
+    /**
+     * The persisted tree URI read once from the store. The picker
+     * callback's release step needs the STORED value: the StateFlow's
+     * .value can still be its initialValue before DataStore's first
+     * emission lands, and releasing nothing there would strand the old
+     * grant slot (review F9, 2026-10-13).
+     */
+    suspend fun currentVoiceNoteTreeUri(): String? =
+        preferencesManager.voiceNoteTreeUri.firstOrNull()
 
     fun saveExternalAutomationEnabled(enabled: Boolean) {
         viewModelScope.launch {

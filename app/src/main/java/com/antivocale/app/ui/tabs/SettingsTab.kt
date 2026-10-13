@@ -1971,11 +1971,20 @@ fun SettingsTab(
             val voiceNoteDetectionEnabled by viewModel.voiceNoteDetectionEnabled.collectAsState()
             var voiceNoteAudioPermissionGranted by remember { mutableStateOf(false) }
             var voiceNoteGrantHeld by remember { mutableStateOf(false) }
+            // Declared before recomputeGrantHeld: the recompute reads the
+            // STORE (see currentVoiceNoteTreeUri), which suspends.
+            val grantScope = rememberCoroutineScope()
             fun recomputeGrantHeld() {
-                voiceNoteGrantHeld = viewModel.voiceNoteTreeUri.value?.let {
-                    com.antivocale.app.util.TreeUris
-                        .holdsPersistableReadGrant(context, android.net.Uri.parse(it))
-                } ?: false
+                // The STORED value, never the StateFlow's .value (still the
+                // initialValue before DataStore's first emission; review
+                // R2-3): a stale null would flash the card un-granted and
+                // (pre-fix) hide the Remove action.
+                grantScope.launch(Dispatchers.IO) {
+                    voiceNoteGrantHeld = viewModel.currentVoiceNoteTreeUri()?.let {
+                        com.antivocale.app.util.TreeUris
+                            .holdsPersistableReadGrant(context, android.net.Uri.parse(it))
+                    } ?: false
+                }
             }
             RecheckOnResume {
                 val granted =
@@ -2023,7 +2032,6 @@ fun SettingsTab(
             // (toggle on, audio permission granted) and the grant is
             // missing; picking the wrong folder is rejected at pick time.
             val voiceNoteTreeUri by viewModel.voiceNoteTreeUri.collectAsState()
-            val grantScope = rememberCoroutineScope()
             val voiceNoteTreePicker = rememberLauncherForActivityResult(
                 ActivityResultContracts.OpenDocumentTree()
             ) { uri ->
@@ -2057,7 +2065,11 @@ fun SettingsTab(
                     }
                     // A replacement pick abandons the old URI: release its
                     // grant slot (platform cap 128/512) before overwriting.
-                    val old = viewModel.voiceNoteTreeUri.value
+                    // The STORED value, not the StateFlow's: .value is still
+                    // the initialValue null until DataStore's first emission
+                    // reaches the flow, and a fast re-pick would leak the
+                    // old slot (review F9).
+                    val old = viewModel.currentVoiceNoteTreeUri()
                     if (old != null && old != uri.toString()) {
                         com.antivocale.app.util.TreeUris
                             .releasePersistableReadGrant(context, android.net.Uri.parse(old))
@@ -2120,13 +2132,15 @@ fun SettingsTab(
                         onChoose = { voiceNoteGrantSheetVisible = true },
                         onRemove = {
                             grantScope.launch(Dispatchers.IO) {
-                                voiceNoteTreeUri?.let {
+                                // The STORED value for the release (the
+                                // flow state may lag its own emission;
+                                // review R2-3), then the pref clear that
+                                // disarms the coordinator (the flow
+                                // source), the tested remove path.
+                                viewModel.currentVoiceNoteTreeUri()?.let {
                                     com.antivocale.app.util.TreeUris
                                         .releasePersistableReadGrant(context, android.net.Uri.parse(it))
                                 }
-                                // Clearing the preference is what disarms
-                                // the coordinator (the flow source), the
-                                // tested remove path.
                                 viewModel.saveVoiceNoteTreeUri(null)
                             }
                         },
@@ -2147,7 +2161,15 @@ fun SettingsTab(
                                     com.antivocale.app.data.VoiceNoteTreeGrant.pickerInitialUri())
                             }.onFailure {
                                 Log.w("SettingsTab", "tree picker launch failed", it)
-                                voiceNoteTreePicker.launch(null)
+                                // Guarded too: a device with no DocumentsUI
+                                // handler throws the SAME exception for the
+                                // plain launch, and an unguarded fallback
+                                // would crash the click handler it exists
+                                // to save (review F6).
+                                runCatching { voiceNoteTreePicker.launch(null) }
+                                    .onFailure { e ->
+                                        Log.e("SettingsTab", "plain tree picker launch failed", e)
+                                    }
                             }
                         },
                     )
@@ -2596,12 +2618,6 @@ private fun FeedbackSection(
 }
 
 /**
- * Informational (non-clickable) row of the Feedback & About section: icon +
- * bold title on the leading edge, value on the trailing edge. Shared by the
- * license and version rows (TASK-459 extraction; the clickable rows above
- * have a different shape and stay inline).
- */
-/**
  * Re-runs [probe] whenever the lifecycle resumes, plus once immediately at
  * composition: ON_RESUME alone never fires for an already-resumed activity,
  * so the immediate call covers entering the section without a pause, and
@@ -2620,6 +2636,12 @@ private fun RecheckOnResume(probe: () -> Unit) {
     }
 }
 
+/**
+ * Informational (non-clickable) row of the Feedback & About section: icon +
+ * bold title on the leading edge, value on the trailing edge. Shared by the
+ * license and version rows (TASK-459 extraction; the clickable rows above
+ * have a different shape and stay inline).
+ */
 @Composable
 private fun InfoRow(icon: ImageVector, title: String, value: String) {
     Row(
@@ -2640,14 +2662,6 @@ private fun InfoRow(icon: ImageVector, title: String, value: String) {
     }
 }
 
-/**
- * TASK-542: the one matching rule behind the settings search: a blank query
- * matches everything (the normal tab is unchanged), otherwise any non-null
- * entry must contain the query, case-insensitive. Null entries are skipped,
- * so callers can pass optional descriptions unchanged. Both the count line
- * (via the card groups) and the per-card [SearchFilterRow] gate go through
- * this function, so they cannot disagree.
- */
 /**
  * TASK-571: card scaffold shared by the two timeout settings (keep-alive
  * auto-unload, subtitle choice): icon + title + description + divider +
@@ -2730,6 +2744,14 @@ private fun TimeoutSettingCard(
     }
 }
 
+/**
+ * TASK-542: the one matching rule behind the settings search: a blank query
+ * matches everything (the normal tab is unchanged), otherwise any non-null
+ * entry must contain the query, case-insensitive. Null entries are skipped,
+ * so callers can pass optional descriptions unchanged. Both the count line
+ * (via the card groups) and the per-card [SearchFilterRow] gate go through
+ * this function, so they cannot disagree.
+ */
 internal fun matchesQuery(query: String, texts: List<String?>): Boolean =
     query.isBlank() || texts.any { it?.contains(query, ignoreCase = true) == true }
 

@@ -43,6 +43,10 @@ class VoiceNoteTreeGrant @Inject constructor(
         } else {
             resolveToSandbox(Uri.parse(uri), whatsappPath)
         }
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        // Disarm cancels the collector mid-copy: cancellation is control
+        // flow, not a resolve failure (the coordinator's own discipline).
+        throw e
     } catch (e: Exception) {
         Log.w(TAG, "tree-grant resolve failed for $whatsappPath", e)
         null
