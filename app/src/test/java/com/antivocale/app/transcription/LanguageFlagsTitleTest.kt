@@ -29,10 +29,11 @@ class LanguageFlagsTitleTest {
     }
 
     @Test
-    fun `too many languages, none, or unmappable leave the title unchanged`() {
+    fun `empty set unchanged, too many languages carry the earth prefix`() {
         assertEquals("Multilingua", LanguageFlags.titled("Multilingua", emptyList()))
-        assertEquals("Multilingua", LanguageFlags.titled("Multilingua", listOf("af", "am", "ar", "as")))
-        assertEquals("Sconosciuto", LanguageFlags.titled("Sconosciuto", listOf("xxx")))
+        assertEquals(
+            "\uD83C\uDF0D Multilingua",
+            LanguageFlags.titled("Multilingua", listOf("af", "am", "ar", "as")))
         // A PARTIAL mapping understates the set: mixed unknown+known never
         // flags (review round 2).
         assertEquals("Misto", LanguageFlags.titled("Misto", listOf("xxx", "it")))
@@ -47,10 +48,14 @@ class LanguageFlagsTitleTest {
             return LanguageFlags.titled("", entry.variants.flatMap(entry::languagesFor))
         }
         assertEquals("gigaam carries the Russian flag", "\uD83C\uDDF7\uD83C\uDDFA ", titleFor("gigaam"))
-        assertEquals("parakeet is multilingual: unchanged", "", titleFor("sherpa-onnx"))
-        assertEquals("whisper union is multilingual: unchanged", "", titleFor("whisper"))
-        assertEquals("qwen3 is multilingual: unchanged", "", titleFor("qwen3-asr"))
-        assertEquals("nemotron is multilingual: unchanged", "", titleFor("nemotron-streaming"))
+        assertEquals("parakeet carries the earth prefix",
+            "\uD83C\uDF0D ", titleFor("sherpa-onnx"))
+        assertEquals("whisper carries the earth prefix",
+            "\uD83C\uDF0D ", titleFor("whisper"))
+        assertEquals("qwen3 carries the earth prefix",
+            "\uD83C\uDF0D ", titleFor("qwen3-asr"))
+        assertEquals("nemotron carries the earth prefix",
+            "\uD83C\uDF0D ", titleFor("nemotron-streaming"))
         // The DISTIL variant inside the whisper entry is monolingual Italian:
         // the variant ROW (not the entry) carries the flag.
         val whisper = entries.first { it.id == "whisper" }

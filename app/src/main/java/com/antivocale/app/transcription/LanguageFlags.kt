@@ -10,8 +10,17 @@ package com.antivocale.app.transcription
  */
 object LanguageFlags {
 
-    /** The "few languages" cutoff for card-title flags (maintainer convention). */
+    /** The "few languages" cutoff for title FLAGS (maintainer convention). */
     const val MAX_TITLE_FLAG_LANGUAGES = 3
+
+    /**
+     * TASK-820 follow-up (maintainer, 2026-10-13): models with MORE than
+     * [MAX_TITLE_FLAG_LANGUAGES] languages carry the earth emoji instead,
+     * so every card keeps a language signal and the symbol itself says
+     * "multilingual" rather than nothing saying anything. One constant:
+     * swap to another glyph (e.g. the meridian globe) is a one-line change.
+     */
+    const val MULTILINGUAL_PREFIX = "\uD83C\uDF0D "
 
     private val specialMappings = mapOf(
         "af" to "ZA", "am" to "ET", "ar" to "SA", "as" to "IN", "az" to "AZ",
@@ -62,7 +71,8 @@ object LanguageFlags {
      */
     fun titled(title: String, languageCodes: Collection<String>): String {
         val distinct = languageCodes.distinct()
-        if (distinct.isEmpty() || distinct.size > MAX_TITLE_FLAG_LANGUAGES) return title
+        if (distinct.isEmpty()) return title
+        if (distinct.size > MAX_TITLE_FLAG_LANGUAGES) return MULTILINGUAL_PREFIX + title
         // Conservative: EVERY code must map. A partial prefix would claim a
         // language set the model does not have (review round: a mixed
         // [unknown, it] set showing only the Italian flag).

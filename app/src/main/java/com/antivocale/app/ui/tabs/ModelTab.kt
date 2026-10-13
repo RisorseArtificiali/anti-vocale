@@ -1305,7 +1305,14 @@ private fun CuratedCommunityCard(
             Button(
                 // NOTE: languages ride the entry JSON itself (importFromEntryJson
                 // reads entry.languages); these params only reach repo imports.
-                onClick = { viewModel.importExternalFromUrl(entry.entryUrl, entry.family) },
+                onClick = {
+                    // TASK-820 follow-up (GH #128 user finding): the entry's
+                    // languages MUST ride the import, or the record is born
+                    // with an empty list and its card never shows the
+                    // language signal.
+                    viewModel.importExternalFromUrl(
+                        entry.entryUrl, entry.family, languages = entry.languages)
+                },
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
             ) {
                 Icon(Icons.Default.CloudDownload, contentDescription = null)
@@ -2447,7 +2454,7 @@ private fun ExternalModelsSection(
                         urlDialogOpen = false
                         when {
                             entry != null -> viewModel.importExternalFromUrl(
-                                entry.entryUrl, entry.family)
+                                entry.entryUrl, entry.family, languages = entry.languages)
                             manual -> viewModel.importExternalFromUrl(
                                 linkUrl.trim(), selection.family,
                                 ctcModelType = selection.ctcModelType,
@@ -2482,7 +2489,9 @@ private fun CatalogPickRow(
             .padding(vertical = 8.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(entry.name,
+            // TASK-820 follow-up (maintainer): the flags ride the modal rows
+            // too, the same derivation as the cards.
+            Text(LanguageFlags.titled(entry.name, entry.languages),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 color = if (selected) MaterialTheme.colorScheme.primary
