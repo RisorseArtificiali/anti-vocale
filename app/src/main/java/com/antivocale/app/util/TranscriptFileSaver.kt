@@ -202,12 +202,49 @@ object TranscriptFileSaver {
             // reported zero, or a vanished document, is a FAILURE; an
             // unknown size (COLUMN_SIZE null is contract-legal for
             // cloud/async providers) or an empty export is a logged pass.
+            // TASK-820 device finding (2026-10-13): the DOWNLOADS tree's
+            // size query can return NO ROW for a document it just created
+            // (provider lag: the file was on disk, 84 bytes, while the query
+            // missed it). A Missing verdict therefore gets one delayed
+            // re-query, then the honest fallback: read the content BACK
+            // through the provider's own stream (a real non-write still
+            // fails there, which is what this verification exists to catch).
             when (VerifyDecision.decide(reportedSize(context, file.uri), text.length)) {
                 VerifyDecision.Outcome.PASS -> Unit
                 VerifyDecision.Outcome.CANNOT_VERIFY ->
                     Log.i(TAG, "Provider reports unknown size for ${file.uri}; cannot verify the write")
-                VerifyDecision.Outcome.FAIL ->
-                    return SaveResult.Failed(SaveResult.FAIL_VERIFY_EMPTY)
+                VerifyDecision.Outcome.FAIL -> {
+                    Thread.sleep(300)
+                    when (VerifyDecision.decide(reportedSize(context, file.uri), text.length)) {
+                        VerifyDecision.Outcome.PASS -> Unit
+                        VerifyDecision.Outcome.CANNOT_VERIFY ->
+                            Log.i(TAG, "Provider reports unknown size for ${file.uri}; cannot verify the write")
+                        VerifyDecision.Outcome.FAIL -> {
+                            val readBack = try {
+                                context.contentResolver.openInputStream(file.uri)?.use { input ->
+                                    var n = 0
+                                    val buffer = ByteArray(8192)
+                                    while (true) {
+                                        val read = input.read(buffer)
+                                        if (read < 0) break
+                                        n += read
+                                    }
+                                    n
+                                } ?: -1
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Verification stream failed for ${file.uri}", e)
+                                -1
+                            }
+                            if (readBack >= text.length) {
+                                Log.i(TAG, "Verify read the content back through the stream ($readBack bytes); " +
+                                    "the provider's size view lagged")
+                            } else {
+                                Log.w(TAG, "Verification read $readBack of ${text.length} bytes for ${file.uri}")
+                                return SaveResult.Failed(SaveResult.FAIL_VERIFY_EMPTY)
+                            }
+                        }
+                    }
+                }
             }
             // TASK-722 review: the affirmative success trace lives at the
             // single owner (both service twins collapsed their copies).
