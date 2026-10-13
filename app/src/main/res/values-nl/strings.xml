@@ -1056,9 +1056,6 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Modellen in het deelmenu</string>
-    <string name="voice_note_identity_title">Afzenderherkenning van spraakberichten</string>
-    <string name="voice_note_identity_description">Voorziet de geschiedenisrij van een gedeeld spraakbericht van de naam van de afzender. Voorlopig alleen WhatsApp. De naam verschijnt alleen als de melding van het bericht binnenkwam terwijl dit aan stond, en alleen wanneer de gemelde lengte overeenkomt met de audio (geen geraden namen). De naam blijft op die rij staan, ook nadat je dit uitzet; de wachtrij leeft alleen in het geheugen. Vereist toegang tot meldingen.</string>
-    <string name="voice_note_identity_grant_hint">Meldingstoegang staat uit. Tik om de systeeminstelling te openen en deze voor de app in te schakelen.</string>
     <string name="share_targets_description">Elk gedownload model verschijnt als aparte optie in het systeemmenu. De audio wordt verwerkt door het gekozen model.</string>
     <string name="advanced_sharing_toggle">Gedownloade modellen tonen</string>
     <string name="share_targets_models_info">Elk gedownload model verschijnt als item in het deelmenu. Een model verwijderen haalt het uit het menu.</string>
@@ -1250,4 +1247,19 @@
     </plurals>
     <string name="folder_watch_period_label">Scaninterval</string>
     <string name="folder_watch_grant_failed">De toegang tot die map kon niet behouden worden, dus hij is niet toegevoegd. Kies hem opnieuw.</string>
+
+    <!-- TASK-271 trial branch: EN stopgaps until the translation pass -->
+    <string name="voice_note_offer_channel">Voice note alerts</string>
+    <string name="voice_note_offer_channel_description">Offers to transcribe new WhatsApp voice notes</string>
+    <string name="voice_note_identity_title">Voice note sender recognition</string>
+    <string name="voice_note_identity_description">Labels the History row of a shared voice note with the sender\'s name. WhatsApp only for now. The name appears only if the note\'s notification arrived while this was on, and only when its reported length matches the audio (no guessed names). The name stays on that row even after you turn this off; the waiting list lives in memory only. Requires notification access.</string>
+    <string name="voice_note_identity_grant_hint">Notification access is off. Tap to open the system setting and enable it for this app.</string>
+    <string name="voice_note_detection_title">Voice note alerts</string>
+    <string name="voice_note_detection_description">Shows a notification with a Transcribe button when a new WhatsApp voice note arrives and the app is running, so you can transcribe it with one tap instead of sharing it. Detection reads only the WhatsApp voice-note folder listing, and everything stays on this device. While this is off, nothing is read at all. Requires permission to access music and audio.</string>
+    <string name="voice_note_detection_grant_hint">Audio access is off. Tap to open the app settings and enable it; alerts start once it is granted.</string>
+    <string name="voice_note_offer_title">New voice note</string>
+    <string name="voice_note_offer_text_with_sender">From %1$s (%2$s)</string>
+    <string name="voice_note_offer_text_duration">Voice message (%1$s)</string>
+    <string name="voice_note_offer_text_plain">Voice message</string>
+    <string name="voice_note_offer_action">Transcribe</string>
 </resources>
