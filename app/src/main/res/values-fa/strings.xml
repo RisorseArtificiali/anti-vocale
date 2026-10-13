@@ -990,17 +990,24 @@
     <string name="voice_note_identity_title">تشخیص فرستنده پیام صوتی</string>
     <string name="voice_note_identity_description">نام فرستندهٔ پیام صوتی به‌اشتراک‌گذاشته‌شده را در ردیف تاریخچه می‌نویسد. در حال حاضر فقط WhatsApp. نام تنها وقتی نمایش داده می‌شود که اعلان پیام در زمان روشن بودن این گزینه رسیده باشد و مدت اعلام‌شده با صدا مطابقت داشته باشد (هیچ نام حدسی ثبت نمی‌شود). نام پس از خاموش کردن هم در همان ردیف می‌ماند؛ فهرست انتظار فقط در حافظه است. نیاز به دسترسی اعلان‌ها دارد.</string>
     <string name="voice_note_identity_grant_hint">دسترسی به اعلان‌ها خاموش است. برای باز کردن تنظیم سیستم و روشن کردن آن برای این برنامه بزنید.</string>
-    <!-- TASK-271: voice-note detection (offer notifications) -->
-    <string name="voice_note_detection_title">هشدار پیام صوتی</string>
-    <string name="voice_note_detection_description">وقتی پیام صوتی جدید واتساپ می‌رسد و برنامه در حال اجراست، یک اعلان با دکمه رونویسی نشان می‌دهد تا به‌جای هم‌رسانی، با یک ضربه آن را رونویسی کنید. تشخیص فقط فهرست پوشه پیام‌های صوتی واتساپ را می‌خواند و همه چیز روی همین دستگاه می‌ماند. وقتی خاموش است هیچ چیزی خوانده نمی‌شود. نیاز به مجوز دسترسی به موسیقی و صدا دارد.</string>
-    <string name="voice_note_detection_grant_hint">دسترسی به صدا خاموش است. برای باز کردن تنظیمات برنامه و روشن کردن آن ضربه بزنید؛ هشدارها به‌محض داده شدن مجوز شروع می‌شوند.</string>
-    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
-    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
-    <string name="voice_note_offer_title">پیام صوتی جدید</string>
-    <string name="voice_note_offer_text_with_sender">از %1$s (%2$s)</string>
-    <string name="voice_note_offer_text_duration">پیام صوتی (%1$s)</string>
-    <string name="voice_note_offer_text_plain">پیام صوتی</string>
-    <string name="voice_note_offer_action">رونویسی</string>
+    <!-- TASK-272: automatic voice-note transcription + folder grant -->
+    <string name="voice_note_detection_title">رونویسی پیام‌های صوتی</string>
+    <string name="voice_note_detection_description">پیام‌های صوتی جدید واتساپ را به محض رسیدن، در حالی که برنامه در حال اجراست، خودکار رونویسی می‌کند. اگر اندروید شروع در پس‌زمینه را مسدود کند (مثلاً وقتی صفحه خاموش است)، یک اعلان اجازه می‌دهد رونویسی را با یک لمس شروع کنید. نتایج در تاریخچه و به‌صورت اعلان نمایش داده می‌شوند. تشخیص فقط فهرست پوشه پیام‌های صوتی واتساپ را می‌خواند؛ یک پیام فقط برای رونویسی خوانده می‌شود و همه چیز روی همین دستگاه می‌ماند. وقتی خاموش است هیچ چیزی خوانده نمی‌شود. نیاز به مجوز دسترسی به موسیقی و صدا دارد.</string>
+    <string name="voice_note_detection_grant_hint">دسترسی صدا خاموش است. برای باز کردن تنظیمات برنامه و فعال‌سازی آن بزنید؛ رونویسی به محض اعطای آن شروع می‌شود.</string>
+    <string name="voice_note_folder_grant_rejected">این پوشه پیام‌های صوتی واتساپ نیست. پوشه‌ای به نام WhatsApp Voice Notes را انتخاب کنید و دوباره امتحان کنید.</string>
+    <string name="voice_note_folder_card_title">پوشه پیام‌های صوتی</string>
+    <string name="voice_note_folder_card_state_granted">اعطا شده</string>
+    <string name="voice_note_folder_card_state_missing">باید اعطا شود</string>
+    <string name="voice_note_folder_card_desc">برای خواندن پیام‌ها، یک بار به پوشه‌ای که واتساپ آن‌ها را ذخیره می‌کند دسترسی دهید:</string>
+    <string name="voice_note_folder_choose">انتخاب پوشه</string>
+    <string name="voice_note_folder_change">تغییر پوشه</string>
+    <string name="voice_note_folder_remove">حذف دسترسی</string>
+    <string name="voice_note_folder_storage_root">حافظه داخلی</string>
+    <string name="voice_note_folder_sheet_title">اعطای دسترسی به پوشه</string>
+    <string name="voice_note_folder_sheet_step1">در انتخابگری که باز می‌شود، وارد حافظه داخلی شوید (منوی چپ؛ اگر آن را نمی‌بینید روی نمایش حافظه بزنید).</string>
+    <string name="voice_note_folder_sheet_step2">در مسیر تا پوشه پیام‌های صوتی پایین بروید:</string>
+    <string name="voice_note_folder_sheet_step3">با انتخاب پوشه WhatsApp Voice Notes (بدون باز کردن آن)، روی استفاده از این پوشه و سپس اجازه بزنید.</string>
+    <string name="voice_note_folder_sheet_open">باز کردن انتخابگر</string>
     <string name="share_targets_description">هر مدل دانلودشده به شکل گزینه‌ای جدا در منوی سیستم ظاهر می‌شود. صدا توسط مدل انتخاب‌شده پردازش می‌شود.</string>
     <string name="advanced_sharing_toggle">نمایش مدل‌های دانلودشده</string>
     <string name="share_targets_models_info">هر مدل دانلودشده به شکل موردی در منوی هم‌رسانی ظاهر می‌شود. با حذف یک مدل، آن از منو برداشته می‌شود.</string>
@@ -1054,9 +1061,6 @@
     <string name="notification_channel_tasker_fallback">خودکارسازی Tasker</string>
     <string name="notification_channel_tasker_fallback_description">وقتی از پس‌زمینه فعال شد، برای شروع رونویسی بزنید</string>
     <string name="tasker_fallback_notification_text">برای شروع رونویسی بزنید</string>
-    <!-- TASK-271: voice-note offer notification channel -->
-    <string name="voice_note_offer_channel">هشدار پیام صوتی</string>
-    <string name="voice_note_offer_channel_description">پیشنهاد رونویسی پیام‌های صوتی جدید واتساپ</string>
     <string name="transcription_interrupted_title">رونویسی قطع شد</string>
     <string name="interrupted_runs_title">رونویسی‌های متوقف‌شده</string>
     <plurals name="interrupted_runs_text">

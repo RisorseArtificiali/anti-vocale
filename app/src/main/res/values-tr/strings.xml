@@ -723,9 +723,6 @@
     <string name="notification_channel_tasker_fallback">Tasker Otomasyonu</string>
     <string name="notification_channel_tasker_fallback_description">Arka plandan tetiklendiğinde metin çıkarmayı başlatmak için dokunun</string>
     <string name="tasker_fallback_notification_text">Metin çıkarmayı başlatmak için dokunun</string>
-    <!-- TASK-271: voice-note offer notification channel -->
-    <string name="voice_note_offer_channel">Sesli not bildirimleri</string>
-    <string name="voice_note_offer_channel_description">Yeni WhatsApp sesli notlarını metne çıkarmayı önerir</string>
 
     <!-- Dismiss -->
     <string name="dismiss">Kapat</string>
@@ -1030,17 +1027,24 @@
     <string name="voice_note_identity_title">Sesli not gönderenini tanıma</string>
     <string name="voice_note_identity_description">Paylaşılan sesli mesajın geçmiş satırına gönderenin adını yazar. Şimdilik sadece WhatsApp. Ad, yalnızca mesajın bildirimi bu açıkken geldiyse ve bildirilen süre sesle uyuyorsa görünür (tahmine dayanı ad yok). Ad, bunu kapattıktan sonra da o satırda kalır; bekleme listesi yalnız bellekte yaşar. Bildirim erişimi gerekir.</string>
     <string name="voice_note_identity_grant_hint">Bildirim erişimi kapalı. Sistem ayarını açıp bu uygulama için etkinleştirmek üzere dokunun.</string>
-    <!-- TASK-271: voice-note detection (offer notifications) -->
-    <string name="voice_note_detection_title">Sesli not bildirimleri</string>
-    <string name="voice_note_detection_description">Yeni bir WhatsApp sesli notu geldiğinde ve uygulama çalışırken Metne çıkar düğmeli bir bildirim gösterir, böylece paylaşmak yerine tek dokunuşla metne çıkarabilirsin. Algılama yalnızca WhatsApp sesli notlar klasörünün listesini okur ve her şey bu cihazda kalır. Bu kapalıyken hiçbir şey okunmaz. Müzik ve sesye erişim izni gerektirir.</string>
-    <string name="voice_note_detection_grant_hint">Ses erişimi kapalı. Uygulama ayarlarını açıp etkinleştirmek için dokunun; izin verilir verilmez bildirimler başlar.</string>
-    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
-    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
-    <string name="voice_note_offer_title">Yeni sesli not</string>
-    <string name="voice_note_offer_text_with_sender">%1$s kişisinden (%2$s)</string>
-    <string name="voice_note_offer_text_duration">Sesli mesaj (%1$s)</string>
-    <string name="voice_note_offer_text_plain">Sesli mesaj</string>
-    <string name="voice_note_offer_action">Metne çıkar</string>
+    <!-- TASK-272: automatic voice-note transcription + folder grant -->
+    <string name="voice_note_detection_title">Sesli not transkripsiyonu</string>
+    <string name="voice_note_detection_description">Yeni WhatsApp sesli notları, uygulama çalışırken geldiği anda otomatik olarak metne çevrilir. Android arka planda başlatmayı engellerse (örneğin ekran kapalıyken), bir bildirim transkripsiyonu tek dokunuşla başlatmanızı sağlar. Sonuçlar geçmişte ve bildirim olarak görünür. Algılama yalnızca WhatsApp sesli notları klasörünün listesini okur; bir not yalnızca transkribe edilirken okunur ve her şey bu cihazda kalır. Bu kapalıyken hiçbir şey okunmaz. Müzik ve ses erişim izni gerektirir.</string>
+    <string name="voice_note_detection_grant_hint">Ses erişimi kapalı. Uygulama ayarlarını açıp etkinleştirmek için dokunun; transkripsiyon izin verilir verilmez başlar.</string>
+    <string name="voice_note_folder_grant_rejected">Bu, WhatsApp sesli notları klasörü değil. WhatsApp Voice Notes adlı klasörü seçin ve tekrar deneyin.</string>
+    <string name="voice_note_folder_card_title">Sesli notlar klasörü</string>
+    <string name="voice_note_folder_card_state_granted">izin verildi</string>
+    <string name="voice_note_folder_card_state_missing">izin gerekli</string>
+    <string name="voice_note_folder_card_desc">Notları okumak için WhatsApp\'ın kaydettiği klasöre bir kez erişim verin:</string>
+    <string name="voice_note_folder_choose">Klasör seç</string>
+    <string name="voice_note_folder_change">Klasörü değiştir</string>
+    <string name="voice_note_folder_remove">Erişimi kaldır</string>
+    <string name="voice_note_folder_storage_root">Dahili depolama</string>
+    <string name="voice_note_folder_sheet_title">Klasör erişimi ver</string>
+    <string name="voice_note_folder_sheet_step1">Açılan seçicide Dahili depolama\'ya girin (soldaki menü; görmüyorsanız Depolamayı göster\'e dokunun).</string>
+    <string name="voice_note_folder_sheet_step2">Sesli notlar klasörüne ulaşana kadar yolu izleyin:</string>
+    <string name="voice_note_folder_sheet_step3">WhatsApp Voice Notes klasörü seçiliyken (açmadan) BU KLASÖRÜ KULLAN\'a, ardından İZİN VER\'e dokunun.</string>
+    <string name="voice_note_folder_sheet_open">Seçiciyi aç</string>
     <string name="share_targets_description">İndirilen her model sistem menüsünde ayrı bir seçenek olarak görünür. Sesi seçilen model işler.</string>
     <string name="advanced_sharing_toggle">İndirilen modelleri göster</string>
     <string name="share_targets_models_info">İndirilen her model paylaşım menüsünde ayrı bir öğe olarak görünür. Model silindiğinde menüden kalkar.</string>

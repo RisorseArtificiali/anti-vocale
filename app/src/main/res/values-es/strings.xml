@@ -613,9 +613,6 @@
     <string name="notification_channel_tasker_fallback">Automatización Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Toca para iniciar la transcripción cuando se activa en segundo plano</string>
     <string name="tasker_fallback_notification_text">Toca para iniciar la transcripción</string>
-    <!-- TASK-271: voice-note offer notification channel -->
-    <string name="voice_note_offer_channel">Avisos de notas de voz</string>
-    <string name="voice_note_offer_channel_description">Ofrece transcribir las notas de voz nuevas de WhatsApp</string>
     <string name="dismiss">Descartar</string>
     <string name="parakeet_downloaded">Modelo Parakeet descargado</string>
     <string name="whisper_downloaded">%1$s descargado</string>
@@ -885,17 +882,24 @@
     <string name="voice_note_identity_title">Reconocimiento del remitente de notas de voz</string>
     <string name="voice_note_identity_description">Anota en la fila del historial el nombre de quien envió la nota de voz compartida. Por ahora solo WhatsApp. El nombre aparece solo si la notificación de la nota llegó con esto activado, y solo si la duración declarada coincide con el audio (nada de nombres adivinados). El nombre permanece en esa fila incluso tras apagar esto; la lista de espera vive solo en memoria. Requiere acceso a notificaciones.</string>
     <string name="voice_note_identity_grant_hint">El acceso a notificaciones está desactivado. Toca para abrir el ajuste del sistema y activarlo para esta app.</string>
-    <!-- TASK-271: voice-note detection (offer notifications) -->
-    <string name="voice_note_detection_title">Avisos de notas de voz</string>
-    <string name="voice_note_detection_description">Muestra una notificación con el botón Transcribir cuando llega una nota de voz nueva de WhatsApp y la aplicación está en ejecución, para transcribirla con un toque en lugar de compartirla. La detección lee solo el listado de la carpeta de notas de voz de WhatsApp, y todo permanece en este dispositivo. Mientras esté desactivado, no se lee nada. Requiere permiso de acceso a música y audio.</string>
-    <string name="voice_note_detection_grant_hint">El acceso al audio está desactivado. Toca para abrir los ajustes de la aplicación y activarlo; los avisos comienzan en cuanto se conceda.</string>
-    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
-    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
-    <string name="voice_note_offer_title">Nueva nota de voz</string>
-    <string name="voice_note_offer_text_with_sender">De %1$s (%2$s)</string>
-    <string name="voice_note_offer_text_duration">Mensaje de voz (%1$s)</string>
-    <string name="voice_note_offer_text_plain">Mensaje de voz</string>
-    <string name="voice_note_offer_action">Transcribir</string>
+    <!-- TASK-272: automatic voice-note transcription + folder grant -->
+    <string name="voice_note_detection_title">Transcripción de notas de voz</string>
+    <string name="voice_note_detection_description">Transcribe automáticamente las notas de voz de WhatsApp en cuanto llegan, mientras la app está en ejecución. Si Android bloquea un inicio en segundo plano (por ejemplo con la pantalla apagada), una notificación permite iniciar la transcripción con un toque. Los resultados aparecen en el historial y como notificación. La detección lee solo la lista de la carpeta de notas de voz de WhatsApp; una nota se lee solo para transcribirla, y todo permanece en este dispositivo. Mientras esté desactivado, no se lee nada. Requiere permiso de acceso a música y audio.</string>
+    <string name="voice_note_detection_grant_hint">El acceso al audio está desactivado. Toca para abrir los ajustes de la app y activarlo; la transcripción comienza en cuanto se conceda.</string>
+    <string name="voice_note_folder_grant_rejected">Esa no es la carpeta de notas de voz de WhatsApp. Elige la carpeta llamada WhatsApp Voice Notes e inténtalo de nuevo.</string>
+    <string name="voice_note_folder_card_title">Carpeta de notas de voz</string>
+    <string name="voice_note_folder_card_state_granted">concedido</string>
+    <string name="voice_note_folder_card_state_missing">por conceder</string>
+    <string name="voice_note_folder_card_desc">Para leer las notas, concede una vez el acceso a la carpeta donde WhatsApp las guarda:</string>
+    <string name="voice_note_folder_choose">Elegir carpeta</string>
+    <string name="voice_note_folder_change">Cambiar carpeta</string>
+    <string name="voice_note_folder_remove">Quitar acceso</string>
+    <string name="voice_note_folder_storage_root">Almacenamiento interno</string>
+    <string name="voice_note_folder_sheet_title">Conceder acceso a la carpeta</string>
+    <string name="voice_note_folder_sheet_step1">En el selector que se abre, entra en Almacenamiento interno (menú de la izquierda; toca Mostrar almacenamiento si no lo ves).</string>
+    <string name="voice_note_folder_sheet_step2">Baja por la ruta hasta la carpeta de las notas de voz:</string>
+    <string name="voice_note_folder_sheet_step3">Con la carpeta WhatsApp Voice Notes seleccionada (sin abrirla), toca USAR ESTA CARPETA y luego PERMITIR.</string>
+    <string name="voice_note_folder_sheet_open">Abrir el selector</string>
     <string name="share_targets_description">Cada modelo descargado aparece como opción separada en el menú del sistema. El audio lo procesa el modelo seleccionado.</string>
     <string name="advanced_sharing_toggle">Mostrar modelos descargados</string>
     <string name="share_targets_models_info">Cada modelo descargado aparecerá como opción en el menú Compartir. Al eliminar un modelo, desaparece del menú.</string>

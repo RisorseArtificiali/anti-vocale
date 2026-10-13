@@ -16,59 +16,29 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-/**
- * TASK-271: one pending offer to transcribe a detected voice note. This is
- * the payload the notification action's PendingIntent carries; tapping
- * Transcribe hands exactly these fields to the offer receiver.
- *
- * @property filePath Absolute path of the voice-note file as observed
- *   (unreadable directly: the tap resolves it through the SAF tree grant).
- * @property senderName Matched sender label, or null when the identity
- *   matcher found no unambiguous candidate (the graceful degradation).
- * @property ownerPackage Always com.whatsapp on this route, threaded to the
- *   service as the source package so History grouping and per-app preferences
- *   behave exactly as for a share from that app.
- * @property durationSeconds Probed audio duration in seconds, when readable.
- */
-data class VoiceNoteOffer(
-    val filePath: String,
-    val senderName: String?,
-    val ownerPackage: String?,
-    val durationSeconds: Long?,
-)
-
-/** The injectable notification poster the coordinator hands offers to. */
-fun interface VoiceNoteOfferPoster {
-    /**
-     * Pre-flight: whether an offer could post at all right now (app-level
-     * denial or a blocked channel). Consulted before any per-entry work, so
-     * a suppressed configuration pays no file probes.
-     */
-    fun canPost(): Boolean = true
-
-    fun post(offer: VoiceNoteOffer)
-}
-
 /** The injectable runtime-permission probe (a seam for unit tests). */
 fun interface VoiceNotePermissionChecker {
     fun audioReadGranted(): Boolean
 }
 
 /**
- * TASK-271 lifecycle owner for voice-note detection: observes the
+ * TASK-272 (automatic form; maintainer decision 2026-10-13) lifecycle
+ * owner for voice-note transcription: observes the
  * `voiceNoteDetectionEnabled` preference and, while it is on AND the
- * read-media runtime permission is granted, keeps [VoiceNoteDetector]
- * subscribed, polls on every change signal, correlates the newest fresh
- * entry with the identity cache, and posts it as the offer notification
- * (the fixed offer id means only the newest entry's offer is visible).
+ * read-media runtime permission is granted AND the tree grant is live,
+ * keeps [VoiceNoteDetector] subscribed and feeds every detected note to
+ * [VoiceNoteAutoTranscriber]: resolve through the grant, enqueue, zero
+ * taps. The result surfaces through the existing result notification and
+ * History rows.
  *
  * PRIVACY CONTRACT (the Settings card states it): while the preference is
  * off, nothing is read at all. While on, detection reads only the
- * WhatsApp voice-note folder listing (FileObserver events over the tree,
- * no content read), and everything stays on device.
+ * WhatsApp voice-note folder listing (FileObserver events over the tree),
+ * and the note's CONTENT is read only when it is transcribed, entirely on
+ * device.
  *
- * Threading: [VoiceNoteDetector.subscribe] runs a synchronous baseline
- * query, so every call site here runs it on [Dispatchers.IO], never the
+ * Threading: [VoiceNoteDetector.subscribe] runs synchronous filesystem
+ * work, so every call site here runs it on [Dispatchers.IO], never the
  * main thread. All coroutines live on the injected @ApplicationScope
  * (launch sites pass their own dispatcher; the scope carries none).
  *
@@ -79,15 +49,14 @@ fun interface VoiceNotePermissionChecker {
  *
  * Idempotent across rapid toggling: transitions serialize on one mutex and
  * short-circuit when the desired state already holds; dispose is the
- * detector's reversible teardown, so off/on cycles re-arm detection from
- * the delta since the watermark.
+ * detector's reversible teardown, so off/on cycles re-arm detection.
  */
 @Singleton
 class VoiceNoteDetectionCoordinator @Inject constructor(
     private val detector: VoiceNoteDetector,
     private val preferencesManager: PreferencesManager,
     private val voiceNoteTreeGrant: VoiceNoteTreeGrant,
-    private val poster: VoiceNoteOfferPoster,
+    private val autoTranscriber: VoiceNoteAutoTranscriber,
     private val permissionChecker: VoiceNotePermissionChecker,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
@@ -150,7 +119,7 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
     internal suspend fun reconcile(prefEnabled: Boolean, treeUri: String?) {
         // The tree grant is the READ route (the spike verdict: direct opens
         // are EACCES and on-demand indexing lands in FILES, denied too);
-        // arming without it would post offers whose tap always fails. The
+        // arming without it would enqueue notes that can never resolve. The
         // LIVE grant is what gates (a saved URI whose grant died arms
         // nothing), the folder-watch precedent.
         val shouldRun = prefEnabled && permissionChecker.audioReadGranted() &&
@@ -179,38 +148,26 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
 
     private suspend fun collectSignals() {
         detector.detections.collect { entry ->
-            runCatching { handleFreshEntry(entry) }
-                .onFailure { Log.w(TAG, "voice-note offer failed", it) }
+            try {
+                transcribe(entry)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // Disarm cancels this job mid-enqueue: propagate, never
+                // log as a failure or keep draining the queue (review F3).
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "voice-note auto transcription failed", e)
+            }
         }
     }
 
     /**
-     * One detected entry becomes the offer. The detector's flow already
-     * conflates bursts to the newest (DROP_OLDEST; the single fixed
-     * notification slot can only ever show the latest one). An entry
-     * without an absolute path cannot be handed to the service and yields
-     * no offer.
-     *
-     * The offer is sender-less and duration-less BY DESIGN on this route
-     * (code review F1, 2026-10-13): the observed path is FUSE-hidden and
-     * EACCES (the spike's probe 3), so a detection-time duration probe
-     * always fails and the matcher labels nothing without a duration (its
-     * own contract). Probing through the tree grant is a content read at
-     * detection time, which the Settings privacy copy rules out; the
-     * enrichment task (backlog) owns that trade-off. The identity leg is
-     * NOT dead: the share path matches over its readable sandbox copy.
+     * One detected note becomes one enqueued transcription; an entry without
+     * an absolute path cannot be resolved and is skipped. Runs on the
+     * collector's IO dispatcher, never the main thread.
      */
-    private suspend fun handleFreshEntry(entry: VoiceNoteEntry) {
-        if (!poster.canPost()) return
+    private suspend fun transcribe(entry: VoiceNoteEntry) {
         val path = entry.path ?: return
-        poster.post(
-            VoiceNoteOffer(
-                filePath = path,
-                senderName = null,
-                ownerPackage = entry.ownerPackage,
-                durationSeconds = null,
-            ),
-        )
+        autoTranscriber.enqueue(path)
     }
 
     private companion object {

@@ -713,9 +713,6 @@
     <string name="notification_channel_tasker_fallback">Автоматизация Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Нажмите, чтобы начать распознавание при запуске из фонового режима</string>
     <string name="tasker_fallback_notification_text">Нажмите, чтобы начать распознавание</string>
-    <!-- TASK-271: voice-note offer notification channel -->
-    <string name="voice_note_offer_channel">Оповещения о голосовых сообщениях</string>
-    <string name="voice_note_offer_channel_description">Предлагает транскрибировать новые голосовые сообщения WhatsApp</string>
 
     <!-- Dismiss -->
     <string name="dismiss">Отклонить</string>
@@ -1030,17 +1027,24 @@
     <string name="voice_note_identity_title">Распознавание отправителя голосовых</string>
     <string name="voice_note_identity_description">Записывает в строку истории имя отправителя общего голосового сообщения. Пока только WhatsApp. Имя появится только если уведомление пришло, пока опция была включена, и только при совпадении заявленной длительности с аудио (без угадывания). Имя остаётся в строке и после выключения; список живёт только в памяти. Требуется доступ к уведомлениям.</string>
     <string name="voice_note_identity_grant_hint">Доступ к уведомлениям выключен. Нажмите, чтобы открыть системную настройку и включить его для этого приложения.</string>
-    <!-- TASK-271: voice-note detection (offer notifications) -->
-    <string name="voice_note_detection_title">Оповещения о голосовых сообщениях</string>
-    <string name="voice_note_detection_description">Показывает уведомление с кнопкой «Транскрибировать», когда приходит новое голосовое сообщение WhatsApp и приложение запущено, чтобы транскрибировать его одним нажатием, а не пересылать. Обнаружение читает только список папки голосовых сообщений WhatsApp, и всё остаётся на этом устройстве. Пока переключатель выключен, ничего не читается. Требуется разрешение на доступ к музыке и аудио.</string>
-    <string name="voice_note_detection_grant_hint">Доступ к аудио выключен. Нажмите, чтобы открыть настройки приложения и включить его; оповещения начнутся сразу после предоставления.</string>
-    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
-    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
-    <string name="voice_note_offer_title">Новое голосовое сообщение</string>
-    <string name="voice_note_offer_text_with_sender">От %1$s (%2$s)</string>
-    <string name="voice_note_offer_text_duration">Голосовое сообщение (%1$s)</string>
-    <string name="voice_note_offer_text_plain">Голосовое сообщение</string>
-    <string name="voice_note_offer_action">Транскрибировать</string>
+    <!-- TASK-272: automatic voice-note transcription + folder grant -->
+    <string name="voice_note_detection_title">Транскрипция голосовых сообщений</string>
+    <string name="voice_note_detection_description">Автоматически расшифровывает новые голосовые сообщения WhatsApp по мере их поступления, пока приложение работает. Если Android запрещает фоновый запуск (например, при выключенном экране), уведомление позволяет запустить транскрипцию одним нажатием. Результаты появляются в журнале и в виде уведомления. Обнаружение читает только список папки голосовых сообщений WhatsApp; сообщение читается только для расшифровки, и всё остаётся на этом устройстве. Пока выключено, ничего не читается. Требуется разрешение на доступ к музыке и аудио.</string>
+    <string name="voice_note_detection_grant_hint">Доступ к аудио выключен. Нажмите, чтобы открыть настройки приложения и включить его; транскрипция начнётся после предоставления.</string>
+    <string name="voice_note_folder_grant_rejected">Это не папка голосовых сообщений WhatsApp. Выберите папку с именем WhatsApp Voice Notes и попробуйте ещё раз.</string>
+    <string name="voice_note_folder_card_title">Папка голосовых сообщений</string>
+    <string name="voice_note_folder_card_state_granted">предоставлен</string>
+    <string name="voice_note_folder_card_state_missing">нужно предоставить</string>
+    <string name="voice_note_folder_card_desc">Чтобы читать сообщения, один раз предоставьте доступ к папке, куда WhatsApp их сохраняет:</string>
+    <string name="voice_note_folder_choose">Выбрать папку</string>
+    <string name="voice_note_folder_change">Сменить папку</string>
+    <string name="voice_note_folder_remove">Отозвать доступ</string>
+    <string name="voice_note_folder_storage_root">Внутренняя память</string>
+    <string name="voice_note_folder_sheet_title">Предоставить доступ к папке</string>
+    <string name="voice_note_folder_sheet_step1">В открывшемся выборе перейдите во Внутреннюю память (меню слева; нажмите Показать память, если её не видно).</string>
+    <string name="voice_note_folder_sheet_step2">Пройдите по пути до папки голосовых сообщений:</string>
+    <string name="voice_note_folder_sheet_step3">Выберите папку WhatsApp Voice Notes (не открывая) и нажмите ИСПОЛЬЗОВАТЬ ЭТУ ПАПКУ, затем РАЗРЕШИТЬ.</string>
+    <string name="voice_note_folder_sheet_open">Открыть выбор папки</string>
     <string name="share_targets_description">Каждая скачанная модель отображается отдельным пунктом системного меню. Аудио обрабатывает выбранная модель</string>
     <string name="advanced_sharing_toggle">Показывать скачанные модели</string>
     <string name="share_targets_models_info">Каждая скачанная модель появится отдельным пунктом в меню «Поделиться». Удаление модели уберёт её из меню</string>

@@ -692,9 +692,6 @@
     <string name="notification_channel_tasker_fallback">Tasker-Automatisierung</string>
     <string name="notification_channel_tasker_fallback_description">Tippen, um die Transkription bei Auslösung im Hintergrund zu starten</string>
     <string name="tasker_fallback_notification_text">Tippen, um die Transkription zu starten</string>
-    <!-- TASK-271: voice-note offer notification channel -->
-    <string name="voice_note_offer_channel">Hinweise zu Sprachnachrichten</string>
-    <string name="voice_note_offer_channel_description">Bietet an, neue WhatsApp-Sprachnachrichten zu transkribieren</string>
 
     <!-- Dismiss -->
     <string name="dismiss">Ausblenden</string>
@@ -987,17 +984,24 @@
     <string name="voice_note_identity_title">Erkennung des Absenders von Sprachnachrichten</string>
     <string name="voice_note_identity_description">Trägt den Namen des Absenders in die Verlaufszeile einer geteilten Sprachnachricht ein. Zurzeit nur WhatsApp. Der Name erscheint nur, wenn die Benachrichtigung der Nachricht eintraf, während dies aktiviert war, und nur wenn die gemeldete Länge zum Audio passt (keine geratenen Namen). Der Name bleibt auf der Zeile, auch nachdem du dies ausschaltest; die Warteliste liegt nur im Speicher. Benötigt Benachrichtigungszugriff.</string>
     <string name="voice_note_identity_grant_hint">Benachrichtigungszugriff ist aus. Tippe, um die Systemeinstellung zu öffnen und ihn für diese App zu aktivieren.</string>
-    <!-- TASK-271: voice-note detection (offer notifications) -->
-    <string name="voice_note_detection_title">Hinweise zu Sprachnachrichten</string>
-    <string name="voice_note_detection_description">Zeigt eine Benachrichtigung mit der Schaltfläche Transkribieren, wenn eine neue WhatsApp-Sprachnachricht eintrifft und die App läuft, sodass du sie mit einem Tipp transkribieren kannst, statt sie zu teilen. Die Erkennung liest nur die Ordnerliste der WhatsApp-Sprachnachrichten, und alles bleibt auf diesem Gerät. Solange dies aus ist, wird gar nichts gelesen. Erfordert die Berechtigung für Musik und Audio.</string>
-    <string name="voice_note_detection_grant_hint">Audiozugriff ist aus. Tippe, um die App-Einstellungen zu öffnen und ihn zu aktivieren; die Hinweise starten, sobald er erteilt ist.</string>
-    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
-    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
-    <string name="voice_note_offer_title">Neue Sprachnachricht</string>
-    <string name="voice_note_offer_text_with_sender">Von %1$s (%2$s)</string>
-    <string name="voice_note_offer_text_duration">Sprachnachricht (%1$s)</string>
-    <string name="voice_note_offer_text_plain">Sprachnachricht</string>
-    <string name="voice_note_offer_action">Transkribieren</string>
+    <!-- TASK-272: automatic voice-note transcription + folder grant -->
+    <string name="voice_note_detection_title">Transkription von Sprachnachrichten</string>
+    <string name="voice_note_detection_description">Transkribiert neue WhatsApp-Sprachnachrichten automatisch, sobald sie ankommen, während die App läuft. Wenn Android einen Start im Hintergrund blockiert (zum Beispiel bei ausgeschaltetem Bildschirm), startet eine Benachrichtigung die Transkription mit einem Tipp. Die Ergebnisse erscheinen in der Chronik und als Benachrichtigung. Die Erkennung liest nur die Ordnerliste der WhatsApp-Sprachnachrichten; eine Nachricht wird nur zum Transkribieren gelesen, und alles bleibt auf diesem Gerät. Solange dies aus ist, wird gar nichts gelesen. Erfordert die Berechtigung für Musik und Audio.</string>
+    <string name="voice_note_detection_grant_hint">Audiozugriff ist aus. Tippe, um die App-Einstellungen zu öffnen und ihn zu aktivieren; die Transkription startet, sobald er erteilt ist.</string>
+    <string name="voice_note_folder_grant_rejected">Das ist nicht der Ordner für WhatsApp-Sprachnachrichten. Wähle den Ordner mit dem Namen WhatsApp Voice Notes und versuche es erneut.</string>
+    <string name="voice_note_folder_card_title">Ordner für Sprachnachrichten</string>
+    <string name="voice_note_folder_card_state_granted">erteilt</string>
+    <string name="voice_note_folder_card_state_missing">zu erteilen</string>
+    <string name="voice_note_folder_card_desc">Um die Nachrichten zu lesen, erteile einmalig Zugriff auf den Ordner, in dem WhatsApp sie speichert:</string>
+    <string name="voice_note_folder_choose">Ordner wählen</string>
+    <string name="voice_note_folder_change">Ordner wechseln</string>
+    <string name="voice_note_folder_remove">Zugriff entfernen</string>
+    <string name="voice_note_folder_storage_root">Interner Speicher</string>
+    <string name="voice_note_folder_sheet_title">Ordnerzugriff erteilen</string>
+    <string name="voice_note_folder_sheet_step1">Öffne im Auswahlbildschirm den Internen Speicher (linkes Menü; tippe auf Speicher anzeigen, falls du ihn nicht siehst).</string>
+    <string name="voice_note_folder_sheet_step2">Scrolle im Pfad nach unten bis zum Ordner der Sprachnachrichten:</string>
+    <string name="voice_note_folder_sheet_step3">Wähle den Ordner WhatsApp Voice Notes aus (nicht öffnen) und tippe auf DIESEN ORDNER VERWENDEN und dann auf ZULASSEN.</string>
+    <string name="voice_note_folder_sheet_open">Auswahl öffnen</string>
     <string name="share_targets_description">Jedes heruntergeladene Modell erscheint als eigener Eintrag im Systemmenü. Das Audio verarbeitet das ausgewählte Modell.</string>
     <string name="advanced_sharing_toggle">Heruntergeladene Modelle anzeigen</string>
     <string name="share_targets_models_info">Jedes heruntergeladene Modell erscheint als Eintrag im Teilen-Menü. Beim Löschen wird das Modell aus dem Menü entfernt.</string>

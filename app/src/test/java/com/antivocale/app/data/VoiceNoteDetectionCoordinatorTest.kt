@@ -1,6 +1,7 @@
 package com.antivocale.app.data
 
 import io.mockk.Runs
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -14,34 +15,31 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * TASK-271: the detection lifecycle's decision layer. The pure policy rules
- * run device-free; the coordinator transitions run against a mocked
- * detector (the real one needs a ContentResolver), with real timing only
- * where a background collector must observe a signal.
+ * TASK-272: the detection lifecycle's decision layer (the automatic form:
+ * every detected note is handed to the auto-transcriber). The pure policy
+ * rules run device-free; the coordinator transitions run against a mocked
+ * detector (the real one needs a filesystem), with real timing only where
+ * a background collector must observe a signal.
  */
 class VoiceNoteDetectionCoordinatorTest {
 
     private fun entry(path: String? = "/voice/PTT-1.opus") = VoiceNoteEntry(
         id = 7L,
         path = path,
-        ownerPackage = "com.whatsapp",
     )
 
     // ---- coordinator transitions ----
 
     private class Harness(
         private val permissionGranted: () -> Boolean,
-        posterOverride: VoiceNoteOfferPoster? = null,
     ) {
         val detections = MutableSharedFlow<VoiceNoteEntry>(extraBufferCapacity = 8)
         val detector = mockk<VoiceNoteDetector>()
-        val offers = mutableListOf<VoiceNoteOffer>()
+        val enqueued = mutableListOf<String>()
         val preferences = FakePreferencesManager()
         val treeGrant = mockk<VoiceNoteTreeGrant>()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
@@ -49,7 +47,9 @@ class VoiceNoteDetectionCoordinatorTest {
             detector,
             preferences,
             treeGrant,
-            posterOverride ?: VoiceNoteOfferPoster { offers += it },
+            mockk<VoiceNoteAutoTranscriber> {
+                coEvery { enqueue(any()) } coAnswers { enqueued += firstArg<String>() }
+            },
             VoiceNotePermissionChecker { permissionGranted() },
             scope,
         )
@@ -67,13 +67,13 @@ class VoiceNoteDetectionCoordinatorTest {
 
         /**
          * The collector runs on Dispatchers.IO, so the test re-emits the
-         * entry until the offer lands rather than sleeping a guess: the
+         * entry until the enqueue lands rather than sleeping a guess: the
          * first emission can race the subscription, and a buffered one can
          * be consumed late.
          */
-        suspend fun untilOfferPosted(e: VoiceNoteEntry) {
+        suspend fun untilEnqueued(e: VoiceNoteEntry) {
             withTimeout(5_000) {
-                while (offers.isEmpty()) {
+                while (enqueued.isEmpty()) {
                     detections.tryEmit(e)
                     delay(10)
                 }
@@ -81,8 +81,8 @@ class VoiceNoteDetectionCoordinatorTest {
         }
 
         /**
-         * One emission, then a grace delay: the collector either posts an
-         * offer or skips the entry; both settle within the delay.
+         * One emission, then a grace delay: the collector either enqueues
+         * or skips the entry; both settle within the delay.
          */
         suspend fun emitAndSettle(e: VoiceNoteEntry) {
             detections.tryEmit(e)
@@ -95,61 +95,43 @@ class VoiceNoteDetectionCoordinatorTest {
     }
 
     @Test
-    fun `on with permission subscribes and posts one sender-less offer`() = runBlocking {
+    fun `on with permission subscribes and enqueues one transcription`() = runBlocking {
         val h = Harness(permissionGranted = { true })
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
         verify(exactly = 1) { h.detector.subscribe() }
-        h.untilOfferPosted(entry())
-        assertEquals(1, h.offers.size)
-        // Sender-less AND duration-less by design on this route (code
-        // review F1): the observed path is FUSE-hidden, a duration probe
-        // would always fail, and the matcher labels nothing without one.
-        assertNull(h.offers.single().senderName)
-        assertNull(h.offers.single().durationSeconds)
+        h.untilEnqueued(entry())
+        assertEquals(listOf("/voice/PTT-1.opus"), h.enqueued)
         h.scope.cancel()
     }
 
     @Test
-    fun `a burst offers only the newest entry`() = runBlocking {
+    fun `a burst queues every note for transcription`() = runBlocking {
         val h = Harness(permissionGranted = { true })
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
         // A burst as back-to-back emissions, re-fired until the collector
-        // (launched on a real IO dispatcher) is subscribed: whether a burst
-        // lands as one (real-flow conflation) or both (this harness buffers
-        // 8), the LAST offer is the newest entry and the single fixed slot
-        // shows that one; an older offer never survives as visible state.
+        // (launched on a real IO dispatcher) is subscribed: TASK-272 AC3,
+        // every detected note reaches the transcriber (the service queue
+        // serializes; no note may be dropped at this seam).
         withTimeout(5_000) {
-            while (h.offers.isEmpty()) {
+            while (h.enqueued.size < 3) {
                 h.detections.tryEmit(entry("/voice/PTT-1.opus").copy(id = 1L))
                 h.detections.tryEmit(entry("/voice/PTT-2.opus").copy(id = 2L))
+                h.detections.tryEmit(entry("/voice/PTT-3.opus").copy(id = 3L))
                 delay(10)
             }
         }
-        assertEquals("/voice/PTT-2.opus", h.offers.last().filePath)
+        assertEquals(
+            setOf("/voice/PTT-1.opus", "/voice/PTT-2.opus", "/voice/PTT-3.opus"),
+            h.enqueued.toSet())
         h.scope.cancel()
     }
 
     @Test
-    fun `a suppressed notification channel posts nothing`() = runBlocking {
-        val h = Harness(
-            permissionGranted = { true },
-            posterOverride = object : VoiceNoteOfferPoster {
-                override fun canPost() = false
-                override fun post(offer: VoiceNoteOffer) {}
-            },
-        )
-        h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
-        h.emitAndSettle(entry())
-        assertTrue(h.offers.isEmpty())
-        h.scope.cancel()
-    }
-
-    @Test
-    fun `an entry without a path posts nothing even when detected`() = runBlocking {
+    fun `an entry without a path enqueues nothing even when detected`() = runBlocking {
         val h = Harness(permissionGranted = { true })
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
         h.emitAndSettle(entry(path = null))
-        assertTrue(h.offers.isEmpty())
+        assertTrue(h.enqueued.isEmpty())
         h.scope.cancel()
     }
 
@@ -185,7 +167,7 @@ class VoiceNoteDetectionCoordinatorTest {
     fun `a saved uri whose live grant died keeps the gate closed`() = runBlocking {
         val h = Harness(permissionGranted = { true })
         // The preference string survives (folder recreated, OEM cleanup);
-        // the live-grant probe is what must disarm the offers.
+        // the live-grant probe is what must disarm transcription.
         every { h.treeGrant.holdsGrant(TREE_URI) } returns false
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
         verify(exactly = 0) { h.detector.subscribe() }
@@ -219,7 +201,7 @@ class VoiceNoteDetectionCoordinatorTest {
         h.preferences._voiceNoteDetectionEnabled.value = true
         // The harness defaults the grant to a live tree; drop it and the
         // gate must stay closed even with permission and preference on:
-        // without the grant every tap would cancel its offer.
+        // without the grant every resolve would fail.
         h.preferences._voiceNoteTreeUri.value = null
         h.coordinator.start()
         verify(exactly = 0) { h.detector.subscribe() }
@@ -227,7 +209,8 @@ class VoiceNoteDetectionCoordinatorTest {
         // poke, the same shape as the preference flow.
         h.preferences._voiceNoteTreeUri.value = TREE_URI
         verify(timeout = 5_000) { h.detector.subscribe() }
-        // And clearing it (the rejected-pick path) tears detection down.
+        // And removing the access (the card's Rimuovi accesso) tears
+        // detection down.
         h.preferences._voiceNoteTreeUri.value = null
         verify(timeout = 5_000) { h.detector.dispose() }
         h.scope.cancel()
@@ -240,7 +223,7 @@ class VoiceNoteDetectionCoordinatorTest {
         // A second start must not double-collect.
         h.coordinator.start()
         h.preferences._voiceNoteDetectionEnabled.value = true
-        h.untilOfferPosted(entry())
+        h.untilEnqueued(entry())
         verify(atLeast = 1) { h.detector.subscribe() }
         h.preferences._voiceNoteDetectionEnabled.value = false
         // Blocking verify: the collector runs on a real dispatcher.

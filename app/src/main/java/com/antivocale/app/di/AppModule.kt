@@ -65,15 +65,6 @@ object AppModule {
         return PreferencesManagerImpl(context).apply { initialize() }
     }
 
-    /**
-     * TASK-271: the voice-note offer poster (interface seam the detection
-     * coordinator consumes; the notifier is the production impl).
-     */
-    @Provides
-    @Singleton
-    fun provideVoiceNoteOfferPoster(impl: com.antivocale.app.service.VoiceNoteOfferNotifier):
-        com.antivocale.app.data.VoiceNoteOfferPoster = impl
-
     /** TASK-271: the read-media permission probe; on Android 10 detection is
      *  also unavailable (scoped storage blocks the tap path), folded in here
      *  so the coordinator's single conjunction stays one source of truth. */

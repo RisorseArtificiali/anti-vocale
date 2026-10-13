@@ -6,10 +6,9 @@ import android.util.Log
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 
 /**
  * One detected WhatsApp voice note (TASK-271, reworked 2026-10-13 onto
@@ -18,12 +17,10 @@ import kotlinx.coroutines.flow.asSharedFlow
  * @property id Path-hash (stable dedup key; replaces the MediaStore row id).
  * @property path Absolute file path as observed (unreadable directly: the
  *   tap path resolves it through the SAF tree grant).
- * @property ownerPackage Always com.whatsapp on this route.
  */
 data class VoiceNoteEntry(
     val id: Long,
     val path: String?,
-    val ownerPackage: String?,
 )
 
 /**
@@ -39,20 +36,23 @@ data class VoiceNoteEntry(
  *
  * Watchers cover the tree root (new counter folders) and each existing
  * counter folder (level-1 enumeration works with READ_MEDIA_AUDIO, the
- * spike's probe 1). [detections] conflates to the newest entry under
- * pressure (DROP_OLDEST), which is exactly the coordinator's offer rule:
- * one fixed notification slot, newest wins.
+ * spike's probe 1). [detections] is a command queue, not a broadcast:
+ * every detected note must reach the transcriber exactly once (TASK-272
+ * AC3), so the Channel is unbounded and emission never drops (entries
+ * are three-field values; WhatsApp cannot outgrow memory between the
+ * consumer's serial resolves). File notes fire on CLOSE_WRITE/MOVED_TO
+ * ONLY (never CREATE: the automatic form would copy the file while
+ * WhatsApp is still writing it, and the dedup would then swallow the
+ * CLOSE_WRITE that proves the write complete); CREATE stays in the mask
+ * for new counter FOLDERS.
  */
 @Singleton
 class VoiceNoteDetector @Inject constructor() {
 
-    private val _detections = MutableSharedFlow<VoiceNoteEntry>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
+    private val _detections = Channel<VoiceNoteEntry>(Channel.UNLIMITED)
 
-    /** Each new voice note, already deduped; newest-wins under pressure. */
-    val detections: Flow<VoiceNoteEntry> = _detections.asSharedFlow()
+    /** Every new voice note, already deduped; queue semantics, no loss. */
+    val detections: Flow<VoiceNoteEntry> = _detections.receiveAsFlow()
 
     private val seen = VoiceNoteFilter.IncrementalFilter()
     private val observers = mutableListOf<FileObserver>()
@@ -107,14 +107,12 @@ class VoiceNoteDetector @Inject constructor() {
                     watch(File(dir, path))
                     return
                 }
+                // File notes only once the write is complete (see class
+                // KDoc): CREATE alone means WhatsApp is still writing.
+                if ((event and (FileObserver.CLOSE_WRITE or FileObserver.MOVED_TO)) == 0) return
                 if (!VoiceNoteFilter.isWhatsAppVoiceNoteName(path)) return
                 val file = File(dir, path)
-                onDetection(
-                    VoiceNoteEntry(
-                        id = file.absolutePath.hashCode().toLong(),
-                        path = file.absolutePath,
-                        ownerPackage = "com.whatsapp",
-                    ))
+                onDetection(VoiceNoteEntry(id = file.absolutePath.hashCode().toLong(), path = file.absolutePath))
             }
         }
         // A missing directory (WhatsApp cleared or reinstalled) must not
@@ -133,7 +131,7 @@ class VoiceNoteDetector @Inject constructor() {
 
     private fun onDetection(entry: VoiceNoteEntry) {
         val isNew = synchronized(this@VoiceNoteDetector) { seen.observe(entry) }
-        if (isNew) _detections.tryEmit(entry)
+        if (isNew) _detections.trySend(entry)
     }
 
     private companion object {
@@ -164,9 +162,9 @@ object VoiceNoteFilter {
     fun isCounterFolderName(name: String): Boolean = name.toIntOrNull() != null
 
     /**
-     * Event dedup: the same file can fire CREATE and CLOSE_WRITE (and
-     * re-fires on WhatsApp's post-write touches); a bounded recent-id
-     * window keeps one offer per note while the memory stays constant.
+     * Event dedup: the same file can fire CLOSE_WRITE more than once
+     * (WhatsApp's post-write touches); a bounded recent-id window keeps
+     * one queue entry per note while the memory stays constant.
      */
     class IncrementalFilter(private val capacity: Int = 128) {
         private val seen = object : LinkedHashMap<Long, Unit>(16, 0.75f, true) {

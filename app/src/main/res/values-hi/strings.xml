@@ -691,9 +691,6 @@
     <string name="notification_channel_tasker_fallback">Tasker ऑटोमेशन</string>
     <string name="notification_channel_tasker_fallback_description">बैकग्राउंड से ट्रिगर होने पर ट्रांसक्रिप्शन शुरू करने के लिए टैप करें</string>
     <string name="tasker_fallback_notification_text">ट्रांसक्रिप्शन शुरू करने के लिए टैप करें</string>
-    <!-- TASK-271: voice-note offer notification channel -->
-    <string name="voice_note_offer_channel">वॉइस नोट अलर्ट</string>
-    <string name="voice_note_offer_channel_description">नई WhatsApp वॉइस नोट को ट्रांसक्राइब करने का प्रस्ताव</string>
 
     <!-- Dismiss -->
     <string name="dismiss">खारिज करें</string>
@@ -986,17 +983,24 @@
     <string name="voice_note_identity_title">वॉइस नोट भेजने वाले की पहचान</string>
     <string name="voice_note_identity_description">साझा गया वॉयेस नोट की इतिहास पंक्ति पर भेजने वाले का नाम लिखता है। फिलहाल सिर्फ WhatsApp। नाम तभी दिखता है जब नोट का नोटिफिकेशन इस ऑन होने पर आया हो, और तभी जब बताया गया समय ऑडियो से मेल खाता हो (कोई अंदाज़ा नाम नहीं)। यह ऑप्शन बंद करने के बाद भी नाम उस पंक्ति पर रहता है; प्रतीक्षा सूची केवल मेमरी में रहती है। नोटिफिकेशन एक्सेस चाहिए।</string>
     <string name="voice_note_identity_grant_hint">सूचना एक्सेस बंद है। सिस्टम सेटिंग खोलने और इस ऐप के लिए इसे चालू करने के लिए टैप करें।</string>
-    <!-- TASK-271: voice-note detection (offer notifications) -->
-    <string name="voice_note_detection_title">वॉइस नोट अलर्ट</string>
-    <string name="voice_note_detection_description">जब कोई नई WhatsApp वॉइस नोट आती है और ऐप चल रहा हो, तो Transcribe बटन के साथ एक सूचना दिखती है, ताकि आप उसे साझा करने के बजाय एक टैप में ट्रांसक्राइब कर सकें। डिटेक्शन केवल WhatsApp वॉइस नोट फ़ोल्डर की सूची पढ़ता है, और सब कुछ इसी डिवाइस पर रहता है। यह बंद रहने पर कुछ भी नहीं पढ़ा जाता। संगीत और ऑडियो तक पहुंच की अनुमति चाहिए।</string>
-    <string name="voice_note_detection_grant_hint">ऑडियो एक्सेस बंद है। ऐप सेटिंग खोलकर इसे चालू करने के लिए टैप करें; अनुमति मिलते ही अलर्ट शुरू हो जाएंगे।</string>
-    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <!-- TASK-272: automatic voice-note transcription + folder grant -->
+    <string name="voice_note_detection_title">वॉइस नोट ट्रांसक्रिप्शन</string>
+    <string name="voice_note_detection_description">ऐप चलते रहने पर नई WhatsApp वॉइस नोट आते ही उन्हें अपने आप ट्रांसक्राइब कर देता है। यदि Android बैकग्राउंड शुरुआत को रोक दे (जैसे स्क्रीन बंद होने पर), तो एक नोटिफिकेशन से आप एक टैप में ट्रांसक्रिप्शन शुरू कर सकते हैं। परिणाम इतिहास में और नोटिफिकेशन के रूप में दिखते हैं। डिटेक्शन केवल WhatsApp वॉइस नोट फ़ोल्डर की सूची पढ़ता है; कोई नोट केवल ट्रांसक्राइब होने के लिए पढ़ा जाता है, और सब कुछ इसी डिवाइस पर रहता है। यह बंद होने पर कुछ भी नहीं पढ़ा जाता। संगीत और ऑडियो एक्सेस की अनुमति चाहिए।</string>
+    <string name="voice_note_detection_grant_hint">ऑडियो एक्सेस बंद है। ऐप सेटिंग्स खोलकर सक्षम करने के लिए टैप करें; अनुमति मिलते ही ट्रांसक्रिप्शन शुरू हो जाता है।</string>
     <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
-    <string name="voice_note_offer_title">नई वॉइस नोट</string>
-    <string name="voice_note_offer_text_with_sender">%1$s से (%2$s)</string>
-    <string name="voice_note_offer_text_duration">वॉइस संदेश (%1$s)</string>
-    <string name="voice_note_offer_text_plain">वॉइस संदेश</string>
-    <string name="voice_note_offer_action">ट्रांसक्राइब करें</string>
+    <string name="voice_note_folder_card_title">वॉइस नोट फ़ोल्डर</string>
+    <string name="voice_note_folder_card_state_granted">अनुमति प्राप्त</string>
+    <string name="voice_note_folder_card_state_missing">अनुमति दें</string>
+    <string name="voice_note_folder_card_desc">नोट पढ़ने के लिए, जिस फ़ोल्डर में WhatsApp उन्हें सहेजता है उसे एक बार एक्सेस दें:</string>
+    <string name="voice_note_folder_choose">फ़ोल्डर चुनें</string>
+    <string name="voice_note_folder_change">फ़ोल्डर बदलें</string>
+    <string name="voice_note_folder_remove">एक्सेस हटाएँ</string>
+    <string name="voice_note_folder_storage_root">इंटरनल स्टोरेज</string>
+    <string name="voice_note_folder_sheet_title">फ़ोल्डर एक्सेस दें</string>
+    <string name="voice_note_folder_sheet_step1">खुलने वाले पिकर में इंटरनल स्टोरेज पर जाएँ (बायाँ मेनू; न दिखे तो स्टोरेज दिखाएँ पर टैप करें)।</string>
+    <string name="voice_note_folder_sheet_step2">वॉइस नोट फ़ोल्डर तक पथ पर नीचे जाएँ:</string>
+    <string name="voice_note_folder_sheet_step3">WhatsApp Voice Notes फ़ोल्डर चुनकर (खोले बिना) इस फ़ोल्डर का उपयोग करें पर, फिर अनुमति दें पर टैप करें।</string>
+    <string name="voice_note_folder_sheet_open">पिकर खोलें</string>
     <string name="share_targets_description">हर डाउनलोड किया मॉडल सिस्टम मेन्यू में अलग विकल्प के रूप में दिखेगा। ऑडियो चुने गए मॉडल से प्रोसेस होगा।</string>
     <string name="advanced_sharing_toggle">डाउनलोड किए मॉडल दिखाएं</string>
     <string name="share_targets_models_info">हर डाउनलोड किया मॉडल शेयर मेन्यू में अलग एंट्री के रूप में दिखेगा। मॉडल मिटाने पर वह मेन्यू से हट जाएगा।</string>

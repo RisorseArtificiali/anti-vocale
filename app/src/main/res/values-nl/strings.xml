@@ -1249,19 +1249,24 @@
     <string name="folder_watch_grant_failed">De toegang tot die map kon niet behouden worden, dus hij is niet toegevoegd. Kies hem opnieuw.</string>
 
     <!-- TASK-271 trial branch: EN stopgaps until the translation pass -->
-    <string name="voice_note_offer_channel">Voice note alerts</string>
-    <string name="voice_note_offer_channel_description">Offers to transcribe new WhatsApp voice notes</string>
     <string name="voice_note_identity_title">Voice note sender recognition</string>
     <string name="voice_note_identity_description">Labels the History row of a shared voice note with the sender\'s name. WhatsApp only for now. The name appears only if the note\'s notification arrived while this was on, and only when its reported length matches the audio (no guessed names). The name stays on that row even after you turn this off; the waiting list lives in memory only. Requires notification access.</string>
     <string name="voice_note_identity_grant_hint">Notification access is off. Tap to open the system setting and enable it for this app.</string>
-    <string name="voice_note_detection_title">Voice note alerts</string>
-    <string name="voice_note_detection_description">Shows a notification with a Transcribe button when a new WhatsApp voice note arrives and the app is running, so you can transcribe it with one tap instead of sharing it. Detection reads only the WhatsApp voice-note folder listing, and everything stays on this device. While this is off, nothing is read at all. Requires permission to access music and audio.</string>
-    <string name="voice_note_detection_grant_hint">Audio access is off. Tap to open the app settings and enable it; alerts start once it is granted.</string>
-    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
-    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
-    <string name="voice_note_offer_title">New voice note</string>
-    <string name="voice_note_offer_text_with_sender">From %1$s (%2$s)</string>
-    <string name="voice_note_offer_text_duration">Voice message (%1$s)</string>
-    <string name="voice_note_offer_text_plain">Voice message</string>
-    <string name="voice_note_offer_action">Transcribe</string>
+    <string name="voice_note_detection_title">Transcriptie van spraakberichten</string>
+    <string name="voice_note_detection_description">Transcribeert nieuwe WhatsApp-spraakberichten automatisch zodra ze binnenkomen, terwijl de app draait. Als Android een start op de achtergrond blokkeert (bijvoorbeeld met het scherm uit), kun je met een melding de transcriptie met één tik starten. De resultaten verschijnen in de geschiedenis en als melding. Detectie leest alleen de maplijst van WhatsApp-spraakberichten; een bericht wordt alleen gelezen om het te transcriberen, en alles blijft op dit apparaat. Uit betekent dat er niets wordt gelezen. Vereist toestemming voor muziek en audio.</string>
+    <string name="voice_note_detection_grant_hint">Audio-toegang staat uit. Tik om de app-instellingen te openen en dit in te schakelen; transcriptie start zodra het is verleend.</string>
+    <string name="voice_note_folder_grant_rejected">Dit is niet de map met WhatsApp-spraakberichten. Kies de map met de naam WhatsApp Voice Notes en probeer het opnieuw.</string>
+    <string name="voice_note_folder_card_title">Map met spraakberichten</string>
+    <string name="voice_note_folder_card_state_granted">verleend</string>
+    <string name="voice_note_folder_card_state_missing">te verlenen</string>
+    <string name="voice_note_folder_card_desc">Om de berichten te lezen, verleen één keer toegang tot de map waar WhatsApp ze opslaat:</string>
+    <string name="voice_note_folder_choose">Map kiezen</string>
+    <string name="voice_note_folder_change">Map wijzigen</string>
+    <string name="voice_note_folder_remove">Toegang intrekken</string>
+    <string name="voice_note_folder_storage_root">Interne opslag</string>
+    <string name="voice_note_folder_sheet_title">Maptoegang verlenen</string>
+    <string name="voice_note_folder_sheet_step1">Ga in de kiezer die opent naar Interne opslag (linkermenu; tik op Opslag weergeven als je het niet ziet).</string>
+    <string name="voice_note_folder_sheet_step2">Scroll omlaag langs het pad naar de map met spraakberichten:</string>
+    <string name="voice_note_folder_sheet_step3">Tik met de map WhatsApp Voice Notes geselecteerd (niet openen) op DEZE MAP GEBRUIKEN en daarna op TOESTAAN.</string>
+    <string name="voice_note_folder_sheet_open">Kiezer openen</string>
 </resources>

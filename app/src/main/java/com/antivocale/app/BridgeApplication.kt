@@ -131,12 +131,17 @@ class BridgeApplication : Application(), Configuration.Provider {
                 if (!enabled) voiceNoteIdentityCache.clear()
             }
         }
-        // TASK-271: the voice-note detection lifecycle (offer notifications
-        // for new WhatsApp voice notes). start() only arms the preference
+        // TASK-272: the voice-note auto-transcription lifecycle (new
+        // WhatsApp voice notes enqueue directly). start() only arms the preference
         // collector on the application scope; the detector's baseline
         // subscription happens off the main thread inside the coordinator,
         // and only while the toggle AND the runtime permission both hold.
         voiceNoteDetectionCoordinator.start()
+        // TASK-272: delete system registrations of channels the enum no
+        // longer declares (upgraded installs keep them as dead toggles).
+        runCatching {
+            com.antivocale.app.util.AppNotificationChannel.cleanupRemovedChannels(this)
+        }
 
         // TASK-785: the Open Transcribe provider component follows its gate
         // the same one-owner way. The flow replays its cached value at

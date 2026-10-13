@@ -619,17 +619,6 @@
             android:enabled="true"
             android:exported="false" />
 
-        <!-- TASK-271: the voice-note offer's Transcribe action. Opens no
-             activity; rebuilds the share-shaped InferenceService request
-             and hands it to the one enqueue path (InferenceEnqueue). -->
-        <!-- No intent-filter: the only sender is the offer notification's
-             explicit-component PendingIntent (the ChooserBroadcastReceiver
-             shape). -->
-        <receiver
-            android:name=".receiver.VoiceNoteOfferReceiver"
-            android:enabled="true"
-            android:exported="false" />
-
         <!-- Foreground service for inference processing -->
         <service
             android:name=".service.InferenceService"

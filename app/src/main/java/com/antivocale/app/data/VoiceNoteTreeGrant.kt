@@ -2,6 +2,7 @@ package com.antivocale.app.data
 
 import android.content.Context
 import android.net.Uri
+import android.os.Environment
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -59,20 +60,22 @@ class VoiceNoteTreeGrant @Inject constructor(
     /**
      * Copies [whatsappPath] (the detector's absolute path, unreadable
      * directly) into shared_audio through the granted tree, returning the
-     * LOCAL path. The counter segment of the path names the intermediate
-     * document: the tree grant's listing covers levels the FUSE mount
-     * hides (the spike's probe 1). A re-tap on the same offer reuses the
-     * existing copy (PTT names are unique per note).
+     * LOCAL path. The detector observed the exact counter/name pair, so
+     * the note's document URI is built directly instead of two linear
+     * findFile scans through the provider (per-note cost now that
+     * detection, not a user tap, drives this). The child docId MUST extend
+     * the TREE's own docId (code review F1, verified against AOSP:
+     * buildDocumentUriUsingTree appends its argument verbatim and
+     * ExternalStorageProvider requires "volume:path" docIds; a bare
+     * "counter/name" throws inside the provider). A stale note fails the
+     * copy, which maps to the same honest null.
      */
     private fun resolveToSandbox(treeUri: Uri, whatsappPath: String): String? {
         val name = whatsappPath.substringAfterLast('/')
         val counter = whatsappPath.substringBeforeLast('/').substringAfterLast('/')
-        val root = DocumentFile.fromTreeUri(context, treeUri) ?: return null
-        val note = root.findFile(counter)?.findFile(name)
-        if (note == null) {
-            Log.w(TAG, "grant cannot find '$counter/$name'")
-            return null
-        }
+        val treeDocId = android.provider.DocumentsContract.getTreeDocumentId(treeUri)
+        val noteUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(
+            treeUri, "$treeDocId/$counter/$name")
         val localName = "voicenote_$name"
         val existing = File(File(context.filesDir, "shared_audio"), localName)
         if (existing.isFile && existing.length() > 0) {
@@ -80,7 +83,7 @@ class VoiceNoteTreeGrant @Inject constructor(
         }
         return when (
             val result = com.antivocale.app.util.SharedAudioHandler.copyToAppStorage(
-                context, note.uri, outputName = localName)
+                context, noteUri, outputName = localName)
         ) {
             is com.antivocale.app.util.SharedAudioHandler.CopyResult.Success -> result.path
             else -> null
@@ -108,6 +111,25 @@ class VoiceNoteTreeGrant @Inject constructor(
         } catch (e: Exception) {
             Log.w(TAG, "tree validation failed", e)
             false
+        }
+
+        /**
+         * The folder picker's EXTRA_INITIAL_URI, in DOCUMENT form
+         * (content://com.android.externalstorage.documents/document/
+         * primary:Android/...): TASK-272 found DocumentsUI honors this
+         * shape more reliably than a file:// URI. Null when the document
+         * URI cannot be built (the caller then opens the picker plain).
+         */
+        fun pickerInitialUri(): Uri? = try {
+            val storageRoot = Environment.getExternalStorageDirectory().absolutePath
+            val relative = voiceNotesRoot().absolutePath
+                .removePrefix(storageRoot)
+                .trimStart('/')
+            android.provider.DocumentsContract.buildDocumentUri(
+                com.antivocale.app.util.TreeUris.EXTERNAL_STORAGE_AUTHORITY, "primary:$relative")
+        } catch (e: Exception) {
+            Log.w(TAG, "picker initial URI build failed", e)
+            null
         }
     }
 }

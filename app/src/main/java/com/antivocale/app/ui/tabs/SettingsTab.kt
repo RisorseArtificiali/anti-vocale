@@ -90,6 +90,8 @@ import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.ModelSource
 import com.antivocale.app.ui.components.SearchField
 import com.antivocale.app.ui.components.CardTitleRow
+import com.antivocale.app.ui.components.VoiceNoteFolderGrantCard
+import com.antivocale.app.ui.components.VoiceNoteFolderGrantSheet
 import com.antivocale.app.ui.components.languageOptionLabel
 import com.antivocale.app.ui.components.transcriptionSentinelLabels
 import com.antivocale.app.ui.components.CollapsibleSection
@@ -1957,7 +1959,7 @@ fun SettingsTab(
                 }
             }
 
-            // TASK-271: the voice-note detection gate (offer notifications).
+            // TASK-272: the voice-note auto-transcription gate.
             // The runtime read-media permission is the outer gate; while
             // this toggle is off the coordinator reads nothing at all. The
             // permission probe re-runs on ON_RESUME (a grant or revoke made
@@ -2102,34 +2104,53 @@ fun SettingsTab(
                     }
                 }
                 // A saved URI whose grant died (folder recreated, OEM
-                // cleanup) must re-offer the row: gating only on the string
+                // cleanup) must re-offer the card: gating only on the string
                 // would strand the user with no re-pick path. recompute-
                 // GrantHeld runs on resume; a URI change recomputes here.
                 LaunchedEffect(voiceNoteTreeUri) { recomputeGrantHeld() }
-                if (voiceNoteDetectionEnabled && voiceNoteAudioPermissionGranted &&
-                    !voiceNoteGrantHeld
-                ) {
-                    // The folder grant rides the picker, the only gesture
-                    // that legitimizes DocumentsUI access; the initial URI
-                    // lands the picker inside WhatsApp's media tree when
-                    // DocumentsUI honors it (best-effort, API 26+). One
-                    // owner of the path: the detector's root helper.
-                    TextButton(onClick = {
-                        runCatching {
-                            voiceNoteTreePicker.launch(
-                                android.net.Uri.fromFile(
-                                    com.antivocale.app.data.voiceNotesRoot()))
-                        }.onFailure {
-                            Log.w("SettingsTab", "tree picker launch failed", it)
-                            voiceNoteTreePicker.launch(null)
-                        }
-                    }) {
-                        Text(
-                            text = stringResource(R.string.voice_note_folder_grant_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
+                var voiceNoteGrantSheetVisible by remember { mutableStateOf(false) }
+                if (voiceNoteDetectionEnabled && voiceNoteAudioPermissionGranted) {
+                    // TASK-272: the folder-grant card (mockup at the repo
+                    // root): state + full path always visible, choose/change
+                    // always available, remove only when a grant is held.
+                    // The grant IS the practical gate of the automatic mode.
+                    VoiceNoteFolderGrantCard(
+                        granted = voiceNoteGrantHeld,
+                        uriString = voiceNoteTreeUri,
+                        onChoose = { voiceNoteGrantSheetVisible = true },
+                        onRemove = {
+                            grantScope.launch(Dispatchers.IO) {
+                                voiceNoteTreeUri?.let {
+                                    com.antivocale.app.util.TreeUris
+                                        .releasePersistableReadGrant(context, android.net.Uri.parse(it))
+                                }
+                                // Clearing the preference is what disarms
+                                // the coordinator (the flow source), the
+                                // tested remove path.
+                                viewModel.saveVoiceNoteTreeUri(null)
+                            }
+                        },
+                    )
+                }
+                if (voiceNoteGrantSheetVisible) {
+                    VoiceNoteFolderGrantSheet(
+                        onDismiss = { voiceNoteGrantSheetVisible = false },
+                        onOpenPicker = {
+                            voiceNoteGrantSheetVisible = false
+                            // The DOCUMENT-form initial URI lands the picker
+                            // inside WhatsApp's media tree when DocumentsUI
+                            // honors it (more reliable than file://,
+                            // TASK-272); plain null when even building it
+                            // fails. One owner of the path: the grant.
+                            runCatching {
+                                voiceNoteTreePicker.launch(
+                                    com.antivocale.app.data.VoiceNoteTreeGrant.pickerInitialUri())
+                            }.onFailure {
+                                Log.w("SettingsTab", "tree picker launch failed", it)
+                                voiceNoteTreePicker.launch(null)
+                            }
+                        },
+                    )
                 }
             }
             } // end detectionAvailable() gate
@@ -4129,3 +4150,4 @@ internal fun ShareShortcutIconsCard(viewModel: SettingsViewModel) {
         }
     }
 }
+
