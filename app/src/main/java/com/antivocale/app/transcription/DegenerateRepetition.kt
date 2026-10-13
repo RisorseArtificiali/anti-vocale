@@ -133,5 +133,5 @@ object DegenerateRepetition {
      * broader Char.isWhitespace, which would disagree on Unicode spaces). */
     private fun Char.isRegexWhitespace(): Boolean =
         this == ' ' || this == '\t' || this == '\n' ||
-            this == '\u000B' || this == '\f' || this == '\r'
+            this == '\u000B' || this == '\u000C' || this == '\r'
 }
