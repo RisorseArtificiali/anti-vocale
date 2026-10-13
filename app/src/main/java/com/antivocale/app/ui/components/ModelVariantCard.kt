@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.components
 
+import com.antivocale.app.transcription.LanguageFlags
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -12,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -138,36 +140,27 @@ fun ModelVariantCard(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = when {
-                            // TASK-786: a download glyph for the on-disk
-                            // state; never a check (the radio dot alone
-                            // marks the active model).
-                            state.isDownloaded -> Icons.Default.DownloadDone
-                            state.isDownloading -> Icons.Default.CloudDownload
-                            else -> Icons.Default.Storage
-                        },
-                        contentDescription = null,
-                        tint = when {
-                            state.isDownloaded -> MaterialTheme.colorScheme.primary
-                            state.isDownloading -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    // TASK-796 (maintainer, approved mockup): the decorative
+                    // leading icon is gone; the language signal is FLAG
+                    // EMOJI in the title for monolingual/few-language
+                    // variants, and the download state lives in the button
+                    // and progress row below.
                     Column {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
+                            val plainTitle = countAwareStringResource(
+                                state.variant.titleResId, state.variant.titleFormatArg())
                             Text(
-                                text = countAwareStringResource(
-                                    state.variant.titleResId, state.variant.titleFormatArg()),
+                                text = LanguageFlags.titled(
+                                    plainTitle, state.variant.supportedLanguageCodes),
                                 style = MaterialTheme.typography.titleSmall,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
+                                modifier = Modifier
+                                    .weight(1f, fill = false)
+                                    .semantics { contentDescription = plainTitle }
                             )
                             extraBadges?.invoke()
                             if (state.isActive) {

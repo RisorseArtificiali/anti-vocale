@@ -1,6 +1,17 @@
 package com.antivocale.app.transcription
 
+/**
+ * The ONE language-to-flag-emoji table. Two consumers:
+ *  - the model-info language chips (TASK-790 lineage): [getFlag] per code;
+ *  - TASK-796 model-card titles: [titled] prefixes a title with the flags
+ *    of a monolingual/few-language set (at most [MAX_TITLE_FLAG_LANGUAGES]
+ *    distinct codes; multilingual models carry none). Unmapped codes
+ *    contribute nothing, so a card title never invents a flag.
+ */
 object LanguageFlags {
+
+    /** The "few languages" cutoff for card-title flags (maintainer convention). */
+    const val MAX_TITLE_FLAG_LANGUAGES = 3
 
     private val specialMappings = mapOf(
         "af" to "ZA", "am" to "ET", "ar" to "SA", "as" to "IN", "az" to "AZ",
@@ -42,5 +53,21 @@ object LanguageFlags {
     fun getFlag(languageCode: String): String {
         val countryCode = specialMappings[languageCode] ?: return ""
         return countryCodeToFlag(countryCode)
+    }
+
+    /**
+     * TASK-796: a model-card title prefixed with its languages' flags (and
+     * a trailing space), or the title unchanged when the set is empty, too
+     * large, or entirely unmapped.
+     */
+    fun titled(title: String, languageCodes: Collection<String>): String {
+        val distinct = languageCodes.distinct()
+        if (distinct.isEmpty() || distinct.size > MAX_TITLE_FLAG_LANGUAGES) return title
+        // Conservative: EVERY code must map. A partial prefix would claim a
+        // language set the model does not have (review round: a mixed
+        // [unknown, it] set showing only the Italian flag).
+        val flags = distinct.map { getFlag(it) }
+        if (flags.any { it.isEmpty() }) return title
+        return flags.joinToString("") + " " + title
     }
 }

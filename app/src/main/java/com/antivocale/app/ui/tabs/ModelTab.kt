@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.tabs
 
+import com.antivocale.app.transcription.LanguageFlags
 import android.annotation.SuppressLint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import android.net.Uri
 import com.antivocale.app.transcription.ModelFamilyDetector
-import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -79,7 +80,6 @@ import com.antivocale.app.transcription.audioLimitForVariants
 import com.antivocale.app.transcription.ModelVariant
 import com.antivocale.app.transcription.SherpaModelDownloader
 import androidx.compose.ui.text.style.TextOverflow
-import com.antivocale.app.ui.components.CardTitleRow
 import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
 import com.antivocale.app.ui.components.SubPageScrollScaffold
@@ -840,10 +840,8 @@ fun ModelTab(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(Icons.Default.Memory, contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(24.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
+                            // TASK-796 (approved mockup): no leading icon; the
+                            // chevron (the opening affordance) stays.
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = stringResource(R.string.gemma_entry_title),
@@ -1001,12 +999,12 @@ fun ModelTab(
                             )
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                CardTitleRow(
-                                    icon = Icons.Default.Memory,
-                                    // TASK-779: was the hardcoded "LiteRT-LM", jargon
-                                    // to anyone outside the project.
-                                    title = stringResource(R.string.litert_card_title),
-                                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant
+                                // TASK-796 (approved mockup): title-only; the
+                                // TASK-779 de-jargoned text stays.
+                                Text(
+                                    text = stringResource(R.string.litert_card_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
                                 )
                                 // TASK-796 trial round 2 (maintainer): the card
                                 // states what it is for before the buttons.
@@ -1150,21 +1148,14 @@ private fun CuratedLanguageSection(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.Default.Star,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.curated_section_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.semantics { heading() },
-            )
-        }
+        // TASK-796 (approved mockup): the star is gone; the heading's own
+        // semantics mark stays.
+        Text(
+            text = stringResource(R.string.curated_section_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.semantics { heading() },
+        )
 
         profile.recommendations.forEach { recommendation ->
             when (recommendation) {
@@ -1354,14 +1345,8 @@ private fun RemoteOmnivoiceServiceCard(
                 .padding(16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Lan,
-                    contentDescription = null,
-                    tint = if (isActive) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
+                // TASK-796 (approved mockup): no leading icon; the Active
+                // badge text is the state signal.
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.remote_omnivoice_name),
@@ -1572,6 +1557,12 @@ private fun CatalogModelSection(
     // descriptionCountArg; the arms resolve through countAwareStringResource.
     val entryTitleCountArg = remember(entry) { entry.titleCountArg() }
     val entryDescriptionCountArg = remember(entry) { entry.descriptionCountArg() }
+    // TASK-796: the entry title carries FLAG EMOJI for its languages when
+    // it is monolingual/few-language (the shared LanguageFlags.titled;
+    // multilingual entries render the title unchanged).
+    val entryTitleWithFlags = remember(entry, entryTitleResId, entryTitleCountArg) {
+        LanguageFlags.titled("", entry.variants.flatMap(entry::languagesFor))
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1595,28 +1586,14 @@ private fun CatalogModelSection(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = when {
-                            // TASK-786: a shelf reads "models live here";
-                            // never a check (the radio dot is the only
-                            // selection mark in the tab). AutoMirrored: the
-                            // spines must flip for RTL locales.
-                            state.downloadedVariants.isNotEmpty() -> Icons.AutoMirrored.Filled.LibraryBooks
-                            state.isAnyDownloading -> Icons.Default.CloudDownload
-                            else -> if (entry.isStreaming) Icons.Default.GraphicEq else Icons.Default.Translate
-                        },
-                        contentDescription = null,
-                        tint = when {
-                            state.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primary
-                            state.isAnyDownloading -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    // TASK-796 (approved mockup): the icon slot is gone.
+                    // The language signal is FLAG EMOJI in the entry
+                    // title (monolingual/few-language entries only); the
+                    // downloaded state lives in the variant rows below
+                    // and the Active pill.
                     Column {
                         Text(
-                            text = countAwareStringResource(entryTitleResId, entryTitleCountArg),
+                            text = entryTitleWithFlags + countAwareStringResource(entryTitleResId, entryTitleCountArg),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -2551,14 +2528,18 @@ private fun ExternalModelCard(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.Default.Memory,
-                        contentDescription = null,
-                        tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    // TASK-796 (approved mockup): no leading icon; the record's
+                    // languages carry flag emoji in the name instead. The plain
+                    // name rides the semantics: TalkBack must not read regional
+                    // indicators (the TASK-386 class).
                     Column {
-                        Text(record.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            LanguageFlags.titled(record.displayName, record.languages),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.semantics {
+                                contentDescription = record.displayName
+                            })
                         // TASK-386: plain comma join instead of the middot chain:
                         // " · " was announced as "middle dot" by TalkBack in some locales.
                         Text(
