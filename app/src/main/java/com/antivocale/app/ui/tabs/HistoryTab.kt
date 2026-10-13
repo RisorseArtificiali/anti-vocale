@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.tabs
 
+import com.antivocale.app.service.ResultNotificationFactory
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -1665,6 +1666,25 @@ fun LogEntryItem(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                            }
+                            // TASK-820 (GH #128): the row-scoped auto-save
+                            // outcome, persisted for every save attempt (the
+                            // subtext rides only the share-only result
+                            // notification, so the ROW is the durable surface).
+                            // The derivation is the factory's shared
+                            // saveOutcomeLine: the two surfaces cannot drift.
+                            val outcomeMessage = ResultNotificationFactory.saveOutcomeMessage(
+                                log.savedFolderName, log.savedFileName, log.saveFailureReason)
+                            ResultNotificationFactory.saveOutcomeLineSpec(outcomeMessage)?.let { (res, args) ->
+                                Text(
+                                    text = stringResource(res, *args),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (outcomeMessage is ResultNotificationFactory.SaveOutcomeMessage.Failed) {
+                                        MaterialTheme.colorScheme.error
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
                             }
                             // TASK-583 (GH #110): error color: the text needs
                             // a human look even though delivery stands.

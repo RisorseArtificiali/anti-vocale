@@ -1,5 +1,6 @@
 package com.antivocale.app.service
 
+import com.antivocale.app.data.local.LogDao
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Handler
@@ -46,7 +47,9 @@ class TranscriptionNotificationListener(
     private val appContext: Context,
     private val preferencesManager: PreferencesManager,
     private val perAppPreferencesManager: PerAppPreferencesManager,
-    private val coroutineScope: CoroutineScope
+    private val coroutineScope: CoroutineScope,
+    /** TASK-820: persists the auto-save outcome on the History row. */
+    private val logDao: LogDao,
 ) : TranscriptionListener {
 
     private val notificationManager: NotificationManager =
@@ -113,13 +116,32 @@ class TranscriptionNotificationListener(
         repetitionSuspected: Boolean
     ) {
         // The worker has no Tasker reply channel; only the service sends ACTION_TASKER_REPLY.
-        // For share requests, mirror the service: auto-copy (if enabled) + post the result.
-        if (isShareRequest) {
-            coroutineScope.launch {
+        // Mirrors the service onSuccess (the twin contract): TASK-820 hoists
+        // the auto-save out of the share branch so EVERY completed non-partial
+        // transcription saves when a folder is configured; the result
+        // notification and auto-copy stay share-only.
+        coroutineScope.launch {
+            val saveResult =
+                if (isShareRequest || !isPartial) {
+                    saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
+                } else {
+                    TranscriptFileSaver.SaveResult.NotConfigured
+                }
+            if (saveResult !is TranscriptFileSaver.SaveResult.NotConfigured) {
+                logDao.setSaveOutcome(
+                    taskId,
+                    saveResult.savedFolderOrNull(),
+                    saveResult.savedFileNameOrNull(),
+                    saveResult.failureOrNull())
+                val failureReason = saveResult.failureOrNull()
+                if (!isShareRequest && failureReason != null) {
+                    resultNotificationFactory.postSaveFailure(failureReason)
+                }
+            }
+            if (isShareRequest) {
                 // TASK-598 review F3: same derivation as the notification Copy action.
                 val annotatedText = SubtitleFormatter.annotatedOrStored(resultText, segments)
                 val copied = autoCopyIfEnabled(annotatedText, sourcePackage)
-                val saveResult = saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
                 // TASK-758 review: this route used to drop the clipboard
                 // note and the refinement verdicts the service route shows
                 // (the worker twin of the same facts).

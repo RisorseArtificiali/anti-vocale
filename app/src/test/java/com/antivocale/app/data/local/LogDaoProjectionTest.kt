@@ -86,6 +86,10 @@ class LogDaoProjectionTest {
             firstPassTranscript = "first",
             detectedLanguage = "de",
             languagePin = "it",
+            // TASK-820: the projection fixture must exercise the new
+            // save-outcome columns non-null (the test's own contract).
+            savedFolderName = "Download", savedFileName = "note.srt",
+            saveFailureReason = "fixture",
         )
         dao.insert(full)
 

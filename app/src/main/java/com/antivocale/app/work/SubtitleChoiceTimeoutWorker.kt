@@ -1,5 +1,6 @@
 package com.antivocale.app.work
 
+import com.antivocale.app.data.local.LogDao
 import android.content.Context
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -18,6 +19,7 @@ import com.antivocale.app.util.AppNotificationChannel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import com.antivocale.app.util.CrashReporter
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +45,9 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val orchestrator: TranscriptionOrchestrator,
     private val preferencesManager: PreferencesManager,
-    private val perAppPreferencesManager: PerAppPreferencesManager
+    private val perAppPreferencesManager: PerAppPreferencesManager,
+    /** TASK-820: feeds the listener's save-outcome persistence. */
+    private val logDao: LogDao
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
@@ -78,14 +82,17 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
         runCatching { setForeground(buildForegroundInfo()) }
 
         // The listener posts the result/error notification exactly as InferenceService would.
-        // Its coroutineScope is this worker's — it dies when doWork returns, which is fine
-        // because the only async side effect (auto-copy) is awaited inside onSuccess.
+        // Its coroutineScope is this worker's; since TASK-820 it also runs the
+        // auto-save (a SAF file write) and the save-outcome persistence, so
+        // doWork JOINS the scope before returning (below) instead of relying
+        // on side effects completing inside onSuccess.
         val workerScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler)
         val listener = TranscriptionNotificationListener(
             appContext = applicationContext,
             preferencesManager = preferencesManager,
             perAppPreferencesManager = perAppPreferencesManager,
-            coroutineScope = workerScope
+            coroutineScope = workerScope,
+            logDao = logDao,
         )
 
         // TASK-526: the worker bypasses InferenceService's enqueue layer,
@@ -125,11 +132,17 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
             }
             // The orchestrator already reported success/error to the listener (which posts
             // the notification). Surface success to WorkManager regardless so the job clears.
+            // TASK-820 review: await the listener's side-effect jobs (the save
+            // and the outcome persistence) first; WorkManager may drop the
+            // foreground promotion the moment this returns and kill the
+            // process with the write still in flight.
+            workerScope.coroutineContext[Job]?.children?.forEach { it.join() }
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "ASR fallback threw for taskId=$taskId", e)
             // Result.failure would trigger retry policy; there is none configured, so this
             // just marks the unique work done. The error notification is the user's signal.
+            workerScope.coroutineContext[Job]?.children?.forEach { it.join() }
             Result.failure()
         }
     }

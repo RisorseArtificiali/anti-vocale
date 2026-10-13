@@ -411,8 +411,18 @@ class InferenceService : Service(), TranscriptionListener {
         failQueuedLogs("Cancelled")
         requestQueue.clear()
         pendingCount.set(0)
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        // TASK-820 review: join the tracked jobs (the auto-save now rides
+        // them, not just notifications) before the teardown cancels the
+        // service scope; the same drain the queue loop's finally does
+        // (TASK-336). A completed task's file write must not die mid-stream.
+        // On the service scope, not runBlocking on main: the scope lives
+        // until this launch's own stopSelf completes.
+        serviceScope.launch {
+            val pending = synchronized(pendingResultNotifications) { pendingResultNotifications.toList() }
+            pending.forEach { it.join() }
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        }
     }
 
     /**
@@ -650,31 +660,61 @@ class InferenceService : Service(), TranscriptionListener {
     ) {
         // DRAFT-12 (TASK-598 boundary): the Tasker reply carries the same
         // annotated form every other surface delivers on diarized runs.
-        sendSuccessReply(taskId, SubtitleFormatter.annotatedOrStored(resultText, segments))
+        val annotatedResult = SubtitleFormatter.annotatedOrStored(resultText, segments)
+        sendSuccessReply(taskId, annotatedResult)
         forgetRequester(taskId)
         // Every completed task moves the model-recency source: re-derive the
         // launcher's dynamic share shortcuts. Metadata-only side effect on the
         // service scope (IO), must never reach the result path.
         serviceScope.launch { shareShortcutManager.refresh() }
-        if (isShareRequest) {
-            // Track the notification job: processQueue()'s finally must NOT stopSelf
-            // while it is still pending. It used to be an untracked launch, and for
-            // fast single-chunk transcriptions the queue teardown (stopForeground +
-            // stopSelf -> onDestroy -> serviceScope.cancel) won the race, killing the
-            // result notification before it was ever posted. In the background that
-            // read as "the notification vanished and nothing arrived" (TASK-336).
-            pendingResultNotifications.add(serviceScope.launch {
-                try {
+        // Track the notification job: processQueue()'s finally must NOT stopSelf
+        // while it is still pending. It used to be an untracked launch, and for
+        // fast single-chunk transcriptions the queue teardown (stopForeground +
+        // stopSelf -> onDestroy -> serviceScope.cancel) won the race, killing
+        // the result notification before it was ever posted. In the background that
+        // read as "the notification vanished and nothing arrived" (TASK-336).
+        // TASK-820: the tracking now also spans the non-share auto-save below;
+        // the teardown must not kill a save mid-write either.
+        pendingResultNotifications.add(serviceScope.launch {
+            try {
+                // TASK-820 (GH #128): the auto-save runs for every completed
+                // transcription of the app's own surfaces (the Export
+                // setting's promise), not just shares; it used to live
+                // inside the share branch, so browse/Tasker/retranscribe
+                // origins never saved at all, silently. Deliberately OUT:
+                // the Open Transcribe callback bridge (third-party requests
+                // must not write into the user's folder) and partial runs on
+                // non-share origins. The RESULT NOTIFICATION stays share-only
+                // (TASK-688's design); shares also keep saving partials
+                // exactly as before.
+                val saveResult =
+                    if (isShareRequest || !isPartial) {
+                        saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
+                    } else {
+                        TranscriptFileSaver.SaveResult.NotConfigured
+                    }
+                if (saveResult !is TranscriptFileSaver.SaveResult.NotConfigured) {
+                    logDao.setSaveOutcome(
+                        taskId,
+                        saveResult.savedFolderOrNull(),
+                        saveResult.savedFileNameOrNull(),
+                        saveResult.failureOrNull())
+                    // A non-share failure has no result notification to ride
+                    // the subtext of: a dedicated one names the reason.
+                    val failureReason = saveResult.failureOrNull()
+                    if (!isShareRequest && failureReason != null) {
+                        resultNotificationFactory.postSaveFailure(failureReason)
+                    }
+                }
+                if (isShareRequest) {
                     // TASK-598 review F3: auto-copy must deliver the same text
                     // the notification's Copy action delivers (the annotated
-                    // form on diarized runs), not the raw stored transcript.
-                    val annotatedText = SubtitleFormatter.annotatedOrStored(resultText, segments)
-                    val copied = autoCopyIfEnabled(annotatedText, sourcePackage)
-                    val saveResult = saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
+                    // form derived once above, reused by the Tasker reply).
+                    val copied = autoCopyIfEnabled(annotatedResult, sourcePackage)
                     val refinedFrom = refinementOutcome?.takeIf { it != DualRefinementPolicy.NOT_REFINED }
                     resultNotificationFactory.postResult(
                         preferencesManager, perAppPreferencesManager,
-                        annotatedText, segments, saveResult,
+                        annotatedResult, segments, saveResult,
                         sourcePackage, taskId, confidence, detectedLanguage,
                         isPartial, failedChunkCount,
                         copiedToClipboard = copied,
@@ -684,11 +724,11 @@ class InferenceService : Service(), TranscriptionListener {
                         repetitionSuspected = repetitionSuspected,
                         originTag = "InferenceService",
                     )
-                } finally {
-                    pendingResultNotifications.remove(coroutineContext[Job])
                 }
-            })
-        }
+            } finally {
+                pendingResultNotifications.remove(coroutineContext[Job])
+            }
+        })
     }
 
     override fun onError(

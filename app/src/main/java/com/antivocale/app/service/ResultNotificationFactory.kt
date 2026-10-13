@@ -174,6 +174,10 @@ class ResultNotificationFactory(private val context: Context) {
             .setAutoCancel(true)
             .build()
 
+    /** The resolved subtext line for [saveOutcomeMessage]'s result. */
+    fun saveOutcomeLine(message: SaveOutcomeMessage?): String? =
+        saveOutcomeLineSpec(message)?.let { (res, args) -> context.getString(res, *args) }
+
     /**
      * TASK-684 (GH #109): the quiet summary for the GENERIC interrupted
      * class (rows closed by the sweep that the classifier could not name a
@@ -351,6 +355,21 @@ class ResultNotificationFactory(private val context: Context) {
     }
 
     /**
+     * TASK-820 (GH #128): the non-share save-failure surface. Shares carry
+     * the reason in the result notification's subtext (TASK-722); every
+     * other origin (browse, Tasker, retranscribe) gets this dedicated
+     * one-shot notice instead. Same channel and alert icon as the error
+     * notifications, so the user's per-app notification settings apply.
+     */
+    fun postSaveFailure(reason: String) {
+        val id = nextNotificationId()
+        postIfPermitted(id, alertNotification(
+            context.getString(R.string.app_name),
+            context.getString(R.string.auto_save_failed, reason)))
+        Log.i(TAG, "Posted save-failure notification (id=$id)")
+    }
+
+    /**
      * The guarded notify: the posting paths must not assume the
      * POST_NOTIFICATIONS grant (lint is right even though a result
      * notification's actions imply deliverability). The refresher and
@@ -441,20 +460,14 @@ class ResultNotificationFactory(private val context: Context) {
             subTextParts.add(context.getString(R.string.warning_repetition_suspected))
         }
 
-        if (spec.saveFailureReason != null) {
-            // TASK-722: a failed auto-save is never silent; the reason token
-            // rides the subtext AFTER the repetition warning (TASK-583: the
-            // warning that the text may be garbage leads the status facts).
-            subTextParts.add(
-                context.getString(R.string.auto_save_failed, spec.saveFailureReason))
-        } else if (spec.savedFolderName != null) {
-            // GH #128: success names the destination folder, the fact that
-            // separates "written" from "written where you are not looking".
-            subTextParts.add(
-                spec.savedFileName?.let { name ->
-                    context.getString(R.string.saved_to_folder, name, spec.savedFolderName)
-                } ?: context.getString(R.string.saved_to_folder_nameless, spec.savedFolderName))
-        }
+        // TASK-820: the ONE shared derivation (the History row line and this
+        // subtext cannot drift again).
+        saveOutcomeLine(saveOutcomeMessage(spec.savedFolderName, spec.savedFileName, spec.saveFailureReason))
+            ?.let { outcome ->
+                // It rides AFTER the repetition warning (TASK-583: the warning
+                // that the text may be garbage leads the status facts).
+                subTextParts.add(outcome)
+            }
         val langLabel = spec.detectedLanguage?.let { lang ->
             LanguageNames.nativeLanguageName(lang)
         }
@@ -589,8 +602,55 @@ class ResultNotificationFactory(private val context: Context) {
         )
     }
 
+    /** TASK-820: the message cases [saveOutcomeMessage] decides between. */
+    sealed interface SaveOutcomeMessage {
+        data class Failed(val reason: String) : SaveOutcomeMessage
+        data class Saved(val fileName: String, val folderName: String) : SaveOutcomeMessage
+        data class SavedNameless(val folderName: String) : SaveOutcomeMessage
+    }
+
     companion object {
         private const val TAG = "ResultNotificationFactory"
+
+        /**
+         * TASK-820: the ONE three-fields-to-message derivation, shared by
+         * the result notification's subtext and the History row line (the
+         * two surfaces that render the persisted save outcome). Pure (no
+         * context): each surface resolves the message with its own string
+         * idiom. Failure leads; a successful save names the file AND its
+         * folder (the fact that separates "written" from "written where
+         * you are not looking", GH #128). Null when no save ran.
+         */
+        fun saveOutcomeMessage(
+            savedFolderName: String?,
+            savedFileName: String?,
+            saveFailureReason: String?,
+        ): SaveOutcomeMessage? = when {
+            saveFailureReason != null -> SaveOutcomeMessage.Failed(saveFailureReason)
+            savedFolderName != null -> savedFileName
+                ?.let { name -> SaveOutcomeMessage.Saved(name, savedFolderName) }
+                ?: SaveOutcomeMessage.SavedNameless(savedFolderName)
+            else -> null
+        }
+
+        /**
+         * The ONE string spec for [saveOutcomeMessage]'s result: the resource
+         * plus its format args. Each surface resolves with its own idiom
+         * (context.getString in the factory, stringResource in the Compose
+         * row); the mapping itself lives only here, so the notification
+         * subtext and the History row cannot drift on wording or args.
+         */
+        fun saveOutcomeLineSpec(message: SaveOutcomeMessage?): Pair<Int, Array<out Any>>? =
+            when (message) {
+                is SaveOutcomeMessage.Failed ->
+                    R.string.auto_save_failed to arrayOf(message.reason)
+                is SaveOutcomeMessage.Saved ->
+                    R.string.saved_to_folder to arrayOf(message.fileName, message.folderName)
+                is SaveOutcomeMessage.SavedNameless ->
+                    R.string.saved_to_folder_nameless to arrayOf(message.folderName)
+                null -> null
+            }
+
         // Mirror the services' launch-band constants so the same intent shape
         // stays a single PendingIntent whichever builder produced it.
         private const val RC_ERROR_LAUNCH_DEFAULT = 0

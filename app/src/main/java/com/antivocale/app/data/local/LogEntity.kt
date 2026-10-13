@@ -64,6 +64,11 @@ data class LogEntity(
      *  policy-resolved ("auto" when the preference was untouched; the
      *  resolved phone language for the phone pin; the code when pinned). */
     val languagePin: String? = null,
+    /** TASK-820 (GH #128): the auto-save outcome row-scoped; see the
+     *  LogEntry twins for the contract (at most one of the three set). */
+    val savedFolderName: String? = null,
+    val savedFileName: String? = null,
+    val saveFailureReason: String? = null,
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -94,7 +99,10 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     processingContext = processingContext,
     firstPassTranscript = firstPassTranscript,
     detectedLanguage = detectedLanguage,
-    languagePin = languagePin
+    languagePin = languagePin,
+    savedFolderName = savedFolderName,
+    savedFileName = savedFileName,
+    saveFailureReason = saveFailureReason,
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -122,5 +130,8 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     processingContext = processingContext,
     firstPassTranscript = firstPassTranscript,
     detectedLanguage = detectedLanguage,
-    languagePin = languagePin
+    languagePin = languagePin,
+    savedFolderName = savedFolderName,
+    savedFileName = savedFileName,
+    saveFailureReason = saveFailureReason,
 )

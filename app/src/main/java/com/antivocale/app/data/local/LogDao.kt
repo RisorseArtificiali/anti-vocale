@@ -43,7 +43,7 @@ interface LogDao {
      */
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs ORDER BY timestamp DESC LIMIT 500")
+        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason FROM logs ORDER BY timestamp DESC LIMIT 500")
     fun getAll(): Flow<List<LogEntity>>
 
     // TASK-613: RAW query, ESCAPE-clause-aware. Room interfaces cannot give a
@@ -56,7 +56,7 @@ interface LogDao {
     // "%" matching the newest 500 rows regardless of the query).
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs WHERE result LIKE '%' || :query || '%' ESCAPE '\\' " +
+        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason FROM logs WHERE result LIKE '%' || :query || '%' ESCAPE '\\' " +
         "ORDER BY timestamp DESC LIMIT 500")
     fun searchAllRaw(query: String): Flow<List<LogEntity>>
 
@@ -76,6 +76,11 @@ interface LogDao {
      *  expanded detail; see the lean-projection note above. */
     @Query("SELECT firstPassTranscript FROM logs WHERE id = :id")
     fun getFirstPass(id: String): Flow<String?>
+
+    /** TASK-820 (GH #128): records the auto-save outcome on the row (at
+     *  most one of the three fields set; null folder+file+reason = no save ran). */
+    @Query("UPDATE logs SET savedFolderName = :savedFolderName, savedFileName = :savedFileName, saveFailureReason = :saveFailureReason WHERE taskId = :taskId")
+    suspend fun setSaveOutcome(taskId: String, savedFolderName: String?, savedFileName: String?, saveFailureReason: String?)
 
     /** TASK-598 F2: the stored transcript of ONE row (the punctuation
      *  pass's output) for the annotated derivation; see the lean-projection

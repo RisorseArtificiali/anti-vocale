@@ -45,6 +45,7 @@ private val ALL_MIGRATIONS = arrayOf(
     AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6, AppDatabase.MIGRATION_6_7,
     AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10,
     AppDatabase.MIGRATION_10_11, AppDatabase.MIGRATION_11_12, AppDatabase.MIGRATION_12_13,
+    AppDatabase.MIGRATION_13_14,
 )
 
 @RunWith(AndroidJUnit4::class)
@@ -271,6 +272,41 @@ class AppDatabaseMigrationTest {
         val updated = runBlocking { db!!.logDao().getByTaskId("task-1") }
         assertEquals("en", updated!!.detectedLanguage)
         assertEquals("auto", updated.languagePin)
+    }
+
+    /**
+     * TASK-820 (GH #128): v14 adds the three save-outcome columns; pre-v14
+     * rows must read as "no save ran" (all null), and the row-scoped setter
+     * the completion paths call must persist through the entity mapping.
+     */
+    @Test
+    fun migrate_13_to_14_addsSaveOutcomeColumns_andSetterPersists() {
+        seedV2Database()
+        db = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+
+        val row = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertNotNull(row)
+        assertNull("savedFolderName defaults null pre-v14", row!!.savedFolderName)
+        assertNull("savedFileName defaults null pre-v14", row.savedFileName)
+        assertNull("saveFailureReason defaults null pre-v14", row.saveFailureReason)
+
+        runBlocking {
+            db!!.logDao().setSaveOutcome("task-1", "Download", "note.srt", null)
+        }
+        val saved = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertEquals("Download", saved!!.savedFolderName)
+        assertEquals("note.srt", saved.savedFileName)
+        assertNull(saved.saveFailureReason)
+
+        runBlocking {
+            db!!.logDao().setSaveOutcome("task-1", null, null, "permission revoked")
+        }
+        val failed = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertNull(failed!!.savedFolderName)
+        assertEquals("permission revoked", failed.saveFailureReason)
     }
 
     /** A fresh v3 DB (no migration) must also be internally consistent with the entity. */

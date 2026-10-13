@@ -103,6 +103,13 @@ data class LogEntry(
     val detectedLanguage: String? = null,
     /** TASK-546: the policy-resolved pin in force at transcription time. */
     val languagePin: String? = null,
+    /** TASK-820: the auto-save outcome, persisted for EVERY save attempt
+     *  (share and non-share origins alike; the notification only exists on
+     *  shares). At most one of the three is non-null; all null = no save
+     *  ran (pre-v14 rows, or the folder was not configured). */
+    val savedFolderName: String? = null,
+    val savedFileName: String? = null,
+    val saveFailureReason: String? = null,
 ) {
     enum class Type { TEXT, AUDIO }
 
