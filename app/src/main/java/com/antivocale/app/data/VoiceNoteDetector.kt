@@ -99,6 +99,12 @@ class VoiceNoteDetector @Inject constructor() {
         ) {
             override fun onEvent(event: Int, path: String?) {
                 if (path == null) return
+                // Field diagnosis of the write pattern (which mask bits the
+                // writers actually emit through the FUSE view): opt-in via
+                // `setprop log.tag.VoiceNoteDetector VERBOSE`.
+                if (Log.isLoggable(TAG, Log.VERBOSE)) {
+                    Log.v(TAG, "event=0x${Integer.toHexString(event)} path=$path dir=${dir.name}")
+                }
                 // A new counter folder at the root: watch it too (events
                 // for its files do not bubble up).
                 if (VoiceNoteFilter.isCounterFolderName(path) &&
