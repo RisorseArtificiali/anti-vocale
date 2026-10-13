@@ -1,5 +1,6 @@
 package com.antivocale.app.util
 
+import com.antivocale.app.testing.RepoFiles
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -16,16 +17,7 @@ import org.junit.Test
  */
 class AutomationBroadcastSnippetTest {
 
-    private fun guideFile(): File {
-        val moduleRelative = File("docs/TASKER_GUIDE.md")
-        val rootRelative = File("../docs/TASKER_GUIDE.md")
-        return when {
-            moduleRelative.exists() -> moduleRelative
-            rootRelative.exists() -> rootRelative
-            else -> throw IllegalStateException(
-                "Cannot locate docs/TASKER_GUIDE.md from ${File(".").absolutePath}")
-        }
-    }
+    private fun guideFile(): File = RepoFiles.resolve("../docs/TASKER_GUIDE.md")
 
     @Test
     fun `release-package command matches the guide snippet verbatim`() {

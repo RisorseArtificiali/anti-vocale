@@ -1,5 +1,6 @@
 package com.antivocale.app.data
 
+import com.antivocale.app.testing.RepoFiles
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -140,7 +141,7 @@ class ExternalCatalogTest {
         // pantinor/whisper-arabic-dialectal-sherpa (TASK-332: desktop-verified
         // transcripts on 6 dialectal samples, 2026-08-19). The entry must parse
         // and surface via both name and language-code search.
-        val text = java.io.File(BUNDLED_INDEX_PATH).readText()
+        val text = RepoFiles.readText(BUNDLED_INDEX_PATH)
         val entries = ExternalCatalog.parseIndex(text)
         // arabic + russian-small + spanish streaming + german streaming (TASK-366/368)
         // + swiss german whisper (TASK-397, Flurin17 re-export)
@@ -217,7 +218,7 @@ class ExternalCatalogTest {
             Triple("arabic-small.json", "WHISPER" to "", 3),
         ).forEach { (file, pin, fileCount) ->
             val obj = org.json.JSONObject(
-                java.io.File("src/main/assets/external-catalog/$file").readText())
+                RepoFiles.readText("src/main/assets/external-catalog/$file"))
             assertEquals("$file family", pin.first, obj.getString("family"))
             assertEquals("$file modelType", pin.second, obj.getString("modelType"))
             val files = obj.getJSONArray("files")
@@ -248,7 +249,7 @@ class ExternalCatalogTest {
             "moonshine-vietnamese.json" to "vi",
         ).forEach { (file, lang) ->
             val obj = org.json.JSONObject(
-                java.io.File("src/main/assets/external-catalog/$file").readText())
+                RepoFiles.readText("src/main/assets/external-catalog/$file"))
             assertEquals("$file language", lang, obj.getJSONArray("languages").getString(0))
         }
         // TASK-770: TWO arabic entries now (the v1 turbo quality pick and
@@ -306,10 +307,10 @@ class ExternalCatalogTest {
         // ONE parse of the bundled index feeds both the name set and the
         // entryUrl lookup below (review round 2: the previous shape read the
         // file twice inside this test).
-        val parsedIndex = ExternalCatalog.parseIndex(java.io.File(BUNDLED_INDEX_PATH).readText())
+        val parsedIndex = ExternalCatalog.parseIndex(RepoFiles.readText(BUNDLED_INDEX_PATH))
         val indexNames = parsedIndex.map { it.name }.toSet()
         for (code in listOf("bn", "gu", "hi", "mr", "ta", "te")) {
-            val json = java.io.File("src/main/assets/external-catalog/indicconformer-$code.json").readText()
+            val json = RepoFiles.readText("src/main/assets/external-catalog/indicconformer-$code.json")
             val obj = org.json.JSONObject(json)
             assertEquals("CTC", obj.getString("family"))
             assertEquals("nemo_ctc", obj.getString("modelType"))
@@ -318,7 +319,7 @@ class ExternalCatalogTest {
         }
         // every index entryUrl basename must be a committed asset (index
         // parsed ONCE, not per entry: the loop below is per-name lookup)
-        val assetDir = java.io.File("src/main/assets/external-catalog")
+        val assetDir = RepoFiles.resolve("src/main/assets/external-catalog")
         val assets = assetDir.listFiles()?.map { it.name }?.toSet() ?: emptySet()
         val byName = parsedIndex.associateBy { it.name }
         indexNames.forEach { name ->
@@ -335,7 +336,7 @@ class ExternalCatalogTest {
         // resolution; a relative path throws at tap-to-import time. The
         // simplify review caught exactly this bug in the IndicConformer
         // batch; pin it so no future entry ships relative.
-        val text = java.io.File(BUNDLED_INDEX_PATH).readText()
+        val text = RepoFiles.readText(BUNDLED_INDEX_PATH)
         ExternalCatalog.parseIndex(text).forEach {
             assertTrue("relative entryUrl: ${it.name} -> ${it.entryUrl}",
                 it.entryUrl.startsWith("https://"))
@@ -346,7 +347,7 @@ class ExternalCatalogTest {
     fun `bundled index is alphabetically sorted by display name`() {
         // Only OUR curated file is held to the rule: parseIndex deliberately
         // keeps input order so a custom/remote catalog may ship unsorted.
-        val text = java.io.File(BUNDLED_INDEX_PATH).readText()
+        val text = RepoFiles.readText(BUNDLED_INDEX_PATH)
         val names = ExternalCatalog.parseIndex(text).map { it.name }
         assertEquals(names.sortedBy { it.lowercase() }, names)
     }
@@ -358,9 +359,9 @@ class ExternalCatalogTest {
         // subset of the versioned index (a compatible fix may edit an entry,
         // nothing may be added or broken).
         val legacy = ExternalCatalog.parseIndex(
-            java.io.File("src/main/assets/external-catalog/index.json").readText())
+            RepoFiles.readText("src/main/assets/external-catalog/index.json"))
         assertEquals(14, legacy.size)
-        val versioned = ExternalCatalog.parseIndex(java.io.File(BUNDLED_INDEX_PATH).readText())
+        val versioned = ExternalCatalog.parseIndex(RepoFiles.readText(BUNDLED_INDEX_PATH))
         val versionedByName = versioned.associateBy { it.name }
         // Shared entries must stay in SYNC (the runbook's compatible fixes
         // apply to every live file): pin entryUrl equality, the field a
@@ -373,7 +374,7 @@ class ExternalCatalogTest {
         }
         // Exactly one versioned index ships: the running build reads only its
         // own version's file; stale ones are dead APK weight.
-        val versionedFiles = java.io.File("src/main/assets/external-catalog")
+        val versionedFiles = RepoFiles.resolve("src/main/assets/external-catalog")
             .listFiles { f -> f.name.matches(Regex("index-.*\\.json")) }
         assertEquals(1, versionedFiles?.size)
     }
@@ -383,8 +384,8 @@ class ExternalCatalogTest {
         // Sync contract: adding an index entry requires its exact name to
         // appear in docs/model-catalog.md, so the user-facing model list
         // cannot drift from the catalog the app serves.
-        val text = java.io.File(BUNDLED_INDEX_PATH).readText()
-        val doc = java.io.File("../docs/model-catalog.md").readText()
+        val text = RepoFiles.readText(BUNDLED_INDEX_PATH)
+        val doc = RepoFiles.readText("../docs/model-catalog.md")
         ExternalCatalog.parseIndex(text).forEach {
             assertTrue("docs/model-catalog.md community table is missing ${it.name}", doc.contains(it.name))
         }

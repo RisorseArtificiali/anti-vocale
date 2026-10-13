@@ -1,6 +1,6 @@
 package com.antivocale.app.service
 
-import java.io.File
+import com.antivocale.app.testing.RepoFiles
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -16,7 +16,7 @@ import org.junit.Test
  */
 class OpenTranscribeManifestContractTest {
 
-    private val manifest: String = File("src/main/AndroidManifest.xml").readText()
+    private val manifest: String = RepoFiles.readText("src/main/AndroidManifest.xml")
 
     private fun serviceNode(): String {
         val idx = manifest.indexOf("android:name=\".service.OpenTranscribeProviderService\"")

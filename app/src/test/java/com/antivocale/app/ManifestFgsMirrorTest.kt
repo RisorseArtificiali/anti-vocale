@@ -1,5 +1,6 @@
 package com.antivocale.app
 
+import com.antivocale.app.testing.RepoFiles
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -42,12 +43,12 @@ class ManifestFgsMirrorTest {
 
     @Test
     fun `every overlay re-assertion carries main's exact foregroundServiceType`() {
-        val main = java.io.File("src/main/AndroidManifest.xml").readText()
+        val main = RepoFiles.readText("src/main/AndroidManifest.xml")
         services.forEach { service ->
             val mainType = fgsType(main, service)
             assertTrue("main must declare a foregroundServiceType for $service", !mainType.isNullOrBlank())
             overlays.forEach { (label, path) ->
-                val overlay = java.io.File(path).readText()
+                val overlay = RepoFiles.readText(path)
                 assertEquals("$label drifted from main for $service", mainType, fgsType(overlay, service))
             }
         }
@@ -83,7 +84,7 @@ class ManifestFgsMirrorTest {
         // the library's own AAR declares NO type, so this override is the
         // only one. Deleting it turns the first FGS promotion into a fatal
         // IllegalArgumentException on every API 29+ device.
-        val main = java.io.File("src/main/AndroidManifest.xml").readText()
+        val main = RepoFiles.readText("src/main/AndroidManifest.xml")
         val service = "androidx.work.impl.foreground.SystemForegroundService"
         assertEquals(
             "the SystemForegroundService manifest override must stay dataSync",
