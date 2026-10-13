@@ -46,6 +46,11 @@ class VoiceNoteListenerSpike : NotificationListenerService() {
     override fun onListenerConnected() {
         if (!BuildConfig.DEBUG) return
         Log.i(TAG, "connected; activeNotifications=${activeNotifications.size}")
+        // TASK-271 follow-up spike: the filesystem probes ride the same
+        // connected listener (the system binds it; the app process is
+        // alive whenever this runs).
+        VoiceNoteFsSpike.arm()
+        VoiceNoteFsSpike.probeScanRead(this)
         // The already-live posts are the richest immediate sample (existing
         // group summaries included); a trial session with no incoming
         // traffic still yields AC records from them.
@@ -56,6 +61,7 @@ class VoiceNoteListenerSpike : NotificationListenerService() {
         // The one line that keeps a silent unbind (an Oplus specialty)
         // distinguishable from "no voice-note signature found".
         Log.w(TAG, "disconnected; records after this line are missing, not absent")
+        VoiceNoteFsSpike.disarm()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
