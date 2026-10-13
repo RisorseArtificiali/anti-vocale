@@ -17,10 +17,15 @@ import kotlinx.coroutines.flow.receiveAsFlow
  * @property id Path-hash (stable dedup key; replaces the MediaStore row id).
  * @property path Absolute file path as observed (unreadable directly: the
  *   tap path resolves it through the SAF tree grant).
+ * @property detectedAtMs When the observer fired. Stamped at emission, not
+ *   at consumption: the serial collector can sit behind a resolve or a
+ *   label wait, and the sender match needs the EVENT's time (its
+ *   candidate window rejects notifications posted far from it, TASK-821).
  */
 data class VoiceNoteEntry(
     val id: Long,
     val path: String?,
+    val detectedAtMs: Long,
 )
 
 /**
@@ -39,8 +44,8 @@ data class VoiceNoteEntry(
  * spike's probe 1). [detections] is a command queue, not a broadcast:
  * every detected note must reach the transcriber exactly once (TASK-272
  * AC3), so the Channel is unbounded and emission never drops (entries
- * are three-field values; WhatsApp cannot outgrow memory between the
- * consumer's serial resolves). File notes fire on CLOSE_WRITE/MOVED_TO
+ * are small fixed-shape values; WhatsApp cannot outgrow memory between
+ * the consumer's serial resolves). File notes fire on CLOSE_WRITE/MOVED_TO
  * ONLY (never CREATE: the automatic form would copy the file while
  * WhatsApp is still writing it, and the dedup would then swallow the
  * CLOSE_WRITE that proves the write complete); CREATE stays in the mask
@@ -118,7 +123,10 @@ class VoiceNoteDetector @Inject constructor() {
                 if ((event and (FileObserver.CLOSE_WRITE or FileObserver.MOVED_TO)) == 0) return
                 if (!VoiceNoteFilter.isWhatsAppVoiceNoteName(path)) return
                 val file = File(dir, path)
-                onDetection(VoiceNoteEntry(id = file.absolutePath.hashCode().toLong(), path = file.absolutePath))
+                onDetection(VoiceNoteEntry(
+                    id = file.absolutePath.hashCode().toLong(),
+                    path = file.absolutePath,
+                    detectedAtMs = System.currentTimeMillis()))
             }
         }
         // A missing directory (WhatsApp cleared or reinstalled) must not

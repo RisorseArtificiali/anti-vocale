@@ -162,12 +162,15 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
 
     /**
      * One detected note becomes one enqueued transcription; an entry without
-     * an absolute path cannot be resolved and is skipped. Runs on the
+     * an absolute path cannot be resolved and is skipped. The EVENT's
+     * timestamp travels with the path: the sender match bounds its
+     * candidates to notifications posted near it (TASK-821), and the
+     * collector's serialization must not shift that anchor. Runs on the
      * collector's IO dispatcher, never the main thread.
      */
     private suspend fun transcribe(entry: VoiceNoteEntry) {
         val path = entry.path ?: return
-        autoTranscriber.enqueue(path)
+        autoTranscriber.enqueue(path, entry.detectedAtMs)
     }
 
     private companion object {

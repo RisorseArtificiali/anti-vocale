@@ -48,7 +48,7 @@ class VoiceNoteDetectorTest {
         // WhatsApp's write fires CREATE and CLOSE_WRITE for the same file,
         // and post-write touches re-fire: one offer per note.
         val filter = VoiceNoteFilter.IncrementalFilter()
-        val entry = VoiceNoteEntry(id = 42L, path = "/x/PTT-1.opus")
+        val entry = VoiceNoteEntry(id = 42L, path = "/x/PTT-1.opus", detectedAtMs = 1L)
         assertTrue("first sighting is new", filter.observe(entry))
         assertFalse("the re-fire is a duplicate", filter.observe(entry))
         assertFalse("and again", filter.observe(entry))

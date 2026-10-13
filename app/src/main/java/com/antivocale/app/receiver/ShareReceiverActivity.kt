@@ -526,9 +526,9 @@ class ShareReceiverActivity : Activity() {
         // free candidates check first; the duration probe runs only when a
         // voice note from this package is actually cached). TASK-271 moved
         // the probe + matcher into VoiceNoteSenderResolution so the share
-        // flow and the detection coordinator share one implementation.
+        // flow and the automatic route share one implementation.
         val senderName = withContext(Dispatchers.IO) {
-            VoiceNoteSenderResolution.matchForShare(
+            VoiceNoteSenderResolution.match(
                 appEntryPoint.voiceNoteIdentityCache(),
                 appEntryPoint.audioPreprocessor(),
                 sourcePackage,

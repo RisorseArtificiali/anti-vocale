@@ -30,6 +30,7 @@ class VoiceNoteDetectionCoordinatorTest {
     private fun entry(path: String? = "/voice/PTT-1.opus") = VoiceNoteEntry(
         id = 7L,
         path = path,
+        detectedAtMs = 1_000L,
     )
 
     // ---- coordinator transitions ----
@@ -48,7 +49,7 @@ class VoiceNoteDetectionCoordinatorTest {
             preferences,
             treeGrant,
             mockk<VoiceNoteAutoTranscriber> {
-                coEvery { enqueue(any()) } coAnswers { enqueued += firstArg<String>() }
+                coEvery { enqueue(any(), any()) } coAnswers { enqueued += firstArg<String>() }
             },
             VoiceNotePermissionChecker { permissionGranted() },
             scope,

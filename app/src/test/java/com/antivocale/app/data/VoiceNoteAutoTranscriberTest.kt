@@ -2,14 +2,15 @@ package com.antivocale.app.data
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.receiver.TaskerRequestReceiver
+import com.antivocale.app.receiver.VoiceNoteIdentityCache
 import com.antivocale.app.service.InferenceService
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -21,7 +22,9 @@ import org.robolectric.annotation.Config
  * contract, ported from the deleted offer receiver's test. The
  * service-intent shape (the share path's mirror) and the unresolvable-note
  * early return; the resolved enqueue leg is device territory (the
- * 2026-10-13 trial proved the chain end to end).
+ * 2026-10-13 trial proved the chain end to end). TASK-821 adds the sender
+ * extra; the match-and-race-window policy is pinned in
+ * VoiceNoteSenderResolutionTest, next to its siblings.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -32,6 +35,8 @@ class VoiceNoteAutoTranscriberTest {
     private fun impl(resolveResult: String?) = VoiceNoteAutoTranscriber(
         context,
         mockk<VoiceNoteTreeGrant> { coEvery { resolve(any()) } returns resolveResult },
+        mockk<AudioPreprocessor>(),
+        VoiceNoteIdentityCache(),
     )
 
     @Test
@@ -55,10 +60,22 @@ class VoiceNoteAutoTranscriberTest {
     }
 
     @Test
+    fun `a labeled note carries the sender, an unlabeled one carries no extra`() {
+        val impl = impl("/local/n.opus")
+        assertEquals(
+            "Anna",
+            impl.serviceIntent("/local/n.opus", "/w/PTT-1.opus", senderName = "Anna")
+                .getStringExtra(InferenceService.EXTRA_SENDER_NAME))
+        assertNull(
+            impl.serviceIntent("/local/n.opus", "/w/PTT-1.opus")
+                .getStringExtra(InferenceService.EXTRA_SENDER_NAME))
+    }
+
+    @Test
     fun `an unresolvable note enqueues nothing`() = runBlocking {
         // resolve returns null (no grant, folder moved, file deleted): the
         // honest skip, and nothing may start.
-        impl(resolveResult = null).enqueue("/gone/PTT-1.opus")
+        impl(resolveResult = null).enqueue("/gone/PTT-1.opus", 1_000L)
         assertEquals(
             "no service may start for an unresolvable note",
             null,
