@@ -40,6 +40,18 @@ class LanguageFlagsTitleTest {
     }
 
     @Test
+    fun `the catalog multilingual marker and the swiss german code map`() {
+        // The community catalog declares the literal marker (Whisper Tiny).
+        assertEquals(
+            "\uD83C\uDF0D Tiny",
+            LanguageFlags.titled("Tiny", listOf("multilingual")))
+        // gsw (ISO 639-3 Swiss German) rides de in the bilingual entry.
+        assertEquals(
+            "\uD83C\uDDE9\uD83C\uDDEA\uD83C\uDDE8\uD83C\uDDED Swiss",
+            LanguageFlags.titled("Swiss", listOf("de", "gsw")))
+    }
+
+    @Test
     fun `the shipped catalog derives the expected card titles`() {
         val entries = ModelCatalogJson.parseCatalog(
             RepoFiles.readText("src/main/assets/models_catalog.json"))

@@ -22,6 +22,13 @@ object LanguageFlags {
      */
     const val MULTILINGUAL_PREFIX = "\uD83C\uDF0D "
 
+    /**
+     * The community catalog's literal "speaks many languages" marker
+     * (declared in place of language codes on entries like Whisper Tiny
+     * multilingual).
+     */
+    const val MULTILINGUAL_MARKER = "multilingual"
+
     private val specialMappings = mapOf(
         "af" to "ZA", "am" to "ET", "ar" to "SA", "as" to "IN", "az" to "AZ",
         "ba" to "RU", "be" to "BY", "bg" to "BG", "bn" to "BD", "bo" to "CN",
@@ -46,6 +53,9 @@ object LanguageFlags {
         "tt" to "RU", "ug" to "CN", "uk" to "UA", "ur" to "PK", "uz" to "UZ",
         "vi" to "VN", "wo" to "SN", "xh" to "ZA", "yi" to "IL", "yo" to "NG",
         "zh" to "CN", "zu" to "ZA",
+        // ISO 639-3 codes the community catalog declares: Swiss German
+        // maps to the Swiss flag (the de+gsw bilingual entry shows both).
+        "gsw" to "CH",
     )
 
     private fun countryCodeToFlag(countryCode: String): String {
@@ -72,7 +82,12 @@ object LanguageFlags {
     fun titled(title: String, languageCodes: Collection<String>): String {
         val distinct = languageCodes.distinct()
         if (distinct.isEmpty()) return title
-        if (distinct.size > MAX_TITLE_FLAG_LANGUAGES) return MULTILINGUAL_PREFIX + title
+        // The community catalog declares the LITERAL marker "multilingual"
+        // on entries that speak many languages (Whisper Tiny multilingual):
+        // that IS the earth-prefix semantic, not an unmappable typo.
+        if (distinct.size > MAX_TITLE_FLAG_LANGUAGES || distinct.contains(MULTILINGUAL_MARKER)) {
+            return MULTILINGUAL_PREFIX + title
+        }
         // Conservative: EVERY code must map. A partial prefix would claim a
         // language set the model does not have (review round: a mixed
         // [unknown, it] set showing only the Italian flag).
