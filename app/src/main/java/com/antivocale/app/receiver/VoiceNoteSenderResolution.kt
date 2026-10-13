@@ -4,21 +4,15 @@ import android.util.Log
 import com.antivocale.app.audio.AudioPreprocessor
 
 /**
- * TASK-271: the shared sender-correlation step behind both consumers of the
- * RAM identity cache: the share flow (TASK-736, matching a shared audio at
- * dispatch time) and the detection coordinator (TASK-271, matching a
- * detected voice note at detection time). One implementation of the duration
- * probe and of the matcher invocation, so the two paths cannot drift on the
- * evidence rule: no probed duration, no label (a wrong name is the one
- * outcome worse than no name).
+ * The sender-correlation step of the share flow (TASK-736, matching a
+ * shared audio at dispatch time over the RAM identity cache). One
+ * implementation of the duration probe and of the matcher invocation, so
+ * the rule cannot drift: no probed duration, no label (a wrong name is
+ * the one outcome worse than no name). The detection route posts
+ * sender-less offers by design (its paths are FUSE-hidden, code review
+ * F1 2026-10-13); restoring detection-time enrichment goes through here.
  */
 object VoiceNoteSenderResolution {
-
-    /** The facts a caller needs: the matched label, and the duration that probed it. */
-    data class Result(
-        val senderName: String?,
-        val durationSeconds: Long?,
-    )
 
     /**
      * The HOUSE duration probe, not a raw MediaMetadataRetriever: voice notes
@@ -48,28 +42,6 @@ object VoiceNoteSenderResolution {
             return null
         }
         return selectAndLog(candidates, probeDurationSeconds(audioPreprocessor, localPath))?.sender
-    }
-
-    /**
-     * The detection path's entry: the duration is probed unconditionally
-     * (the offer payload carries it even when no identity is cached), then
-     * the same matcher runs over the same cache for the contributing
-     * package. Ambiguity or mismatch degrades to a sender-less offer, which
-     * is already the matcher's contract.
-     */
-    fun match(
-        cache: VoiceNoteIdentityCache,
-        audioPreprocessor: AudioPreprocessor,
-        sourcePackage: String?,
-        localPath: String,
-    ): Result {
-        val durationSeconds = probeDurationSeconds(audioPreprocessor, localPath)
-        val candidates = cache.forPackage(sourcePackage.orEmpty())
-        if (candidates.isEmpty()) {
-            Log.i(TAG, "identity match: no cached candidates for ${sourcePackage.orEmpty()}")
-            return Result(null, durationSeconds)
-        }
-        return Result(selectAndLog(candidates, durationSeconds)?.sender, durationSeconds)
     }
 
     /**

@@ -47,6 +47,19 @@ object TreeUris {
     }
 
     /**
+     * Whether the persisted READ grant is actually HELD right now (the live
+     * artifact, not the saved URI string). A grant can die while the
+     * preference survives (folder deleted and recreated, OEM grant
+     * cleanup), and a consumer that gates only on the string would arm on
+     * a dead grant with no re-pick path. Same probe shape as
+     * ScheduledFolderWorker.grantHeld.
+     */
+    fun holdsPersistableReadGrant(context: Context, uri: Uri): Boolean =
+        context.contentResolver.persistedUriPermissions.any {
+            it.isReadPermission && it.uri == uri
+        }
+
+    /**
      * The display name of a tree, falling back through the path segment to
      * the raw string (never null, so callers can render it directly).
      */

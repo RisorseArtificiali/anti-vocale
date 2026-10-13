@@ -1040,6 +1040,8 @@
     <string name="voice_note_detection_title">התראות הודעות קוליות</string>
     <string name="voice_note_detection_description">כשמגיעה הודעה קולית חדשה של WhatsApp והאפליקציה פועלת, מוצגת התראה עם כפתור תמלול, כדי שתוכל לתמלל אותה בנגיעה אחת במקום לשתף אותה. הזיהוי קורא רק את רישום תיקיית ההודעות הקוליות של WhatsApp, והכול נשאר במכשיר הזה. כשזה כבוי לא נקרא דבר. דורש הרשאת גישה למוזיקה ולאודיו.</string>
     <string name="voice_note_detection_grant_hint">גישת האודיו כבויה. הקש כדי לפתוח את הגדרות האפליקציה ולהפעיל אותה; ההתראות יתחילו ברגע שתינתן.</string>
+    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_offer_title">הודעה קולית חדשה</string>
     <string name="voice_note_offer_text_with_sender">מאת %1$s (%2$s)</string>
     <string name="voice_note_offer_text_duration">הודעה קולית (%1$s)</string>

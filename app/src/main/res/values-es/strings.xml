@@ -889,6 +889,8 @@
     <string name="voice_note_detection_title">Avisos de notas de voz</string>
     <string name="voice_note_detection_description">Muestra una notificación con el botón Transcribir cuando llega una nota de voz nueva de WhatsApp y la aplicación está en ejecución, para transcribirla con un toque en lugar de compartirla. La detección lee solo el listado de la carpeta de notas de voz de WhatsApp, y todo permanece en este dispositivo. Mientras esté desactivado, no se lee nada. Requiere permiso de acceso a música y audio.</string>
     <string name="voice_note_detection_grant_hint">El acceso al audio está desactivado. Toca para abrir los ajustes de la aplicación y activarlo; los avisos comienzan en cuanto se conceda.</string>
+    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_offer_title">Nueva nota de voz</string>
     <string name="voice_note_offer_text_with_sender">De %1$s (%2$s)</string>
     <string name="voice_note_offer_text_duration">Mensaje de voz (%1$s)</string>

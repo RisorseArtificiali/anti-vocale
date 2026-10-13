@@ -617,6 +617,24 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED
         )
 
+    /**
+     * TASK-271: the persisted SAF tree grant on the WhatsApp Voice Notes
+     * folder (the one read route; the coordinator gates detection on it).
+     */
+    val voiceNoteTreeUri: StateFlow<String?> = preferencesManager.voiceNoteTreeUri
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    /** TASK-271: a null clears the grant; the coordinator disarms on it. */
+    fun saveVoiceNoteTreeUri(uri: String?) {
+        viewModelScope.launch {
+            preferencesManager.saveVoiceNoteTreeUri(uri)
+        }
+    }
+
     fun saveExternalAutomationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveExternalAutomationEnabled(enabled)

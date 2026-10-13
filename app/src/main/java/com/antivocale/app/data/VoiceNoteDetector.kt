@@ -1,13 +1,9 @@
 package com.antivocale.app.data
 
-import android.content.Context
-import android.database.ContentObserver
-import android.net.Uri
-import android.os.Build
-import android.os.Handler
-import android.os.HandlerThread
-import android.provider.MediaStore
-import dagger.hilt.android.qualifiers.ApplicationContext
+import android.os.Environment
+import android.os.FileObserver
+import android.util.Log
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.channels.BufferOverflow
@@ -16,342 +12,170 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 /**
- * One WhatsApp voice note as indexed by MediaStore.
+ * One detected WhatsApp voice note (TASK-271, reworked 2026-10-13 onto
+ * FileObserver after the MediaStore premise died on device).
  *
- * @property id MediaStore row id (stable dedup key).
- * @property dateAddedSeconds MediaStore DATE_ADDED, in unix seconds (second
- *   granularity: several notes in the same second share the value).
- * @property displayName File name, e.g. `PTT-20260107-WA0000.opus`; empty when
- *   MediaStore indexed the row before a name was available (the payload rule
- *   then leans on the mime).
- * @property path Absolute file path (DATA column), when resolvable.
- * @property relativePath Storage-relative directory (API 29+), e.g.
- *   `Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes/`.
- * @property mimeType MediaStore-classified mime, when known.
- * @property ownerPackage Package that contributed the row (API 29+; null when
- *   the OS did not report it).
+ * @property id Path-hash (stable dedup key; replaces the MediaStore row id).
+ * @property path Absolute file path as observed (unreadable directly: the
+ *   tap path resolves it through the SAF tree grant).
+ * @property ownerPackage Always com.whatsapp on this route.
  */
 data class VoiceNoteEntry(
     val id: Long,
-    val dateAddedSeconds: Long,
-    val displayName: String,
     val path: String?,
-    val relativePath: String?,
-    val mimeType: String?,
     val ownerPackage: String?,
 )
 
 /**
- * Detection core for incoming WhatsApp voice notes (TASK-270): a passive
- * [ContentObserver] on [MediaStore.Audio.Media.EXTERNAL_CONTENT_URI] that emits
- * NEW WhatsApp voice-note rows as they are indexed. Pure decision logic lives
- * in [VoiceNoteFilter] (unit-tested without an Android device).
+ * Detection core for incoming WhatsApp voice notes (TASK-270 origin,
+ * reworked 2026-10-13): [FileObserver]s over the WhatsApp Voice Notes
+ * tree emit each new .opus file the moment WhatsApp finishes writing it.
+ * The observer route is the inotify side channel documented by the File
+ * Notification Attacks research (CCS 2026, demonstrated against
+ * WhatsApp): events cross the FUSE per-app view that blocks listing
+ * level 2 and direct opens. FRAGILITY NOTE: that channel is a documented
+ * vulnerability; if Android closes it, detection dies silently (the
+ * Settings copy and the task record both say so).
  *
- * **Permission requirement (surfaces a task-premise gap):** on API 29+ an app
- * without a read-media permission only sees its OWN contributions when
- * querying MediaStore; WhatsApp's rows are visible only once the runtime
- * permission `READ_MEDIA_AUDIO` (API 33+) / `READ_EXTERNAL_STORAGE` (below 33)
- * has been granted. This app currently declares NO storage permissions
- * (TASK-301 manifest comment: SAF-only); TASK-270 was written under the
- * premise that READ_MEDIA_AUDIO was already granted, and it is NOT in the
- * manifest. Per the task constraints this class does not touch the manifest:
- * TASK-271's lifecycle wiring must request the permission before subscribing.
- * No MANAGE_EXTERNAL_STORAGE, no AccessibilityService, and no permission beyond
- * that standard runtime grant is involved
- * (docs/research/2026-07-12-auto-transcription-feasibility.md, approach 2).
- *
- * **Threading:** [subscribe] runs the baseline index query synchronously, so
- * the TASK-271 lifecycle owner must call it off the main thread. [poll] runs
- * one bounded MediaStore query per call. All state transitions ([subscribe],
- * [dispose], [poll]) serialize on this detector's monitor.
- *
- * **Battery impact:** push-only. No polling loop exists; the MediaStore query
- * runs only when the system reports a change (or when the TASK-271 lifecycle
- * owner explicitly calls [poll]), and it is bounded by `DATE_ADDED >= last
- * seen` so it stays cheap as the index grows. Between voice notes the only
- * live resource is a parked HandlerThread. Callers done with detection must
- * call [dispose] so the thread exits.
- *
- * **Self-delivered files:** rows contributed by this app's own package are
- * skipped, so app-written audio can never re-trigger detection on itself.
- *
- * Detection core only: no service, notification, or lifecycle wiring here
- * (TASK-271 owns that).
+ * Watchers cover the tree root (new counter folders) and each existing
+ * counter folder (level-1 enumeration works with READ_MEDIA_AUDIO, the
+ * spike's probe 1). [detections] conflates to the newest entry under
+ * pressure (DROP_OLDEST), which is exactly the coordinator's offer rule:
+ * one fixed notification slot, newest wins.
  */
 @Singleton
-class VoiceNoteDetector @Inject constructor(
-    @ApplicationContext private val context: Context,
-) {
-    /**
-     * A change event. MediaStore frequently fires several onChange calls for a
-     * single WhatsApp write; the DROP_OLDEST buffer of one collapses them into
-     * one pending signal, so one query covers a burst.
-     */
-    sealed interface ChangeSignal {
-        data object MediaChanged : ChangeSignal
-    }
+class VoiceNoteDetector @Inject constructor() {
 
-    private val _detections = MutableSharedFlow<VoiceNoteEntry>(extraBufferCapacity = 64)
-    // SharedFlow, not a Channel: signals fan out to every collector, and a
-    // second (or restarted) collector must never steal the conflated signal.
-    private val _signals = MutableSharedFlow<ChangeSignal>(
+    private val _detections = MutableSharedFlow<VoiceNoteEntry>(
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
 
-    private var handlerThread: HandlerThread? = null
-    private var observer: ContentObserver? = null
-    private var tracker = VoiceNoteFilter.IncrementalFilter()
-    private var disposed = false
+    /** Each new voice note, already deduped; newest-wins under pressure. */
+    val detections: Flow<VoiceNoteEntry> = _detections.asSharedFlow()
 
-    /** Hot flow of newly indexed WhatsApp voice notes; never replays old entries. */
-    val detections: Flow<VoiceNoteEntry> = _detections
+    private val seen = VoiceNoteFilter.IncrementalFilter()
+    private val observers = mutableListOf<FileObserver>()
+    private val watchedDirs = mutableSetOf<String>()
 
-    /**
-     * Registers the observer and establishes the baseline: everything not yet
-     * observed is absorbed silently, so nothing pre-existing is re-emitted on
-     * (re-)subscription. Idempotent while subscribed; after a [dispose] the
-     * detector re-arms, absorbing only the delta since the watermark
-     * (TASK-271's lifecycle: the preference toggle tears detection down and
-     * back up within one process).
-     */
+    // Guards watch() from observer threads too: without it, a late watch
+    // (a counter CREATE racing dispose) could add an observer AFTER the
+    // teardown cleared the list, and the next subscribe would short-
+    // circuit on the stale entry, silently disarming detection.
+    private var armed = false
+
+    val root: File
+        get() = voiceNotesRoot()
+
     @Synchronized
     fun subscribe() {
-        if (observer != null) return
-        // Baseline: absorb everything not yet observed before the observer
-        // registers. The tracker survives off/on cycles (the TASK-271
-        // toggle), so a re-arm absorbs only the delta since the watermark
-        // instead of rescanning the whole audio index; runs on the caller's
-        // thread (see Threading above).
-        tracker.absorb(queryWhatsAppVoiceNotes(tracker.watermarkSeconds))
-        val thread = HandlerThread("VoiceNoteDetector").apply { start() }
-        handlerThread = thread
-        val registered = object : ContentObserver(Handler(thread.looper)) {
-            override fun onChange(selfChange: Boolean, uri: Uri?) {
-                if (!disposed) _signals.tryEmit(ChangeSignal.MediaChanged)
-            }
-        }
-        // Before the registration, not after: an onChange delivered in the
-        // window between registering and re-arming the flag would otherwise
-        // be dropped (review F5), silently losing that note's only signal.
-        disposed = false
-        try {
-            context.contentResolver.registerContentObserver(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                /* notifyForDescendants = */ true,
-                registered,
-            )
-        } catch (t: Throwable) {
-            // A failed registration must not strand the parked thread.
-            handlerThread = null
-            thread.quitSafely()
-            throw t
-        }
-        observer = registered
+        if (observers.isNotEmpty()) return
+        armed = true
+        watch(root)
+        root.listFiles()
+            ?.filter { VoiceNoteFilter.isCounterFolderName(it.name) }
+            ?.forEach { watch(it) }
+        Log.i(TAG, "subscribed: ${observers.size} watchers under ${root.absolutePath}")
     }
 
-    /**
-     * Tears the active subscription down: unregisters the observer and parks
-     * the handler thread. A no-op when nothing is subscribed; a later
-     * [subscribe] re-arms detection. The lifecycle owner ends its collector
-     * itself (the signal flow is hot and never completes); unregistering here
-     * is what stops further MediaChanged emissions.
-     */
     @Synchronized
     fun dispose() {
-        if (observer == null && handlerThread == null) return
-        disposed = true
-        observer?.let { context.contentResolver.unregisterContentObserver(it) }
-        observer = null
-        handlerThread?.quitSafely()
-        handlerThread = null
+        armed = false
+        observers.forEach { it.stopWatching() }
+        observers.clear()
+        watchedDirs.clear()
+        Log.i(TAG, "disposed")
     }
 
-    /**
-     * Coalesced change signals, exposed as a shared flow so any number of
-     * collectors (the TASK-271 lifecycle owner drives collection with its own
-     * scope; the detector owns no process-lifetime coroutine, the
-     * @ApplicationScope rule) each see the events. A collector reacts to
-     * [ChangeSignal.MediaChanged] by calling [poll].
-     */
-    fun changeSignals(): Flow<ChangeSignal> = _signals.asSharedFlow()
-
-    /**
-     * Run one detection pass: query MediaStore for rows at or after the last
-     * seen DATE_ADDED, filter to WhatsApp voice notes, dedup, and emit the new
-     * ones on [detections]. Returns the entries emitted this pass.
-     */
-    suspend fun poll(): List<VoiceNoteEntry> {
-        val fresh: List<VoiceNoteEntry>
-        synchronized(this) {
-            val candidates = queryWhatsAppVoiceNotes(tracker.watermarkSeconds)
-            val (voiceNotes, rejected) =
-                candidates.partition { VoiceNoteFilter.isWhatsAppVoiceNote(it) }
-            fresh = tracker.filter(voiceNotes, selfPackage = context.packageName)
-            // Candidates that failed the strict rule are still recorded: a
-            // MediaStore re-index that fills in a missing name or mime in the
-            // same second must not surface as a fresh detection.
-            tracker.absorb(rejected)
-        }
-        fresh.forEach { _detections.emit(it) }
-        return fresh
-    }
-
-    private fun queryWhatsAppVoiceNotes(minDateAdded: Long = Long.MIN_VALUE): List<VoiceNoteEntry> {
-        val projection = buildList {
-            add(MediaStore.Audio.Media._ID)
-            add(MediaStore.Audio.Media.DISPLAY_NAME)
-            add(MediaStore.Audio.Media.DATA)
-            add(MediaStore.Audio.Media.DATE_ADDED)
-            add(MediaStore.Audio.Media.MIME_TYPE)
-            add(MediaStore.Audio.Media.RELATIVE_PATH)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                add(MediaStore.Audio.Media.OWNER_PACKAGE_NAME)
-            }
-        }
-        val entries = mutableListOf<VoiceNoteEntry>()
-        // Bounded query: only rows at or after the watermark can ever be new
-        // (same-second rows must come back for the id-set dedup, hence >=).
-        val selection = if (minDateAdded != Long.MIN_VALUE) {
-            "${MediaStore.Audio.Media.DATE_ADDED} >= ?"
-        } else {
-            null
-        }
-        val selectionArgs = if (minDateAdded != Long.MIN_VALUE) arrayOf(minDateAdded.toString()) else null
-        context.contentResolver.query(
-            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-            projection.toTypedArray(),
-            /* selection = */ selection,
-            /* selectionArgs = */ selectionArgs,
-            /* sortOrder = */ "${MediaStore.Audio.Media.DATE_ADDED} ASC",
-        )?.use { cursor ->
-            val idCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-            val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
-            val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
-            val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
-            val mimeCol = cursor.getColumnIndex(MediaStore.Audio.Media.MIME_TYPE)
-            val relPathCol = cursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH)
-            val ownerCol = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                cursor.getColumnIndex(MediaStore.Audio.Media.OWNER_PACKAGE_NAME)
-            } else {
-                -1
-            }
-            while (cursor.moveToNext()) {
-                val relativePath = if (relPathCol >= 0) cursor.getString(relPathCol) else null
-                val path = if (dataCol >= 0) cursor.getString(dataCol) else null
-                // Cheap location pre-filter over the DIRECTORY components of
-                // the row: a display name like "WhatsApp Voice Notes - demo"
-                // must never confer WhatsApp-ness on a foreign folder. Rows
-                // that pass advance to the strict per-entry rule in [poll].
-                val directories = listOfNotNull(
-                    relativePath,
-                    path?.substringBeforeLast('/', missingDelimiterValue = ""),
-                )
-                if (directories.none { VoiceNoteFilter.isWhatsAppVoiceNoteDirectory(it) }) continue
-                entries.add(
+    @Synchronized
+    private fun watch(dir: File) {
+        if (!armed) return
+        // CREATE and MOVED_TO both fire for one folder creation, and folder
+        // touches re-fire: the watched-set keeps one observer per directory.
+        if (!watchedDirs.add(dir.absolutePath)) return
+        val observer = object : FileObserver(
+            dir,
+            FileObserver.CREATE or FileObserver.CLOSE_WRITE or FileObserver.MOVED_TO,
+        ) {
+            override fun onEvent(event: Int, path: String?) {
+                if (path == null) return
+                // A new counter folder at the root: watch it too (events
+                // for its files do not bubble up).
+                if (VoiceNoteFilter.isCounterFolderName(path) &&
+                    (event and (FileObserver.CREATE or FileObserver.MOVED_TO)) != 0
+                ) {
+                    watch(File(dir, path))
+                    return
+                }
+                if (!VoiceNoteFilter.isWhatsAppVoiceNoteName(path)) return
+                val file = File(dir, path)
+                onDetection(
                     VoiceNoteEntry(
-                        id = cursor.getLong(idCol),
-                        dateAddedSeconds = cursor.getLong(dateCol),
-                        displayName = cursor.getString(nameCol) ?: "",
-                        path = path,
-                        relativePath = relativePath,
-                        mimeType = if (mimeCol >= 0) cursor.getString(mimeCol) else null,
-                        ownerPackage = if (ownerCol >= 0) cursor.getString(ownerCol) else null,
-                    ),
-                )
+                        id = file.absolutePath.hashCode().toLong(),
+                        path = file.absolutePath,
+                        ownerPackage = "com.whatsapp",
+                    ))
             }
         }
-        return entries
+        // A missing directory (WhatsApp cleared or reinstalled) must not
+        // count as a watcher: FileObserver.startWatching() returns nothing,
+        // so the existence check carries the accounting. An empty observers
+        // list lets the next reconcile retry the subscribe when the folder
+        // is back.
+        if (dir.isDirectory) {
+            observer.startWatching()
+            observers.add(observer)
+        } else {
+            watchedDirs.remove(dir.absolutePath)
+            Log.w(TAG, "not watching missing ${dir.absolutePath}")
+        }
+    }
+
+    private fun onDetection(entry: VoiceNoteEntry) {
+        val isNew = synchronized(this@VoiceNoteDetector) { seen.observe(entry) }
+        if (isNew) _detections.tryEmit(entry)
+    }
+
+    private companion object {
+        const val TAG = "VoiceNoteDetector"
     }
 }
 
+/** The canonical WhatsApp Voice Notes folder (the detector's watch root and
+ *  the Settings picker's initial location: one owner of the path). */
+fun voiceNotesRoot(): File =
+    File(Environment.getExternalStorageDirectory(), "Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes")
+
 /**
- * Pure decision logic for voice-note detection, split out of
- * [VoiceNoteDetector] so the rules are unit-testable without a device.
+ * The pure decision rules for voice-note detection, split out of
+ * [VoiceNoteDetector] so they stay unit-testable without a device.
  */
 object VoiceNoteFilter {
-    /**
-     * Location rule: the row's DIRECTORY must sit under a WhatsApp tree AND in
-     * a "Voice Notes" directory. Case-insensitive; matches both
-     * `Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes/` and the
-     * legacy external-storage layout (`WhatsApp/Media/WhatsApp Voice Notes/`),
-     * plus localized WhatsApp folder names that keep the literal "Voice Notes"
-     * leaf. The file name is deliberately NOT part of the haystack: a podcast
-     * named "whatsapp-voice-notes-episode.opus" in Music/ is not a WhatsApp
-     * note.
-     */
-    fun isWhatsAppVoiceNoteDirectory(directory: String?): Boolean {
-        if (directory == null) return false
-        val normalized = directory.replace('\\', '/')
-        return normalized.contains("whatsapp", ignoreCase = true) &&
-            normalized.contains("voice notes", ignoreCase = true)
-    }
 
     /**
-     * The strict per-entry rule: WhatsApp voice-note location AND an Opus
-     * payload. WhatsApp voice notes are .opus; the payload check accepts the
-     * audio/opus mime, the audio/ogg container mime some OEM indexers report
-     * for .opus, or the .opus extension when MediaStore left the mime
-     * unclassified (null or something else entirely).
+     * WhatsApp's voice-note file naming: PTT-YYYYMMDD-WANNNNN.opus.
+     * Covers sent and received notes alike (both land in the tree).
      */
-    fun isWhatsAppVoiceNote(entry: VoiceNoteEntry): Boolean {
-        val directories = listOfNotNull(
-            entry.relativePath,
-            entry.path?.substringBeforeLast('/', missingDelimiterValue = ""),
-        )
-        if (directories.none { isWhatsAppVoiceNoteDirectory(it) }) return false
-        return when (entry.mimeType?.lowercase()) {
-            "audio/opus", "audio/ogg" -> true
-            else -> entry.displayName.endsWith(".opus", ignoreCase = true)
-        }
-    }
+    fun isWhatsAppVoiceNoteName(name: String): Boolean =
+        name.startsWith("PTT-", ignoreCase = true) &&
+            name.endsWith(".opus", ignoreCase = true)
+
+    /** WhatsApp's rolling counter folders (one per ~100 notes, numeric). */
+    fun isCounterFolderName(name: String): Boolean = name.toIntOrNull() != null
 
     /**
-     * Stateful, deterministic incrementality: decides which query results are
-     * NEW relative to everything already observed. Two defenses do the work:
-     *
-     * - a `DATE_ADDED > lastSeenSeconds` watermark (MediaStore's DATE_ADDED has
-     *   second granularity, so entries in the same second as the watermark are
-     *   candidates, not auto-passes);
-     * - an id set covering the watermark second, so a re-indexed row (same id,
-     *   same second) is never emitted twice, while a genuinely new row with the
-     *   same DATE_ADDED second still gets through.
-     *
-     * Rows outside the watermark second never consult the id set, so it stays
-     * bounded. Every observed row (self-contributed, already seen, or
-     * rejected) still advances the watermark and the id set, keeping the poll
-     * query window tight.
+     * Event dedup: the same file can fire CREATE and CLOSE_WRITE (and
+     * re-fires on WhatsApp's post-write touches); a bounded recent-id
+     * window keeps one offer per note while the memory stays constant.
      */
-    class IncrementalFilter {
-        private var lastSeenSeconds = Long.MIN_VALUE
-        private var seenIdsAtLastSecond = mutableSetOf<Long>()
-
-        /** The current watermark; queries can bound themselves with `DATE_ADDED >= this`. */
-        val watermarkSeconds: Long get() = lastSeenSeconds
-
-        /** Record [entries] as already-known without emitting anything (baseline, rejected candidates). */
-        fun absorb(entries: List<VoiceNoteEntry>) {
-            filter(entries, selfPackage = null)
+    class IncrementalFilter(private val capacity: Int = 128) {
+        private val seen = object : LinkedHashMap<Long, Unit>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Long, Unit>) =
+                size > capacity
         }
 
-        /**
-         * Return the subset of [entries] that is new and not contributed by
-         * [selfPackage] (null disables the self check, e.g. during [absorb]),
-         * updating the watermark and dedup state.
-         */
-        fun filter(entries: List<VoiceNoteEntry>, selfPackage: String?): List<VoiceNoteEntry> {
-            val fresh = mutableListOf<VoiceNoteEntry>()
-            for (entry in entries.sortedBy { it.dateAddedSeconds }) {
-                if (entry.dateAddedSeconds > lastSeenSeconds) {
-                    lastSeenSeconds = entry.dateAddedSeconds
-                    seenIdsAtLastSecond = mutableSetOf()
-                }
-                if (entry.dateAddedSeconds < lastSeenSeconds) continue
-                val isSelf = selfPackage != null && entry.ownerPackage == selfPackage
-                if (!isSelf && entry.id !in seenIdsAtLastSecond) fresh.add(entry)
-                seenIdsAtLastSecond.add(entry.id)
-            }
-            return fresh
-        }
+        /** true when the entry is NEW (first sighting within the window). */
+        fun observe(entry: VoiceNoteEntry): Boolean =
+            seen.put(entry.id, Unit) == null
     }
 }

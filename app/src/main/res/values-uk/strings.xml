@@ -1054,6 +1054,8 @@
     <string name="voice_note_detection_title">Сповіщення про голосові повідомлення</string>
     <string name="voice_note_detection_description">Показує сповіщення з кнопкою «Транскрибувати», коли приходить нове голосове повідомлення WhatsApp і застосунок запущений, щоб транскрибувати його одним дотиком замість пересилання. Виявлення читає лише список папки голосових повідомлень WhatsApp, і все залишається на цьому пристрої. Поки це вимкнено, нічого не читається. Потрібен дозвіл на доступ до музики й аудіо.</string>
     <string name="voice_note_detection_grant_hint">Доступ до аудіо вимкнено. Торкніться, щоб відкрити налаштування застосунку та увімкнути його; сповіщення почнуться щойно його буде надано.</string>
+    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_offer_title">Нове голосове повідомлення</string>
     <string name="voice_note_offer_text_with_sender">Від %1$s (%2$s)</string>
     <string name="voice_note_offer_text_duration">Голосове повідомлення (%1$s)</string>

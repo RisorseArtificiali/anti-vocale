@@ -995,6 +995,8 @@
     <string name="voice_note_detection_title">Avvisi note vocali</string>
     <string name="voice_note_detection_description">Mostra una notifica con il pulsante Trascrivi quando arriva una nuova nota vocale WhatsApp e l\'app è in esecuzione, così la trascrivi con un tocco invece di condividerla. Il rilevamento legge solo l\'elenco della cartella delle note vocali WhatsApp, e tutto resta su questo dispositivo. Mentre l\'opzione è spenta non viene letto nulla. Richiede il permesso di accesso a musica e audio.</string>
     <string name="voice_note_detection_grant_hint">L\'accesso all\'audio è disattivato. Tocca per aprire le impostazioni dell\'app e attivarlo; gli avvisi partono appena è concesso.</string>
+    <string name="voice_note_folder_grant_hint">Manca l\'accesso alla cartella. Tocca per scegliere la cartella WhatsApp Voice Notes in Memoria interna, Android, media, com.whatsapp, WhatsApp, Media; gli avvisi partono appena è concessa.</string>
+    <string name="voice_note_folder_grant_rejected">Questa non è la cartella delle note vocali WhatsApp. Scegli la cartella chiamata WhatsApp Voice Notes e riprova.</string>
     <string name="voice_note_offer_title">Nuova nota vocale</string>
     <string name="voice_note_offer_text_with_sender">Da %1$s (%2$s)</string>
     <string name="voice_note_offer_text_duration">Messaggio vocale (%1$s)</string>

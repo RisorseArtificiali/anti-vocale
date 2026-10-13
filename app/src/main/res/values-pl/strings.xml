@@ -1052,6 +1052,8 @@
     <string name="voice_note_detection_title">Powiadomienia o notatkach głosowych</string>
     <string name="voice_note_detection_description">Pokazuje powiadomienie z przyciskiem Transkrybuj, gdy przychodzi nowa notatka głosowa WhatsApp, a aplikacja jest uruchomiona, dzięki czemu transkrybujesz ją jednym dotknięciem zamiast udostępniać. Wykrywanie czyta tylko listę folderu notatek głosowych WhatsApp, a wszystko zostaje na tym urządzeniu. Gdy to jest wyłączone, nic nie jest czytane. Wymaga uprawnienia dostępu do muzyki i audio.</string>
     <string name="voice_note_detection_grant_hint">Dostęp do audio jest wyłączony. Dotknij, aby otworzyć ustawienia aplikacji i go włączyć; powiadomienia rozpoczną się po jego przyznaniu.</string>
+    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_offer_title">Nowa notatka głosowa</string>
     <string name="voice_note_offer_text_with_sender">Od %1$s (%2$s)</string>
     <string name="voice_note_offer_text_duration">Wiadomość głosowa (%1$s)</string>

@@ -878,6 +878,8 @@
     <string name="voice_note_detection_title">语音消息提醒</string>
     <string name="voice_note_detection_description">收到新的 WhatsApp 语音消息且应用正在运行时，显示带转录按钮的通知，一键转录而无需分享。检测只读取 WhatsApp 语音消息文件夹的列表，一切都保留在本设备上。关闭时不读取任何内容。需要音乐和音频访问权限。</string>
     <string name="voice_note_detection_grant_hint">音频访问已关闭。点按打开应用设置并启用；获得权限后提醒即会开始。</string>
+    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_offer_title">新语音消息</string>
     <string name="voice_note_offer_text_with_sender">来自 %1$s（%2$s）</string>
     <string name="voice_note_offer_text_duration">语音消息（%1$s）</string>

@@ -296,6 +296,8 @@ interface PreferencesManager {
 
     /** TASK-271: see [voiceNoteDetectionEnabled]. */
     suspend fun saveVoiceNoteDetectionEnabled(enabled: Boolean)
+    val voiceNoteTreeUri: Flow<String?>
+    suspend fun saveVoiceNoteTreeUri(uri: String?)
     suspend fun saveCompactResultActions(enabled: Boolean)
     suspend fun saveLanguageChipEnabled(enabled: Boolean)
 

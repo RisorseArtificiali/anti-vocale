@@ -1,10 +1,7 @@
 package com.antivocale.app.data
 
 import android.util.Log
-import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.di.ApplicationScope
-import com.antivocale.app.receiver.VoiceNoteIdentityCache
-import com.antivocale.app.receiver.VoiceNoteSenderResolution
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -24,12 +21,13 @@ import kotlinx.coroutines.withContext
  * the payload the notification action's PendingIntent carries; tapping
  * Transcribe hands exactly these fields to the offer receiver.
  *
- * @property filePath Absolute path of the voice-note file (MediaStore DATA).
+ * @property filePath Absolute path of the voice-note file as observed
+ *   (unreadable directly: the tap resolves it through the SAF tree grant).
  * @property senderName Matched sender label, or null when the identity
  *   matcher found no unambiguous candidate (the graceful degradation).
- * @property ownerPackage Package that contributed the MediaStore row (API
- *   29+), threaded to the service as the source package so History grouping
- *   and per-app preferences behave exactly as for a share from that app.
+ * @property ownerPackage Always com.whatsapp on this route, threaded to the
+ *   service as the source package so History grouping and per-app preferences
+ *   behave exactly as for a share from that app.
  * @property durationSeconds Probed audio duration in seconds, when readable.
  */
 data class VoiceNoteOffer(
@@ -66,8 +64,8 @@ fun interface VoiceNotePermissionChecker {
  *
  * PRIVACY CONTRACT (the Settings card states it): while the preference is
  * off, nothing is read at all. While on, detection reads only the
- * WhatsApp voice-note folder listing (the bounded MediaStore query), and
- * everything stays on device.
+ * WhatsApp voice-note folder listing (FileObserver events over the tree,
+ * no content read), and everything stays on device.
  *
  * Threading: [VoiceNoteDetector.subscribe] runs a synchronous baseline
  * query, so every call site here runs it on [Dispatchers.IO], never the
@@ -88,9 +86,8 @@ fun interface VoiceNotePermissionChecker {
 class VoiceNoteDetectionCoordinator @Inject constructor(
     private val detector: VoiceNoteDetector,
     private val preferencesManager: PreferencesManager,
+    private val voiceNoteTreeGrant: VoiceNoteTreeGrant,
     private val poster: VoiceNoteOfferPoster,
-    private val identityCache: VoiceNoteIdentityCache,
-    private val audioPreprocessor: AudioPreprocessor,
     private val permissionChecker: VoiceNotePermissionChecker,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
@@ -125,11 +122,12 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
             combine(
                 preferencesManager.voiceNoteDetectionEnabled,
                 permissionPokes.onStart { emit(Unit) },
-            ) { enabled, _ -> enabled }.collect { enabled ->
+                preferencesManager.voiceNoteTreeUri,
+            ) { enabled, _, uri -> enabled to uri }.collect { (enabled, uri) ->
                 // Contained per emission: a failed (un)subscribe must
                 // not kill the collector, or a later toggle would
                 // silently stop reaching the detector.
-                runCatching { reconcile(enabled) }
+                runCatching { reconcile(enabled, uri) }
                     .onFailure { Log.e(TAG, "detection reconcile failed for enabled=$enabled", it) }
             }
         }
@@ -145,12 +143,18 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
     }
 
     /**
-     * Brings the detector's subscription in line with the preference and
-     * the permission. Internal so the unit tests can drive transitions
-     * directly without the preference collector in between.
+     * Brings the detector's subscription in line with the preference, the
+     * permission, and the tree grant. Internal so the unit tests can drive
+     * transitions directly without the preference collector in between.
      */
-    internal suspend fun reconcile(prefEnabled: Boolean) {
-        val shouldRun = prefEnabled && permissionChecker.audioReadGranted()
+    internal suspend fun reconcile(prefEnabled: Boolean, treeUri: String?) {
+        // The tree grant is the READ route (the spike verdict: direct opens
+        // are EACCES and on-demand indexing lands in FILES, denied too);
+        // arming without it would post offers whose tap always fails. The
+        // LIVE grant is what gates (a saved URI whose grant died arms
+        // nothing), the folder-watch precedent.
+        val shouldRun = prefEnabled && permissionChecker.audioReadGranted() &&
+            treeUri != null && voiceNoteTreeGrant.holdsGrant(treeUri)
         lifecycleMutex.withLock {
             if (shouldRun == active) return
             if (shouldRun) {
@@ -165,7 +169,7 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
                 withContext(Dispatchers.IO) { detector.dispose() }
                 // The signal flow is a hot SharedFlow that never completes,
                 // so cancelling the collector job is what ends it; dispose
-                // merely unregisters the observer (no more MediaChanged
+                // merely unregisters the observer (no more FilesChanged
                 // emissions follow it).
                 job?.cancel()
                 Log.i(TAG, "detection inactive")
@@ -174,33 +178,37 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
     }
 
     private suspend fun collectSignals() {
-        detector.changeSignals().collect {
-            runCatching { handleFreshEntries(detector.poll()) }
-                .onFailure { Log.w(TAG, "voice-note poll failed", it) }
+        detector.detections.collect { entry ->
+            runCatching { handleFreshEntry(entry) }
+                .onFailure { Log.w(TAG, "voice-note offer failed", it) }
         }
     }
 
     /**
-     * The NEWEST fresh entry becomes the offer: the single fixed
-     * notification slot can only ever show the latest one, so resolving the
-     * older entries of a burst (duration probe plus matcher per entry)
-     * would be discarded work. An entry without an absolute path cannot be
-     * handed to the service and yields no offer.
+     * One detected entry becomes the offer. The detector's flow already
+     * conflates bursts to the newest (DROP_OLDEST; the single fixed
+     * notification slot can only ever show the latest one). An entry
+     * without an absolute path cannot be handed to the service and yields
+     * no offer.
+     *
+     * The offer is sender-less and duration-less BY DESIGN on this route
+     * (code review F1, 2026-10-13): the observed path is FUSE-hidden and
+     * EACCES (the spike's probe 3), so a detection-time duration probe
+     * always fails and the matcher labels nothing without a duration (its
+     * own contract). Probing through the tree grant is a content read at
+     * detection time, which the Settings privacy copy rules out; the
+     * enrichment task (backlog) owns that trade-off. The identity leg is
+     * NOT dead: the share path matches over its readable sandbox copy.
      */
-    private suspend fun handleFreshEntries(entries: List<VoiceNoteEntry>) {
+    private suspend fun handleFreshEntry(entry: VoiceNoteEntry) {
         if (!poster.canPost()) return
-        val entry = entries.lastOrNull() ?: return
         val path = entry.path ?: return
-        // Sender correlation at DETECTION time, not tap time: the same
-        // duration probe + matcher the share path uses, over the cache
-        // of the package that contributed the row.
-        val resolution = VoiceNoteSenderResolution.match(identityCache, audioPreprocessor, entry.ownerPackage, path)
         poster.post(
             VoiceNoteOffer(
                 filePath = path,
-                senderName = resolution.senderName,
+                senderName = null,
                 ownerPackage = entry.ownerPackage,
-                durationSeconds = resolution.durationSeconds,
+                durationSeconds = null,
             ),
         )
     }

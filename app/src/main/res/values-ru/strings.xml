@@ -1034,6 +1034,8 @@
     <string name="voice_note_detection_title">Оповещения о голосовых сообщениях</string>
     <string name="voice_note_detection_description">Показывает уведомление с кнопкой «Транскрибировать», когда приходит новое голосовое сообщение WhatsApp и приложение запущено, чтобы транскрибировать его одним нажатием, а не пересылать. Обнаружение читает только список папки голосовых сообщений WhatsApp, и всё остаётся на этом устройстве. Пока переключатель выключен, ничего не читается. Требуется разрешение на доступ к музыке и аудио.</string>
     <string name="voice_note_detection_grant_hint">Доступ к аудио выключен. Нажмите, чтобы открыть настройки приложения и включить его; оповещения начнутся сразу после предоставления.</string>
+    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_offer_title">Новое голосовое сообщение</string>
     <string name="voice_note_offer_text_with_sender">От %1$s (%2$s)</string>
     <string name="voice_note_offer_text_duration">Голосовое сообщение (%1$s)</string>

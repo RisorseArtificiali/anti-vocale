@@ -991,6 +991,8 @@
     <string name="voice_note_detection_title">Hinweise zu Sprachnachrichten</string>
     <string name="voice_note_detection_description">Zeigt eine Benachrichtigung mit der Schaltfläche Transkribieren, wenn eine neue WhatsApp-Sprachnachricht eintrifft und die App läuft, sodass du sie mit einem Tipp transkribieren kannst, statt sie zu teilen. Die Erkennung liest nur die Ordnerliste der WhatsApp-Sprachnachrichten, und alles bleibt auf diesem Gerät. Solange dies aus ist, wird gar nichts gelesen. Erfordert die Berechtigung für Musik und Audio.</string>
     <string name="voice_note_detection_grant_hint">Audiozugriff ist aus. Tippe, um die App-Einstellungen zu öffnen und ihn zu aktivieren; die Hinweise starten, sobald er erteilt ist.</string>
+    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_offer_title">Neue Sprachnachricht</string>
     <string name="voice_note_offer_text_with_sender">Von %1$s (%2$s)</string>
     <string name="voice_note_offer_text_duration">Sprachnachricht (%1$s)</string>

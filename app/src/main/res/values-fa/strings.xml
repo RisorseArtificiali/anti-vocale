@@ -994,6 +994,8 @@
     <string name="voice_note_detection_title">هشدار پیام صوتی</string>
     <string name="voice_note_detection_description">وقتی پیام صوتی جدید واتساپ می‌رسد و برنامه در حال اجراست، یک اعلان با دکمه رونویسی نشان می‌دهد تا به‌جای هم‌رسانی، با یک ضربه آن را رونویسی کنید. تشخیص فقط فهرست پوشه پیام‌های صوتی واتساپ را می‌خواند و همه چیز روی همین دستگاه می‌ماند. وقتی خاموش است هیچ چیزی خوانده نمی‌شود. نیاز به مجوز دسترسی به موسیقی و صدا دارد.</string>
     <string name="voice_note_detection_grant_hint">دسترسی به صدا خاموش است. برای باز کردن تنظیمات برنامه و روشن کردن آن ضربه بزنید؛ هشدارها به‌محض داده شدن مجوز شروع می‌شوند.</string>
+    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_offer_title">پیام صوتی جدید</string>
     <string name="voice_note_offer_text_with_sender">از %1$s (%2$s)</string>
     <string name="voice_note_offer_text_duration">پیام صوتی (%1$s)</string>

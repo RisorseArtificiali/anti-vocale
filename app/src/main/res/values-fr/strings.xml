@@ -889,6 +889,8 @@
     <string name="voice_note_detection_title">Alertes de notes vocales</string>
     <string name="voice_note_detection_description">Affiche une notification avec le bouton Transcrire dès qu\'un nouveau message vocal WhatsApp arrive et que l\'app est en cours d\'exécution, pour le transcrire en un geste au lieu de le partager. La détection lit uniquement la liste du dossier des messages vocaux WhatsApp, et tout reste sur cet appareil. Tant que c\'est désactivé, rien n\'est lu. Nécessite l\'autorisation d\'accès à la musique et à l\'audio.</string>
     <string name="voice_note_detection_grant_hint">L\'accès audio est désactivé. Touchez pour ouvrir les réglages de l\'app et l\'activer ; les alertes démarrent dès qu\'il est accordé.</string>
+    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_offer_title">Nouveau message vocal</string>
     <string name="voice_note_offer_text_with_sender">De %1$s (%2$s)</string>
     <string name="voice_note_offer_text_duration">Message vocal (%1$s)</string>

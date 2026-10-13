@@ -1034,6 +1034,8 @@
     <string name="voice_note_detection_title">Sesli not bildirimleri</string>
     <string name="voice_note_detection_description">Yeni bir WhatsApp sesli notu geldiğinde ve uygulama çalışırken Metne çıkar düğmeli bir bildirim gösterir, böylece paylaşmak yerine tek dokunuşla metne çıkarabilirsin. Algılama yalnızca WhatsApp sesli notlar klasörünün listesini okur ve her şey bu cihazda kalır. Bu kapalıyken hiçbir şey okunmaz. Müzik ve sesye erişim izni gerektirir.</string>
     <string name="voice_note_detection_grant_hint">Ses erişimi kapalı. Uygulama ayarlarını açıp etkinleştirmek için dokunun; izin verilir verilmez bildirimler başlar.</string>
+    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_offer_title">Yeni sesli not</string>
     <string name="voice_note_offer_text_with_sender">%1$s kişisinden (%2$s)</string>
     <string name="voice_note_offer_text_duration">Sesli mesaj (%1$s)</string>

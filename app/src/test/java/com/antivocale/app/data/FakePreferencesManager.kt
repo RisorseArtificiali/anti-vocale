@@ -66,6 +66,7 @@ internal class FakePreferencesManager : PreferencesManager {
     val _voiceNoteIdentityEnabled = MutableStateFlow(PreferencesManager.DEFAULT_VOICE_NOTE_IDENTITY_ENABLED)
     // TASK-271: the voice-note detection gate, default off like the real impl.
     val _voiceNoteDetectionEnabled = MutableStateFlow(PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED)
+    val _voiceNoteTreeUri = MutableStateFlow<String?>(null)
     // TASK-681: the LAN-offload (OmniVoice) gate and its config triple.
     val _remoteOmnivoiceEnabled = MutableStateFlow(PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED)
     val _remoteOmnivoiceEndpoint = MutableStateFlow(PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT)
@@ -135,6 +136,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override val openTranscribeEnabled: Flow<Boolean> get() = _openTranscribeEnabled
     override val voiceNoteIdentityEnabled: Flow<Boolean> get() = _voiceNoteIdentityEnabled
     override val voiceNoteDetectionEnabled: Flow<Boolean> get() = _voiceNoteDetectionEnabled
+    override val voiceNoteTreeUri: Flow<String?> get() = _voiceNoteTreeUri
     override val remoteOmnivoiceEnabled: Flow<Boolean> get() = _remoteOmnivoiceEnabled
     override val remoteOmnivoiceEndpoint: Flow<String> get() = _remoteOmnivoiceEndpoint
     override val remoteOmnivoiceApiKey: Flow<String> get() = _remoteOmnivoiceApiKey
@@ -207,6 +209,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveOpenTranscribeEnabled(enabled: Boolean) { _openTranscribeEnabled.value = enabled }
     override suspend fun saveVoiceNoteIdentityEnabled(enabled: Boolean) { _voiceNoteIdentityEnabled.value = enabled }
     override suspend fun saveVoiceNoteDetectionEnabled(enabled: Boolean) { _voiceNoteDetectionEnabled.value = enabled }
+    override suspend fun saveVoiceNoteTreeUri(uri: String?) { _voiceNoteTreeUri.value = uri }
     override suspend fun saveCompactResultActions(enabled: Boolean) { _compactResultActions.value = enabled }
     override suspend fun saveLanguageChipEnabled(enabled: Boolean) { _languageChipEnabled.value = enabled }
     override suspend fun saveExternalModelsJson(json: String) { _externalModelsJson.value = json }

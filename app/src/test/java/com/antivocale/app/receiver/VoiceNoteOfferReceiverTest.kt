@@ -9,7 +9,6 @@ import com.antivocale.app.service.InferenceService
 import com.antivocale.app.service.VoiceNoteOfferNotifier
 import com.antivocale.app.util.AppNotificationChannel
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -22,9 +21,15 @@ import org.robolectric.annotation.Config
 
 /**
  * TASK-271: the offer's Transcribe action. The service-intent shape (the
- * share path's mirror) and the two tap-time behaviors that must not need a
- * device: a missing file cancels the offer silently with no service start,
- * and a live file enqueues through InferenceEnqueue and cancels the offer.
+ * share path's mirror) and the tap behavior reachable without Hilt: an
+ * unresolvable file cancels the offer silently with no service start. The
+ * enqueue leg resolves the WhatsApp path through the SAF tree grant. Under
+ * plain Robolectric the generated Hilt_ base does inject (verified by the
+ * passing cancel branch: an unset lateinit would skip the cancel), so the
+ * cancel here is the ABSENT grant preference, not a broken seam; seeding
+ * that preference plus a documents-provider shadow is the path to JVM
+ * coverage of the resolved leg (backlog task; the tap flow itself is
+ * device-proven by the 2026-10-13 trial).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -49,11 +54,13 @@ class VoiceNoteOfferReceiverTest {
 
     @Test
     fun `buildServiceIntent mirrors the share path's audio shape`() {
-        val serviceIntent = VoiceNoteOfferReceiver.buildServiceIntent(context, offerIntent("/n.opus"))
+        val serviceIntent = VoiceNoteOfferReceiver.buildServiceIntent(context, offerIntent("/n.opus"), "/local/n.opus")
         assertEquals(
             TaskerRequestReceiver.REQUEST_TYPE_AUDIO,
             serviceIntent.getStringExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE))
-        assertEquals("/n.opus", serviceIntent.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH))
+        assertEquals(
+            "the service must receive the RESOLVED sandbox path",
+            "/local/n.opus", serviceIntent.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH))
         assertTrue(
             "task id must carry the voicenote prefix: " +
                 serviceIntent.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID),
@@ -66,8 +73,8 @@ class VoiceNoteOfferReceiverTest {
 
     @Test
     fun `buildServiceIntent omits the optional extras when absent`() {
-        val serviceIntent =
-            VoiceNoteOfferReceiver.buildServiceIntent(context, offerIntent("/n.opus", sender = null, owner = null))
+        val serviceIntent = VoiceNoteOfferReceiver.buildServiceIntent(
+            context, offerIntent("/n.opus", sender = null, owner = null), "/local/n.opus")
         assertNull(serviceIntent.getStringExtra(InferenceService.EXTRA_SENDER_NAME))
         assertNull(serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE_PACKAGE))
     }
@@ -86,24 +93,18 @@ class VoiceNoteOfferReceiverTest {
         .activeNotifications.any { it.id == VoiceNoteOfferNotifier.OFFER_NOTIFICATION_ID }
 
     @Test
-    fun `a tap on a live file enqueues the service request and cancels the offer`() {
+    fun `a tap whose file cannot be resolved cancels the offer silently without starting the service`() {
+        // No tree-grant preference is saved, so resolve() returns null for
+        // ANY path (the device trial covers the resolved leg): the offer
+        // must cancel and nothing may start. The
+        // cancel now rides the receiver's IO coroutine (goAsync), so the
+        // test waits for it instead of asserting synchronously.
         val file = java.io.File(context.cacheDir, "note.opus").apply { writeText("x") }
         postOfferStub()
         VoiceNoteOfferReceiver().onReceive(context, offerIntent(file.absolutePath))
-        val started = shadowOf(context.applicationContext as Application).nextStartedService
-        assertNotNull(started)
-        assertEquals(InferenceService::class.java.name, started.component?.className)
-        assertEquals(file.absolutePath, started.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH))
-        assertEquals("Anna", started.getStringExtra(InferenceService.EXTRA_SENDER_NAME))
-        assertEquals(InferenceService.SOURCE_VOICE_NOTE, started.getStringExtra(InferenceService.EXTRA_SOURCE))
-        assertTrue("the offer must be cancelled after the enqueue", !offerActive())
-    }
-
-    @Test
-    fun `a tap on a missing file cancels the offer silently without starting the service`() {
-        postOfferStub()
-        VoiceNoteOfferReceiver().onReceive(context, offerIntent("/gone/n.opus"))
         assertNull(shadowOf(context.applicationContext as Application).nextStartedService)
+        val deadline = System.currentTimeMillis() + 5_000
+        while (offerActive() && System.currentTimeMillis() < deadline) Thread.sleep(20)
         assertTrue("the stale offer must be cancelled", !offerActive())
     }
 }

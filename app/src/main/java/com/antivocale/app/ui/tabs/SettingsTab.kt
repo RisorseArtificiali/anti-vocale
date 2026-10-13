@@ -1968,6 +1968,13 @@ fun SettingsTab(
             if (com.antivocale.app.data.VoiceNoteDetectionPermission.detectionAvailable()) {
             val voiceNoteDetectionEnabled by viewModel.voiceNoteDetectionEnabled.collectAsState()
             var voiceNoteAudioPermissionGranted by remember { mutableStateOf(false) }
+            var voiceNoteGrantHeld by remember { mutableStateOf(false) }
+            fun recomputeGrantHeld() {
+                voiceNoteGrantHeld = viewModel.voiceNoteTreeUri.value?.let {
+                    com.antivocale.app.util.TreeUris
+                        .holdsPersistableReadGrant(context, android.net.Uri.parse(it))
+                } ?: false
+            }
             RecheckOnResume {
                 val granted =
                     com.antivocale.app.data.VoiceNoteDetectionPermission.granted(context)
@@ -1979,6 +1986,10 @@ fun SettingsTab(
                     // be poked to re-evaluate its conjunction.
                     viewModel.refreshVoiceNoteDetectionGate()
                 }
+                // The tree grant can die with the URI string unchanged
+                // (folder deleted and recreated, OEM cleanup): the probe
+                // re-runs on every resume, not only on URI changes.
+                recomputeGrantHeld()
             }
             val audioPermissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission()
@@ -2001,6 +2012,55 @@ fun SettingsTab(
                         com.antivocale.app.data.VoiceNoteDetectionPermission.requiredPermission())
                 } catch (e: android.content.ActivityNotFoundException) {
                     android.util.Log.w("SettingsTab", "permission request unavailable", e)
+                }
+            }
+            // TASK-271: the SAF tree grant on the WhatsApp Voice Notes
+            // folder, the one read route (the 2026-10-13 spike: direct
+            // opens are EACCES and MediaStore never indexes the notes).
+            // The row appears only when the rest is already in place
+            // (toggle on, audio permission granted) and the grant is
+            // missing; picking the wrong folder is rejected at pick time.
+            val voiceNoteTreeUri by viewModel.voiceNoteTreeUri.collectAsState()
+            val grantScope = rememberCoroutineScope()
+            val voiceNoteTreePicker = rememberLauncherForActivityResult(
+                ActivityResultContracts.OpenDocumentTree()
+            ) { uri ->
+                if (uri == null) return@rememberLauncherForActivityResult
+                // Binder work off the main thread, the output-folder
+                // picker's pattern; the take must precede the validation
+                // query or the query itself is denied.
+                grantScope.launch(Dispatchers.IO) {
+                    if (!com.antivocale.app.util.TreeUris
+                            .takePersistableReadGrant(context, uri)
+                    ) {
+                        // A non-persistable OEM grant would die at process
+                        // death: refuse it, the row stays for a retry.
+                        Log.w("SettingsTab", "voice-note grant take failed for $uri")
+                        return@launch
+                    }
+                    if (!com.antivocale.app.data.VoiceNoteTreeGrant
+                            .looksLikeVoiceNotesTree(context, uri)
+                    ) {
+                        // A wrong tree would surface only as offers that
+                        // cancel on tap: refuse it AND give the grant slot
+                        // back (the platform caps persisted grants).
+                        com.antivocale.app.util.TreeUris
+                            .releasePersistableReadGrant(context, uri)
+                        withContext(Dispatchers.Main) {
+                            ToastCompat.show(
+                                context, R.string.voice_note_folder_grant_rejected,
+                                Toast.LENGTH_LONG)
+                        }
+                        return@launch
+                    }
+                    // A replacement pick abandons the old URI: release its
+                    // grant slot (platform cap 128/512) before overwriting.
+                    val old = viewModel.voiceNoteTreeUri.value
+                    if (old != null && old != uri.toString()) {
+                        com.antivocale.app.util.TreeUris
+                            .releasePersistableReadGrant(context, android.net.Uri.parse(old))
+                    }
+                    viewModel.saveVoiceNoteTreeUri(uri.toString())
                 }
             }
             SearchFilterRow(searchQuery, SettingsSearchId.VOICE_NOTE_DETECTION, searchState) {
@@ -2036,6 +2096,36 @@ fun SettingsTab(
                     }) {
                         Text(
                             text = stringResource(R.string.voice_note_detection_grant_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+                // A saved URI whose grant died (folder recreated, OEM
+                // cleanup) must re-offer the row: gating only on the string
+                // would strand the user with no re-pick path. recompute-
+                // GrantHeld runs on resume; a URI change recomputes here.
+                LaunchedEffect(voiceNoteTreeUri) { recomputeGrantHeld() }
+                if (voiceNoteDetectionEnabled && voiceNoteAudioPermissionGranted &&
+                    !voiceNoteGrantHeld
+                ) {
+                    // The folder grant rides the picker, the only gesture
+                    // that legitimizes DocumentsUI access; the initial URI
+                    // lands the picker inside WhatsApp's media tree when
+                    // DocumentsUI honors it (best-effort, API 26+). One
+                    // owner of the path: the detector's root helper.
+                    TextButton(onClick = {
+                        runCatching {
+                            voiceNoteTreePicker.launch(
+                                android.net.Uri.fromFile(
+                                    com.antivocale.app.data.voiceNotesRoot()))
+                        }.onFailure {
+                            Log.w("SettingsTab", "tree picker launch failed", it)
+                            voiceNoteTreePicker.launch(null)
+                        }
+                    }) {
+                        Text(
+                            text = stringResource(R.string.voice_note_folder_grant_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )

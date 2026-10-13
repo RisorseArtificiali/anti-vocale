@@ -990,6 +990,8 @@
     <string name="voice_note_detection_title">वॉइस नोट अलर्ट</string>
     <string name="voice_note_detection_description">जब कोई नई WhatsApp वॉइस नोट आती है और ऐप चल रहा हो, तो Transcribe बटन के साथ एक सूचना दिखती है, ताकि आप उसे साझा करने के बजाय एक टैप में ट्रांसक्राइब कर सकें। डिटेक्शन केवल WhatsApp वॉइस नोट फ़ोल्डर की सूची पढ़ता है, और सब कुछ इसी डिवाइस पर रहता है। यह बंद रहने पर कुछ भी नहीं पढ़ा जाता। संगीत और ऑडियो तक पहुंच की अनुमति चाहिए।</string>
     <string name="voice_note_detection_grant_hint">ऑडियो एक्सेस बंद है। ऐप सेटिंग खोलकर इसे चालू करने के लिए टैप करें; अनुमति मिलते ही अलर्ट शुरू हो जाएंगे।</string>
+    <string name="voice_note_folder_grant_hint">Folder access is missing. Tap to pick the WhatsApp Voice Notes folder under Internal storage, Android, media, com.whatsapp, WhatsApp, Media; alerts start once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_offer_title">नई वॉइस नोट</string>
     <string name="voice_note_offer_text_with_sender">%1$s से (%2$s)</string>
     <string name="voice_note_offer_text_duration">वॉइस संदेश (%1$s)</string>

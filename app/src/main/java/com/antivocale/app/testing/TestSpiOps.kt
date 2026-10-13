@@ -122,6 +122,8 @@ internal class TestSpiOps(
             .put("voiceNoteIdentityEnabled", preferences.voiceNoteIdentityEnabled.first())
             // TASK-271: the voice-note detection gate (offer notifications).
             .put("voiceNoteDetectionEnabled", preferences.voiceNoteDetectionEnabled.first())
+            // TASK-271: the SAF tree grant URI (the one read route), or null.
+            .put("voiceNoteTreeUri", preferences.voiceNoteTreeUri.first() ?: JSONObject.NULL)
             // TASK-681: the LAN-offload config (endpoint visible for E2E
             // verification; the key is masked to its last 4 chars).
             .put("remoteOmnivoiceEnabled", preferences.remoteOmnivoiceEnabled.first())

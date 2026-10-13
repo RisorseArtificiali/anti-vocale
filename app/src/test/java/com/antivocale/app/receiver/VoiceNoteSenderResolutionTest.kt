@@ -47,40 +47,7 @@ class VoiceNoteSenderResolutionTest {
         assertNull(VoiceNoteSenderResolution.probeDurationSeconds(preprocessor(throwing = true), "/boom"))
     }
 
-    @Test
-    fun `match labels the sender when the duration agrees`() {
-        val result = VoiceNoteSenderResolution.match(
-            cacheWith(note(durationSeconds = 42L)),
-            preprocessor(returning = 43.0),
-            "com.whatsapp",
-            "/n.opus")
-        assertEquals("Anna", result.senderName)
-        assertEquals(43L, result.durationSeconds)
-    }
-
-    @Test
-    fun `match keeps the duration but no label when nothing is cached`() {
-        val result = VoiceNoteSenderResolution.match(
-            VoiceNoteIdentityCache(),
-            preprocessor(returning = 43.0),
-            "com.whatsapp",
-            "/n.opus")
-        assertNull(result.senderName)
-        assertEquals(43L, result.durationSeconds)
-    }
-
-    @Test
-    fun `match refuses a label when the durations disagree`() {
-        val result = VoiceNoteSenderResolution.match(
-            cacheWith(note(durationSeconds = 42L)),
-            preprocessor(returning = 90.0),
-            "com.whatsapp",
-            "/n.opus")
-        assertNull(result.senderName)
-        assertEquals(90L, result.durationSeconds)
-    }
-
-    @Test
+                @Test
     fun `matchForShare is free and label-less when nothing is cached`() {
         // The TASK-736 contract: every ordinary share pays nothing when the
         // identity listener is off; the probe must not even run.
