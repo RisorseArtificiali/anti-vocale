@@ -869,7 +869,7 @@
     <string name="external_notice_family">如果转写直接崩溃且无错误，可能是架构选错：请删除并更换家族后重试。</string>
     <string name="share_targets_title">分享菜单中的模型</string>
     <string name="voice_note_identity_title">语音消息发送者识别</string>
-    <string name="voice_note_identity_description">在历史记录行标注分享语音消息的发送者。目前仅支持 WhatsApp。</string>
+    <string name="voice_note_identity_description">在历史记录行标注每条转写语音消息的发送者，无论是你分享的还是自动转写的。目前仅支持 WhatsApp。</string>
     <string name="voice_note_identity_grant_hint">通知访问权限已关闭。点按打开系统设置并为此应用启用。</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">语音消息转录</string>

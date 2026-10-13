@@ -1025,7 +1025,7 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Paylaşım Menüsünde Modeller</string>
     <string name="voice_note_identity_title">Sesli not gönderenini tanıma</string>
-    <string name="voice_note_identity_description">Paylaşılan sesli mesajın geçmiş satırına gönderenin adını yazar. Şimdilik sadece WhatsApp. Ad, yalnızca mesajın bildirimi bu açıkken geldiyse ve bildirilen süre sesle uyuyorsa görünür (tahmine dayanı ad yok). Ad, bunu kapattıktan sonra da o satırda kalır; bekleme listesi yalnız bellekte yaşar. Bildirim erişimi gerekir.</string>
+    <string name="voice_note_identity_description">Buraya paylaştığın ya da otomatik olarak yazıya çevrilen her sesli mesajın geçmiş satırına gönderenin adını yazar. Şimdilik sadece WhatsApp. Ad, yalnızca mesajın bildirimi bu açıkken geldiyse ve bildirilen süre sesle uyuyorsa görünür (tahmine dayanı ad yok). Ad, bunu kapattıktan sonra da o satırda kalır; bekleme listesi yalnız bellekte yaşar. Bildirim erişimi gerekir.</string>
     <string name="voice_note_identity_grant_hint">Bildirim erişimi kapalı. Sistem ayarını açıp bu uygulama için etkinleştirmek üzere dokunun.</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">Sesli not transkripsiyonu</string>

@@ -1031,7 +1031,7 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">מודלים בתפריט השיתוף</string>
     <string name="voice_note_identity_title">זיהוי שולח ההודעות הקוליות</string>
-    <string name="voice_note_identity_description">כותב בשורת ההיסטוריה את שם השולח של הודעת הקול ששותפה. לעת עתה רק WhatsApp. השם מופיע רק אם ההתראה של ההודעה הגיעה בעת שהאפשרות היתה פעילה, ורק אם האוך שדווח תואם לשמע (בלי שמות מנוחשים). השם נשאר בשורה גם לאחר כיבוי; רשימת ההמתנה מוחזרת רק בזכרון. דורש הרשאת גישה להתראות.</string>
+    <string name="voice_note_identity_description">כותב בשורת ההיסטוריה את שם השולח של כל הודעת קול מתומללת, בין אם שיתפת אותה כאן ובין אם תומללה אוטומטית. לעת עתה רק WhatsApp. השם מופיע רק אם ההתראה של ההודעה הגיעה בעת שהאפשרות היתה פעילה, ורק אם האוך שדווח תואם לשמע (בלי שמות מנוחשים). השם נשאר בשורה גם לאחר כיבוי; רשימת ההמתנה מוחזרת רק בזכרון. דורש הרשאת גישה להתראות.</string>
     <string name="voice_note_identity_grant_hint">גישה להתראות כבויה. הקש כדי לפתוח את הגדרת המערכת ולהפעיל אותה ליישום הזה.</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">תמלול הודעות קוליות</string>
