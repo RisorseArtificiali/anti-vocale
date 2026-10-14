@@ -1061,11 +1061,11 @@
     <string name="voice_note_settings_summary_off">Automatic WhatsApp voice-note transcription · off</string>
     <string name="voice_note_settings_summary_limited">Sender recognition for voice notes</string>
     <string name="voice_note_identity_title">Voice note sender recognition</string>
-    <string name="voice_note_identity_description">Labels the History row of every transcribed voice note with the sender\'s name, whether you shared it here or it was transcribed automatically. WhatsApp only for now. The name appears only if the note\'s notification arrived while this was on, and only when its reported length matches the audio (no guessed names). The name stays on that row even after you turn this off; the waiting list lives in memory only. Requires notification access.</string>
+    <string name="voice_note_identity_description">Labels transcribed voice notes with the sender\'s name, shared here or automatic. WhatsApp only for now. The name appears only when the note\'s notification arrived while this was on and its length matches (no guessed names); the waiting list lives in memory only. Requires notification access.</string>
     <string name="voice_note_identity_grant_hint">Notification access is off. Tap to open the system setting and enable it for this app.</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">Voice note transcription</string>
-    <string name="voice_note_detection_description">Transcribes new WhatsApp voice notes automatically as they arrive, while the app is running. If Android blocks a background start (for example with the screen off), a notification lets you start the transcription with one tap. Results appear in the history and as a notification. Detection reads only the WhatsApp voice-note folder listing; a note is read only to transcribe it, and everything stays on this device. While this is off, nothing is read at all. Requires permission to access music and audio.</string>
+    <string name="voice_note_detection_description">Transcribes new WhatsApp voice notes as they arrive, while the app is running. If Android blocks a background start, a one-tap notification starts it. A note is read only to transcribe it, on this device; while off, nothing is read. Requires audio access.</string>
     <string name="voice_note_detection_grant_hint">Audio access is off. Tap to open the app settings and enable it; transcription starts once it is granted.</string>
     <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_folder_card_title">Voice notes folder</string>

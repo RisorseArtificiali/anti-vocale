@@ -873,11 +873,11 @@
     <string name="voice_note_settings_summary_off">自动转录 WhatsApp 语音消息 · 关闭</string>
     <string name="voice_note_settings_summary_limited">语音消息发送者识别</string>
     <string name="voice_note_identity_title">语音消息发送者识别</string>
-    <string name="voice_note_identity_description">在历史记录行标注每条转写语音消息的发送者，无论是你分享的还是自动转写的。目前仅支持 WhatsApp。</string>
+    <string name="voice_note_identity_description">为转录的语音消息标注发送者名称，无论是手动分享还是自动转录。目前仅支持 WhatsApp。仅当此功能开启时通知已到达且时长匹配时才显示名称（不猜测姓名）；等待列表仅存于内存。需要通知访问权限。</string>
     <string name="voice_note_identity_grant_hint">通知访问权限已关闭。点按打开系统设置并为此应用启用。</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">语音消息转录</string>
-    <string name="voice_note_detection_description">应用运行时，新到达的 WhatsApp 语音消息会被自动转录。 如果 Android 阻止后台启动（例如屏幕关闭时），通知可让你一键开始转录。 结果显示在历史记录中并附带通知。检测只读取 WhatsApp 语音消息文件夹的列表；仅在转录时才会读取某条消息，且所有内容都保留在本设备上。关闭期间不会读取任何内容。需要音乐和音频访问权限。</string>
+    <string name="voice_note_detection_description">在应用运行时自动转录新到达的 WhatsApp 语音消息。若 Android 阻止后台启动，一键通知即可开始。仅在转录时读取消息，且在本机进行；关闭时不读取任何内容。需要音频访问权限。</string>
     <string name="voice_note_detection_grant_hint">音频访问已关闭。点按可打开应用设置并启用；授权后转录随即开始。</string>
     <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_folder_card_title">语音消息文件夹</string>

@@ -2003,51 +2003,6 @@ internal fun VoiceNoteSettingsScreen(
         onScrollConsumed = onScrollConsumed,
         bodySpacing = Arrangement.spacedBy(12.dp),
     ) { _ ->
-            // TASK-735: the voice-note identity listener's app-level gate.
-            // The system's notification access is the outer gate; while this
-            // toggle is off the listener reads nothing (the RAM-only privacy
-            // contract is on VoiceNoteIdentityListener). The access probe is
-            // NOT remembered: it must re-read when the user returns from the
-            // system screen.
-            val voiceNoteIdentityEnabled by viewModel.voiceNoteIdentityEnabled.collectAsState()
-            // The access probe is a binder IPC; refresh it exactly when the
-            // user comes back from the system screen (ON_RESUME), not on
-            // every recomposition of the section.
-            var notificationAccessGranted by remember { mutableStateOf(false) }
-            RecheckOnResume {
-                notificationAccessGranted = androidx.core.app.NotificationManagerCompat
-                    .getEnabledListenerPackages(context).contains(context.packageName)
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                ToggleSettingCard(
-                    icon = Icons.Default.RecordVoiceOver,
-                    title = stringResource(R.string.voice_note_identity_title),
-                    description = stringResource(R.string.voice_note_identity_description),
-                    // The description IS the maintainer-mandated limits
-                    // text and renders in full here: the subpage never
-                    // composes under search compaction, so the old
-                    // descriptionMaxLinesCompact override left on the main
-                    // tree became inert with the move (review R-5).
-                    checked = voiceNoteIdentityEnabled,
-                    onCheckedChange = { enabled -> viewModel.saveVoiceNoteIdentityEnabled(enabled) }
-                )
-                if (voiceNoteIdentityEnabled && !notificationAccessGranted) {
-                    // The battery-exemption precedent: the grant action is a
-                    // Button row, not bare text.
-                    TextButton(onClick = {
-                        runCatching {
-                            context.startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                        }
-                    }) {
-                        Text(
-                            text = stringResource(R.string.voice_note_identity_grant_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                }
-            }
-
             // TASK-272: the voice-note auto-transcription gate.
             // The runtime read-media permission is the outer gate; while
             // this toggle is off the coordinator reads nothing at all. The
@@ -2264,6 +2219,51 @@ internal fun VoiceNoteSettingsScreen(
                 }
             }
             } // end detectionAvailable() gate
+            // TASK-735: the voice-note identity listener's app-level gate.
+            // The system's notification access is the outer gate; while this
+            // toggle is off the listener reads nothing (the RAM-only privacy
+            // contract is on VoiceNoteIdentityListener). The access probe is
+            // NOT remembered: it must re-read when the user returns from the
+            // system screen.
+            val voiceNoteIdentityEnabled by viewModel.voiceNoteIdentityEnabled.collectAsState()
+            // The access probe is a binder IPC; refresh it exactly when the
+            // user comes back from the system screen (ON_RESUME), not on
+            // every recomposition of the section.
+            var notificationAccessGranted by remember { mutableStateOf(false) }
+            RecheckOnResume {
+                notificationAccessGranted = androidx.core.app.NotificationManagerCompat
+                    .getEnabledListenerPackages(context).contains(context.packageName)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                ToggleSettingCard(
+                    icon = Icons.Default.RecordVoiceOver,
+                    title = stringResource(R.string.voice_note_identity_title),
+                    description = stringResource(R.string.voice_note_identity_description),
+                    // The description IS the maintainer-mandated limits
+                    // text and renders in full here: the subpage never
+                    // composes under search compaction, so the old
+                    // descriptionMaxLinesCompact override left on the main
+                    // tree became inert with the move (review R-5).
+                    checked = voiceNoteIdentityEnabled,
+                    onCheckedChange = { enabled -> viewModel.saveVoiceNoteIdentityEnabled(enabled) }
+                )
+                if (voiceNoteIdentityEnabled && !notificationAccessGranted) {
+                    // The battery-exemption precedent: the grant action is a
+                    // Button row, not bare text.
+                    TextButton(onClick = {
+                        runCatching {
+                            context.startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        }
+                    }) {
+                        Text(
+                            text = stringResource(R.string.voice_note_identity_grant_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+
     }
 }
 

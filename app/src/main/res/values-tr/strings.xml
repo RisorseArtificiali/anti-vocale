@@ -1029,11 +1029,11 @@
     <string name="voice_note_settings_summary_off">WhatsApp sesli mesajlarının otomatik yazıya çevirisi · kapalı</string>
     <string name="voice_note_settings_summary_limited">Sesli mesaj gönderenini tanıma</string>
     <string name="voice_note_identity_title">Sesli not gönderenini tanıma</string>
-    <string name="voice_note_identity_description">Buraya paylaştığın ya da otomatik olarak yazıya çevrilen her sesli mesajın geçmiş satırına gönderenin adını yazar. Şimdilik sadece WhatsApp. Ad, yalnızca mesajın bildirimi bu açıkken geldiyse ve bildirilen süre sesle uyuyorsa görünür (tahmine dayanı ad yok). Ad, bunu kapattıktan sonra da o satırda kalır; bekleme listesi yalnız bellekte yaşar. Bildirim erişimi gerekir.</string>
+    <string name="voice_note_identity_description">Transkripte edilen sesli mesajları gönderenin adıyla etiketler; buraya paylaşılan ya da otomatik olanlar. Şimdilik sadece WhatsApp. Ad, yalnızca bildirim bu açıkken geldiyse ve süre uyuyorsa görünür (tahmine dayalı ad yok); bekleme listesi yalnız bellekte yaşar. Bildirim erişimi gerekir.</string>
     <string name="voice_note_identity_grant_hint">Bildirim erişimi kapalı. Sistem ayarını açıp bu uygulama için etkinleştirmek üzere dokunun.</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">Sesli not transkripsiyonu</string>
-    <string name="voice_note_detection_description">Yeni WhatsApp sesli notları, uygulama çalışırken geldiği anda otomatik olarak metne çevrilir. Android arka planda başlatmayı engellerse (örneğin ekran kapalıyken), bir bildirim transkripsiyonu tek dokunuşla başlatmanızı sağlar. Sonuçlar geçmişte ve bildirim olarak görünür. Algılama yalnızca WhatsApp sesli notları klasörünün listesini okur; bir not yalnızca transkribe edilirken okunur ve her şey bu cihazda kalır. Bu kapalıyken hiçbir şey okunmaz. Müzik ve ses erişim izni gerektirir.</string>
+    <string name="voice_note_detection_description">Yeni WhatsApp sesli mesajlarını uygulama çalışırken geldikçe yazıya çevirir. Android arka plan başlatmayı engellerse tek dokunuşlu bir bildirimle başlar. Bir mesaj yalnızca yazıya çevirmek için okunur, bu cihazda; kapalıyken hiçbir şey okunmaz. Ses erişimi gerekir.</string>
     <string name="voice_note_detection_grant_hint">Ses erişimi kapalı. Uygulama ayarlarını açıp etkinleştirmek için dokunun; transkripsiyon izin verilir verilmez başlar.</string>
     <string name="voice_note_folder_grant_rejected">Bu, WhatsApp sesli notları klasörü değil. WhatsApp Voice Notes adlı klasörü seçin ve tekrar deneyin.</string>
     <string name="voice_note_folder_card_title">Sesli notlar klasörü</string>
