@@ -2,22 +2,24 @@
 
 Anti-Vocale transcribes voice messages on your Android device, entirely offline. Audio never leaves your phone: transcription runs locally with open AI models, no account, no cloud service, no telemetry.
 
-Manual updated for version 1.14.
+Manual updated for version 1.15.
 
 ## Contents
 
 1. [Getting started](#getting-started)
 2. [Choosing a model](#choosing-a-model)
 3. [Transcribing: the daily flow](#transcribing-the-daily-flow)
-4. [Long audio, queue, and retries](#long-audio-queue-and-retries)
-5. [Community models and imports](#community-models-and-imports)
-6. [Tasker and automation](#tasker-and-automation)
-7. [Per-app settings](#per-app-settings)
-8. [Privacy](#privacy)
-9. [Troubleshooting](#troubleshooting)
-10. [FAQ](#faq)
+4. [WhatsApp voice notes, automatically](#whatsapp-voice-notes-automatically)
+5. [Results: labels, formats, and the floating window](#results-labels-formats-and-the-floating-window)
+6. [Long audio, queue, and retries](#long-audio-queue-and-retries)
+7. [Community models and imports](#community-models-and-imports)
+8. [Tasker and automation](#tasker-and-automation)
+9. [Per-app settings](#per-app-settings)
+10. [Privacy](#privacy)
+11. [Troubleshooting](#troubleshooting)
+12. [FAQ](#faq)
 
-Sections 6a and 6b cover the automation surfaces: the scheduled folder watch and remote offload.
+Sections 8a, 8b, and 8c cover the automation surfaces: the scheduled folder watch, remote offload, and the Open Transcribe provider.
 
 ## Getting started
 
@@ -55,10 +57,32 @@ Rules of thumb:
 - Share a voice message to Anti-Vocale. Processing starts immediately, even with the screen off.
 - The result notification offers: **Copy**, **Share**, and, when the source app is supported, **Send to [App]** which pastes the text directly into the chat the voice message came from.
 - With Auto-Copy enabled (Settings), the text is already on your clipboard when the notification arrives; the notification says so.
-- Every transcription is kept in the **Logs** tab with the model used, duration, and processing time. Long-press an entry to retry, copy, delete, or report a bad result by email.
+- Every transcription is kept in the **Logs** tab with the model used, duration, and processing time. Long-press an entry to retry, copy, delete, or report a bad result by email; **Re-transcribe** runs the same audio through a different model of your choice.
 - With a **Whisper or SenseVoice** model, each expanded transcript carries a language chip: the flag of the language the model detected, with a tap to check or pin it when the guess is wrong (small models misfire sometimes). Other model families do not report a detected language, so the chip stays off for them; the toggle in Settings says so and stays disabled.
 - With Auto-Save (Settings) every transcript is also written as a .txt file into a folder you choose.
-- **Voice-note sender recognition** (optional, Settings): with notification access granted, the History row of a shared voice note can show who likely sent it. The name appears only when the note's notification arrived while the feature was on AND its reported length matches the audio; otherwise no name is shown, never a guess.
+
+## WhatsApp voice notes, automatically
+
+Anti-Vocale can transcribe new WhatsApp voice notes the moment they arrive, with no taps at all. The text lands in the Logs tab and as a result notification; if Android blocks a background start (for example with the screen off), a one-tap notification starts the transcription instead.
+
+Setup takes one minute, in **Settings > Voice notes**:
+
+1. Turn on **Voice note transcription** and grant audio access when Android asks. If you declined twice, Android shows no dialog any more; the red hint that appears instead opens the system page where the permission can still be granted.
+2. Pick the WhatsApp Voice Notes folder once through the guided picker. A wrong folder is refused on the spot; you can change or remove it any time from the same card.
+3. Optional: turn on **sender recognition** too, and grant notification access. The Logs row is then labeled with the sender's name.
+
+Two honest rules govern the labels. A name appears only when the note's own notification confirms it, meaning the notification arrived while the feature was on and its reported length matches the audio: names are never guessed. And notes you download manually (with auto-download off) stay unlabeled, because their notification is too old to be trusted. The waiting list of recent notifications lives in memory only and disappears when the feature is off.
+
+Privacy is the same contract as everywhere else: while detection is on, it reads only the WhatsApp voice-note folder listing; a note's audio is read only to transcribe it, entirely on this device; while the feature is off, nothing is read at all.
+
+One caveat, stated plainly: on phones with aggressive battery managers, notes that arrive while the system has suspended the app can be missed until it wakes. If you rely on the automatic mode, excluding Anti-Vocale from battery optimization makes it reliable. WhatsApp only for now; Telegram is on the roadmap.
+
+## Results: labels, formats, and the floating window
+
+- **Speaker labels**: opt in from Settings and transcripts of conversations get per-sentence speaker attribution, rendered as SPEAKER turns in the result and every export.
+- **Share as more than text**: from a result row, share as plain text, timed text, SRT, or VTT. The timed formats need a transcription that carries cues. "Share as..." is opt-in from Settings.
+- **Picture-in-Picture**: while a transcription runs, a floating window can show the text appearing live, so you can keep using other apps.
+- **Re-transcribe**: retry any entry with a different model straight from its row, and compare.
 
 ## Long audio, queue, and retries
 
@@ -73,6 +97,7 @@ The built-in catalog does not cover every language. Anti-Vocale ships with a com
 Advanced users can also:
 - import a model from a Hugging Face repository URL or a catalog entry link (the advanced branch in the same dialog);
 - import a set of model files from a folder on the phone;
+- export a downloaded model as an **offline bundle** and import it on another device, so a model downloaded once moves without re-downloading;
 - point the app at a different catalog index (the "change" action next to the catalog source) maintained by anyone, for example your community.
 
 The import format and file requirements are documented in [external models](../../external-models.md).
@@ -96,6 +121,10 @@ Anti-Vocale can watch folders you choose and transcribe new audio files automati
 ## Remote offload (experimental)
 
 If you run your own transcription server, Anti-Vocale can delegate long or heavy transcriptions to it: Settings, Remote offload (experimental). Any OpenAI-compatible server speaking the /v1/audio/transcriptions API works (OmniVoice, the whisper.cpp server, and others). The in-app disclosure says it plainly: when the feature is enabled, the audio of the transcriptions you delegate is sent only to the server address you enter, wherever that server is (your home network or anywhere on the internet); everything else is transcribed on the device, and the feature is off by default.
+
+## Open Transcribe (experimental)
+
+Apps that speak the open Open Transcribe contract, like Forkgram (a Telegram client), can use Anti-Vocale as their in-place voice-message transcriber: enable **Settings > Automation > Open Transcribe API** (off by default), then pick Anti-Vocale in the client's offline-transcription settings. Voice messages are transcribed with the app's own models and the audio never leaves the device. Turning the toggle off removes the app from the clients' pickers again.
 
 ## Per-app settings
 
@@ -122,6 +151,9 @@ Try a specialist model for your language (see the table above). Long-press the b
 **NNAPI makes it crash.**
 If you enabled the NNAPI provider in Settings and the app now crashes, it reverts to CPU automatically on next start. NNAPI depends heavily on the phone's chipset; if it crashes repeatedly, leave it on CPU.
 
+**Automatic voice notes stopped arriving.**
+Two usual causes. If WhatsApp's folder was deleted and recreated (a reinstall, a cleanup tool), the stored folder permission can die: open Settings > Voice notes and pick the folder again from the card. If your phone suspends background apps aggressively, notes that arrive while the app is suspended are missed until it wakes: the battery exemption above is the fix, and it matters more for this feature than for manual sharing.
+
 ## FAQ
 
 **Does it work without internet?**
@@ -134,7 +166,10 @@ Any app that can share an audio file. The send-back action currently targets a s
 In the Logs tab, and optionally as .txt files in a folder you pick. Nothing is stored anywhere else.
 
 **Can it transcribe voice notes automatically as they arrive?**
-Not for chat apps directly, yet: it is on the roadmap. Two routes exist today: the scheduled folder watch can watch a messaging app's media folder (Android 11+) and transcribe new voice notes as they land, and the optional sender recognition labels the History row with who likely sent a note you shared.
+Yes, for WhatsApp: turn on Settings > Voice notes, grant audio access, and pick the WhatsApp Voice Notes folder once. New notes are transcribed as they land, and the row can carry the sender's name. The scheduled folder watch remains the generic route for any app's media folder (Android 11+), and Telegram is on the roadmap. On phones with aggressive battery managers, notes arriving while the app is suspended can be missed: the battery exemption makes the automatic mode reliable.
+
+**Why does a voice note have no sender name?**
+The name appears only when the note's notification arrived while sender recognition was on and its reported length matches the audio. Notes downloaded manually (auto-download off) and notes whose notification never arrived get no name, on purpose: a wrong name is worse than no name.
 
 **Why are there two stores (Play and F-Droid)?**
 Same app, same features. F-Droid builds it from source with no proprietary components; Play adds automatic crash reporting.

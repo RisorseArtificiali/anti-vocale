@@ -2,20 +2,24 @@
 
 Anti-Vocale transkribiert Sprachnachrichten auf deinem Android-Gerät, komplett offline. Audio verlässt dein Telefon nie: Die Transkription läuft lokal mit offenen KI-Modellen, ohne Konto, ohne Cloud-Dienst, ohne Telemetrie.
 
-Handbuch aktualisiert für Version 1.14.
+Handbuch aktualisiert für Version 1.15.
 
 ## Inhalt
 
 1. [Erste Schritte](#erste-schritte)
 2. [Modell wählen](#modell-wählen)
 3. [Transkribieren: der Alltag](#transkribieren-der-alltag)
-4. [Lange Audios, Warteschlange und erneute Versuche](#lange-audios-warteschlange-und-erneute-versuche)
-5. [Community-Modelle und Importe](#community-modelle-und-importe)
-6. [Tasker und Automatisierung](#tasker-und-automatisierung)
-7. [App-spezifische Einstellungen](#app-spezifische-einstellungen)
-8. [Datenschutz](#datenschutz)
-9. [Fehlerbehebung](#fehlerbehebung)
-10. [FAQ](#faq)
+4. [WhatsApp-Sprachnachrichten, automatisch](#whatsapp-sprachnachrichten-automatisch)
+5. [Ergebnisse: Labels, Formate und das schwebende Fenster](#ergebnisse-labels-formate-und-das-schwebende-fenster)
+6. [Lange Audios, Warteschlange und erneute Versuche](#lange-audios-warteschlange-und-erneute-versuche)
+7. [Community-Modelle und Importe](#community-modelle-und-importe)
+8. [Tasker und Automatisierung](#tasker-und-automatisierung)
+9. [App-spezifische Einstellungen](#app-spezifische-einstellungen)
+10. [Datenschutz](#datenschutz)
+11. [Fehlerbehebung](#fehlerbehebung)
+12. [FAQ](#faq)
+
+Die Abschnitte 8a, 8b und 8c behandeln die Automatisierung: die geplante Ordnerüberwachung, das Remote-Offload und den Open-Transcribe-Anbieter.
 
 ## Erste Schritte
 
@@ -53,10 +57,32 @@ Faustregeln:
 - Teile eine Sprachnachricht an Anti-Vocale. Die Verarbeitung startet sofort, auch bei ausgeschaltetem Bildschirm.
 - Die Ergebnis-Benachrichtigung bietet: **Kopieren**, **Teilen** und, wenn die Quell-App unterstützt wird, **An [App] senden**, womit der Text direkt in den Chat eingefügt wird, aus dem die Sprachnachricht kam.
 - Mit aktiviertem Automatischem Kopieren (Einstellungen) liegt der Text bereits in der Zwischenablage, wenn die Benachrichtigung ankommt; die Benachrichtigung weist darauf hin.
-- Jede Transkription landet im Tab **Verlauf**, mit verwendetem Modell, Dauer und Bearbeitungszeit. Halte einen Eintrag lange gedrückt, um erneut zu versuchen, zu kopieren, zu löschen oder ein schlechtes Ergebnis per E-Mail zu melden.
+- Jede Transkription landet im Tab **Verlauf**, mit verwendetem Modell, Dauer und Bearbeitungszeit. Halte einen Eintrag lange gedrückt, um erneut zu versuchen, zu kopieren, zu löschen oder ein schlechtes Ergebnis per E-Mail zu melden; **Erneut transkribieren** führt dasselbe Audio durch ein anderes Modell deiner Wahl.
 - Mit einem **Whisper- oder SenseVoice-**Modell trägt jede aufgeklappte Transkript einen Sprach-Chip: die Flagge der vom Modell erkannten Sprache, mit einem Tipp zum Prüfen oder Festlegen, wenn die Schätzung falsch liegt (kleine Modelle raten manchmal daneben). Andere Modellfamilien melden keine erkannte Sprache, deshalb bleibt der Chip dort aus; der Schalter in den Einstellungen sagt das und bleibt deaktiviert.
 - Mit Automatischem Speichern im Ordner (Einstellungen) wird jede Transkription zusätzlich als .txt-Datei in einen von dir gewählten Ordner geschrieben.
-- **Absendererkennung für Sprachnachrichten** (optional, Einstellungen): Mit gewährtem Benachrichtigungszugriff kann die Verlauf-Zeile einer geteilten Sprachnachricht zeigen, wer sie wahrscheinlich gesendet hat. Der Name erscheint nur, wenn die Benachrichtigung der Nachricht eingegangen ist, während die Funktion an war UND die gemeldete Länge zum Audio passt; sonst kein Name, nie eine Vermutung.
+
+## WhatsApp-Sprachnachrichten, automatisch
+
+Anti-Vocale kann neue WhatsApp-Sprachnachrichten in dem Moment transkribieren, in dem sie ankommen, ganz ohne einen einzigen Tipp. Der Text landet im Tab Verlauf und als Ergebnis-Benachrichtigung; blockiert Android einen Hintergrundstart (zum Beispiel bei ausgeschaltetem Bildschirm), startet ein Tipp auf eine Benachrichtigung die Transkription.
+
+Die Einrichtung dauert eine Minute, unter **Einstellungen > Sprachnachrichten**:
+
+1. Aktiviere **Sprachnachrichten transkribieren** und erteile den Audio-Zugriff, wenn Android danach fragt. Hast du zweimal abgelehnt, zeigt Android keinen Dialog mehr; der stattdessen erscheinende rote Hinweis öffnet die Systemseite, auf der die Berechtigung noch erteilt werden kann.
+2. Wähle den Ordner WhatsApp Voice Notes einmal über den geführten Picker aus. Ein falscher Ordner wird auf der Stelle abgelehnt; über dieselbe Karte kannst du ihn jederzeit ändern oder entfernen.
+3. Optional: Aktiviere zusätzlich die **Absendererkennung** und erteile den Benachrichtigungszugriff. Die Verlauf-Zeile trägt dann den Namen des Absenders.
+
+Zwei ehrliche Regeln gelten für die Labels. Ein Name erscheint nur, wenn die Benachrichtigung der Nachricht ihn bestätigt, das heißt, die Benachrichtigung kam an, während die Funktion an war, und ihre gemeldete Länge passt zum Audio: Namen werden nie geraten. Und Nachrichten, die du manuell herunterlädst (bei ausgeschaltetem automatischem Download), bleiben ohne Label, weil ihre Benachrichtigung zu alt ist, um ihr zu trauen. Die Warteliste der letzten Benachrichtigungen liegt nur im Speicher und verschwindet, sobald die Funktion aus ist.
+
+Der Datenschutz folgt demselben Vertrag wie überall sonst: Solange die Erkennung an ist, wird nur die Ordnerliste der WhatsApp-Sprachnachrichten gelesen; das Audio einer Nachricht wird nur gelesen, um es zu transkribieren, vollständig auf diesem Gerät; solange die Funktion aus ist, wird gar nichts gelesen.
+
+Ein Vorbehalt, klar gesagt: Auf Telefonen mit aggressiven Akku-Managern können Nachrichten verpasst werden, die ankommen, während das System die App ausgesetzt hat, bis sie aufwacht. Verlässt du dich auf den automatischen Modus, macht die Ausnahme von der Akku-Optimierung ihn zuverlässig. Vorerst nur WhatsApp; Telegram steht auf der Roadmap.
+
+## Ergebnisse: Labels, Formate und das schwebende Fenster
+
+- **Sprecher-Labels**: einmal in den Einstellungen aktiviert, erhalten Transkripte von Unterhaltungen eine Sprecherzuordnung Satz für Satz, im Ergebnis und in jedem Export als SPEAKER-Beiträge dargestellt.
+- **Mehr teilen als Text**: aus einer Ergebnis-Zeile heraus als reiner Text, mit Zeitmarken, als SRT oder als VTT teilen. Die Zeitformate brauchen eine Transkription, die Cues mitbringt. „Teilen als …“ ist ein Opt-in in den Einstellungen.
+- **Picture-in-Picture**: Während einer Transkription kann ein schwebendes Fenster zeigen, wie der Text live entsteht, sodass du andere Apps weiter nutzen kannst.
+- **Erneut transkribieren**: Jeden Eintrag direkt aus seiner Zeile mit einem anderen Modell erneut laufen lassen und vergleichen.
 
 ## Lange Audios, Warteschlange und erneute Versuche
 
@@ -71,6 +97,7 @@ Der integrierte Katalog deckt nicht jede Sprache ab. Anti-Vocale bringt einen Co
 Fortgeschrittene Nutzer können zusätzlich:
 - ein Modell über die URL eines Hugging-Face-Repositorys oder über einen Link auf einen Katalog-Eintrag importieren (der erweiterte Zweig im selben Dialog);
 - einen Satz Modelldateien aus einem Ordner auf dem Telefon importieren;
+- ein heruntergeladenes Modell als **Offline-Bundle** exportieren und auf einem anderen Gerät importieren, sodass ein einmal heruntergeladenes Modell ohne erneutes Herunterladen mitwandert;
 - die App auf einen anderen Katalog-Index zeigen lassen (die Aktion „ändern“ neben der Katalogquelle), den jeder pflegen kann, zum Beispiel deine Community.
 
 Das Importformat und die Dateianforderungen sind in [externen Modellen](../../external-models.md) dokumentiert.
@@ -94,6 +121,10 @@ Anti-Vocale kann Ordner deiner Wahl überwachen und neue Audiodateien automatisc
 ## Remote-Offload (experimentell)
 
 Betreibst du einen eigenen Transkriptionsserver, kann Anti-Vocale lange oder schwere Transkriptionen an ihn auslagern: Einstellungen, Remote-Offload (experimentell). Jeder OpenAI-kompatible Server, der die API /v1/audio/transcriptions spricht, funktioniert (OmniVoice, der whisper.cpp-Server und andere). Der Hinweis in der App sagt es klar: Ist die Funktion aktiv, wird das Audio der ausgelagerten Transkriptionen nur an die Serveradresse gesendet, die du eingibst, wo auch immer dieser Server steht (dein Heimnetzwerk oder irgendwo im Internet); alles andere wird auf dem Gerät transkribiert, und die Funktion ist standardmäßig aus.
+
+## Open Transcribe (experimentell)
+
+Apps, die den offenen Open-Transcribe-Vertrag unterstützen, wie Forkgram (ein Telegram-Client), können Anti-Vocale als Sprachnachrichten-Transkribierer direkt im Client nutzen: Aktiviere **Einstellungen > Automatisierung > Open Transcribe API** (standardmäßig aus) und wähle Anti-Vocale anschließend in den Einstellungen für Offline-Transkription des Clients. Sprachnachrichten werden mit den eigenen Modellen der App transkribiert, und das Audio verlässt das Gerät nie. Schaltest du die Funktion aus, verschwindet die App wieder aus den Auswahllisten der Clients.
 
 ## App-spezifische Einstellungen
 
@@ -120,6 +151,9 @@ Versuche ein Spezialmodell für deine Sprache (siehe Tabelle oben). Halte den sc
 **NNAPI führt zu Abstürzen.**
 Hast du in den Einstellungen den NNAPI-Anbieter aktiviert und die App stürzt jetzt ab, kehrt sie beim nächsten Start automatisch zur CPU zurück. NNAPI hängt stark vom Chipsatz des Telefons ab; bei wiederholten Abstürzen lass es bei der CPU.
 
+**Automatische Sprachnachrichten kommen nicht mehr an.**
+Zwei übliche Ursachen. Wurde der WhatsApp-Ordner gelöscht und neu angelegt (eine Neuinstallation, ein Aufräum-Tool), kann die gespeicherte Ordner-Berechtigung sterben: Öffne Einstellungen > Sprachnachrichten und wähle den Ordner über die Karte erneut aus. Setzt dein Telefon Hintergrund-Apps aggressiv aus, werden Nachrichten, die während der Aussetzung ankommen, verpasst, bis die App aufwacht: Die Akku-Ausnahme von oben ist die Lösung, und für diese Funktion zählt sie mehr als für das manuelle Teilen.
+
 ## FAQ
 
 **Funktioniert es ohne Internet?**
@@ -132,7 +166,10 @@ Jede App, die eine Audiodatei teilen kann. Die Aktion zum Zurücksenden zielt de
 Im Tab Verlauf und optional als .txt-Dateien in einem Ordner deiner Wahl. Nirgendwo sonst wird etwas gespeichert.
 
 **Werden Sprachnachrichten automatisch beim Eingang transkribiert?**
-Für Chat-Apps nicht direkt, noch nicht: Es steht auf der Roadmap. Zwei Wege gibt es heute: Die Geplante Ordnerüberwachung kann den Medienordner einer Messenger-App überwachen (Android 11+) und neue Sprachnachrichten transkribieren, sobald sie ankommen, und die optionale Absendererkennung versieht die Verlauf-Zeile mit dem Hinweis, wer eine geteilte Nachricht wahrscheinlich gesendet hat.
+Ja, für WhatsApp: Aktiviere Einstellungen > Sprachnachrichten, erteile den Audio-Zugriff und wähle den Ordner WhatsApp Voice Notes einmal aus. Neue Nachrichten werden transkribiert, sobald sie ankommen, und die Zeile kann den Namen des Absenders tragen. Die Geplante Ordnerüberwachung bleibt der allgemeine Weg für den Medienordner jeder App (Android 11+), und Telegram steht auf der Roadmap. Auf Telefonen mit aggressiven Akku-Managern können Nachrichten, die ankommen, während die App ausgesetzt ist, verpasst werden: Die Akku-Ausnahme macht den automatischen Modus zuverlässig.
+
+**Warum trägt eine Sprachnachricht keinen Absendernamen?**
+Der Name erscheint nur, wenn die Benachrichtigung der Nachricht einging, während die Absendererkennung an war, und ihre gemeldete Länge zum Audio passt. Manuell heruntergeladene Nachrichten (automatischer Download aus) und Nachrichten, deren Benachrichtigung nie ankam, bekommen bewusst keinen Namen: Ein falscher Name ist schlimmer als kein Name.
 
 **Warum gibt es zwei Stores (Play und F-Droid)?**
 Dieselbe App, dieselben Funktionen. F-Droid baut sie aus dem Quellcode ohne proprietäre Komponenten; Play ergänzt automatische Absturzberichte.

@@ -2,20 +2,24 @@
 
 Anti-Vocale trascrive i messaggi vocali sul tuo dispositivo Android, interamente offline. L'audio non lascia mai il telefono: la trascrizione avviene in locale con modelli AI aperti, senza account, senza servizi cloud, senza telemetria.
 
-Manuale aggiornato alla versione 1.14.
+Manuale aggiornato alla versione 1.15.
 
 ## Indice
 
 1. [Primi passi](#primi-passi)
 2. [Scegliere un modello](#scegliere-un-modello)
 3. [Trascrivere: il flusso quotidiano](#trascrivere-il-flusso-quotidiano)
-4. [Audio lunghi, coda e ritentativi](#audio-lunghi-coda-e-ritentativi)
-5. [Modelli community e importazioni](#modelli-community-e-importazioni)
-6. [Tasker e automazione](#tasker-e-automazione)
-7. [Impostazioni per app](#impostazioni-per-app)
-8. [Privacy](#privacy)
-9. [Risoluzione dei problemi](#risoluzione-dei-problemi)
-10. [Domande frequenti](#domande-frequenti)
+4. [Note vocali WhatsApp, automaticamente](#note-vocali-whatsapp-automaticamente)
+5. [Risultati: etichette, formati e finestra mobile](#risultati-etichette-formati-e-finestra-mobile)
+6. [Audio lunghi, coda e ritentativi](#audio-lunghi-coda-e-ritentativi)
+7. [Modelli community e importazioni](#modelli-community-e-importazioni)
+8. [Tasker e automazione](#tasker-e-automazione)
+9. [Impostazioni per app](#impostazioni-per-app)
+10. [Privacy](#privacy)
+11. [Risoluzione dei problemi](#risoluzione-dei-problemi)
+12. [Domande frequenti](#domande-frequenti)
+
+Le sezioni 8a, 8b e 8c coprono le superfici di automazione: il controllo cartella programmato, l'offload remoto e il provider Open Transcribe.
 
 ## Primi passi
 
@@ -53,10 +57,32 @@ Regole pratiche:
 - Condividi un vocale verso Anti-Vocale. L'elaborazione parte subito, anche a schermo spento.
 - La notifica del risultato offre: **Copia**, **Condividi** e, quando l'app di origine è supportata, **Invia a [App]** che incolla il testo direttamente nella chat da cui proveniva il vocale.
 - Con Copia automatica attiva (Impostazioni), il testo è già negli appunti quando arriva la notifica; la notifica te lo dice.
-- Ogni trascrizione resta nella scheda **Cronologia** con modello usato, durata e tempo di elaborazione. Tieni premuta una voce per riprovare, copiare, eliminare o segnalare un risultato sbagliato via email.
+- Ogni trascrizione resta nella scheda **Cronologia** con modello usato, durata e tempo di elaborazione. Tieni premuta una voce per riprovare, copiare, eliminare o segnalare un risultato sbagliato via email; **Ri-trascrivi** fa passare lo stesso audio per un modello diverso a tua scelta.
 - Con un modello **Whisper o SenseVoice**, ogni trascrizione espansa porta un chip lingua: la bandiera della lingua che il modello ha rilevato, con un tocco per verificare o bloccare quando il tiro è sbagliato (i modelli piccoli ogni tanto sbagliano). Le altre famiglie di modelli non riportano una lingua rilevata, quindi il chip resta spento per loro; l'interruttore nelle Impostazioni lo dice e resta disattivato.
-- con Salvataggio automatico (Impostazioni) ogni trascrizione viene scritta anche come file .txt in una cartella a tua scelta.
-- **Riconoscimento del mittente dei vocali** (opzionale, Impostazioni): con l'accesso alle notifiche concesso, la riga della Cronologia di un vocale condiviso può mostrare chi lo ha probabilmente inviato. Il nome compare solo se la notifica del vocale era arrivata con la funzione accesa E la durata dichiarata corrisponde all'audio; altrimenti nessun nome, mai un'ipotesi.
+- Con Salvataggio automatico (Impostazioni) ogni trascrizione viene scritta anche come file .txt in una cartella a tua scelta.
+
+## Note vocali WhatsApp, automaticamente
+
+Anti-Vocale può trascrivere le nuove note vocali WhatsApp nel momento in cui arrivano, senza alcun tocco. Il testo finisce nella scheda Cronologia e in una notifica di risultato; se Android blocca un avvio in background (per esempio a schermo spento), una notifica con un tocco avvia la trascrizione al posto suo.
+
+La configurazione richiede un minuto, in **Impostazioni > Note vocali**:
+
+1. Attiva **Trascrizione note vocali** e concedi l'accesso all'audio quando Android lo chiede. Se hai rifiutato due volte, Android non mostra più nessun dialogo; il suggerimento rosso che compare al suo posto apre la pagina di sistema dove il permesso si può ancora concedere.
+2. Scegli una volta sola la cartella WhatsApp Voice Notes attraverso il selettore guidato. Una cartella sbagliata viene rifiutata sul momento; puoi cambiarla o rimuoverla in qualunque momento dalla stessa scheda.
+3. Facoltativo: attiva anche il **riconoscimento del mittente** e concedi l'accesso alle notifiche. La riga della Cronologia viene così etichettata con il nome del mittente.
+
+Due regole oneste governano le etichette. Un nome compare solo quando la notifica della nota lo conferma, cioè la notifica è arrivata mentre la funzione era accesa e la durata dichiarata corrisponde all'audio: i nomi non vengono mai indovinati. E le note scaricate a mano (con l'auto-download spento) restano senza etichetta, perché la loro notifica è troppo vecchia per essere attendibile. La lista d'attesa delle notifiche recenti vive solo in memoria e scompare con la funzione spenta.
+
+La privacy è lo stesso contratto di sempre: con il rilevamento attivo legge soltanto l'elenco della cartella delle note vocali WhatsApp; l'audio di una nota viene letto solo per trascriverlo, interamente su questo dispositivo; con la funzione spenta non viene letto nulla.
+
+Un avvertimento, detto chiaramente: sui telefoni con gestori di batteria aggressivi, le note che arrivano mentre il sistema ha sospeso l'app possono andare perse finché non si risveglia. Se ti affidi alla modalità automatica, escludere Anti-Vocale dall'ottimizzazione della batteria la rende affidabile. Solo WhatsApp per ora; Telegram è in roadmap.
+
+## Risultati: etichette, formati e finestra mobile
+
+- **Etichette dei parlanti**: si attivano dalle Impostazioni e le trascrizioni delle conversazioni ricevono l'attribuzione del parlante frase per frase, resa come turni SPEAKER nel risultato e in ogni esportazione.
+- **Condividi più del testo**: da una riga di risultato, condividi come testo semplice, testo con timestamp, SRT o VTT. I formati con i tempi richiedono una trascrizione che porta indicatori temporali. "Condividi come…" si attiva dalle Impostazioni.
+- **Picture-in-Picture**: mentre una trascrizione è in corso, una finestra mobile può mostrare il testo che appare dal vivo, così puoi continuare a usare le altre app.
+- **Ri-trascrivi**: riprova qualsiasi voce con un modello diverso direttamente dalla sua riga, e confronta.
 
 ## Audio lunghi, coda e ritentativi
 
@@ -71,6 +97,7 @@ Il catalogo integrato non copre tutte le lingue. Anti-Vocale include un catalogo
 Gli utenti avanzati possono inoltre:
 - importare un modello dall'URL di un repository Hugging Face o da un link a una voce di catalogo (ramo avanzato nello stesso dialogo);
 - importare un insieme di file modello da una cartella sul telefono;
+- esportare un modello scaricato come **bundle offline** e importarlo su un altro dispositivo, così un modello scaricato una volta si sposta senza ricaricarlo;
 - puntare l'app a un indice di catalogo diverso (azione "cambia" accanto alla fonte del catalogo) mantenuto da chiunque, per esempio la tua community.
 
 Il formato di importazione e i requisiti dei file sono documentati in [modelli esterni](../../external-models.md).
@@ -94,6 +121,10 @@ Anti-Vocale può sorvegliare le cartelle che scegli e trascrivere automaticament
 ## Offload remoto (sperimentale)
 
 Se gestisci un tuo server di trascrizione, Anti-Vocale può delegare ad esso le trascrizioni lunghe o pesanti: Impostazioni, Offload remoto (sperimentale). Funziona qualsiasi server compatibile OpenAI che parli l'API /v1/audio/transcriptions (OmniVoice, il server whisper.cpp e altri). L'informativa in app lo dice chiaramente: con la funzione attiva, l'audio delle trascrizioni che deleghi viene inviato solo all'indirizzo del server che inserisci, ovunque si trovi (la tua rete di casa o qualsiasi punto di internet); tutto il resto viene trascritto sul dispositivo, e la funzione è spenta di default.
+
+## Open Transcribe (sperimentale)
+
+Le app che parlano il contratto aperto Open Transcribe, come Forkgram (un client Telegram), possono usare Anti-Vocale come trascrittore dei messaggi vocali integrato: attiva **Impostazioni > Automazione e offload > API di trascrizione Open Transcribe** (spenta per impostazione predefinita), poi scegli Anti-Vocale nelle impostazioni di trascrizione offline del client. I messaggi vocali vengono trascritti con i modelli dell'app stessa e l'audio non lascia mai il dispositivo. Spegnere l'interruttore toglie di nuovo l'app dai selettori dei client.
 
 ## Impostazioni per app
 
@@ -120,6 +151,9 @@ Prova un modello specializzato per la tua lingua (vedi la tabella sopra). Tieni 
 **NNAPI fa crashare l'app.**
 Se hai attivo il provider NNAPI nelle Impostazioni e l'app crasha, al prossimo avvio torna automaticamente alla CPU. NNAPI dipende molto dal chipset del telefono; se crasha ripetutamente, lascialo su CPU.
 
+**Le note vocali automatiche smettono di arrivare.**
+Due cause consuete. Se la cartella di WhatsApp è stata eliminata e ricreata (una reinstallazione, uno strumento di pulizia), il permesso della cartella salvato può morire: apri Impostazioni > Note vocali e scegli di nuovo la cartella dalla scheda. Se il tuo telefono sospende le app in background in modo aggressivo, le note che arrivano mentre l'app è sospesa vanno perse finché non si risveglia: l'esenzione batteria di cui sopra è la soluzione, e per questa funzione conta più che per la condivisione manuale.
+
 ## Domande frequenti
 
 **Funziona senza internet?**
@@ -132,7 +166,10 @@ Qualunque app possa condividere un file audio. L'azione di invio attualmente è 
 Nella scheda Cronologia e, a scelta, come file .txt in una cartella che scegli tu. Nulla è salvato altrove.
 
 **Può trascrivere i vocali automaticamente appena arrivano?**
-Non direttamente per le app di chat, non ancora: è in roadmap. Oggi esistono due strade: il controllo cartella programmato può osservare la cartella media di un'app di messaggistica (Android 11+) e trascrivere i nuovi vocali appena arrivano, e il riconoscimento del mittente opzionale etichetta la riga della Cronologia con chi ha probabilmente inviato un vocale che hai condiviso.
+Sì, per WhatsApp: attiva Impostazioni > Note vocali, concedi l'accesso all'audio e scegli una volta la cartella WhatsApp Voice Notes. Le nuove note vengono trascritte appena arrivano, e la riga può portare il nome del mittente. Il controllo cartella programmato resta la strada generica per la cartella media di qualsiasi app (Android 11+), e Telegram è in roadmap. Sui telefoni con gestori di batteria aggressivi, le note che arrivano mentre l'app è sospesa possono andare perse: l'esenzione batteria rende affidabile la modalità automatica.
+
+**Perché un vocale non ha il nome del mittente?**
+Il nome compare solo se la notifica della nota è arrivata con il riconoscimento del mittente attivo e la durata dichiarata corrisponde all'audio. Le note scaricate a mano (auto-download spento) e le note la cui notifica non è mai arrivata restano senza nome, di proposito: un nome sbagliato è peggio di nessun nome.
 
 **Perché ci sono due store (Play e F-Droid)?**
 Stessa app, stesse funzioni. F-Droid la compila da sorgente senza componenti proprietari; Play aggiunge la segnalazione automatica dei crash.

@@ -2,20 +2,24 @@
 
 Anti-Vocale transcrit les messages vocaux sur votre appareil Android, entièrement hors ligne. L'audio ne quitte jamais votre téléphone : la transcription s'exécute localement avec des modèles d'IA ouverts, sans compte, sans service cloud, sans télémétrie.
 
-Manuel mis à jour pour la version 1.14.
+Manuel mis à jour pour la version 1.15.
 
 ## Sommaire
 
 1. [Premiers pas](#premiers-pas)
 2. [Choisir un modèle](#choisir-un-modèle)
 3. [Transcription au quotidien](#transcription-au-quotidien)
-4. [Audio long, file d'attente et nouvelles tentatives](#audio-long-file-dattente-et-nouvelles-tentatives)
-5. [Modèles de la communauté et import](#modèles-de-la-communauté-et-import)
-6. [Tasker et automatisation](#tasker-et-automatisation)
-7. [Paramètres par application](#paramètres-par-application)
-8. [Confidentialité](#confidentialité)
-9. [Dépannage](#dépannage)
-10. [FAQ](#faq)
+4. [Messages vocaux WhatsApp, automatiquement](#messages-vocaux-whatsapp-automatiquement)
+5. [Résultats : étiquettes, formats et la fenêtre flottante](#résultats--étiquettes-formats-et-la-fenêtre-flottante)
+6. [Audio long, file d'attente et nouvelles tentatives](#audio-long-file-dattente-et-nouvelles-tentatives)
+7. [Modèles de la communauté et import](#modèles-de-la-communauté-et-import)
+8. [Tasker et automatisation](#tasker-et-automatisation)
+9. [Paramètres par application](#paramètres-par-application)
+10. [Confidentialité](#confidentialité)
+11. [Dépannage](#dépannage)
+12. [FAQ](#faq)
+
+Les sections 8a, 8b et 8c couvrent les surfaces d'automatisation : la surveillance planifiée des dossiers, le déport distant et le fournisseur Open Transcribe.
 
 ## Premiers pas
 
@@ -53,10 +57,32 @@ Quelques repères :
 - Partagez un message vocal vers Anti-Vocale. Le traitement commence immédiatement, même écran éteint.
 - La notification de résultat propose : **Copier**, **Partager** et, quand l'application source est prise en charge, **Envoyer à [App]**, qui colle le texte directement dans la conversation d'où venait le message vocal.
 - Avec la Copie automatique activée (Paramètres), le texte est déjà dans le presse-papiers quand la notification arrive ; la notification vous l'indique.
-- Chaque transcription est conservée dans l'onglet **Historique**, avec le modèle utilisé, la durée et le temps de traitement. Un appui long sur une entrée permet de réessayer, de copier, de supprimer ou de signaler un mauvais résultat par e-mail.
+- Chaque transcription est conservée dans l'onglet **Historique**, avec le modèle utilisé, la durée et le temps de traitement. Un appui long sur une entrée permet de réessayer, de copier, de supprimer ou de signaler un mauvais résultat par e-mail ; **Re-transcrire** relance le même audio avec un autre modèle de votre choix.
 - Avec un modèle **Whisper ou SenseVoice**, chaque transcription dépliée porte une puce de langue : le drapeau de la langue détectée par le modèle, avec un appui pour vérifier ou épingler quand l'estimation est fausse (les petits modèles se trompent parfois). Les autres familles de modèles ne rapportent pas de langue détectée, la puce reste donc absente pour elles ; le réglage dans les Paramètres le dit et reste désactivé.
 - Avec l'Enregistrement automatique dans un dossier (Paramètres), chaque transcription est aussi écrite dans un fichier .txt, dans le dossier de votre choix.
-- **Reconnaissance de l'expéditeur des messages vocaux** (facultatif, Paramètres) : avec l'accès aux notifications accordé, la ligne d'Historique d'un message vocal partagé peut indiquer qui l'a probablement envoyé. Le nom n'apparaît que si la notification du message est arrivée pendant que la fonction était active ET que sa durée annoncée correspond à l'audio ; sinon, pas de nom, jamais une supposition.
+
+## Messages vocaux WhatsApp, automatiquement
+
+Anti-Vocale peut transcrire les nouveaux messages vocaux WhatsApp dès leur arrivée, sans le moindre geste. Le texte arrive dans l'onglet Historique et sous forme de notification de résultat ; si Android bloque un démarrage en arrière-plan (écran éteint, par exemple), une notification en un appui lance la transcription à la place.
+
+La configuration prend une minute, dans **Paramètres > Messages vocaux** :
+
+1. Activez la **Transcription des messages vocaux** et accordez l'accès audio quand Android le demande. Si vous avez refusé deux fois, Android n'affiche plus de boîte de dialogue ; l'indication rouge qui apparaît à la place ouvre la page système où l'autorisation peut encore être accordée.
+2. Choisissez une fois le dossier WhatsApp Voice Notes via le sélecteur guidé. Un dossier erroné est refusé immédiatement ; vous pouvez le changer ou le retirer à tout moment depuis la même carte.
+3. Facultatif : activez aussi la **reconnaissance de l'expéditeur** et accordez l'accès aux notifications. La ligne d'Historique porte alors le nom de l'expéditeur.
+
+Deux règles honnêtes régissent les étiquettes. Un nom n'apparaît que lorsque la notification du message lui-même le confirme, c'est-à-dire quand elle est arrivée pendant que la fonction était activée et que sa durée annoncée correspond à l'audio : les noms ne sont jamais devinés. Et les messages que vous téléchargez manuellement (téléchargement automatique désactivé) restent sans étiquette, car leur notification est trop ancienne pour être fiable. La liste d'attente des notifications récentes vit uniquement en mémoire et disparaît quand la fonction est désactivée.
+
+La confidentialité répond au même contrat que partout ailleurs : pendant que la détection est active, l'application ne lit que la liste du dossier de messages vocaux WhatsApp ; l'audio d'un message n'est lu que pour le transcrire, entièrement sur cet appareil ; fonction désactivée, rien n'est lu du tout.
+
+Une réserve, dite sans détour : sur les téléphones aux économiseurs de batterie agressifs, les messages qui arrivent pendant que le système a suspendu l'application peuvent être manqués jusqu'à son réveil. Si vous comptez sur le mode automatique, exclure Anti-Vocale de l'optimisation de la batterie le rend fiable. WhatsApp seulement pour l'instant ; Telegram est au programme.
+
+## Résultats : étiquettes, formats et la fenêtre flottante
+
+- **Étiquettes locuteur** : à activer dans les Paramètres ; les transcriptions de conversations reçoivent une attribution de locuteur phrase par phrase, rendue sous forme de tours SPEAKER dans le résultat et dans chaque export.
+- **Partager au-delà du texte** : depuis une ligne de résultat, partagez en texte brut, en texte horodaté, en SRT ou en VTT. Les formats horodatés exigent une transcription qui porte des cues. « Partager en... » s'active dans les Paramètres.
+- **Picture-in-Picture** : pendant qu'une transcription tourne, une fenêtre flottante peut afficher le texte au fur et à mesure, pour continuer à utiliser d'autres applications.
+- **Re-transcrire** : relancez n'importe quelle entrée avec un autre modèle directement depuis sa ligne, et comparez.
 
 ## Audio long, file d'attente et nouvelles tentatives
 
@@ -71,6 +97,7 @@ Le catalogue intégré ne couvre pas toutes les langues. Anti-Vocale embarque un
 Les utilisateurs avancés peuvent aussi :
 - importer un modèle depuis l'URL d'un dépôt Hugging Face ou depuis un lien d'entrée de catalogue (la partie avancée de la même boîte de dialogue) ;
 - importer un ensemble de fichiers de modèle depuis un dossier du téléphone ;
+- exporter un modèle téléchargé sous forme de **bundle hors ligne** et l'importer sur un autre appareil : un modèle téléchargé une fois se déplace sans être retéléchargé ;
 - pointer l'application vers un autre index de catalogue (l'action « modifier » à côté de la source du catalogue), maintenu par n'importe qui, par exemple votre communauté.
 
 Le format d'import et les fichiers exigés sont documentés dans [modèles externes](../../external-models.md).
@@ -94,6 +121,10 @@ Anti-Vocale peut surveiller les dossiers de votre choix et transcrire automatiqu
 ## Déport distant (expérimental)
 
 Si vous exploitez votre propre serveur de transcription, Anti-Vocale peut lui confier les transcriptions longues ou lourdes : Paramètres, Déport distant (expérimental). Tout serveur compatible OpenAI parlant l'API /v1/audio/transcriptions fonctionne (OmniVoice, le serveur whisper.cpp, et d'autres). L'encart dans l'application le dit clairement : quand la fonction est activée, l'audio des transcriptions confiées n'est envoyé qu'à l'adresse du serveur que vous saisissez, où que ce serveur se trouve (votre réseau local ou n'importe où sur Internet) ; tout le reste est transcrit sur l'appareil, et la fonction est désactivée par défaut.
+
+## Open Transcribe (expérimental)
+
+Les applications qui parlent le contrat ouvert Open Transcribe, comme Forkgram (un client Telegram), peuvent utiliser Anti-Vocale comme transcripteur intégré de leurs messages vocaux : activez **Paramètres > Automatisation > Open Transcribe API** (désactivé par défaut), puis choisissez Anti-Vocale dans les réglages de transcription hors ligne du client. Les messages vocaux sont transcrits avec les modèles propres de l'application et l'audio ne quitte jamais l'appareil. Désactiver l'interrupteur retire de nouveau l'application des sélecteurs des clients.
 
 ## Paramètres par application
 
@@ -120,6 +151,9 @@ Essayez un modèle spécialisé pour votre langue (voir le tableau plus haut). A
 **NNAPI fait planter l'application.**
 Si vous avez activé le fournisseur NNAPI dans les Paramètres et que l'application plante maintenant, elle revient automatiquement au CPU au prochain démarrage. NNAPI dépend fortement du chipset du téléphone ; si les plantages se répètent, laissez-le sur CPU.
 
+**Les messages vocaux automatiques n'arrivent plus.**
+Deux causes habituelles. Si le dossier de WhatsApp a été supprimé puis recréé (une réinstallation, un outil de nettoyage), l'autorisation de dossier enregistrée peut mourir : ouvrez Paramètres > Messages vocaux et choisissez à nouveau le dossier depuis la carte. Si votre téléphone suspend agressivement les applications en arrière-plan, les messages qui arrivent pendant que l'application est suspendue sont manqués jusqu'à son réveil : l'exemption de batterie décrite plus haut est le remède, et elle compte davantage pour cette fonction que pour le partage manuel.
+
 ## FAQ
 
 **Cela fonctionne-t-il sans internet ?**
@@ -132,7 +166,10 @@ N'importe quelle application capable de partager un fichier audio. L'action de r
 Dans l'onglet Historique et, en option, dans des fichiers .txt dans un dossier de votre choix. Rien n'est stocké ailleurs.
 
 **Peut-il transcrire les messages vocaux automatiquement dès leur arrivée ?**
-Pas directement pour les applications de chat, pas encore : c'est au programme. Deux voies existent aujourd'hui : la surveillance planifiée de dossiers peut surveiller le dossier média d'une messagerie (Android 11+) et transcrire les nouveaux messages vocaux dès qu'ils arrivent, et la reconnaissance facultative de l'expéditeur étiquette la ligne d'Historique avec qui a probablement envoyé un message que vous avez partagé.
+Oui, pour WhatsApp : activez Paramètres > Messages vocaux, accordez l'accès audio et choisissez une fois le dossier WhatsApp Voice Notes. Les nouveaux messages sont transcrits dès leur arrivée, et la ligne peut porter le nom de l'expéditeur. La surveillance planifiée des dossiers reste la voie générique pour le dossier média de n'importe quelle messagerie (Android 11+), et Telegram est au programme. Sur les téléphones aux économiseurs de batterie agressifs, les messages qui arrivent pendant que l'application est suspendue peuvent être manqués : l'exemption de batterie rend le mode automatique fiable.
+
+**Pourquoi un message vocal n'a-t-il pas de nom d'expéditeur ?**
+Le nom n'apparaît que si la notification du message est arrivée pendant que la reconnaissance de l'expéditeur était activée et que sa durée annoncée correspond à l'audio. Les messages téléchargés manuellement (téléchargement automatique désactivé) et ceux dont la notification n'est jamais arrivée n'ont pas de nom, exprès : un mauvais nom est pire que pas de nom du tout.
 
 **Pourquoi deux magasins (Play et F-Droid) ?**
 La même application, les mêmes fonctions. F-Droid la compile depuis les sources sans composant propriétaire ; la version Play ajoute le rapport de plantages automatique.

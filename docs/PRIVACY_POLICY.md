@@ -32,6 +32,10 @@ The App requests the following permissions:
 ### Notifications
 - **POST_NOTIFICATIONS**: Required to display transcription results
 
+### Media access (opt-in)
+- **READ_MEDIA_AUDIO**: Requested only when you enable automatic WhatsApp voice-note transcription. While that feature is on, the App reads the listing of the WhatsApp voice-note folder to detect new notes; a note's audio is read only to transcribe it, on this device. While the feature is off, nothing is read.
+- **Notification access (special access, opt-in)**: Requested only when you enable voice-note sender recognition. The App then reads messaging notifications from WhatsApp to learn the sender's name and the voice note's length, keeps them in memory only, and clears them when the feature is turned off. No notification content is stored permanently or transmitted.
+
 ### Network
 - **INTERNET**: Used ONLY for downloading AI models (not for transcription or data transmission)
 
@@ -49,6 +53,10 @@ The App requests the following permissions:
 - Transcriptions are stored locally in your app's database
 - History can be cleared or deleted through the app's interface
 - No synchronization or backup to cloud services
+
+### Notification Identity Cache (opt-in)
+- With sender recognition enabled, the sender name and voice-note length of recent WhatsApp notifications are held in memory only
+- This list never touches disk, is cleared when the feature is turned off, and the process ending forgets it
 
 ## Data Sharing
 
