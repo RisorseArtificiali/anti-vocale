@@ -1051,8 +1051,8 @@
     <string name="voice_note_detection_grant_hint">Dostęp do audio jest wyłączony. Dotknij, aby otworzyć ustawienia aplikacji i go włączyć; transkrypcja wystartuje po jego przyznaniu.</string>
     <string name="voice_note_folder_grant_rejected">To nie jest folder notatek głosowych WhatsApp. Wybierz folder o nazwie WhatsApp Voice Notes i spróbuj ponownie.</string>
     <string name="voice_note_folder_card_title">Folder notatek głosowych</string>
-    <string name="voice_note_folder_card_state_granted">przyznany</string>
-    <string name="voice_note_folder_card_state_missing">do przyznania</string>
+    <string name="voice_note_folder_card_state_granted">Uprawnienie przyznane</string>
+    <string name="voice_note_folder_card_state_missing">Brak uprawnienia</string>
     <string name="voice_note_folder_card_desc">Aby czytać notatki, przyznaj raz dostęp do folderu, w którym WhatsApp je zapisuje:</string>
     <string name="voice_note_folder_choose">Wybierz folder</string>
     <string name="voice_note_folder_change">Zmień folder</string>

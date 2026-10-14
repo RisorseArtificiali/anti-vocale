@@ -878,7 +878,7 @@
     <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_folder_card_title">语音消息文件夹</string>
     <string name="voice_note_folder_card_state_granted">已授权</string>
-    <string name="voice_note_folder_card_state_missing">待授权</string>
+    <string name="voice_note_folder_card_state_missing">未授权</string>
     <string name="voice_note_folder_card_desc">如需读取语音消息，请一次性授权访问 WhatsApp 保存它们的文件夹：</string>
     <string name="voice_note_folder_choose">选择文件夹</string>
     <string name="voice_note_folder_change">更改文件夹</string>

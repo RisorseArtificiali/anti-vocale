@@ -996,8 +996,8 @@
     <string name="voice_note_detection_grant_hint">دسترسی صدا خاموش است. برای باز کردن تنظیمات برنامه و فعال‌سازی آن بزنید؛ رونویسی به محض اعطای آن شروع می‌شود.</string>
     <string name="voice_note_folder_grant_rejected">این پوشه پیام‌های صوتی واتساپ نیست. پوشه‌ای به نام WhatsApp Voice Notes را انتخاب کنید و دوباره امتحان کنید.</string>
     <string name="voice_note_folder_card_title">پوشه پیام‌های صوتی</string>
-    <string name="voice_note_folder_card_state_granted">اعطا شده</string>
-    <string name="voice_note_folder_card_state_missing">باید اعطا شود</string>
+    <string name="voice_note_folder_card_state_granted">مجوز داده شده</string>
+    <string name="voice_note_folder_card_state_missing">مجوز وجود ندارد</string>
     <string name="voice_note_folder_card_desc">برای خواندن پیام‌ها، یک بار به پوشه‌ای که واتساپ آن‌ها را ذخیره می‌کند دسترسی دهید:</string>
     <string name="voice_note_folder_choose">انتخاب پوشه</string>
     <string name="voice_note_folder_change">تغییر پوشه</string>

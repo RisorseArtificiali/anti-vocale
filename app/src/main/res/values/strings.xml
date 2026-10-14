@@ -1065,8 +1065,8 @@
     <string name="voice_note_detection_grant_hint">Audio access is off. Tap to open the app settings and enable it; transcription starts once it is granted.</string>
     <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_folder_card_title">Voice notes folder</string>
-    <string name="voice_note_folder_card_state_granted">granted</string>
-    <string name="voice_note_folder_card_state_missing">to grant</string>
+    <string name="voice_note_folder_card_state_granted">Permission granted</string>
+    <string name="voice_note_folder_card_state_missing">Permission missing</string>
     <string name="voice_note_folder_card_desc">To read the notes, grant access once to the folder where WhatsApp saves them:</string>
     <string name="voice_note_folder_choose">Choose folder</string>
     <string name="voice_note_folder_change">Change folder</string>

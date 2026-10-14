@@ -47,13 +47,18 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * TASK-272: the WhatsApp Voice Notes folder-grant card (mockup at the repo
- * root, mockup-272-grant-card.html). State + granted path always visible;
+ * TASK-272, layout v2 (maintainer pick 2026-10-14 over three rendered
+ * variants: the v1 narrow left column was rejected): full-width rows. The
+ * header is an icon tile plus the title with the state UNDER it; then the
+ * description (missing state only), the path chip, and the actions
+ * right-aligned on their own row. State + granted path always visible;
  * choose/change always available; remove only while a grant is held. The
  * breadcrumb shows the SAF display path when granted, the canonical
  * expected path when missing; only the storage-root LABEL is translated,
  * the directory names are derived in code from [voiceNotesRoot] (the one
  * owner of the path), so a translation can never corrupt the segments.
+ * The tile header is the app's first state-header of this shape; a second
+ * one should extract it instead of copying.
  */
 @Composable
 fun VoiceNoteFolderGrantCard(
@@ -62,41 +67,61 @@ fun VoiceNoteFolderGrantCard(
     onChoose: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    val stateColor =
-        if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     val segments = voiceNotePathSegments(granted, uriString)
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
-            CardTitleRow(
-                icon = Icons.Default.FolderOpen,
-                title = buildAnnotatedString {
-                    append(stringResource(R.string.voice_note_folder_card_title))
-                    append("  ")
-                    withStyle(SpanStyle(color = stateColor, fontWeight = FontWeight.Medium)) {
-                        append(
-                            "· " + stringResource(
-                                if (granted) R.string.voice_note_folder_card_state_granted
-                                else R.string.voice_note_folder_card_state_missing))
-                    }
-                },
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CardCornerShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FolderOpen,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+                Column {
+                    Text(
+                        text = stringResource(R.string.voice_note_folder_card_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        text = stringResource(
+                            if (granted) R.string.voice_note_folder_card_state_granted
+                            else R.string.voice_note_folder_card_state_missing),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
             if (!granted) {
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(10.dp))
                 CardDescription(text = stringResource(R.string.voice_note_folder_card_desc))
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
             MonospacePathChip(breadcrumbAnnotated(segments, boldFrom = if (granted) segments.size - 1 else 1))
             Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 if (granted) {
-                    FilledTonalButton(onClick = onChoose) {
-                        Text(stringResource(R.string.voice_note_folder_change))
-                    }
                     TextButton(onClick = onRemove) {
                         Text(
                             text = stringResource(R.string.voice_note_folder_remove),
                             color = MaterialTheme.colorScheme.error,
                         )
+                    }
+                    FilledTonalButton(onClick = onChoose) {
+                        Text(stringResource(R.string.voice_note_folder_change))
                     }
                 } else {
                     Button(onClick = onChoose) {
@@ -176,6 +201,10 @@ private fun GrantSheetStep(number: Int, text: String, extraContent: @Composable 
     }
 }
 
+/** The header tile and the path chip share one corner radius (quality
+ *  review: the duplicated 10dp literal could drift). */
+private val CardCornerShape = RoundedCornerShape(10.dp)
+
 /** The card and sheet share one path chip: monospace on surfaceVariant,
  *  full width, rounded. */
 @Composable
@@ -185,7 +214,7 @@ private fun MonospacePathChip(text: AnnotatedString) {
         style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(CardCornerShape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 12.dp, vertical = 10.dp),
     )
@@ -222,6 +251,9 @@ private fun voiceNotePathSegments(granted: Boolean, uriString: String?): List<St
         initialValue = segmentsUnderLabel(storageRootLabel, voiceNotesRoot().absolutePath),
         granted,
         uriString,
+        // The label is an input too: a locale change with a live grant
+        // must re-resolve the breadcrumb (efficiency review, 2026-10-14).
+        storageRootLabel,
     ) {
         if (granted && uriString != null) {
             val path = withContext(Dispatchers.IO) {
@@ -232,9 +264,15 @@ private fun voiceNotePathSegments(granted: Boolean, uriString: String?): List<St
     }.value
 }
 
-/** The storage prefix is stripped so the localized label replaces it. */
+/** The storage prefix is stripped so the localized label replaces it; a
+ *  path that is NOT under device storage (a cloud-tree grant, which the
+ *  name-based pick validation admits) keeps its own segments: the label
+ *  would claim a false location. */
 private fun segmentsUnderLabel(storageRootLabel: String, path: String): List<String> {
     val storageRoot = Environment.getExternalStorageDirectory().absolutePath
+    if (!path.startsWith(storageRoot)) {
+        return path.split('/').filter { it.isNotBlank() }
+    }
     val tail = path.removePrefix(storageRoot).split('/').filter { it.isNotBlank() }
     return listOf(storageRootLabel) + tail
 }

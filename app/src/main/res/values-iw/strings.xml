@@ -1039,8 +1039,8 @@
     <string name="voice_note_detection_grant_hint">גישת האודיו כבויה. הקישו כדי לפתוח את הגדרות האפליקציה ולהפעיל אותה; התמלול מתחיל ברגע שהיא תינתן.</string>
     <string name="voice_note_folder_grant_rejected">זו אינה תיקיית ההודעות הקוליות של WhatsApp. בחרו את התיקייה בשם WhatsApp Voice Notes ונסו שוב.</string>
     <string name="voice_note_folder_card_title">תיקיית ההודעות הקוליות</string>
-    <string name="voice_note_folder_card_state_granted">ניתנה</string>
-    <string name="voice_note_folder_card_state_missing">להענקה</string>
+    <string name="voice_note_folder_card_state_granted">ההרשאה ניתנה</string>
+    <string name="voice_note_folder_card_state_missing">ההרשאה חסרה</string>
     <string name="voice_note_folder_card_desc">כדי לקרוא את ההודעות, העניקו פעם אחת גישה לתיקייה שבה WhatsApp שומר אותן:</string>
     <string name="voice_note_folder_choose">בחירת תיקייה</string>
     <string name="voice_note_folder_change">החלפת תיקייה</string>

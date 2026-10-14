@@ -1053,8 +1053,8 @@
     <string name="voice_note_detection_grant_hint">Доступ до аудіо вимкнено. Торкніться, щоб відкрити настройки застосунку й увімкнути його; транскрипція почнеться щойно його надано.</string>
     <string name="voice_note_folder_grant_rejected">Це не папка голосових повідомлень WhatsApp. Виберіть папку з назвою WhatsApp Voice Notes і спробуйте ще раз.</string>
     <string name="voice_note_folder_card_title">Папка голосових повідомлень</string>
-    <string name="voice_note_folder_card_state_granted">надано</string>
-    <string name="voice_note_folder_card_state_missing">треба надати</string>
+    <string name="voice_note_folder_card_state_granted">Дозвіл надано</string>
+    <string name="voice_note_folder_card_state_missing">Дозвіл відсутній</string>
     <string name="voice_note_folder_card_desc">Щоб читати повідомлення, один раз надайте доступ до папки, куди WhatsApp їх зберігає:</string>
     <string name="voice_note_folder_choose">Вибрати папку</string>
     <string name="voice_note_folder_change">Змінити папку</string>

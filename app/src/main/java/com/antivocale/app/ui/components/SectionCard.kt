@@ -18,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -35,20 +34,6 @@ import androidx.compose.ui.unit.dp
 fun CardTitleRow(
     icon: ImageVector,
     title: String,
-    modifier: Modifier = Modifier,
-    iconTint: Color = MaterialTheme.colorScheme.primary,
-) {
-    CardTitleRow(icon = icon, title = AnnotatedString(title), modifier = modifier, iconTint = iconTint)
-}
-
-/**
- * TASK-272: the annotated-title arm (the voice-note grant card appends a
- * colored state suffix to its title); same idiom, richer text.
- */
-@Composable
-fun CardTitleRow(
-    icon: ImageVector,
-    title: AnnotatedString,
     modifier: Modifier = Modifier,
     iconTint: Color = MaterialTheme.colorScheme.primary,
 ) {

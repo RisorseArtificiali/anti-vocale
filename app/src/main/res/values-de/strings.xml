@@ -990,8 +990,8 @@
     <string name="voice_note_detection_grant_hint">Audiozugriff ist aus. Tippe, um die App-Einstellungen zu öffnen und ihn zu aktivieren; die Transkription startet, sobald er erteilt ist.</string>
     <string name="voice_note_folder_grant_rejected">Das ist nicht der Ordner für WhatsApp-Sprachnachrichten. Wähle den Ordner mit dem Namen WhatsApp Voice Notes und versuche es erneut.</string>
     <string name="voice_note_folder_card_title">Ordner für Sprachnachrichten</string>
-    <string name="voice_note_folder_card_state_granted">erteilt</string>
-    <string name="voice_note_folder_card_state_missing">zu erteilen</string>
+    <string name="voice_note_folder_card_state_granted">Berechtigung erteilt</string>
+    <string name="voice_note_folder_card_state_missing">Berechtigung fehlt</string>
     <string name="voice_note_folder_card_desc">Um die Nachrichten zu lesen, erteile einmalig Zugriff auf den Ordner, in dem WhatsApp sie speichert:</string>
     <string name="voice_note_folder_choose">Ordner wählen</string>
     <string name="voice_note_folder_change">Ordner wechseln</string>

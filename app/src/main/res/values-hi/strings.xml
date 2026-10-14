@@ -989,8 +989,8 @@
     <string name="voice_note_detection_grant_hint">ऑडियो एक्सेस बंद है। ऐप सेटिंग्स खोलकर सक्षम करने के लिए टैप करें; अनुमति मिलते ही ट्रांसक्रिप्शन शुरू हो जाता है।</string>
     <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
     <string name="voice_note_folder_card_title">वॉइस नोट फ़ोल्डर</string>
-    <string name="voice_note_folder_card_state_granted">अनुमति प्राप्त</string>
-    <string name="voice_note_folder_card_state_missing">अनुमति दें</string>
+    <string name="voice_note_folder_card_state_granted">अनुमति दी गई</string>
+    <string name="voice_note_folder_card_state_missing">अनुमति नहीं है</string>
     <string name="voice_note_folder_card_desc">नोट पढ़ने के लिए, जिस फ़ोल्डर में WhatsApp उन्हें सहेजता है उसे एक बार एक्सेस दें:</string>
     <string name="voice_note_folder_choose">फ़ोल्डर चुनें</string>
     <string name="voice_note_folder_change">फ़ोल्डर बदलें</string>

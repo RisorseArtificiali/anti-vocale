@@ -1257,8 +1257,8 @@
     <string name="voice_note_detection_grant_hint">Audio-toegang staat uit. Tik om de app-instellingen te openen en dit in te schakelen; transcriptie start zodra het is verleend.</string>
     <string name="voice_note_folder_grant_rejected">Dit is niet de map met WhatsApp-spraakberichten. Kies de map met de naam WhatsApp Voice Notes en probeer het opnieuw.</string>
     <string name="voice_note_folder_card_title">Map met spraakberichten</string>
-    <string name="voice_note_folder_card_state_granted">verleend</string>
-    <string name="voice_note_folder_card_state_missing">te verlenen</string>
+    <string name="voice_note_folder_card_state_granted">Permission granted</string>
+    <string name="voice_note_folder_card_state_missing">Permission missing</string>
     <string name="voice_note_folder_card_desc">Om de berichten te lezen, verleen één keer toegang tot de map waar WhatsApp ze opslaat:</string>
     <string name="voice_note_folder_choose">Map kiezen</string>
     <string name="voice_note_folder_change">Map wijzigen</string>

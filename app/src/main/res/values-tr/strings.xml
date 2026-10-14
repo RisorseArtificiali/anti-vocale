@@ -1033,8 +1033,8 @@
     <string name="voice_note_detection_grant_hint">Ses erişimi kapalı. Uygulama ayarlarını açıp etkinleştirmek için dokunun; transkripsiyon izin verilir verilmez başlar.</string>
     <string name="voice_note_folder_grant_rejected">Bu, WhatsApp sesli notları klasörü değil. WhatsApp Voice Notes adlı klasörü seçin ve tekrar deneyin.</string>
     <string name="voice_note_folder_card_title">Sesli notlar klasörü</string>
-    <string name="voice_note_folder_card_state_granted">izin verildi</string>
-    <string name="voice_note_folder_card_state_missing">izin gerekli</string>
+    <string name="voice_note_folder_card_state_granted">İzin verildi</string>
+    <string name="voice_note_folder_card_state_missing">İzin eksik</string>
     <string name="voice_note_folder_card_desc">Notları okumak için WhatsApp\'ın kaydettiği klasöre bir kez erişim verin:</string>
     <string name="voice_note_folder_choose">Klasör seç</string>
     <string name="voice_note_folder_change">Klasörü değiştir</string>

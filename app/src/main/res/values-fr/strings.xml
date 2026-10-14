@@ -888,8 +888,8 @@
     <string name="voice_note_detection_grant_hint">L\'accès audio est désactivé. Touchez pour ouvrir les paramètres de l\'application et l\'activer; la transcription démarre dès qu\'il est accordé.</string>
     <string name="voice_note_folder_grant_rejected">Ce n\'est pas le dossier des notes vocales WhatsApp. Choisissez le dossier nommé WhatsApp Voice Notes et réessayez.</string>
     <string name="voice_note_folder_card_title">Dossier des notes vocales</string>
-    <string name="voice_note_folder_card_state_granted">accordé</string>
-    <string name="voice_note_folder_card_state_missing">à accorder</string>
+    <string name="voice_note_folder_card_state_granted">Autorisation accordée</string>
+    <string name="voice_note_folder_card_state_missing">Autorisation manquante</string>
     <string name="voice_note_folder_card_desc">Pour lire les notes, accordez une fois l\'accès au dossier où WhatsApp les enregistre:</string>
     <string name="voice_note_folder_choose">Choisir le dossier</string>
     <string name="voice_note_folder_change">Changer de dossier</string>
