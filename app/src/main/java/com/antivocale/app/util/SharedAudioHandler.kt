@@ -96,11 +96,24 @@ object SharedAudioHandler {
      * @param context Application context
      * @param uri Content URI from share intent
      * @param mimeType Optional MIME type (if already known from intent)
+     * @param outputName Optional fixed file name for the local copy (the
+     *   TASK-271 SAF tree-grant resolve route: the note's own name, so a
+     *   second tap on the same offer reuses the copy). When set, extension
+     *   resolution is skipped: the caller owns the name.
      * @return [CopyResult]; [CopyResult.Success] yields the local path, the others
      *   describe the specific failure for a clear user-facing message.
      */
-    fun copyToAppStorage(context: Context, uri: Uri, mimeType: String? = null): CopyResult {
+    fun copyToAppStorage(
+        context: Context,
+        uri: Uri,
+        mimeType: String? = null,
+        outputName: String? = null,
+    ): CopyResult {
         Log.d(TAG, "copyToAppStorage: URI=$uri, MIME=$mimeType")
+
+        if (outputName != null) {
+            return copyNamed(context, uri, outputName)
+        }
 
         return try {
             // Use provided MIME type or resolve from ContentResolver
@@ -146,62 +159,99 @@ object SharedAudioHandler {
             val fileName = "shared_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(8)}.$extension"
             val outputFile = File(outputDir, fileName)
 
-            // Pre-copy storage gate + copy over ONE provider session (TASK-432:
-            // with the 2GB sanity bound, a near-full device would otherwise hit
-            // ENOSPC mid-copy). Size and stream both come from the
-            // AssetFileDescriptor when the provider offers one; unknown size
-            // fails open (the copy itself will error visibly).
-            try {
-                val afd = try {
-                    context.contentResolver.openAssetFileDescriptor(uri, "r")
-                } catch (e: Exception) {
-                    Log.w(TAG, "Could not open AssetFileDescriptor for URI: $uri", e)
-                    null
-                }
-                if (afd != null) {
-                    afd.use {
-                        val neededBytes = it.length
-                        if (neededBytes > 0 && !hasFreeSpace(context.filesDir.usableSpace, neededBytes)) {
-                            Log.e(TAG, "Not enough free space for $uri: needs $neededBytes bytes")
-                            return CopyResult.OutOfSpace(neededMb(neededBytes))
-                        }
-                        it.createInputStream()?.use { input ->
-                            FileOutputStream(outputFile).use { output -> input.copyTo(output) }
-                        } ?: throw java.io.FileNotFoundException("AssetFileDescriptor gave no stream")
-                    }
-                } else {
-                    // Providers without AFD support: fall back to the plain stream.
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        FileOutputStream(outputFile).use { output ->
-                            input.copyTo(output)
-                        }
-                    } ?: run {
-                        Log.e(TAG, "Could not open input stream for URI: $uri")
-                        outputFile.delete()
-                        return CopyResult.Unreadable
-                    }
-                }
-            } catch (e: Exception) {
-                // Clean up any partially-written file so a flaky/revoked content provider
-                // can't leak partial files into shared_audio/ until the 24h cleanup runs.
-                outputFile.delete()
-                Log.e(TAG, "Error copying file from URI: $uri", e)
-                return CopyResult.Unreadable
-            }
-
-            if (outputFile.length() == 0L) {
-                outputFile.delete()
-                Log.e(TAG, "Shared content was empty for URI: $uri")
-                return CopyResult.Unreadable
-            }
-
-            Log.i(TAG, "Copied ${outputFile.length()} bytes to ${outputFile.absolutePath}")
-            CopyResult.Success(outputFile.absolutePath)
+            // One copy sequence, shared with the fixed-name arm below.
+            performCopy(context, uri, outputFile)
 
         } catch (e: SecurityException) {
             Log.e(TAG, "Permission denied for URI: $uri", e)
             CopyResult.Unreadable
         } catch (e: Exception) {
+            Log.e(TAG, "Error copying file from URI: $uri", e)
+            CopyResult.Unreadable
+        }
+    }
+
+    /**
+     * The fixed-name arm (TASK-271 tree-grant resolve): the SAME copy
+     * sequence as the random-name arm, only the name policy differs, plus
+     * a copy-to-temp-then-rename so the final name only ever exists
+     * complete. A name reused across taps (the resolve route's
+     * exists-short-circuit) must never surface a partial file left by an
+     * interrupted run, and two near-simultaneous taps on the same offer
+     * must not interleave their writes into one file.
+     */
+    private fun copyNamed(context: Context, uri: Uri, fileName: String): CopyResult {
+        val outputDir = File(context.filesDir, SHARED_AUDIO_DIR).apply {
+            if (!exists()) mkdirs()
+        }
+        val outputFile = File(outputDir, fileName)
+        val tempFile = File(outputDir, "$fileName.${UUID.randomUUID().toString().take(8)}.part")
+        val result = performCopy(context, uri, tempFile)
+        return when {
+            result is CopyResult.Success && tempFile.renameTo(outputFile) ->
+                CopyResult.Success(outputFile.absolutePath)
+            result is CopyResult.Success -> {
+                // Same-directory rename failing is a full disk or a stale
+                // duplicate; do not leave the temp behind either way.
+                tempFile.delete()
+                Log.e(TAG, "Could not finalize $fileName")
+                CopyResult.Unreadable
+            }
+            else -> result
+        }
+    }
+
+    /**
+     * The ONE copy sequence (TASK-432 pre-copy gate over one provider
+     * session, partial-file delete on failure, empty-file check): the
+     * random-name and fixed-name arms share it so the sequence cannot
+     * drift between them.
+     */
+    private fun performCopy(context: Context, uri: Uri, outputFile: File): CopyResult {
+        return try {
+            // Size and stream both come from the AssetFileDescriptor when
+            // the provider offers one; unknown size fails open (the copy
+            // itself will error visibly).
+            val afd = try {
+                context.contentResolver.openAssetFileDescriptor(uri, "r")
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not open AssetFileDescriptor for URI: $uri", e)
+                null
+            }
+            if (afd != null) {
+                afd.use {
+                    val neededBytes = it.length
+                    if (neededBytes > 0 && !hasFreeSpace(context.filesDir.usableSpace, neededBytes)) {
+                        Log.e(TAG, "Not enough free space for $uri: needs $neededBytes bytes")
+                        return CopyResult.OutOfSpace(neededMb(neededBytes))
+                    }
+                    it.createInputStream()?.use { input ->
+                        FileOutputStream(outputFile).use { output -> input.copyTo(output) }
+                    } ?: throw java.io.FileNotFoundException("AssetFileDescriptor gave no stream")
+                }
+            } else {
+                // Providers without AFD support: fall back to the plain stream.
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(outputFile).use { output ->
+                        input.copyTo(output)
+                    }
+                } ?: run {
+                    Log.e(TAG, "Could not open input stream for URI: $uri")
+                    outputFile.delete()
+                    return CopyResult.Unreadable
+                }
+            }
+            if (outputFile.length() == 0L) {
+                outputFile.delete()
+                Log.e(TAG, "Shared content was empty for URI: $uri")
+                return CopyResult.Unreadable
+            }
+            Log.i(TAG, "Copied ${outputFile.length()} bytes to ${outputFile.absolutePath}")
+            CopyResult.Success(outputFile.absolutePath)
+        } catch (e: Exception) {
+            // Clean up any partially-written file so a flaky/revoked content provider
+            // can't leak partial files into shared_audio/ until the 24h cleanup runs.
+            outputFile.delete()
             Log.e(TAG, "Error copying file from URI: $uri", e)
             CopyResult.Unreadable
         }

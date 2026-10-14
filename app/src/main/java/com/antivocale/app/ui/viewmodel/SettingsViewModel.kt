@@ -60,6 +60,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.update
@@ -91,6 +92,9 @@ class SettingsViewModel @Inject constructor(
     private val backendManager: TranscriptionBackendManager,
     private val llmManager: LlmManager,
     private val shareTargetManager: ShareTargetManager,
+    // TASK-271: permission grants have no observable state, so the grant
+    // paths poke the coordinator for a re-evaluation.
+    private val voiceNoteDetectionCoordinator: com.antivocale.app.data.VoiceNoteDetectionCoordinator,
     private val shareShortcutManager: ShareShortcutManager,
     private val backendRegistry: BackendRegistry,
     private val shortcutIconStore: ShortcutIconStore,
@@ -606,6 +610,42 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_VOICE_NOTE_IDENTITY_ENABLED
         )
 
+    /** TASK-271: the voice-note detection gate (offer notifications). */
+    val voiceNoteDetectionEnabled: StateFlow<Boolean> = preferencesManager.voiceNoteDetectionEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED
+        )
+
+    /**
+     * TASK-271: the persisted SAF tree grant on the WhatsApp Voice Notes
+     * folder (the one read route; the coordinator gates detection on it).
+     */
+    val voiceNoteTreeUri: StateFlow<String?> = preferencesManager.voiceNoteTreeUri
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    /** TASK-271: a null clears the grant; the coordinator disarms on it. */
+    fun saveVoiceNoteTreeUri(uri: String?) {
+        viewModelScope.launch {
+            preferencesManager.saveVoiceNoteTreeUri(uri)
+        }
+    }
+
+    /**
+     * The persisted tree URI read once from the store. The picker
+     * callback's release step needs the STORED value: the StateFlow's
+     * .value can still be its initialValue before DataStore's first
+     * emission lands, and releasing nothing there would strand the old
+     * grant slot (review F9, 2026-10-13).
+     */
+    suspend fun currentVoiceNoteTreeUri(): String? =
+        preferencesManager.voiceNoteTreeUri.firstOrNull()
+
     fun saveExternalAutomationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveExternalAutomationEnabled(enabled)
@@ -628,6 +668,21 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.saveVoiceNoteIdentityEnabled(enabled)
         }
+    }
+
+    /** TASK-271: see [voiceNoteDetectionEnabled]. */
+    fun saveVoiceNoteDetectionEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveVoiceNoteDetectionEnabled(enabled)
+        }
+    }
+
+    /** TASK-271: a grant may have happened outside the preference flow (the
+     *  runtime dialog, a return from the app-settings screen); the coordinator
+     *  re-evaluates its conjunction against the CURRENT preference value,
+     *  which re-arms detection when the value itself did not change. */
+    fun refreshVoiceNoteDetectionGate() {
+        voiceNoteDetectionCoordinator.pokePermissionState()
     }
 
     // ---- TASK-681: LAN offload (OmniVoice) ----

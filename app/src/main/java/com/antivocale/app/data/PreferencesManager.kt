@@ -169,6 +169,14 @@ interface PreferencesManager {
     val voiceNoteIdentityEnabled: Flow<Boolean>
 
     /**
+     * TASK-271: the voice-note detection gate (offer notifications for new
+     * WhatsApp voice notes). Off by default; while off nothing is read. The
+     * runtime permission is a second, independent gate (the coordinator
+     * subscribes only when both hold).
+     */
+    val voiceNoteDetectionEnabled: Flow<Boolean>
+
+    /**
      * TASK-681: the LAN-offload consent gate. Off by default; while off the
      * backend has no surface anywhere and nothing leaves the device. The
      * disclosure paragraph the Settings card renders is the contract this
@@ -285,6 +293,11 @@ interface PreferencesManager {
 
     /** TASK-735: see [voiceNoteIdentityEnabled]. */
     suspend fun saveVoiceNoteIdentityEnabled(enabled: Boolean)
+
+    /** TASK-271: see [voiceNoteDetectionEnabled]. */
+    suspend fun saveVoiceNoteDetectionEnabled(enabled: Boolean)
+    val voiceNoteTreeUri: Flow<String?>
+    suspend fun saveVoiceNoteTreeUri(uri: String?)
     suspend fun saveCompactResultActions(enabled: Boolean)
     suspend fun saveLanguageChipEnabled(enabled: Boolean)
 
@@ -420,6 +433,9 @@ interface PreferencesManager {
         /** TASK-785: the Open Transcribe provider ships off; on, it is an
          *  experimental external surface for contract clients. */
         const val DEFAULT_OPEN_TRANSCRIBE_ENABLED = false
+
+        /** TASK-271: detection ships off; the runtime permission is the second gate. */
+        const val DEFAULT_VOICE_NOTE_DETECTION_ENABLED = false
         /** TASK-681: LAN offload is opt-in; off, no audio ever leaves the device. */
         const val DEFAULT_REMOTE_OMNIVOICE_ENABLED = false
         /** TASK-670: speaker identities are off until the maintainer signs the

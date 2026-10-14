@@ -65,6 +65,18 @@ object AppModule {
         return PreferencesManagerImpl(context).apply { initialize() }
     }
 
+    /** TASK-271: the read-media permission probe; on Android 10 detection is
+     *  also unavailable (scoped storage blocks the tap path), folded in here
+     *  so the coordinator's single conjunction stays one source of truth. */
+    @Provides
+    @Singleton
+    fun provideVoiceNotePermissionChecker(@ApplicationContext context: Context):
+        com.antivocale.app.data.VoiceNotePermissionChecker =
+        com.antivocale.app.data.VoiceNotePermissionChecker {
+            com.antivocale.app.data.VoiceNoteDetectionPermission.detectionAvailable() &&
+                com.antivocale.app.data.VoiceNoteDetectionPermission.granted(context)
+        }
+
     @Provides
     @Singleton
     fun providePerAppPreferencesManager(@ApplicationContext context: Context): PerAppPreferencesManager {

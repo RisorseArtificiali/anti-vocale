@@ -91,11 +91,14 @@ object AppNavigation {
     /** The one non-scrollable sub-page key: its body is a LazyColumn. */
     const val SUBPAGE_KEY_PER_APP = "per_app"
 
+    /** TASK-835: the voice-note settings page (the N>=2 subpage rule). */
+    const val SUBPAGE_KEY_VOICE_NOTES = "voice_notes"
+
     /** Settings sections reachable by key (single source for parser + UI). */
     val SECTION_KEYS = setOf("transcription", "appearance", "advanced", "feedback")
 
     /** Settings sub-pages reachable by key. */
-    val SUBPAGE_KEYS = setOf("icon_picker", "prompt", "per_app", SUBPAGE_KEY_EXPORT, "speaker", "performance", "automation")
+    val SUBPAGE_KEYS = setOf("icon_picker", "prompt", "per_app", SUBPAGE_KEY_EXPORT, "speaker", "performance", "automation", SUBPAGE_KEY_VOICE_NOTES)
 
     /**
      * TASK-632: Settings ROWS reachable by key (the deep-link targets one

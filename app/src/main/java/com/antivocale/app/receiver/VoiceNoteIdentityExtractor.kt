@@ -73,7 +73,6 @@ object VoiceNoteIdentityExtractor {
      * a trustworthy sender.
      */
     fun fromNotification(
-        category: String?,
         packageName: String,
         title: CharSequence?,
         text: CharSequence?,
@@ -82,10 +81,13 @@ object VoiceNoteIdentityExtractor {
         isGroupSummary: Boolean,
         postedAtMs: Long,
     ): VoiceNote? {
-        // The privacy contract is a CONJUNCTION: message category AND a
-        // messaging package (a spoofed or unrelated app posting category msg
-        // must not have its titles cached as senders).
-        if (category != "msg" || !isMessagingPackage(packageName)) return null
+        // The privacy contract (2026-10-13 trial amendment): the exact-id
+        // messaging-package allowlist is the anchor; the msg category is
+        // NOT a requirement, since real WhatsApp notifications on current
+        // builds carry no category at all (the device trial: the spike saw
+        // them, the strict gate rejected every one). A spoofed app outside
+        // the allowlist is rejected regardless of a stolen category.
+        if (!isMessagingPackage(packageName)) return null
         if (isGroupSummary) return null
 
         val textString = text?.toString().orEmpty()

@@ -1024,9 +1024,31 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Paylaşım Menüsünde Modeller</string>
+    <string name="voice_note_settings_title">Sesli mesajlar</string>
+    <string name="voice_note_settings_summary_on">WhatsApp sesli mesajlarının otomatik yazıya çevirisi · açık</string>
+    <string name="voice_note_settings_summary_off">WhatsApp sesli mesajlarının otomatik yazıya çevirisi · kapalı</string>
+    <string name="voice_note_settings_summary_limited">Sesli mesaj gönderenini tanıma</string>
     <string name="voice_note_identity_title">Sesli not gönderenini tanıma</string>
-    <string name="voice_note_identity_description">Paylaşılan sesli mesajın geçmiş satırına gönderenin adını yazar. Şimdilik sadece WhatsApp. Ad, yalnızca mesajın bildirimi bu açıkken geldiyse ve bildirilen süre sesle uyuyorsa görünür (tahmine dayanı ad yok). Ad, bunu kapattıktan sonra da o satırda kalır; bekleme listesi yalnız bellekte yaşar. Bildirim erişimi gerekir.</string>
+    <string name="voice_note_identity_description">Transkripte edilen sesli mesajları gönderenin adıyla etiketler; buraya paylaşılan ya da otomatik olanlar. Şimdilik sadece WhatsApp. Ad, yalnızca bildirim bu açıkken geldiyse ve süre uyuyorsa görünür (tahmine dayalı ad yok); bekleme listesi yalnız bellekte yaşar. Bildirim erişimi gerekir.</string>
     <string name="voice_note_identity_grant_hint">Bildirim erişimi kapalı. Sistem ayarını açıp bu uygulama için etkinleştirmek üzere dokunun.</string>
+    <!-- TASK-272: automatic voice-note transcription + folder grant -->
+    <string name="voice_note_detection_title">Sesli not transkripsiyonu</string>
+    <string name="voice_note_detection_description">Yeni WhatsApp sesli mesajlarını uygulama çalışırken geldikçe yazıya çevirir. Android arka plan başlatmayı engellerse tek dokunuşlu bir bildirimle başlar. Bir mesaj yalnızca yazıya çevirmek için okunur, bu cihazda; kapalıyken hiçbir şey okunmaz. Ses erişimi gerekir.</string>
+    <string name="voice_note_detection_grant_hint">Ses erişimi kapalı. Uygulama ayarlarını açıp etkinleştirmek için dokunun; transkripsiyon izin verilir verilmez başlar.</string>
+    <string name="voice_note_folder_grant_rejected">Bu, WhatsApp sesli notları klasörü değil. WhatsApp Voice Notes adlı klasörü seçin ve tekrar deneyin.</string>
+    <string name="voice_note_folder_card_title">Sesli notlar klasörü</string>
+    <string name="voice_note_folder_card_state_granted">İzin verildi</string>
+    <string name="voice_note_folder_card_state_missing">İzin eksik</string>
+    <string name="voice_note_folder_card_desc">Notları okumak için WhatsApp\'ın kaydettiği klasöre bir kez erişim verin:</string>
+    <string name="voice_note_folder_choose">Klasör seç</string>
+    <string name="voice_note_folder_change">Klasörü değiştir</string>
+    <string name="voice_note_folder_remove">Erişimi kaldır</string>
+    <string name="voice_note_folder_storage_root">Dahili depolama</string>
+    <string name="voice_note_folder_sheet_title">Klasör erişimi ver</string>
+    <string name="voice_note_folder_sheet_step1">Açılan seçicide Dahili depolama\'ya girin (soldaki menü; görmüyorsanız Depolamayı göster\'e dokunun).</string>
+    <string name="voice_note_folder_sheet_step2">Sesli notlar klasörüne ulaşana kadar yolu izleyin:</string>
+    <string name="voice_note_folder_sheet_step3">WhatsApp Voice Notes klasörü seçiliyken (açmadan) BU KLASÖRÜ KULLAN\'a, ardından İZİN VER\'e dokunun.</string>
+    <string name="voice_note_folder_sheet_open">Seçiciyi aç</string>
     <string name="share_targets_description">İndirilen her model sistem menüsünde ayrı bir seçenek olarak görünür. Sesi seçilen model işler.</string>
     <string name="advanced_sharing_toggle">İndirilen modelleri göster</string>
     <string name="share_targets_models_info">İndirilen her model paylaşım menüsünde ayrı bir öğe olarak görünür. Model silindiğinde menüden kalkar.</string>

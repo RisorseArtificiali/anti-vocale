@@ -980,9 +980,31 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">शेयर मेन्यू में मॉडल</string>
+    <string name="voice_note_settings_title">वॉयेस नोट</string>
+    <string name="voice_note_settings_summary_on">WhatsApp वॉयेस नोट की स्वचालित ट्रांसक्रिप्शन · चालू</string>
+    <string name="voice_note_settings_summary_off">WhatsApp वॉयेस नोट की स्वचालित ट्रांसक्रिप्शन · बंद</string>
+    <string name="voice_note_settings_summary_limited">वॉयेस नोट भेजने वाले की पहचान</string>
     <string name="voice_note_identity_title">वॉइस नोट भेजने वाले की पहचान</string>
-    <string name="voice_note_identity_description">साझा गया वॉयेस नोट की इतिहास पंक्ति पर भेजने वाले का नाम लिखता है। फिलहाल सिर्फ WhatsApp। नाम तभी दिखता है जब नोट का नोटिफिकेशन इस ऑन होने पर आया हो, और तभी जब बताया गया समय ऑडियो से मेल खाता हो (कोई अंदाज़ा नाम नहीं)। यह ऑप्शन बंद करने के बाद भी नाम उस पंक्ति पर रहता है; प्रतीक्षा सूची केवल मेमरी में रहती है। नोटिफिकेशन एक्सेस चाहिए।</string>
+    <string name="voice_note_identity_description">ट्रांसक्राइब की गई वॉयेस नोट को भेजने वाले के नाम से लेबल करता है, यहाँ साझा या स्वचालित। फिलहाल सिर्फ WhatsApp। नाम केवल तब दिखता है जब यह ऑन होने पर नोटिफिकेशन आया हो और समय मेल खाता हो (कोई अंदाज़ा नहीं); प्रतीक्षा सूची केवल मेमरी में रहती है। नोटिफिकेशन एक्सेस चाहिए।</string>
     <string name="voice_note_identity_grant_hint">सूचना एक्सेस बंद है। सिस्टम सेटिंग खोलने और इस ऐप के लिए इसे चालू करने के लिए टैप करें।</string>
+    <!-- TASK-272: automatic voice-note transcription + folder grant -->
+    <string name="voice_note_detection_title">वॉइस नोट ट्रांसक्रिप्शन</string>
+    <string name="voice_note_detection_description">ऐप चलते समय नई WhatsApp वॉयेस नोट आते ही ट्रांसक्राइब करता है। Android बैकग्राउंड शुरुआत रोके तो एक टैप वाली नोटिफिकेशन से शुरू होता है। नोट केवल ट्रांसक्रिप्शन के लिए पढ़ा जाता है, इसी डिवाइस पर; बंद होने पर कुछ नहीं पढ़ा जाता। ऑडियो एक्सेस चाहिए।</string>
+    <string name="voice_note_detection_grant_hint">ऑडियो एक्सेस बंद है। ऐप सेटिंग्स खोलकर सक्षम करने के लिए टैप करें; अनुमति मिलते ही ट्रांसक्रिप्शन शुरू हो जाता है।</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
+    <string name="voice_note_folder_card_title">वॉइस नोट फ़ोल्डर</string>
+    <string name="voice_note_folder_card_state_granted">अनुमति दी गई</string>
+    <string name="voice_note_folder_card_state_missing">अनुमति नहीं है</string>
+    <string name="voice_note_folder_card_desc">नोट पढ़ने के लिए, जिस फ़ोल्डर में WhatsApp उन्हें सहेजता है उसे एक बार एक्सेस दें:</string>
+    <string name="voice_note_folder_choose">फ़ोल्डर चुनें</string>
+    <string name="voice_note_folder_change">फ़ोल्डर बदलें</string>
+    <string name="voice_note_folder_remove">एक्सेस हटाएँ</string>
+    <string name="voice_note_folder_storage_root">इंटरनल स्टोरेज</string>
+    <string name="voice_note_folder_sheet_title">फ़ोल्डर एक्सेस दें</string>
+    <string name="voice_note_folder_sheet_step1">खुलने वाले पिकर में इंटरनल स्टोरेज पर जाएँ (बायाँ मेनू; न दिखे तो स्टोरेज दिखाएँ पर टैप करें)।</string>
+    <string name="voice_note_folder_sheet_step2">वॉइस नोट फ़ोल्डर तक पथ पर नीचे जाएँ:</string>
+    <string name="voice_note_folder_sheet_step3">WhatsApp Voice Notes फ़ोल्डर चुनकर (खोले बिना) इस फ़ोल्डर का उपयोग करें पर, फिर अनुमति दें पर टैप करें।</string>
+    <string name="voice_note_folder_sheet_open">पिकर खोलें</string>
     <string name="share_targets_description">हर डाउनलोड किया मॉडल सिस्टम मेन्यू में अलग विकल्प के रूप में दिखेगा। ऑडियो चुने गए मॉडल से प्रोसेस होगा।</string>
     <string name="advanced_sharing_toggle">डाउनलोड किए मॉडल दिखाएं</string>
     <string name="share_targets_models_info">हर डाउनलोड किया मॉडल शेयर मेन्यू में अलग एंट्री के रूप में दिखेगा। मॉडल मिटाने पर वह मेन्यू से हट जाएगा।</string>

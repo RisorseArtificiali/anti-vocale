@@ -1044,9 +1044,31 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Цілі надсилання</string>
+    <string name="voice_note_settings_title">Голосові повідомлення</string>
+    <string name="voice_note_settings_summary_on">Автоматична розшифровка голосових повідомлень WhatsApp · увімкнена</string>
+    <string name="voice_note_settings_summary_off">Автоматична розшифровка голосових повідомлень WhatsApp · вимкнена</string>
+    <string name="voice_note_settings_summary_limited">Розпізнавання відправника голосових повідомлень</string>
     <string name="voice_note_identity_title">Розпізнавання відправника голосових</string>
-    <string name="voice_note_identity_description">Записує в рядок історії ім\'я відправника поділеного голосового повідомлення. Поки лише WhatsApp. Ім\'я з\'являється лише якщо повідомлення прийшло, поки опція була увімкнена, і лише коли заявлена тривалість збігається з аудіо (без вгадувань). Ім\'я залишається в рядку і після вимкення; список живе лише в пам\'яті. Потрібен доступ до сповіщень.</string>
+    <string name="voice_note_identity_description">Позначає розшифровані голосові повідомлення ім\'ям відправника: поділені в застосунок або автоматичні. Поки лише WhatsApp. Ім\'я з\'являється, лише якщо сповіщення прийшло за увімкненої опції і тривалість збігається (без вгадувань); список очікування живе лише в пам\'яті. Потрібен доступ до сповіщень.</string>
     <string name="voice_note_identity_grant_hint">Доступ до сповіщень вимкнено. Торкніться, щоб відкрити системне налаштування й увімкнути його для цього застосунку.</string>
+    <!-- TASK-272: automatic voice-note transcription + folder grant -->
+    <string name="voice_note_detection_title">Транскрипція голосових повідомлень</string>
+    <string name="voice_note_detection_description">Розшифровує нові голосові повідомлення WhatsApp у міру надходження, поки застосунок працює. Якщо Android блокує фоновий запуск, один дотик до сповіщення продовжить роботу. Повідомлення читається лише для розшифровки, на цьому пристрої; вимкнено, нічого не читається. Потрібен доступ до аудіо.</string>
+    <string name="voice_note_detection_grant_hint">Доступ до аудіо вимкнено. Торкніться, щоб відкрити настройки застосунку й увімкнути його; транскрипція почнеться щойно його надано.</string>
+    <string name="voice_note_folder_grant_rejected">Це не папка голосових повідомлень WhatsApp. Виберіть папку з назвою WhatsApp Voice Notes і спробуйте ще раз.</string>
+    <string name="voice_note_folder_card_title">Папка голосових повідомлень</string>
+    <string name="voice_note_folder_card_state_granted">Дозвіл надано</string>
+    <string name="voice_note_folder_card_state_missing">Дозвіл відсутній</string>
+    <string name="voice_note_folder_card_desc">Щоб читати повідомлення, один раз надайте доступ до папки, куди WhatsApp їх зберігає:</string>
+    <string name="voice_note_folder_choose">Вибрати папку</string>
+    <string name="voice_note_folder_change">Змінити папку</string>
+    <string name="voice_note_folder_remove">Відкликати доступ</string>
+    <string name="voice_note_folder_storage_root">Внутрішня пам\'ять</string>
+    <string name="voice_note_folder_sheet_title">Надати доступ до папки</string>
+    <string name="voice_note_folder_sheet_step1">У виборі, що відкриється, перейдіть у Внутрішню пам\'ять (меню ліворуч; торкніться Показати пам\'ять, якщо її не видно).</string>
+    <string name="voice_note_folder_sheet_step2">Пройдіть шляхом до папки голосових повідомлень:</string>
+    <string name="voice_note_folder_sheet_step3">Вибравши папку WhatsApp Voice Notes (не відкриваючи), торкніться ВИКОРИСТАТИ ЦЮ ПАПКУ, а потім ДОЗВОЛИТИ.</string>
+    <string name="voice_note_folder_sheet_open">Відкрити вибір</string>
     <string name="share_targets_description">Показувати кожну завантажену модель окремим варіантом у меню надсилання Android. Коли ви надсилаєте аудіо через конкретну модель, вона використовується тимчасово лише для цієї розшифровки.</string>
     <string name="advanced_sharing_toggle">Показувати моделі в меню надсилання</string>
     <string name="share_targets_models_info">Кожна завантажена модель з\'явиться як окрема ціль надсилання. Видалення моделі прибирає її ціль надсилання.</string>

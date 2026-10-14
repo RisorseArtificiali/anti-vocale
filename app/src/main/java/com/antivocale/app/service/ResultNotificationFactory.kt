@@ -696,7 +696,8 @@ class ResultNotificationFactory(private val context: Context) {
          * - 2503: SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID (TASK-684
          *   generic interrupted-runs summary)
          * New fixed ids or bands go under the base; 2301..2400 and 2504..2999
-         * are free headroom.
+         * are free headroom (2601 was the voice-note offer slot until the
+         * offer mode was removed, TASK-272).
          */
         const val RESULT_NOTIFICATION_ID_BASE = 3000
 

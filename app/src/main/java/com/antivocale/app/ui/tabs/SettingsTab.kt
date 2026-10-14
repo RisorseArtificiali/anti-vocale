@@ -90,6 +90,8 @@ import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.ModelSource
 import com.antivocale.app.ui.components.SearchField
 import com.antivocale.app.ui.components.CardTitleRow
+import com.antivocale.app.ui.components.VoiceNoteFolderGrantCard
+import com.antivocale.app.ui.components.VoiceNoteFolderGrantSheet
 import com.antivocale.app.ui.components.languageOptionLabel
 import com.antivocale.app.ui.components.transcriptionSentinelLabels
 import com.antivocale.app.ui.components.CollapsibleSection
@@ -170,6 +172,7 @@ fun SettingsTab(
     var showSpeakerSettings by remember { mutableStateOf(false) }
     var showPerformanceSettings by remember { mutableStateOf(false) }
     var showAutomationSettings by remember { mutableStateOf(false) }
+    var showVoiceNoteSettings by remember { mutableStateOf(false) }
 
     // The ONE sub-page clear (TASK-632): system back and every nav-effect
     // branch share it, so a future sub-page flag cannot be cleared in one
@@ -182,6 +185,7 @@ fun SettingsTab(
         showSpeakerSettings = false
         showPerformanceSettings = false
         showAutomationSettings = false
+        showVoiceNoteSettings = false
     }
 
     // 2026-09-30 regroup: system back on ANY subpage must return to the
@@ -189,7 +193,7 @@ fun SettingsTab(
     // these flags; without this, back from a subpage closes the app).
     androidx.activity.compose.BackHandler(enabled = showIconSettings || showExportSettings ||
         showPromptSettings || showPerAppSettings || showSpeakerSettings ||
-        showPerformanceSettings || showAutomationSettings) {
+        showPerformanceSettings || showAutomationSettings || showVoiceNoteSettings) {
         closeSubPages()
     }
     // TASK-625 deep-link carrier: the memory-failure notification action
@@ -233,6 +237,7 @@ fun SettingsTab(
                     "speaker" -> showSpeakerSettings = true
                     "performance" -> showPerformanceSettings = true
                     "automation" -> showAutomationSettings = true
+                    "voice_notes" -> showVoiceNoteSettings = true
                 }
             }
             is AppNavigation.Destination.SettingsRow -> {
@@ -369,6 +374,15 @@ fun SettingsTab(
             initialScroll = pendingSubPageScroll,
             onScrollConsumed = { pendingSubPageScroll = null },
             onBack = { showExportSettings = false }
+        )
+    } else if (showVoiceNoteSettings) {
+        // TASK-835 (the N>=2 subpage rule): the voice-note entries (sender
+        // recognition, auto transcription, folder grant) on one page.
+        VoiceNoteSettingsScreen(
+            viewModel = viewModel,
+            initialScroll = pendingSubPageScroll,
+            onScrollConsumed = { pendingSubPageScroll = null },
+            onBack = { showVoiceNoteSettings = false }
         )
     } else if (showPromptSettings) {
         PromptSettingsScreen(
@@ -1911,59 +1925,36 @@ fun SettingsTab(
                 SettingsHubCard(R.string.automation_settings_title, R.string.automation_settings_summary) { showAutomationSettings = true }
             }
 
-            // TASK-735: the voice-note identity listener's app-level gate.
-            // The system's notification access is the outer gate; while this
-            // toggle is off the listener reads nothing (the RAM-only privacy
-            // contract is on VoiceNoteIdentityListener). The access probe is
-            // NOT remembered: it must re-read when the user returns from the
-            // system screen.
-            val voiceNoteIdentityEnabled by viewModel.voiceNoteIdentityEnabled.collectAsState()
-            // The access probe is a binder IPC; refresh it exactly when the
-            // user comes back from the system screen (ON_RESUME), not on
-            // every recomposition of the section.
-            var notificationAccessGranted by remember { mutableStateOf(false) }
-            val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
-            DisposableEffect(lifecycleOwner) {
-                fun probe() {
-                    notificationAccessGranted = androidx.core.app.NotificationManagerCompat
-                        .getEnabledListenerPackages(context).contains(context.packageName)
-                }
-                val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-                    if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) probe()
-                }
-                probe() // ON_RESUME alone never fires for an already-resumed activity
-                lifecycleOwner.lifecycle.addObserver(observer)
-                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-            }
-            SearchFilterRow(searchQuery, SettingsSearchId.VOICE_NOTE_IDENTITY, searchState) {
-                ToggleSettingCard(
-                    icon = Icons.Default.RecordVoiceOver,
-                    title = stringResource(R.string.voice_note_identity_title),
-                    description = stringResource(R.string.voice_note_identity_description),
-                    // The description IS the maintainer-mandated limits
-                    // text: it renders in full wherever the card renders,
-                    // search included. (Range review: the first attempt at
-                    // this override silently never applied - the fourth
-                    // scripted non-application; disk grep is the proof.)
-                    descriptionMaxLinesCompact = Int.MAX_VALUE,
-                    checked = voiceNoteIdentityEnabled,
-                    onCheckedChange = { enabled -> viewModel.saveVoiceNoteIdentityEnabled(enabled) }
-                )
-                if (voiceNoteIdentityEnabled && !notificationAccessGranted) {
-                    // The battery-exemption precedent: the grant action is a
-                    // Button row, not bare text.
-                    TextButton(onClick = {
-                        runCatching {
-                            context.startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                        }
-                    }) {
-                        Text(
-                            text = stringResource(R.string.voice_note_identity_grant_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                }
+            // TASK-835 (the N>=2 subpage rule, maintainer 2026-10-14): the
+            // voice-note entries (sender recognition, auto transcription,
+            // folder grant) live on their own page; this hub opens it. The
+            // hub shows on every device: sender recognition needs no
+            // read-media permission, so the page keeps it reachable where
+            // auto-detection is unavailable (Android 10) and gates that
+            // part inside. Search contract: the hub's registry vocabulary
+            // is the static union of its own and all three children's
+            // strings.
+            val voiceNoteDetectionEnabledForSummary by viewModel.voiceNoteDetectionEnabled.collectAsState()
+            // R-1 (review 2026-10-14): the subpage's own ON_RESUME probe only
+            // runs while the page is open; an external grant or revoke of the
+            // read-media permission must re-evaluate the coordinator's
+            // conjunction from the always-composed tree (the review-F1 poke
+            // the coordinator KDoc names), same composition condition the
+            // old inline probe had.
+            RecheckOnResume { viewModel.refreshVoiceNoteDetectionGate() }
+            SearchFilterRow(searchQuery, SettingsSearchId.VOICE_NOTE_HUB, searchState) {
+                SettingsHubCard(
+                    titleRes = R.string.voice_note_settings_title,
+                    summaryRes = when {
+                        !com.antivocale.app.data.VoiceNoteDetectionPermission.detectionAvailable() ->
+                            // Android 10: the page hides auto-detection, so
+                            // the summary must not advertise it (review R-2).
+                            R.string.voice_note_settings_summary_limited
+                        voiceNoteDetectionEnabledForSummary -> R.string.voice_note_settings_summary_on
+                        else -> R.string.voice_note_settings_summary_off
+                    },
+                    leadingIcon = Icons.Default.RecordVoiceOver,
+                ) { showVoiceNoteSettings = true }
             }
             SearchFilterRow(searchQuery, SettingsSearchId.SHARE_SHORTCUT_ICONS, searchState) {
                 ShareShortcutIconsCard(viewModel)
@@ -1986,6 +1977,294 @@ fun SettingsTab(
         }
     }
     } // End of if-else for showPerAppSettings
+}
+
+/**
+ * TASK-835 (the N>=2 subpage rule): the voice-note settings page. The three
+ * entries moved here verbatim from the main tree (sender recognition, the
+ * auto-transcription gate with its runtime-permission flow, the folder
+ * grant card with its picker); the main tree keeps one hub row whose
+ * summary carries the detection state. The detectionAvailable gate stays
+ * INSIDE the page: sender recognition needs no read-media permission, so
+ * the page stays reachable on Android 10 with that part hidden.
+ */
+@Composable
+internal fun VoiceNoteSettingsScreen(
+    viewModel: SettingsViewModel,
+    initialScroll: AppNavigation.ScrollRequest? = null,
+    onScrollConsumed: () -> Unit = {},
+    onBack: () -> Unit,
+) {
+    val context = LocalContext.current
+    SubPageScrollScaffold(
+        titleRes = R.string.voice_note_settings_title,
+        onBack = onBack,
+        scrollRequest = initialScroll,
+        onScrollConsumed = onScrollConsumed,
+        bodySpacing = Arrangement.spacedBy(12.dp),
+    ) { _ ->
+            // TASK-272: the voice-note auto-transcription gate.
+            // The runtime read-media permission is the outer gate; while
+            // this toggle is off the coordinator reads nothing at all. The
+            // permission probe re-runs on ON_RESUME (a grant or revoke made
+            // in the system dialog must show on return), not on every
+            // recomposition. Android 10 is excluded (scoped storage blocks
+            // the tap path; TASK-777 tracks the content-URI arm that would
+            // lift this).
+            if (com.antivocale.app.data.VoiceNoteDetectionPermission.detectionAvailable()) {
+            val voiceNoteDetectionEnabled by viewModel.voiceNoteDetectionEnabled.collectAsState()
+            var voiceNoteAudioPermissionGranted by remember { mutableStateOf(false) }
+            var voiceNoteGrantHeld by remember { mutableStateOf(false) }
+            // Declared before recomputeGrantHeld: the recompute reads the
+            // STORE (see currentVoiceNoteTreeUri), which suspends.
+            val grantScope = rememberCoroutineScope()
+            fun recomputeGrantHeld() {
+                // The STORED value, never the StateFlow's .value (still the
+                // initialValue before DataStore's first emission; review
+                // R2-3): a stale null would flash the card un-granted and
+                // (pre-fix) hide the Remove action.
+                grantScope.launch(Dispatchers.IO) {
+                    voiceNoteGrantHeld = viewModel.currentVoiceNoteTreeUri()?.let {
+                        com.antivocale.app.util.TreeUris
+                            .holdsPersistableReadGrant(context, android.net.Uri.parse(it))
+                    } ?: false
+                }
+            }
+            RecheckOnResume {
+                val granted =
+                    com.antivocale.app.data.VoiceNoteDetectionPermission.granted(context)
+                if (granted != voiceNoteAudioPermissionGranted) {
+                    voiceNoteAudioPermissionGranted = granted
+                    // A grant or revoke made OUTSIDE this screen (the system
+                    // dialog answered by a launcher, the app-settings page)
+                    // changes no preference value, so the coordinator must
+                    // be poked to re-evaluate its conjunction.
+                    viewModel.refreshVoiceNoteDetectionGate()
+                }
+                // The tree grant can die with the URI string unchanged
+                // (folder deleted and recreated, OEM cleanup): the probe
+                // re-runs on every resume, not only on URI changes.
+                recomputeGrantHeld()
+            }
+            val audioPermissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { granted ->
+                // The toggle turns on only on the actual grant: a denial
+                // leaves it off, which is what the coordinator would honor
+                // anyway (no dead-on toggle). Either way the gate is
+                // re-evaluated: a grant with an already-on preference must
+                // re-arm detection without a preference change.
+                viewModel.refreshVoiceNoteDetectionGate()
+                if (granted) viewModel.saveVoiceNoteDetectionEnabled(true)
+            }
+            fun requestAudioPermission() {
+                // After a double denial the system serves no dialog at all;
+                // the request returns instantly, so the runtime ask stays on
+                // the toggle and the hint below routes to the app-settings
+                // page where the permission can always be granted.
+                try {
+                    audioPermissionLauncher.launch(
+                        com.antivocale.app.data.VoiceNoteDetectionPermission.requiredPermission())
+                } catch (e: android.content.ActivityNotFoundException) {
+                    android.util.Log.w("SettingsTab", "permission request unavailable", e)
+                }
+            }
+            // TASK-271: the SAF tree grant on the WhatsApp Voice Notes
+            // folder, the one read route (the 2026-10-13 spike: direct
+            // opens are EACCES and MediaStore never indexes the notes).
+            // The row appears only when the rest is already in place
+            // (toggle on, audio permission granted) and the grant is
+            // missing; picking the wrong folder is rejected at pick time.
+            val voiceNoteTreeUri by viewModel.voiceNoteTreeUri.collectAsState()
+            val voiceNoteTreePicker = rememberLauncherForActivityResult(
+                ActivityResultContracts.OpenDocumentTree()
+            ) { uri ->
+                if (uri == null) return@rememberLauncherForActivityResult
+                // Binder work off the main thread, the output-folder
+                // picker's pattern; the take must precede the validation
+                // query or the query itself is denied.
+                grantScope.launch(Dispatchers.IO) {
+                    if (!com.antivocale.app.util.TreeUris
+                            .takePersistableReadGrant(context, uri)
+                    ) {
+                        // A non-persistable OEM grant would die at process
+                        // death: refuse it, the row stays for a retry.
+                        Log.w("SettingsTab", "voice-note grant take failed for $uri")
+                        return@launch
+                    }
+                    if (!com.antivocale.app.data.VoiceNoteTreeGrant
+                            .looksLikeVoiceNotesTree(context, uri)
+                    ) {
+                        // A wrong tree would surface only as offers that
+                        // cancel on tap: refuse it AND give the grant slot
+                        // back (the platform caps persisted grants).
+                        com.antivocale.app.util.TreeUris
+                            .releasePersistableReadGrant(context, uri)
+                        withContext(Dispatchers.Main) {
+                            ToastCompat.show(
+                                context, R.string.voice_note_folder_grant_rejected,
+                                Toast.LENGTH_LONG)
+                        }
+                        return@launch
+                    }
+                    // A replacement pick abandons the old URI: release its
+                    // grant slot (platform cap 128/512) before overwriting.
+                    // The STORED value, not the StateFlow's: .value is still
+                    // the initialValue null until DataStore's first emission
+                    // reaches the flow, and a fast re-pick would leak the
+                    // old slot (review F9).
+                    val old = viewModel.currentVoiceNoteTreeUri()
+                    if (old != null && old != uri.toString()) {
+                        com.antivocale.app.util.TreeUris
+                            .releasePersistableReadGrant(context, android.net.Uri.parse(old))
+                    }
+                    viewModel.saveVoiceNoteTreeUri(uri.toString())
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Notifications,
+                    title = stringResource(R.string.voice_note_detection_title),
+                    description = stringResource(R.string.voice_note_detection_description),
+                    checked = voiceNoteDetectionEnabled,
+                    onCheckedChange = { enabled ->
+                        when {
+                            !enabled -> viewModel.saveVoiceNoteDetectionEnabled(false)
+                            voiceNoteAudioPermissionGranted ->
+                                viewModel.saveVoiceNoteDetectionEnabled(true)
+                            // The runtime request rides the toggle
+                            // interaction itself, the one user gesture that
+                            // legitimizes it.
+                            else -> requestAudioPermission()
+                        }
+                    }
+                )
+                if (voiceNoteDetectionEnabled && !voiceNoteAudioPermissionGranted) {
+                    TextButton(onClick = {
+                        // The reliable grant path, not the runtime ask: this
+                        // button shows when the permission is missing, which
+                        // after a double denial is the only path left.
+                        runCatching {
+                            context.startActivity(
+                                Intent(
+                                    android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    android.net.Uri.fromParts("package", context.packageName, null)))
+                        }
+                    }) {
+                        Text(
+                            text = stringResource(R.string.voice_note_detection_grant_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+                // A saved URI whose grant died (folder recreated, OEM
+                // cleanup) must re-offer the card: gating only on the string
+                // would strand the user with no re-pick path. recompute-
+                // GrantHeld runs on resume; a URI change recomputes here.
+                LaunchedEffect(voiceNoteTreeUri) { recomputeGrantHeld() }
+                var voiceNoteGrantSheetVisible by remember { mutableStateOf(false) }
+                if (voiceNoteDetectionEnabled && voiceNoteAudioPermissionGranted) {
+                    // TASK-272: the folder-grant card (mockup at the repo
+                    // root): state + full path always visible, choose/change
+                    // always available, remove only when a grant is held.
+                    // The grant IS the practical gate of the automatic mode.
+                    VoiceNoteFolderGrantCard(
+                        granted = voiceNoteGrantHeld,
+                        uriString = voiceNoteTreeUri,
+                        onChoose = { voiceNoteGrantSheetVisible = true },
+                        onRemove = {
+                            grantScope.launch(Dispatchers.IO) {
+                                // The STORED value for the release (the
+                                // flow state may lag its own emission;
+                                // review R2-3), then the pref clear that
+                                // disarms the coordinator (the flow
+                                // source), the tested remove path.
+                                viewModel.currentVoiceNoteTreeUri()?.let {
+                                    com.antivocale.app.util.TreeUris
+                                        .releasePersistableReadGrant(context, android.net.Uri.parse(it))
+                                }
+                                viewModel.saveVoiceNoteTreeUri(null)
+                            }
+                        },
+                    )
+                }
+                if (voiceNoteGrantSheetVisible) {
+                    VoiceNoteFolderGrantSheet(
+                        onDismiss = { voiceNoteGrantSheetVisible = false },
+                        onOpenPicker = {
+                            voiceNoteGrantSheetVisible = false
+                            // The DOCUMENT-form initial URI lands the picker
+                            // inside WhatsApp's media tree when DocumentsUI
+                            // honors it (more reliable than file://,
+                            // TASK-272); plain null when even building it
+                            // fails. One owner of the path: the grant.
+                            runCatching {
+                                voiceNoteTreePicker.launch(
+                                    com.antivocale.app.data.VoiceNoteTreeGrant.pickerInitialUri())
+                            }.onFailure {
+                                Log.w("SettingsTab", "tree picker launch failed", it)
+                                // Guarded too: a device with no DocumentsUI
+                                // handler throws the SAME exception for the
+                                // plain launch, and an unguarded fallback
+                                // would crash the click handler it exists
+                                // to save (review F6).
+                                runCatching { voiceNoteTreePicker.launch(null) }
+                                    .onFailure { e ->
+                                        Log.e("SettingsTab", "plain tree picker launch failed", e)
+                                    }
+                            }
+                        },
+                    )
+                }
+            }
+            } // end detectionAvailable() gate
+            // TASK-735: the voice-note identity listener's app-level gate.
+            // The system's notification access is the outer gate; while this
+            // toggle is off the listener reads nothing (the RAM-only privacy
+            // contract is on VoiceNoteIdentityListener). The access probe is
+            // NOT remembered: it must re-read when the user returns from the
+            // system screen.
+            val voiceNoteIdentityEnabled by viewModel.voiceNoteIdentityEnabled.collectAsState()
+            // The access probe is a binder IPC; refresh it exactly when the
+            // user comes back from the system screen (ON_RESUME), not on
+            // every recomposition of the section.
+            var notificationAccessGranted by remember { mutableStateOf(false) }
+            RecheckOnResume {
+                notificationAccessGranted = androidx.core.app.NotificationManagerCompat
+                    .getEnabledListenerPackages(context).contains(context.packageName)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                ToggleSettingCard(
+                    icon = Icons.Default.RecordVoiceOver,
+                    title = stringResource(R.string.voice_note_identity_title),
+                    description = stringResource(R.string.voice_note_identity_description),
+                    // The description IS the maintainer-mandated limits
+                    // text and renders in full here: the subpage never
+                    // composes under search compaction, so the old
+                    // descriptionMaxLinesCompact override left on the main
+                    // tree became inert with the move (review R-5).
+                    checked = voiceNoteIdentityEnabled,
+                    onCheckedChange = { enabled -> viewModel.saveVoiceNoteIdentityEnabled(enabled) }
+                )
+                if (voiceNoteIdentityEnabled && !notificationAccessGranted) {
+                    // The battery-exemption precedent: the grant action is a
+                    // Button row, not bare text.
+                    TextButton(onClick = {
+                        runCatching {
+                            context.startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        }
+                    }) {
+                        Text(
+                            text = stringResource(R.string.voice_note_identity_grant_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+
+    }
 }
 
 /**
@@ -2407,6 +2686,25 @@ private fun FeedbackSection(
 }
 
 /**
+ * Re-runs [probe] whenever the lifecycle resumes, plus once immediately at
+ * composition: ON_RESUME alone never fires for an already-resumed activity,
+ * so the immediate call covers entering the section without a pause, and
+ * the observer covers returning from a system grant screen.
+ */
+@Composable
+private fun RecheckOnResume(probe: () -> Unit) {
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) probe()
+        }
+        probe()
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+}
+
+/**
  * Informational (non-clickable) row of the Feedback & About section: icon +
  * bold title on the leading edge, value on the trailing edge. Shared by the
  * license and version rows (TASK-459 extraction; the clickable rows above
@@ -2432,14 +2730,6 @@ private fun InfoRow(icon: ImageVector, title: String, value: String) {
     }
 }
 
-/**
- * TASK-542: the one matching rule behind the settings search: a blank query
- * matches everything (the normal tab is unchanged), otherwise any non-null
- * entry must contain the query, case-insensitive. Null entries are skipped,
- * so callers can pass optional descriptions unchanged. Both the count line
- * (via the card groups) and the per-card [SearchFilterRow] gate go through
- * this function, so they cannot disagree.
- */
 /**
  * TASK-571: card scaffold shared by the two timeout settings (keep-alive
  * auto-unload, subtitle choice): icon + title + description + divider +
@@ -2522,6 +2812,14 @@ private fun TimeoutSettingCard(
     }
 }
 
+/**
+ * TASK-542: the one matching rule behind the settings search: a blank query
+ * matches everything (the normal tab is unchanged), otherwise any non-null
+ * entry must contain the query, case-insensitive. Null entries are skipped,
+ * so callers can pass optional descriptions unchanged. Both the count line
+ * (via the card groups) and the per-card [SearchFilterRow] gate go through
+ * this function, so they cannot disagree.
+ */
 internal fun matchesQuery(query: String, texts: List<String?>): Boolean =
     query.isBlank() || texts.any { it?.contains(query, ignoreCase = true) == true }
 
@@ -3081,7 +3379,7 @@ internal enum class SettingsSearchId {
     COMPACT_RESULT_ACTIONS, TECHNICAL_DETAILS, LANGUAGE_CHIP, RETRANSCRIBE, ADVANCED_SHARE_FORMATS,
     // Advanced
     BATTERY_EXEMPTION, HUGGINGFACE_AUTH, PERFORMANCE_HUB,
-    SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, VOICE_NOTE_IDENTITY, PER_APP_SETTINGS,
+    SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, VOICE_NOTE_HUB, PER_APP_SETTINGS,
     SHARE_SHORTCUT_ICONS,
     // Feedback
     FEEDBACK,
@@ -3447,9 +3745,17 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.open_transcribe_title, R.string.open_transcribe_description),
         group = SettingsSearchGroup.INTEGRATIONS,
     ),
+    // TASK-835 (the N>=2 subpage rule): the voice-note hub, whose page
+    // hosts the three entries. Static union vocabulary: the hub's strings
+    // plus all three children's (sender recognition, detection, folder).
     SettingsSearchCard(
-        SettingsSearchId.VOICE_NOTE_IDENTITY, SettingsSearchSection.ADVANCED,
-        listOf(R.string.voice_note_identity_title, R.string.voice_note_identity_description),
+        SettingsSearchId.VOICE_NOTE_HUB, SettingsSearchSection.ADVANCED,
+        listOf(
+            R.string.voice_note_settings_title,
+            R.string.voice_note_settings_summary_on, R.string.voice_note_settings_summary_off,
+            R.string.voice_note_identity_title, R.string.voice_note_identity_description,
+            R.string.voice_note_detection_title, R.string.voice_note_detection_description,
+            R.string.voice_note_folder_card_title, R.string.voice_note_folder_card_desc),
         group = SettingsSearchGroup.INTEGRATIONS,
     ),
     SettingsSearchCard(
@@ -3935,3 +4241,4 @@ internal fun ShareShortcutIconsCard(viewModel: SettingsViewModel) {
         }
     }
 }
+

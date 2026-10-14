@@ -20,6 +20,14 @@ object TreeUris {
     private const val TAG = "TreeUris"
 
     /**
+     * The external-storage documents provider: the authority whose tree
+     * docIds ARE paths, so path display and document-URI building only
+     * make sense for it. One constant, three consumers (displayPath, the
+     * voice-note picker's initial URI, legacy-grant checks).
+     */
+    const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
+
+    /**
      * Takes the persistable READ grant for [uri]. Returns success; failures
      * are logged (the OEM-picker trap), never thrown.
      */
@@ -47,6 +55,19 @@ object TreeUris {
     }
 
     /**
+     * Whether the persisted READ grant is actually HELD right now (the live
+     * artifact, not the saved URI string). A grant can die while the
+     * preference survives (folder deleted and recreated, OEM grant
+     * cleanup), and a consumer that gates only on the string would arm on
+     * a dead grant with no re-pick path. Same probe shape as
+     * ScheduledFolderWorker.grantHeld.
+     */
+    fun holdsPersistableReadGrant(context: Context, uri: Uri): Boolean =
+        context.contentResolver.persistedUriPermissions.any {
+            it.isReadPermission && it.uri == uri
+        }
+
+    /**
      * The display name of a tree, falling back through the path segment to
      * the raw string (never null, so callers can render it directly).
      */
@@ -67,7 +88,7 @@ object TreeUris {
         // ARE paths; a colon inside a cloud provider's opaque id would
         // fabricate a nonexistent directory (code review F1).
         val authority = uri.authority
-        if (authority != "com.android.externalstorage.documents" &&
+        if (authority != EXTERNAL_STORAGE_AUTHORITY &&
             authority != "com.android.providers.downloads.documents"
         ) {
             return displayName(context, uri)

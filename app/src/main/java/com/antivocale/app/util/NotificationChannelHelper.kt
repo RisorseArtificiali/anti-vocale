@@ -82,6 +82,26 @@ enum class AppNotificationChannel(
         showBadge = true
     );
 
+    companion object {
+        /**
+         * TASK-272: channels removed from the enum whose system
+         * registrations survive upgrades (the platform keeps them; they
+         * would linger as dead toggles in the app's notification
+         * settings). Called once at startup; deleting an absent channel
+         * is a no-op.
+         */
+        private val REMOVED_CHANNEL_IDS = listOf(
+            // The voice-note offer channel died with the offer mode; the
+            // automatic form surfaces through the result channel.
+            "voice_note_offer_channel",
+        )
+
+        fun cleanupRemovedChannels(context: Context) {
+            val nm = context.getSystemService(NotificationManager::class.java) ?: return
+            REMOVED_CHANNEL_IDS.forEach { nm.deleteNotificationChannel(it) }
+        }
+    }
+
     /**
      * Creates (registers) this notification channel with the system.
      * Safe to call multiple times — Android ignores duplicate registrations

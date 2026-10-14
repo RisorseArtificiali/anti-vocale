@@ -2,9 +2,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- No storage permissions: model import, audio share, and audio picker all use
-         the Storage Access Framework (OpenDocument) or share-intent content URIs,
-         which grant their own read access. See TASK-301. -->
+    <!-- Storage permissions are read-media only, and only for the opt-in
+         voice-note detection (TASK-271): the runtime grant READ_MEDIA_AUDIO
+         (API 33+) / READ_EXTERNAL_STORAGE (below 33, capped at 32 by
+         maxSdkVersion) is what makes WhatsApp's MediaStore rows visible to
+         the detector. This is the sanctioned exception to the SAF-only
+         stance of TASK-301 (docs/research/2026-07-12-auto-transcription-
+         feasibility.md, approach 2); model import, audio share, and the
+         audio picker keep using SAF and share-intent content URIs, which
+         grant their own read access. Everything else in the app stays
+         permission-free storage-wise, and detection reads only the
+         WhatsApp voice-note folder listing while the toggle is on. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 
     <!-- Foreground service for inference -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

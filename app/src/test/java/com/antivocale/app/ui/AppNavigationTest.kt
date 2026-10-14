@@ -54,7 +54,7 @@ class AppNavigationTest {
     fun `scrollable destinations are the scroll sub-pages plus the gemma page`() {
         // per_app is deliberately out of v1: its body is a LazyColumn.
         assertEquals(
-            setOf("automation", "performance", "speaker", "prompt", "icon_picker", "export"),
+            setOf("automation", "performance", "speaker", "prompt", "icon_picker", "export", "voice_notes"),
             AppNavigation.SUBPAGE_KEYS.filter { key ->
                 AppNavigation.isScrollableDest(AppNavigation.parse("settings:$key")!!)
             }.toSet(),
@@ -66,7 +66,8 @@ class AppNavigationTest {
         // token list and the validation stay the same set.
         assertEquals(
             setOf("settings:automation", "settings:performance", "settings:speaker",
-                "settings:prompt", "settings:icon_picker", "settings:export", "models:gemma"),
+                "settings:prompt", "settings:icon_picker", "settings:export",
+                "settings:voice_notes", "models:gemma"),
             AppNavigation.scrollableDestTokens().toSet())
     }
 
@@ -89,7 +90,7 @@ class AppNavigationTest {
         // The four SettingsTab sections and the three sub-screens, pinned so
         // a UI rename without a parser update (or the reverse) fails here.
         assertEquals(setOf("transcription", "appearance", "advanced", "feedback"), AppNavigation.SECTION_KEYS)
-        assertEquals(setOf("icon_picker", "prompt", "per_app", "export", "speaker", "performance", "automation"), AppNavigation.SUBPAGE_KEYS)
+        assertEquals(setOf("icon_picker", "prompt", "per_app", "export", "speaker", "performance", "automation", "voice_notes"), AppNavigation.SUBPAGE_KEYS)
         assertEquals(setOf("import", "gemma"), AppNavigation.MODEL_KEYS)
         assertEquals(listOf("history", "models", "settings"), AppNavigation.TAB_KEYS)
         // TASK-617 F2: the derived indices pin the TabRow ORDER, not just

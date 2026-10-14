@@ -21,8 +21,10 @@ import kotlinx.coroutines.launch
  * until both hold, the service reads nothing (the pref is cached by a
  * collector at connect time and checked before any extraction).
  *
- * PRIVACY CONTRACT (the toggle copy states it): only message-category
- * notifications from messaging packages are inspected; only the sender,
+ * PRIVACY CONTRACT (the toggle copy states it): only notifications from
+ * messaging packages are inspected (the 2026-10-13 trial amendment: real
+ * WhatsApp notifications carry no message category, so the package
+ * allowlist alone anchors the gate); only the sender,
  * the duration marker and the timestamp are kept. The CACHE is in memory
  * only (never Crashlytics, never any report; process death forgets it;
  * toggle off clears it and stops all reading). The durable part is the
@@ -86,14 +88,13 @@ class VoiceNoteIdentityListener : NotificationListenerService() {
         // Group summaries carry the GROUP name in the title, never a sender.
         val isGroupSummary = (n.flags and Notification.FLAG_GROUP_SUMMARY) != 0
         // Lazy: the Person unmarshal runs only when the extractor's cheap
-        // gates (category, marker) already accepted the notification.
+        // gates (package allowlist, marker) already accepted the notification.
         val stylePersons = {
             NotificationCompat.MessagingStyle
                 .extractMessagingStyleFromNotification(n)?.messages.orEmpty()
                 .map { it.person?.name?.toString() }
         }
         val note = VoiceNoteIdentityExtractor.fromNotification(
-            category = n.category,
             packageName = sbn.packageName.orEmpty(),
             title = n.extras.getCharSequence(Notification.EXTRA_TITLE),
             text = n.extras.getCharSequence(Notification.EXTRA_TEXT),

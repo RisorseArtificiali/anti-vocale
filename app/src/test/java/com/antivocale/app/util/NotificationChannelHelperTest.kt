@@ -71,6 +71,8 @@ class NotificationChannelHelperTest {
 
     @Test
     fun `enum has exactly 5 entries`() {
+        // TASK-272: the offer channel died with the offer mode (5 entries;
+        // an upgrade keeps the orphaned system channel, it posts nothing).
         assertEquals(
             "AppNotificationChannel should have exactly 5 entries",
             5,

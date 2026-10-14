@@ -214,8 +214,7 @@ class ScheduledFolderWorker @AssistedInject constructor(
     }
 
     private fun grantHeld(treeUri: Uri): Boolean =
-        applicationContext.contentResolver.persistedUriPermissions
-            .any { it.uri == treeUri && it.isReadPermission }
+        com.antivocale.app.util.TreeUris.holdsPersistableReadGrant(applicationContext, treeUri)
 
     /**
      * The share-shaped request (local path + request type), with the folder

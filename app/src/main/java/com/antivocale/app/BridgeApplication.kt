@@ -32,6 +32,7 @@ class BridgeApplication : Application(), Configuration.Provider {
     @Inject lateinit var externalModelStore: com.antivocale.app.data.ExternalModelStore
     @Inject lateinit var logDao: com.antivocale.app.data.local.LogDao
     @Inject lateinit var scheduledFolderStore: com.antivocale.app.data.ScheduledFolderStore
+    @Inject lateinit var voiceNoteDetectionCoordinator: com.antivocale.app.data.VoiceNoteDetectionCoordinator
 
     /**
      * Shared process-lifetime scope for startup work that must not block the
@@ -129,6 +130,17 @@ class BridgeApplication : Application(), Configuration.Provider {
                     this@BridgeApplication, enabled)
                 if (!enabled) voiceNoteIdentityCache.clear()
             }
+        }
+        // TASK-272: the voice-note auto-transcription lifecycle (new
+        // WhatsApp voice notes enqueue directly). start() only arms the preference
+        // collector on the application scope; the detector's baseline
+        // subscription happens off the main thread inside the coordinator,
+        // and only while the toggle AND the runtime permission both hold.
+        voiceNoteDetectionCoordinator.start()
+        // TASK-272: delete system registrations of channels the enum no
+        // longer declares (upgraded installs keep them as dead toggles).
+        runCatching {
+            com.antivocale.app.util.AppNotificationChannel.cleanupRemovedChannels(this)
         }
 
         // TASK-785: the Open Transcribe provider component follows its gate

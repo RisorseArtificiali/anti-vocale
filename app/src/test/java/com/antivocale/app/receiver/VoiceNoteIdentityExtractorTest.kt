@@ -17,7 +17,6 @@ class VoiceNoteIdentityExtractorTest {
     @Test
     fun `the verified WhatsApp one-to-one shape yields sender and duration`() {
         val note = VoiceNoteIdentityExtractor.fromNotification(
-            category = "msg",
             packageName = pkg,
             title = "Chiara",
             text = "🎤 Voice message (0:04)",
@@ -36,7 +35,6 @@ class VoiceNoteIdentityExtractorTest {
         // In a group the TITLE is the GROUP name; the MessagingStyle Person
         // names the actual speaker.
         val note = VoiceNoteIdentityExtractor.fromNotification(
-            category = "msg",
             packageName = pkg,
             title = "Family",
             text = "🎤 Voice message (1:02:03)",
@@ -52,7 +50,6 @@ class VoiceNoteIdentityExtractorTest {
     @Test
     fun `a group post without a Person is skipped, not attributed to the group name`() {
         val note = VoiceNoteIdentityExtractor.fromNotification(
-            category = "msg",
             packageName = pkg,
             title = "Family",
             text = "🎤 Voice message (0:10)",
@@ -69,7 +66,6 @@ class VoiceNoteIdentityExtractorTest {
         // Review: only the NEWEST message's Person counts; an older Alice
         // followed by a person-less voice note must not attribute to Alice.
         val note = VoiceNoteIdentityExtractor.fromNotification(
-            category = "msg",
             packageName = pkg,
             title = null,
             text = "🎤 Voice message (0:04)",
@@ -82,17 +78,17 @@ class VoiceNoteIdentityExtractorTest {
     }
 
     @Test
-    fun `a category-msg notification from a non-messaging package is skipped`() {
+    fun `a voice-marker notification from a non-messaging package is skipped`() {
         // The privacy contract is a conjunction; Telegram stays out until
         // its voice marker is verified on a device.
         assertNull(
             VoiceNoteIdentityExtractor.fromNotification(
-                category = "msg", packageName = "org.telegram.messenger", title = "Chiara",
+                packageName = "org.telegram.messenger", title = "Chiara",
                 text = "🎤 Voice message (0:04)", conversationTitle = null,
                 messagingPersons = { listOf("Chiara") }, isGroupSummary = false, postedAtMs = 1L))
         assertNull(
             VoiceNoteIdentityExtractor.fromNotification(
-                category = "msg", packageName = "com.crm.inbox", title = "Chiara",
+                packageName = "com.crm.inbox", title = "Chiara",
                 text = "🎤 Voice message (0:04)", conversationTitle = null,
                 messagingPersons = { emptyList() }, isGroupSummary = false, postedAtMs = 1L))
     }
@@ -101,7 +97,7 @@ class VoiceNoteIdentityExtractorTest {
     fun `a plain text message is not a voice note`() {
         assertNull(
             VoiceNoteIdentityExtractor.fromNotification(
-                category = "msg", packageName = pkg, title = "Chiara",
+                packageName = pkg, title = "Chiara",
                 text = "a che ora ci vediamo?", conversationTitle = null,
                 messagingPersons = { emptyList() }, isGroupSummary = false, postedAtMs = 1L))
     }
@@ -110,12 +106,12 @@ class VoiceNoteIdentityExtractorTest {
     fun `group summaries and non-messaging notifications are skipped`() {
         assertNull(
             VoiceNoteIdentityExtractor.fromNotification(
-                category = "msg", packageName = pkg, title = "Family",
+                packageName = pkg, title = "Family",
                 text = "🎤 Voice message (0:04)", conversationTitle = "Family",
                 messagingPersons = { listOf("Chiara") }, isGroupSummary = true, postedAtMs = 1L))
         assertNull(
             VoiceNoteIdentityExtractor.fromNotification(
-                category = "call", packageName = "com.other.app", title = "Chiara",
+                packageName = "com.other.app", title = "Chiara",
                 text = "🎤 Voice message (0:04)", conversationTitle = null,
                 messagingPersons = { emptyList() }, isGroupSummary = false, postedAtMs = 1L))
     }
@@ -124,7 +120,7 @@ class VoiceNoteIdentityExtractorTest {
     fun `a marker with no sender in the title is skipped`() {
         assertNull(
             VoiceNoteIdentityExtractor.fromNotification(
-                category = "msg", packageName = pkg, title = null,
+                packageName = pkg, title = null,
                 text = "🎤 Voice message (0:04)", conversationTitle = null,
                 messagingPersons = { emptyList() }, isGroupSummary = false, postedAtMs = 1L))
     }

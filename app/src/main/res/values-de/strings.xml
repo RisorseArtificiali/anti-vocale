@@ -981,9 +981,31 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Modelle im Teilen-Menü</string>
+    <string name="voice_note_settings_title">Sprachnachrichten</string>
+    <string name="voice_note_settings_summary_on">Automatische Transkription von WhatsApp-Sprachnachrichten · aktiv</string>
+    <string name="voice_note_settings_summary_off">Automatische Transkription von WhatsApp-Sprachnachrichten · inaktiv</string>
+    <string name="voice_note_settings_summary_limited">Erkennung der Absender von Sprachnachrichten</string>
     <string name="voice_note_identity_title">Erkennung des Absenders von Sprachnachrichten</string>
-    <string name="voice_note_identity_description">Trägt den Namen des Absenders in die Verlaufszeile einer geteilten Sprachnachricht ein. Zurzeit nur WhatsApp. Der Name erscheint nur, wenn die Benachrichtigung der Nachricht eintraf, während dies aktiviert war, und nur wenn die gemeldete Länge zum Audio passt (keine geratenen Namen). Der Name bleibt auf der Zeile, auch nachdem du dies ausschaltest; die Warteliste liegt nur im Speicher. Benötigt Benachrichtigungszugriff.</string>
+    <string name="voice_note_identity_description">Beschriftet transkribierte Sprachnachrichten mit dem Namen des Absenders, geteilt oder automatisch. Zurzeit nur WhatsApp. Der Name erscheint nur, wenn die Benachrichtigung bei aktivierter Option einging und die Länge übereinstimmt (keine geratenen Namen); die Warteliste lebt nur im Speicher. Benötigt Benachrichtigungszugriff.</string>
     <string name="voice_note_identity_grant_hint">Benachrichtigungszugriff ist aus. Tippe, um die Systemeinstellung zu öffnen und ihn für diese App zu aktivieren.</string>
+    <!-- TASK-272: automatic voice-note transcription + folder grant -->
+    <string name="voice_note_detection_title">Transkription von Sprachnachrichten</string>
+    <string name="voice_note_detection_description">Transkribiert neue WhatsApp-Sprachnachrichten, sobald sie ankommen, während die App läuft. Blockiert Android den Start im Hintergrund, startet eine Benachrichtigung mit einem Tipp. Eine Nachricht wird nur zum Transkribieren gelesen, auf diesem Gerät; ausgeschaltet wird nichts gelesen. Benötigt Audiozugriff.</string>
+    <string name="voice_note_detection_grant_hint">Audiozugriff ist aus. Tippe, um die App-Einstellungen zu öffnen und ihn zu aktivieren; die Transkription startet, sobald er erteilt ist.</string>
+    <string name="voice_note_folder_grant_rejected">Das ist nicht der Ordner für WhatsApp-Sprachnachrichten. Wähle den Ordner mit dem Namen WhatsApp Voice Notes und versuche es erneut.</string>
+    <string name="voice_note_folder_card_title">Ordner für Sprachnachrichten</string>
+    <string name="voice_note_folder_card_state_granted">Berechtigung erteilt</string>
+    <string name="voice_note_folder_card_state_missing">Berechtigung fehlt</string>
+    <string name="voice_note_folder_card_desc">Um die Nachrichten zu lesen, erteile einmalig Zugriff auf den Ordner, in dem WhatsApp sie speichert:</string>
+    <string name="voice_note_folder_choose">Ordner wählen</string>
+    <string name="voice_note_folder_change">Ordner wechseln</string>
+    <string name="voice_note_folder_remove">Zugriff entfernen</string>
+    <string name="voice_note_folder_storage_root">Interner Speicher</string>
+    <string name="voice_note_folder_sheet_title">Ordnerzugriff erteilen</string>
+    <string name="voice_note_folder_sheet_step1">Öffne im Auswahlbildschirm den Internen Speicher (linkes Menü; tippe auf Speicher anzeigen, falls du ihn nicht siehst).</string>
+    <string name="voice_note_folder_sheet_step2">Scrolle im Pfad nach unten bis zum Ordner der Sprachnachrichten:</string>
+    <string name="voice_note_folder_sheet_step3">Wähle den Ordner WhatsApp Voice Notes aus (nicht öffnen) und tippe auf DIESEN ORDNER VERWENDEN und dann auf ZULASSEN.</string>
+    <string name="voice_note_folder_sheet_open">Auswahl öffnen</string>
     <string name="share_targets_description">Jedes heruntergeladene Modell erscheint als eigener Eintrag im Systemmenü. Das Audio verarbeitet das ausgewählte Modell.</string>
     <string name="advanced_sharing_toggle">Heruntergeladene Modelle anzeigen</string>
     <string name="share_targets_models_info">Jedes heruntergeladene Modell erscheint als Eintrag im Teilen-Menü. Beim Löschen wird das Modell aus dem Menü entfernt.</string>

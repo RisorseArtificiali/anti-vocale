@@ -97,6 +97,22 @@ BACKENDS = {
         # whisper below; the app caps parakeet chunks at 60s.
         "chunk_seconds": 60,
     },
+    # Parakeet Ultra (moondream post-train of v3; TASK-823 A/B candidate,
+    # Alexqwqw int8 conversion). Same sherpa layout, model_type, tokenizer
+    # and decode shape as the v3 int8 above, so the A/B differs by weights
+    # only; deliberately NOT in _CATALOG_ENTRY_BY_BACKEND (no catalog entry
+    # exists yet, the literals are the config).
+    "parakeet_ultra": {
+        "kind": "transducer",
+        "dir": MODELS_ROOT / "parakeet-ultra-int8",
+        "encoder": "encoder.int8.onnx",
+        "decoder": "decoder.int8.onnx",
+        "joiner": "joiner.int8.onnx",
+        "tokens": "tokens.txt",
+        "model_type": "nemo_transducer",
+        "tail_pad_seconds": 1.0,
+        "chunk_seconds": 60,
+    },
     # Nemotron 3.5 streaming 0.6b (1120ms int8).
     # App config: NemotronStreamingBackend.kt:98-113 (OnlineRecognizer, modelType=""
     # empty, language="auto", greedy_search).

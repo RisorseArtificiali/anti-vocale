@@ -524,8 +524,16 @@ class ShareReceiverActivity : Activity() {
         // ---- Default ASR path ----
         // TASK-736: match the shared audio against the identity cache (the
         // free candidates check first; the duration probe runs only when a
-        // voice note from this package is actually cached).
-        val senderName = withContext(Dispatchers.IO) { matchSenderIdentity(localPath) }
+        // voice note from this package is actually cached). TASK-271 moved
+        // the probe + matcher into VoiceNoteSenderResolution so the share
+        // flow and the automatic route share one implementation.
+        val senderName = withContext(Dispatchers.IO) {
+            VoiceNoteSenderResolution.match(
+                appEntryPoint.voiceNoteIdentityCache(),
+                appEntryPoint.audioPreprocessor(),
+                sourcePackage,
+                localPath)
+        }
         val serviceIntent = buildServiceIntent(taskId, localPath, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO, trackIndex = -1, backendOverride = backendOverride, senderName = senderName)
 
         // F6: unified enqueue (trampoline fallback on the API 31+
@@ -603,40 +611,6 @@ class ShareReceiverActivity : Activity() {
         if (requestType == TaskerRequestReceiver.REQUEST_TYPE_SUBTITLES) {
             putExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, trackIndex)
         }
-    }
-
-
-    /**
-     * TASK-736: the identity match for one shared file. Free short-circuit
-     * when nothing is cached for the calling package; the duration probe
-     * (one MediaMetadataRetriever pass) runs only for real candidates, so
-     * every ordinary share pays nothing.
-     */
-    private fun matchSenderIdentity(localPath: String): String? {
-        val candidates = appEntryPoint.voiceNoteIdentityCache()
-            .forPackage(sourcePackage.orEmpty())
-        // TASK-736 E2E instrumentation: the field report was a bare "no
-        // label"; this line separates the three failure classes (nothing
-        // cached for the package, unreadable duration, disagreement).
-        // Counts and seconds only, no names in logcat.
-        if (candidates.isEmpty()) {
-            Log.i(TAG, "identity match: no cached candidates for ${sourcePackage.orEmpty()}")
-            return null
-        }
-        // The HOUSE duration probe, not a raw MediaMetadataRetriever: voice
-        // notes are Ogg Opus, where the retriever's KEY_DURATION is the
-        // documented-unreliable path (GH #91); this one reads the granule
-        // position first. Returns seconds.
-        val durationSeconds = runCatching {
-            appEntryPoint.audioPreprocessor().getAudioDuration(localPath)
-        }.getOrNull()?.takeIf { it > 0 }?.toLong()
-        val verdict = VoiceNoteIdentityMatcher.select(candidates, durationSeconds)
-        Log.i(
-            TAG,
-            "identity match: ${candidates.size} candidate(s), audio ${durationSeconds}s, " +
-                "durations ${candidates.mapNotNull { it.durationSeconds }}, " +
-                "labeled=${verdict != null}")
-        return verdict?.sender
     }
 
     private fun cleanup() {

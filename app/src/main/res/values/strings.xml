@@ -1056,9 +1056,31 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Models in Share Menu</string>
+    <string name="voice_note_settings_title">Voice notes</string>
+    <string name="voice_note_settings_summary_on">Automatic WhatsApp voice-note transcription · on</string>
+    <string name="voice_note_settings_summary_off">Automatic WhatsApp voice-note transcription · off</string>
+    <string name="voice_note_settings_summary_limited">Sender recognition for voice notes</string>
     <string name="voice_note_identity_title">Voice note sender recognition</string>
-    <string name="voice_note_identity_description">Labels the History row of a shared voice note with the sender\'s name. WhatsApp only for now. The name appears only if the note\'s notification arrived while this was on, and only when its reported length matches the audio (no guessed names). The name stays on that row even after you turn this off; the waiting list lives in memory only. Requires notification access.</string>
+    <string name="voice_note_identity_description">Labels transcribed voice notes with the sender\'s name, shared here or automatic. WhatsApp only for now. The name appears only when the note\'s notification arrived while this was on and its length matches (no guessed names); the waiting list lives in memory only. Requires notification access.</string>
     <string name="voice_note_identity_grant_hint">Notification access is off. Tap to open the system setting and enable it for this app.</string>
+    <!-- TASK-272: automatic voice-note transcription + folder grant -->
+    <string name="voice_note_detection_title">Voice note transcription</string>
+    <string name="voice_note_detection_description">Transcribes new WhatsApp voice notes as they arrive, while the app is running. If Android blocks a background start, a one-tap notification starts it. A note is read only to transcribe it, on this device; while off, nothing is read. Requires audio access.</string>
+    <string name="voice_note_detection_grant_hint">Audio access is off. Tap to open the app settings and enable it; transcription starts once it is granted.</string>
+    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
+    <string name="voice_note_folder_card_title">Voice notes folder</string>
+    <string name="voice_note_folder_card_state_granted">Permission granted</string>
+    <string name="voice_note_folder_card_state_missing">Permission missing</string>
+    <string name="voice_note_folder_card_desc">To read the notes, grant access once to the folder where WhatsApp saves them:</string>
+    <string name="voice_note_folder_choose">Choose folder</string>
+    <string name="voice_note_folder_change">Change folder</string>
+    <string name="voice_note_folder_remove">Remove access</string>
+    <string name="voice_note_folder_storage_root">Internal storage</string>
+    <string name="voice_note_folder_sheet_title">Grant folder access</string>
+    <string name="voice_note_folder_sheet_step1">In the picker that opens, enter Internal storage (the left menu; tap Show storage if you don\'t see it).</string>
+    <string name="voice_note_folder_sheet_step2">Scroll down the path to the voice-notes folder:</string>
+    <string name="voice_note_folder_sheet_step3">With the WhatsApp Voice Notes folder selected (don\'t open it), tap USE THIS FOLDER, then ALLOW.</string>
+    <string name="voice_note_folder_sheet_open">Open the picker</string>
     <string name="share_targets_description">Each downloaded model appears as a separate option in the system menu. Audio is processed by the selected model.</string>
     <string name="advanced_sharing_toggle">Show downloaded models</string>
     <string name="share_targets_models_info">Each downloaded model will appear as an item in the share menu. Deleting a model removes it from the menu.</string>
