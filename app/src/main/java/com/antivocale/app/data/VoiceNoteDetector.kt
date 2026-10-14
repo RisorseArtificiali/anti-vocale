@@ -99,7 +99,9 @@ class VoiceNoteDetector @Inject constructor() {
         // touches re-fire: the watched-set keeps one observer per directory.
         if (!watchedDirs.add(dir.absolutePath)) return
         val observer = object : FileObserver(
-            dir,
+            // The String constructor: FileObserver(File, Int) is API 29+
+            // and detection runs down to minSdk 26 (lint-fatal, CI 2026-10-14).
+            dir.absolutePath,
             FileObserver.CREATE or FileObserver.CLOSE_WRITE or FileObserver.MOVED_TO,
         ) {
             override fun onEvent(event: Int, path: String?) {

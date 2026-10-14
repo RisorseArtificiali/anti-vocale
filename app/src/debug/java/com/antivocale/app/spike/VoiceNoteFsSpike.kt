@@ -68,7 +68,9 @@ object VoiceNoteFsSpike {
 
     private fun watch(dir: File, label: String) {
         val observer = object : FileObserver(
-            dir,
+            // The String constructor: FileObserver(File, Int) is API 29+,
+            // minSdk is 26 (lint-fatal, CI 2026-10-14).
+            dir.absolutePath,
             FileObserver.CREATE or FileObserver.CLOSE_WRITE or
                 FileObserver.MOVED_TO or FileObserver.DELETE,
         ) {
