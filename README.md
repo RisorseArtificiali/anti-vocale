@@ -80,6 +80,7 @@ Everything the app can transcribe with, on one page: bundled models with sizes, 
 - **Share integration** - Share audio from any messaging app to transcribe
 - **Direct file picker** - Pick any audio or video file from storage in the app, no messaging app needed
 - **Model-specific share targets** - Pick a specific model directly from the Android share sheet
+- **WhatsApp voice notes** - New WhatsApp voice notes are transcribed automatically as they arrive, zero taps, and the history row can carry the sender's name; see [Advanced integrations](#whatsapp-voice-notes-automatic-transcription)
 - **Tasker/automation support** - Trigger transcription via broadcast intents
 - **Open Transcribe provider (experimental)** - Apps that speak the open [Open Transcribe](https://github.com/23rd/Scrib/blob/master/CONTRACT.md) contract, like [Forkgram](https://github.com/forkgram/TelegramAndroid), can turn Anti-Vocale into their inline voice-message transcriber; off by default (Settings, Automation, Open Transcribe API), and the audio never leaves the device
 - **Scheduled folder watch** - Watch folders you choose and transcribe new audio files automatically; on Android 11+ the watched folder can be a messaging app's media folder, so incoming voice notes transcribe themselves (scans adapt to what the system allows; a manual scan is always available)
@@ -274,6 +275,18 @@ adb shell am broadcast -a com.antivocale.app.PRELOAD_MODEL
 The app holds no storage permissions, so shared-storage paths like `/sdcard/Download` are NOT readable by it. Pass a path inside the app's own storage instead; how Tasker setups stage files is covered in the guide.
 
 See [docs/TASKER_GUIDE.md](docs/TASKER_GUIDE.md) for detailed automation setup.
+
+## Advanced integrations
+
+### WhatsApp voice notes (automatic transcription)
+
+Anti-Vocale can transcribe new WhatsApp voice notes the moment they arrive, with no interaction at all: the transcription lands in the history and as a result notification, and if Android blocks a background start (for example with the screen off), a one-tap notification starts it.
+
+Setup lives in **Settings > Voice notes**: turn transcription on, grant audio access, and pick the WhatsApp Voice Notes folder once through the guided picker. Optionally enable **sender recognition** as well: the history row is then labeled with the sender's name. A label appears only when the note's own notification confirms it (its reported length must match the audio), so names are never guessed; the waiting list of recent notifications lives in memory only.
+
+Privacy is the same contract as everywhere else in the app: while detection is on it reads only the WhatsApp voice-note folder listing; a note's audio is read only to transcribe it, entirely on this device; while the feature is off, nothing is read at all.
+
+One honest caveat: on phones with aggressive battery managers (common on some OEMs), notes that arrive while the app has been suspended by the system can be missed until it wakes. If you rely on the automatic mode, excluding Anti-Vocale from battery optimization makes it reliable. WhatsApp only for now.
 
 ### Open Transcribe (experimental)
 

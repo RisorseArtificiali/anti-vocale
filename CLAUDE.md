@@ -96,6 +96,16 @@ Gotchas:
 
 **Debug-build test SPI:** the `TEST_SPI` broadcast reads/writes app state for device-driven tests (`docs/testing-spi.md`; ops get/set/records/help). Always invoke with `-n` (implicit shell broadcasts are silently dropped on the RMX3853) and launch the app once after a fresh install. Release builds contain no receiver.
 
+## Advanced integrations (WhatsApp, Open Transcribe)
+
+Two integration pipelines live in the app; both are opt-in and privacy-contract-documented in their Settings copy.
+
+**WhatsApp voice notes (TASK-271/272/821/835, merged 2026-10-14).** The pipeline: `data/VoiceNoteDetector` (FileObserver tree watchers; file notes fire on CLOSE_WRITE/MOVED_TO only, real WhatsApp downloads arrive as MOVED_TO temp+rename) → `data/VoiceNoteTreeGrant.resolve` (persisted SAF tree grant, child docId extends the TREE docId) → `data/VoiceNoteAutoTranscriber` → `InferenceEnqueue`. Sender labels: `receiver/VoiceNoteIdentityListener` (RAM-only cache, RAM TTL 6h) → `VoiceNoteSenderResolution.matchForDetection` (candidates bounded to notifications within 60s of the emission-stamped `VoiceNoteEntry.detectedAtMs`; one bounded 2s race-window re-check; a wrong name is worse than no name, so widening the window is NOT a fix, see TASK-833). Settings live in the dedicated subpage (`VoiceNoteSettingsScreen`; hub row in the main tree; the detectionAvailable gate stays inside the page so sender recognition remains reachable on Android 10). Device-proven reliability classes on ColorOS, all in the backlog: freezer kills (TASK-829), silent watch death after storage churn (TASK-830: remedy is a blind periodic re-subscribe, optionally a catch-up sweep), listener unbinding after a process kill (system rebinds only some listeners). The privacy contract: detection reads only the folder listing; a note is read only to transcribe it, on device; off = nothing read.
+
+**Open Transcribe provider (TASK-785, experimental).** `service/OpenTranscribeProviderService` + `OpenTranscribeCallbackBridge` + `OpenTranscribeComponentSync`: vendor-neutral AIDL transcription contract (github.com/23rd/Scrib CONTRACT.md); clients like Forkgram list Anti-Vocale as their offline transcriber. Off by default; every write of the preference re-flips the manifest component through the BridgeApplication collector. Files-only today (the openStream arm is DRAFT-15, unimplemented).
+
+**Settings UI convention (maintainer rule 2026-10-14): a feature with N>=2 entries gets a dedicated subpage**, one `SettingsHubCard` row in the main tree that opens a `SubPageScrollScaffold` screen (flag + `closeSubPages` + BackHandler + an `AppNavigation.SUBPAGE_KEY_*` literal branch; the literal form is pinned by `AppNavigationTest`). The hub's search vocabulary is the static union of its children's strings (registry + pin test).
+
 ## NNAPI crash recovery (issue #26)
 
 NNAPI is available on ALL devices including MediaTek. If a native crash occurs while NNAPI is the selected provider, `MainActivity` auto-resets the preference to CPU on the next launch (leveraging `NativeCrashDetector`). Users see one crash, then the app falls back safely.
