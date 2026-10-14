@@ -980,6 +980,10 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">शेयर मेन्यू में मॉडल</string>
+    <string name="voice_note_settings_title">वॉयेस नोट</string>
+    <string name="voice_note_settings_summary_on">WhatsApp वॉयेस नोट की स्वचालित ट्रांसक्रिप्शन · चालू</string>
+    <string name="voice_note_settings_summary_off">WhatsApp वॉयेस नोट की स्वचालित ट्रांसक्रिप्शन · बंद</string>
+    <string name="voice_note_settings_summary_limited">वॉयेस नोट भेजने वाले की पहचान</string>
     <string name="voice_note_identity_title">वॉइस नोट भेजने वाले की पहचान</string>
     <string name="voice_note_identity_description">आप यहाँ साझा किए या अपने आप लिप्यंतरित हुए हर वॉयेस नोट की इतिहास पंक्ति पर भेजने वाले का नाम लिखता है। फिलहाल सिर्फ WhatsApp। नाम तभी दिखता है जब नोट का नोटिफिकेशन इस ऑन होने पर आया हो, और तभी जब बताया गया समय ऑडियो से मेल खाता हो (कोई अंदाज़ा नाम नहीं)। यह ऑप्शन बंद करने के बाद भी नाम उस पंक्ति पर रहता है; प्रतीक्षा सूची केवल मेमरी में रहती है। नोटिफिकेशन एक्सेस चाहिए।</string>
     <string name="voice_note_identity_grant_hint">सूचना एक्सेस बंद है। सिस्टम सेटिंग खोलने और इस ऐप के लिए इसे चालू करने के लिए टैप करें।</string>

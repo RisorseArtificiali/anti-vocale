@@ -1056,6 +1056,10 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Models in Share Menu</string>
+    <string name="voice_note_settings_title">Voice notes</string>
+    <string name="voice_note_settings_summary_on">Automatic WhatsApp voice-note transcription · on</string>
+    <string name="voice_note_settings_summary_off">Automatic WhatsApp voice-note transcription · off</string>
+    <string name="voice_note_settings_summary_limited">Sender recognition for voice notes</string>
     <string name="voice_note_identity_title">Voice note sender recognition</string>
     <string name="voice_note_identity_description">Labels the History row of every transcribed voice note with the sender\'s name, whether you shared it here or it was transcribed automatically. WhatsApp only for now. The name appears only if the note\'s notification arrived while this was on, and only when its reported length matches the audio (no guessed names). The name stays on that row even after you turn this off; the waiting list lives in memory only. Requires notification access.</string>
     <string name="voice_note_identity_grant_hint">Notification access is off. Tap to open the system setting and enable it for this app.</string>

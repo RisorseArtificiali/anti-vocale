@@ -172,6 +172,7 @@ fun SettingsTab(
     var showSpeakerSettings by remember { mutableStateOf(false) }
     var showPerformanceSettings by remember { mutableStateOf(false) }
     var showAutomationSettings by remember { mutableStateOf(false) }
+    var showVoiceNoteSettings by remember { mutableStateOf(false) }
 
     // The ONE sub-page clear (TASK-632): system back and every nav-effect
     // branch share it, so a future sub-page flag cannot be cleared in one
@@ -184,6 +185,7 @@ fun SettingsTab(
         showSpeakerSettings = false
         showPerformanceSettings = false
         showAutomationSettings = false
+        showVoiceNoteSettings = false
     }
 
     // 2026-09-30 regroup: system back on ANY subpage must return to the
@@ -191,7 +193,7 @@ fun SettingsTab(
     // these flags; without this, back from a subpage closes the app).
     androidx.activity.compose.BackHandler(enabled = showIconSettings || showExportSettings ||
         showPromptSettings || showPerAppSettings || showSpeakerSettings ||
-        showPerformanceSettings || showAutomationSettings) {
+        showPerformanceSettings || showAutomationSettings || showVoiceNoteSettings) {
         closeSubPages()
     }
     // TASK-625 deep-link carrier: the memory-failure notification action
@@ -235,6 +237,7 @@ fun SettingsTab(
                     "speaker" -> showSpeakerSettings = true
                     "performance" -> showPerformanceSettings = true
                     "automation" -> showAutomationSettings = true
+                    "voice_notes" -> showVoiceNoteSettings = true
                 }
             }
             is AppNavigation.Destination.SettingsRow -> {
@@ -371,6 +374,15 @@ fun SettingsTab(
             initialScroll = pendingSubPageScroll,
             onScrollConsumed = { pendingSubPageScroll = null },
             onBack = { showExportSettings = false }
+        )
+    } else if (showVoiceNoteSettings) {
+        // TASK-835 (the N>=2 subpage rule): the voice-note entries (sender
+        // recognition, auto transcription, folder grant) on one page.
+        VoiceNoteSettingsScreen(
+            viewModel = viewModel,
+            initialScroll = pendingSubPageScroll,
+            onScrollConsumed = { pendingSubPageScroll = null },
+            onBack = { showVoiceNoteSettings = false }
         )
     } else if (showPromptSettings) {
         PromptSettingsScreen(
@@ -1913,6 +1925,84 @@ fun SettingsTab(
                 SettingsHubCard(R.string.automation_settings_title, R.string.automation_settings_summary) { showAutomationSettings = true }
             }
 
+            // TASK-835 (the N>=2 subpage rule, maintainer 2026-10-14): the
+            // voice-note entries (sender recognition, auto transcription,
+            // folder grant) live on their own page; this hub opens it. The
+            // hub shows on every device: sender recognition needs no
+            // read-media permission, so the page keeps it reachable where
+            // auto-detection is unavailable (Android 10) and gates that
+            // part inside. Search contract: the hub's registry vocabulary
+            // is the static union of its own and all three children's
+            // strings.
+            val voiceNoteDetectionEnabledForSummary by viewModel.voiceNoteDetectionEnabled.collectAsState()
+            // R-1 (review 2026-10-14): the subpage's own ON_RESUME probe only
+            // runs while the page is open; an external grant or revoke of the
+            // read-media permission must re-evaluate the coordinator's
+            // conjunction from the always-composed tree (the review-F1 poke
+            // the coordinator KDoc names), same composition condition the
+            // old inline probe had.
+            RecheckOnResume { viewModel.refreshVoiceNoteDetectionGate() }
+            SearchFilterRow(searchQuery, SettingsSearchId.VOICE_NOTE_HUB, searchState) {
+                SettingsHubCard(
+                    titleRes = R.string.voice_note_settings_title,
+                    summaryRes = when {
+                        !com.antivocale.app.data.VoiceNoteDetectionPermission.detectionAvailable() ->
+                            // Android 10: the page hides auto-detection, so
+                            // the summary must not advertise it (review R-2).
+                            R.string.voice_note_settings_summary_limited
+                        voiceNoteDetectionEnabledForSummary -> R.string.voice_note_settings_summary_on
+                        else -> R.string.voice_note_settings_summary_off
+                    },
+                    leadingIcon = Icons.Default.RecordVoiceOver,
+                ) { showVoiceNoteSettings = true }
+            }
+            SearchFilterRow(searchQuery, SettingsSearchId.SHARE_SHORTCUT_ICONS, searchState) {
+                ShareShortcutIconsCard(viewModel)
+            }
+        }
+
+        // Feedback & About section (issue #34 / TASK-341)
+        if (feedbackVisible) FeedbackSection(
+            expandSignal = (expandCounters["feedback"] ?: 0) + if (searchActive) 1 else 0,
+            onPositioned = { sectionOffsets["feedback"] = it },
+            activeBackendId = uiState.transcriptionBackend,
+            activeModelName = uiState.currentModelName,
+            currentLanguage = currentLanguage,
+            onReplayTour = { viewModel.replayOnboardingTour() }
+        )
+
+        // Spacer for scroll
+        Spacer(modifier = Modifier.height(32.dp))
+        }
+        }
+    }
+    } // End of if-else for showPerAppSettings
+}
+
+/**
+ * TASK-835 (the N>=2 subpage rule): the voice-note settings page. The three
+ * entries moved here verbatim from the main tree (sender recognition, the
+ * auto-transcription gate with its runtime-permission flow, the folder
+ * grant card with its picker); the main tree keeps one hub row whose
+ * summary carries the detection state. The detectionAvailable gate stays
+ * INSIDE the page: sender recognition needs no read-media permission, so
+ * the page stays reachable on Android 10 with that part hidden.
+ */
+@Composable
+internal fun VoiceNoteSettingsScreen(
+    viewModel: SettingsViewModel,
+    initialScroll: AppNavigation.ScrollRequest? = null,
+    onScrollConsumed: () -> Unit = {},
+    onBack: () -> Unit,
+) {
+    val context = LocalContext.current
+    SubPageScrollScaffold(
+        titleRes = R.string.voice_note_settings_title,
+        onBack = onBack,
+        scrollRequest = initialScroll,
+        onScrollConsumed = onScrollConsumed,
+        bodySpacing = Arrangement.spacedBy(12.dp),
+    ) { _ ->
             // TASK-735: the voice-note identity listener's app-level gate.
             // The system's notification access is the outer gate; while this
             // toggle is off the listener reads nothing (the RAM-only privacy
@@ -1928,17 +2018,16 @@ fun SettingsTab(
                 notificationAccessGranted = androidx.core.app.NotificationManagerCompat
                     .getEnabledListenerPackages(context).contains(context.packageName)
             }
-            SearchFilterRow(searchQuery, SettingsSearchId.VOICE_NOTE_IDENTITY, searchState) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 ToggleSettingCard(
                     icon = Icons.Default.RecordVoiceOver,
                     title = stringResource(R.string.voice_note_identity_title),
                     description = stringResource(R.string.voice_note_identity_description),
                     // The description IS the maintainer-mandated limits
-                    // text: it renders in full wherever the card renders,
-                    // search included. (Range review: the first attempt at
-                    // this override silently never applied - the fourth
-                    // scripted non-application; disk grep is the proof.)
-                    descriptionMaxLinesCompact = Int.MAX_VALUE,
+                    // text and renders in full here: the subpage never
+                    // composes under search compaction, so the old
+                    // descriptionMaxLinesCompact override left on the main
+                    // tree became inert with the move (review R-5).
                     checked = voiceNoteIdentityEnabled,
                     onCheckedChange = { enabled -> viewModel.saveVoiceNoteIdentityEnabled(enabled) }
                 )
@@ -2077,12 +2166,11 @@ fun SettingsTab(
                     viewModel.saveVoiceNoteTreeUri(uri.toString())
                 }
             }
-            SearchFilterRow(searchQuery, SettingsSearchId.VOICE_NOTE_DETECTION, searchState) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 ToggleSettingCard(
                     icon = Icons.Default.Notifications,
                     title = stringResource(R.string.voice_note_detection_title),
                     description = stringResource(R.string.voice_note_detection_description),
-                    descriptionMaxLinesCompact = Int.MAX_VALUE,
                     checked = voiceNoteDetectionEnabled,
                     onCheckedChange = { enabled ->
                         when {
@@ -2176,27 +2264,7 @@ fun SettingsTab(
                 }
             }
             } // end detectionAvailable() gate
-            SearchFilterRow(searchQuery, SettingsSearchId.SHARE_SHORTCUT_ICONS, searchState) {
-                ShareShortcutIconsCard(viewModel)
-            }
-        }
-
-        // Feedback & About section (issue #34 / TASK-341)
-        if (feedbackVisible) FeedbackSection(
-            expandSignal = (expandCounters["feedback"] ?: 0) + if (searchActive) 1 else 0,
-            onPositioned = { sectionOffsets["feedback"] = it },
-            activeBackendId = uiState.transcriptionBackend,
-            activeModelName = uiState.currentModelName,
-            currentLanguage = currentLanguage,
-            onReplayTour = { viewModel.replayOnboardingTour() }
-        )
-
-        // Spacer for scroll
-        Spacer(modifier = Modifier.height(32.dp))
-        }
-        }
     }
-    } // End of if-else for showPerAppSettings
 }
 
 /**
@@ -3311,8 +3379,8 @@ internal enum class SettingsSearchId {
     COMPACT_RESULT_ACTIONS, TECHNICAL_DETAILS, LANGUAGE_CHIP, RETRANSCRIBE, ADVANCED_SHARE_FORMATS,
     // Advanced
     BATTERY_EXEMPTION, HUGGINGFACE_AUTH, PERFORMANCE_HUB,
-    SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, VOICE_NOTE_IDENTITY, PER_APP_SETTINGS,
-    SHARE_SHORTCUT_ICONS, VOICE_NOTE_DETECTION,
+    SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, VOICE_NOTE_HUB, PER_APP_SETTINGS,
+    SHARE_SHORTCUT_ICONS,
     // Feedback
     FEEDBACK,
 }
@@ -3677,16 +3745,17 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.open_transcribe_title, R.string.open_transcribe_description),
         group = SettingsSearchGroup.INTEGRATIONS,
     ),
+    // TASK-835 (the N>=2 subpage rule): the voice-note hub, whose page
+    // hosts the three entries. Static union vocabulary: the hub's strings
+    // plus all three children's (sender recognition, detection, folder).
     SettingsSearchCard(
-        SettingsSearchId.VOICE_NOTE_IDENTITY, SettingsSearchSection.ADVANCED,
-        listOf(R.string.voice_note_identity_title, R.string.voice_note_identity_description),
-        group = SettingsSearchGroup.INTEGRATIONS,
-    ),
-    // TASK-271: the voice-note detection gate, next to the identity card
-    // it cooperates with (detection offers; identity labels the sender).
-    SettingsSearchCard(
-        SettingsSearchId.VOICE_NOTE_DETECTION, SettingsSearchSection.ADVANCED,
-        listOf(R.string.voice_note_detection_title, R.string.voice_note_detection_description),
+        SettingsSearchId.VOICE_NOTE_HUB, SettingsSearchSection.ADVANCED,
+        listOf(
+            R.string.voice_note_settings_title,
+            R.string.voice_note_settings_summary_on, R.string.voice_note_settings_summary_off,
+            R.string.voice_note_identity_title, R.string.voice_note_identity_description,
+            R.string.voice_note_detection_title, R.string.voice_note_detection_description,
+            R.string.voice_note_folder_card_title, R.string.voice_note_folder_card_desc),
         group = SettingsSearchGroup.INTEGRATIONS,
     ),
     SettingsSearchCard(

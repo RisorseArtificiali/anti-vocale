@@ -879,6 +879,10 @@
     <string name="external_notice_single_pass">Un audio muy largo puede no procesarse en una sola pasada con modelos grandes. Recorta el audio o elige un modelo más pequeño.</string>
     <string name="external_notice_family">Si la transcripción se cierra sin error, la arquitectura puede ser incorrecta: elimina y reimporta el modelo con otra arquitectura.</string>
     <string name="share_targets_title">Modelos en el menú Compartir</string>
+    <string name="voice_note_settings_title">Notas de voz</string>
+    <string name="voice_note_settings_summary_on">Transcripción automática de las notas de voz de WhatsApp · activa</string>
+    <string name="voice_note_settings_summary_off">Transcripción automática de las notas de voz de WhatsApp · inactiva</string>
+    <string name="voice_note_settings_summary_limited">Reconocimiento del remitente de las notas de voz</string>
     <string name="voice_note_identity_title">Reconocimiento del remitente de notas de voz</string>
     <string name="voice_note_identity_description">Anota en la fila del historial el nombre de quien envió cada nota de voz transcrita, tanto si la compartes aquí como si se transcribe automáticamente. Por ahora solo WhatsApp. El nombre aparece solo si la notificación de la nota llegó con esto activado, y solo si la duración declarada coincide con el audio (nada de nombres adivinados). El nombre permanece en esa fila incluso tras apagar esto; la lista de espera vive solo en memoria. Requiere acceso a notificaciones.</string>
     <string name="voice_note_identity_grant_hint">El acceso a notificaciones está desactivado. Toca para abrir el ajuste del sistema y activarlo para esta app.</string>

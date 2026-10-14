@@ -879,6 +879,10 @@
     <string name="external_notice_single_pass">Áudio muito longo pode não ser processado por modelos grandes em uma única passagem. Corte o áudio ou escolha um modelo menor.</string>
     <string name="external_notice_family">Se a transcrição fechar sem erro, a arquitetura pode estar errada: exclua e reimporte o modelo com outra arquitetura.</string>
     <string name="share_targets_title">Modelos no menu Compartilhar</string>
+    <string name="voice_note_settings_title">Mensagens de voz</string>
+    <string name="voice_note_settings_summary_on">Transcrição automática das mensagens de voz do WhatsApp · ativa</string>
+    <string name="voice_note_settings_summary_off">Transcrição automática das mensagens de voz do WhatsApp · inativa</string>
+    <string name="voice_note_settings_summary_limited">Reconhecimento do remetente das mensagens de voz</string>
     <string name="voice_note_identity_title">Reconhecimento do remetente de áudios</string>
     <string name="voice_note_identity_description">Anota na linha do histórico o nome de quem enviou cada áudio transcrito, tanto se você compartilhar aqui como se for transcrito automaticamente. Por enquanto só WhatsApp. O nome aparece somente se a notificação do áudio chegou com isto ativado, e somente se a duração informada bate com o áudio (nenhum nome chutado). O nome fica nessa linha mesmo depois de desativar; a lista de espera vive só na memória. Requer acesso às notificações.</string>
     <string name="voice_note_identity_grant_hint">O acesso às notificações está desativado. Toque para abrir a configuração do sistema e ativá-lo para este app.</string>

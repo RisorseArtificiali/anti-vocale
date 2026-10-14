@@ -1024,6 +1024,10 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Модели в меню «Поделиться»</string>
+    <string name="voice_note_settings_title">Голосовые сообщения</string>
+    <string name="voice_note_settings_summary_on">Автоматическая расшифровка голосовых сообщений WhatsApp · включена</string>
+    <string name="voice_note_settings_summary_off">Автоматическая расшифровка голосовых сообщений WhatsApp · выключена</string>
+    <string name="voice_note_settings_summary_limited">Распознавание отправителя голосовых сообщений</string>
     <string name="voice_note_identity_title">Распознавание отправителя голосовых</string>
     <string name="voice_note_identity_description">Записывает в строку истории имя отправителя каждого расшифрованного голосового сообщения (и отправленного в приложение, и расшифрованного автоматически). Пока только WhatsApp. Имя появится только если уведомление пришло, пока опция была включена, и только при совпадении заявленной длительности с аудио (без угадывания). Имя остаётся в строке и после выключения; список живёт только в памяти. Требуется доступ к уведомлениям.</string>
     <string name="voice_note_identity_grant_hint">Доступ к уведомлениям выключен. Нажмите, чтобы открыть системную настройку и включить его для этого приложения.</string>

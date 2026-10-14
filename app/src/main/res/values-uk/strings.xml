@@ -1044,6 +1044,10 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Цілі надсилання</string>
+    <string name="voice_note_settings_title">Голосові повідомлення</string>
+    <string name="voice_note_settings_summary_on">Автоматична розшифровка голосових повідомлень WhatsApp · увімкнена</string>
+    <string name="voice_note_settings_summary_off">Автоматична розшифровка голосових повідомлень WhatsApp · вимкнена</string>
+    <string name="voice_note_settings_summary_limited">Розпізнавання відправника голосових повідомлень</string>
     <string name="voice_note_identity_title">Розпізнавання відправника голосових</string>
     <string name="voice_note_identity_description">Записує в рядок історії ім\'я відправника кожного розшифрованого голосового повідомлення (і поділеного в застосунок, і розшифрованого автоматично). Поки лише WhatsApp. Ім\'я з\'являється лише якщо повідомлення прийшло, поки опція була увімкнена, і лише коли заявлена тривалість збігається з аудіо (без вгадувань). Ім\'я залишається в рядку і після вимкення; список живе лише в пам\'яті. Потрібен доступ до сповіщень.</string>
     <string name="voice_note_identity_grant_hint">Доступ до сповіщень вимкнено. Торкніться, щоб відкрити системне налаштування й увімкнути його для цього застосунку.</string>

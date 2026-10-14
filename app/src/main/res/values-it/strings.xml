@@ -988,6 +988,10 @@
     <string name="external_notice_single_pass">Un audio molto lungo potrebbe non essere elaborato dai modelli grandi in una sola passata. Accorcia l\'audio o scegli un modello più piccolo.</string>
     <string name="external_notice_family">Se la trascrizione si interrompe senza errori l\'architettura potrebbe essere sbagliata: elimina e reimporta il modello con un\'architettura diversa.</string>
     <string name="share_targets_title">Modelli nel menu Condividi</string>
+    <string name="voice_note_settings_title">Note vocali</string>
+    <string name="voice_note_settings_summary_on">Trascrizione automatica delle note vocali WhatsApp · attiva</string>
+    <string name="voice_note_settings_summary_off">Trascrizione automatica delle note vocali WhatsApp · disattivata</string>
+    <string name="voice_note_settings_summary_limited">Riconoscimento del mittente delle note vocali</string>
     <string name="voice_note_identity_title">Riconoscimento del mittente delle note vocali</string>
     <string name="voice_note_identity_description">Scrive sulla riga della cronologia il nome del mittente di ogni nota vocale trascritta, sia che tu la condivida qui sia che venga trascritta automaticamente. Per ora solo WhatsApp. Il nome compare solo se la notifica della nota è arrivata mentre l\'opzione era accesa, e solo se la durata dichiarata corrisponde all\'audio (nessun nome azzardato). Il nome resta su quella riga anche dopo aver spento l\'opzione; l\'elenco delle note in attesa sta solo in memoria. Richiede l\'accesso alle notifiche.</string>
     <string name="voice_note_identity_grant_hint">L\'accesso alle notifiche è disattivato. Tocca per aprire l\'impostazione di sistema e attivarlo per questa app.</string>
