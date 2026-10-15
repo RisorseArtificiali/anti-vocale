@@ -3,7 +3,6 @@
      docs/localization/glossaries.md (TASK-350). Terminology: AOSP Settings
      values-tr conventions first; "transcription" = "metin çıkarma". -->
 <resources>
-    <string name="app_name">Anti-Vocale</string>
 
     <!-- Tab names -->
     <string name="model_tab">Modeller</string>

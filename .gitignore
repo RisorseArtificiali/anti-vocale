@@ -91,6 +91,10 @@ keystore.properties
 
 # Google Services (e.g. APIs or Firebase)
 google-services.json
+# GH #159: the nightly source-set json is COMMITTED on purpose (the duplicated
+# .nightly client entry; the same trick the local untracked debug json uses).
+# It ships inside every playStore APK, so it is not secret.
+!app/src/nightly/google-services.json
 
 # Freeline
 freeline.py

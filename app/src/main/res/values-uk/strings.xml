@@ -5,7 +5,6 @@
      "transcription" = "розшифровка" (per the ru glossary's расшифровка choice,
      issue #36 native-speaker feedback). -->
 <resources>
-    <string name="app_name">Anti-Vocale</string>
 
     <!-- Tab names -->
     <string name="model_tab">Моделі</string>

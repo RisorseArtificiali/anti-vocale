@@ -113,7 +113,7 @@ class HuggingFaceAuthManager(
             HuggingFaceOAuthConfig.serviceConfig,
             HuggingFaceOAuthConfig.CLIENT_ID,
             ResponseTypeValues.CODE,
-            Uri.parse(HuggingFaceOAuthConfig.REDIRECT_URI)
+            Uri.parse(HuggingFaceOAuthConfig.redirectUri())
         )
             .setScope(HuggingFaceOAuthConfig.SCOPE)
             // Use 'consent' prompt to ensure we get a refresh token
@@ -148,7 +148,7 @@ class HuggingFaceAuthManager(
         val authRequest = createAuthorizationRequest()
         val authIntent = authService!!.getAuthorizationRequestIntent(authRequest)
 
-        Log.i(TAG, "Starting OAuth flow with redirect: ${HuggingFaceOAuthConfig.REDIRECT_URI}")
+        Log.i(TAG, "Starting OAuth flow with redirect: ${HuggingFaceOAuthConfig.redirectUri()}")
         launcher.launch(authIntent)
     }
 

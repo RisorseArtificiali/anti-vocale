@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1092794214960",
+    "project_id": "anti-vocale",
+    "storage_bucket": "anti-vocale.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1092794214960:android:ec3fc259d92c615027dbf5",
+        "android_client_info": {
+          "package_name": "com.antivocale.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQEw__lHEvJeDmNSUfUNA3ciov_Wbdnio"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1092794214960:android:ec3fc259d92c615027dbf5",
+        "android_client_info": {
+          "package_name": "com.antivocale.app.nightly"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQEw__lHEvJeDmNSUfUNA3ciov_Wbdnio"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

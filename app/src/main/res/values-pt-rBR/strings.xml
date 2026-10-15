@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Anti-Vocale</string>
     <string name="model_tab">Modelos</string>
     <string name="logs_tab">Histórico</string>
     <string name="settings_tab">Configurações</string>

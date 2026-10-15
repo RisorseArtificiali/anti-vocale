@@ -2,7 +2,6 @@
 <resources>
     <!-- Terminology: user-facing "транскрипция" is translated as "распознавание" (common word)
          instead of the Android-typical "транскрипция", per native-speaker feedback (issue #36). -->
-    <string name="app_name">Anti-Vocale</string>
 
     <!-- Tab names -->
     <string name="model_tab">Модели</string>

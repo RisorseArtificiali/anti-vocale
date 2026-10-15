@@ -114,6 +114,28 @@ android {
             // Suffix the applicationId so a debug APK installs ALONGSIDE the release /
             // Play Store build (different package) instead of conflicting on signature.
             applicationIdSuffix = ".debug"
+            // Own OAuth redirect scheme (TASK-838 review F1): two installed
+            // builds sharing one scheme fight over the implicit redirect;
+            // HuggingFaceOAuthConfig.redirectUri() derives from applicationId,
+            // and this placeholder feeds the AppAuth library's redirect
+            // activity to match. Needs the URI registered on the HF OAuth app.
+            manifestPlaceholders["appAuthRedirectScheme"] = "com.antivocale.app.debug"
+        }
+        // GH #159: the nightly build type, cloned from release so the nightly
+        // APK is a true release artifact (R8, resource shrink) but carries its
+        // OWN applicationId and label: it installs side-by-side with the
+        // store build instead of replacing it, and the launcher says which
+        // is which. initWith copies the release block's conditional signing
+        // assignment only if keystore.properties existed when that block ran;
+        // re-assert it explicitly so the nightly never depends on block order.
+        create("nightly") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".nightly"
+            // Own OAuth redirect scheme, same rationale as the debug block.
+            manifestPlaceholders["appAuthRedirectScheme"] = "com.antivocale.app.nightly"
+            if (keystoreProperties["storeFile"] != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

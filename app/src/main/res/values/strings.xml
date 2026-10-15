@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Anti-Vocale</string>
+    <string name="app_name" translatable="false">Anti-Vocale</string>
 
     <!-- Tab names -->
     <string name="model_tab">Models</string>

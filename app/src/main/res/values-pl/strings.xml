@@ -3,7 +3,6 @@
      docs/localization/glossaries.md (TASK-351). Terminology: AOSP Settings
      values-pl conventions first; "transcription" = "transkrypcja". -->
 <resources>
-    <string name="app_name">Anti-Vocale</string>
 
     <!-- Tab names -->
     <string name="model_tab">Modele</string>

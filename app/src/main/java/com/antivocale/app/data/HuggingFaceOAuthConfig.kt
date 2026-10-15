@@ -1,6 +1,7 @@
 package com.antivocale.app.data
 
 import android.net.Uri
+import com.antivocale.app.BuildConfig
 import net.openid.appauth.AuthorizationServiceConfiguration
 
 /**
@@ -38,12 +39,19 @@ object HuggingFaceOAuthConfig {
     const val CLIENT_ID = "982f691f-f8d2-4b1d-a5aa-0b33c7b1bb50"
 
     /**
-     * Redirect URI for OAuth callback.
-     * Must match the scheme configured in build.gradle.kts manifestPlaceholders.
+     * Redirect URI for OAuth callback, derived from the build's
+     * applicationId at runtime (TASK-838 review F1): every installable id
+     * (com.antivocale.app, .debug, .nightly) gets its OWN scheme, so two
+     * installed builds never fight over one implicit redirect. Each scheme
+     * must be registered as a redirect URI on the HuggingFace OAuth app
+     * (a maintainer-side registration; unregistered schemes fail login
+     * with HuggingFace's own "redirect uri not registered" error).
      *
-     * Format: {appAuthRedirectScheme}://oauth2callback
+     * Format: {applicationId}://oauth2callback, matching the
+     * appAuthRedirectScheme manifestPlaceholders (the AppAuth library's
+     * redirect activity consumes it).
      */
-    const val REDIRECT_URI = "com.antivocale.app://oauth2callback"
+    fun redirectUri(): String = BuildConfig.APPLICATION_ID + "://oauth2callback"
 
     /**
      * OAuth scopes requested from HuggingFace.

@@ -56,12 +56,15 @@ class StringResourceParityTest {
      * TASK-604 F3: the translatable="false" exemption is one-way; without a
      * pinned allowlist, a user-visible key wrongly marked untranslatable
      * silently bypasses parity AND lint, re-enabling the laundering this
-     * task removed. Empty today: adding an entry must be a conscious,
-     * reviewed decision.
+     * task removed. Each entry is a conscious, reviewed decision.
+     * app_name (GH #159 / TASK-838): the brand is locale-invariant by
+     * nature; per-locale copies made buildType label overrides (Debug,
+     * Nightly) lose on non-English launchers, so the copies were deleted
+     * and the key pinned here.
      */
     @Test
     fun `untranslatable keys match the reviewed allowlist`() {
-        val expected = setOf<String>()
+        val expected = setOf("app_name")
         val actual = rawKeys(stringsFile("src/main/res/values/strings.xml"))
             .filterValues { it == "false" }.keys
         assertEquals(

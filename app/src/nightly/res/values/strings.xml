@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nightly-only overrides (GH #159): the launcher label distinguishes the
+     nightly build from the marketplace and debug installs; the applicationId
+     suffix (.nightly, app/build.gradle.kts) makes them coexist. -->
+<resources>
+    <string name="app_name">Anti-Vocale Nightly</string>
+</resources>
