@@ -1282,4 +1282,23 @@
     </plurals>
     <string name="folder_watch_period_label">Interwał skanowania</string>
     <string name="folder_watch_grant_failed">Nie udało się zachować dostępu do tego folderu, więc nie został dodany. Wybierz go ponownie.</string>
+
+    <!-- Kopia zapasowa i przenoszenie (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">Kopia zapasowa i przenoszenie</string>
+    <string name="backup_transfer_summary">Zapisz ustawienia i historię w pliku albo przywróć je na innym urządzeniu</string>
+    <string name="backup_export_title">Eksportuj kopię zapasową</string>
+    <string name="backup_export_description">Zapisuje jeden plik z ustawieniami i całą historią transkrypcji. Plik jest zwykłym tekstem: każdy, kto go posiada, może przeczytać wszystkie transkrypcje i nazwy nadawców.</string>
+    <string name="backup_export_action">Utwórz plik kopii zapasowej</string>
+    <string name="backup_import_title">Importuj kopię zapasową</string>
+    <string name="backup_import_description">Dodaje na tym urządzeniu ustawienia i dawne transkrypcje z pliku kopii zapasowej. To, co już masz, zostaje zachowane.</string>
+    <string name="backup_import_action">Wybierz plik kopii zapasowej</string>
+    <string name="backup_export_progress">Zapisywanie kopii…</string>
+    <string name="backup_import_progress">Odczytywanie kopii…</string>
+    <string name="backup_export_done">Kopia zapisana</string>
+    <string name="backup_export_failed">Nie udało się zapisać kopii</string>
+    <string name="backup_import_done">Zaimportowano: %1$d, pominięto: %2$d</string>
+    <string name="backup_import_failed">Nie udało się odczytać pliku kopii</string>
+    <string name="backup_import_history_failed">Zaimportowano ustawienia, ale nie udało się dodać historii. Ponowna próba jest bezpieczna.</string>
+    <string name="backup_disclosure_title">Zanim wyeksportujesz</string>
+    <string name="backup_disclosure_body">Kopia zawiera każdą transkrypcję, nazwę nadawcy i etykietę mówcy jako czytelny tekst. Udostępniaj ją tylko zaufanym odbiorcom.</string>
 </resources>

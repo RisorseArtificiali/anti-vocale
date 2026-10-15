@@ -11,6 +11,9 @@ import com.antivocale.app.ui.components.LanguageOption
 import com.antivocale.app.ui.components.TranscriptionLanguagePicker
 import com.antivocale.app.ui.components.languageOptionsFor
 import com.antivocale.app.ui.components.transcriptionPickerFor
+import com.antivocale.app.BuildConfig
+import com.antivocale.app.data.BackupArchiveCodec
+import com.antivocale.app.data.BackupHistoryCodec
 import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.HuggingFaceApiClient
@@ -51,6 +54,7 @@ import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.util.LocaleManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
+import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -1694,6 +1698,119 @@ class SettingsViewModel @Inject constructor(
             shortcutIconStore.clear(backendId)
             refreshShareIconBackends()
             shareShortcutManager.refresh()
+        }
+    }
+
+    // ---- TASK-843/844: the backup archive (GH #158) ----
+
+    /** The backup page's operation state; one terminal outcome per action. */
+    sealed interface BackupState {
+        data object Idle : BackupState
+        data object Exporting : BackupState
+        data object Importing : BackupState
+
+        /**
+         * [messageRes] formatted with [args] (int positions). [export]
+         * scopes the terminal outcome to its own card: the page renders
+         * one outcome line per action, not both (a shared un-scoped state
+         * showed the export result under the import card too).
+         */
+        data class Done(
+            val export: Boolean,
+            val messageRes: Int,
+            val args: List<Int> = emptyList(),
+        ) : BackupState
+
+        data class Failed(val export: Boolean, val messageRes: Int) : BackupState
+    }
+
+    private val _backupState = MutableStateFlow<BackupState>(BackupState.Idle)
+    val backupState: StateFlow<BackupState> = _backupState.asStateFlow()
+
+    /** Clears a terminal outcome so the page stops showing it. */
+    fun resetBackupState() {
+        _backupState.value = BackupState.Idle
+    }
+
+    /**
+     * Writes the full archive to the SAF pick: whitelisted settings plus
+     * the whole history streamed page-by-page onto the output stream (the
+     * history never buffers as one heap copy; the 256MB lesson). Runs on
+     * IO in viewModelScope like the model-bundle export (a compose scope
+     * would cancel the zip mid-write when the page closes).
+     */
+    fun exportBackup(uri: Uri) = viewModelScope.launch(Dispatchers.IO) {
+        _backupState.value = BackupState.Exporting
+        try {
+            val values = preferencesManager.exportPortableSettings()
+            val out = getApplication<Application>().contentResolver.openOutputStream(uri)
+                ?: error("cannot open export target $uri")
+            out.use {
+                ZipOutputStream(it).use { zip ->
+                    BackupArchiveCodec.writeSettingsEntries(
+                        zip, values, BuildConfig.VERSION_NAME, System.currentTimeMillis())
+                    BackupHistoryCodec.writeHistoryEntry(zip) { before, limit ->
+                        logDao.pageBefore(before, limit)
+                    }
+                }
+            }
+            Log.i(TAG, "backup exported -> $uri (${values.size} settings keys)")
+            _backupState.value = BackupState.Done(export = true, messageRes = R.string.backup_export_done)
+        } catch (e: Exception) {
+            Log.w(TAG, "backup export failed", e)
+            _backupState.value = BackupState.Failed(export = true, messageRes = R.string.backup_export_failed)
+        }
+    }
+
+    /**
+     * Reads the SAF pick: the settings apply in ONE DataStore transaction
+     * (whitelist-gated), the history rows merge idempotently (REPLACE on
+     * the row id, streamed chunk-by-chunk straight off the zip stream so
+     * the heap never holds the archive or the history whole, the 256MB
+     * lesson), and malformed rows drop and count. Two passes over two
+     * fresh streams (validation first, then the merge) instead of one
+     * full-buffer copy. An unreadable archive applies NOTHING. A history
+     * write failure after the settings applied leaves the settings
+     * applied and reports its OWN outcome (the generic read-failure
+     * string would misreport what happened); the retry is idempotent.
+     */
+    fun importBackup(uri: Uri) = viewModelScope.launch(Dispatchers.IO) {
+        _backupState.value = BackupState.Importing
+        try {
+            val resolver = getApplication<Application>().contentResolver
+            val settings = resolver.openInputStream(uri)?.use {
+                BackupArchiveCodec.readSettings(it)
+            } ?: error("cannot open import source $uri")
+            if (settings == null) {
+                _backupState.value = BackupState.Failed(
+                    export = false, messageRes = R.string.backup_import_failed)
+                return@launch
+            }
+            preferencesManager.importPortableSettings(settings)
+            try {
+                var imported = 0
+                val dropped = resolver.openInputStream(uri)?.use { stream ->
+                    BackupArchiveCodec.openHistoryReader(stream)?.let { reader ->
+                        BackupHistoryCodec.readHistoryEntryChunked(reader) { chunk ->
+                            imported += chunk.size
+                            logDao.insertAll(chunk)
+                        }
+                    } ?: 0
+                } ?: 0
+                Log.i(TAG, "backup imported: ${settings.size} keys, $imported rows, $dropped dropped")
+                _backupState.value = BackupState.Done(
+                    export = false,
+                    messageRes = R.string.backup_import_done,
+                    args = listOf(imported, dropped))
+            } catch (e: Exception) {
+                Log.w(TAG, "backup history merge failed", e)
+                _backupState.value = BackupState.Failed(
+                    export = false, messageRes = R.string.backup_import_history_failed)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "backup import failed", e)
+            _backupState.value = BackupState.Failed(
+                export = false, messageRes = R.string.backup_import_failed)
         }
     }
 }

@@ -1272,4 +1272,23 @@
     <string name="voice_note_folder_sheet_step2">Scroll omlaag langs het pad naar de map met spraakberichten:</string>
     <string name="voice_note_folder_sheet_step3">Tik met de map WhatsApp Voice Notes geselecteerd (niet openen) op DEZE MAP GEBRUIKEN en daarna op TOESTAAN.</string>
     <string name="voice_note_folder_sheet_open">Kiezer openen</string>
+
+    <!-- Back-up en overdracht (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">Back-up en overdracht</string>
+    <string name="backup_transfer_summary">Bewaar je instellingen en geschiedenis in een bestand, of zet ze terug op een ander apparaat</string>
+    <string name="backup_export_title">Back-up exporteren</string>
+    <string name="backup_export_description">Schrijft één bestand met je instellingen en je volledige transcriptiegeschiedenis. Het bestand is platte tekst: wie het heeft, kan elke transcriptie en elke afzendernaam lezen.</string>
+    <string name="backup_export_action">Back-upbestand maken</string>
+    <string name="backup_import_title">Back-up importeren</string>
+    <string name="backup_import_description">Voegt instellingen en eerdere transcripties uit een back-upbestand toe aan dit apparaat. Wat je al hebt, blijft staan.</string>
+    <string name="backup_import_action">Back-upbestand kiezen</string>
+    <string name="backup_export_progress">Back-up schrijven…</string>
+    <string name="backup_import_progress">Back-up lezen…</string>
+    <string name="backup_export_done">Back-up opgeslagen</string>
+    <string name="backup_export_failed">Back-up schrijven mislukt</string>
+    <string name="backup_import_done">Geïmporteerd: %1$d, overgeslagen: %2$d</string>
+    <string name="backup_import_failed">Back-upbestand lezen mislukt</string>
+    <string name="backup_import_history_failed">Instellingen geïmporteerd, maar de geschiedenis kon niet worden toegevoegd. Opnieuw proberen is veilig.</string>
+    <string name="backup_disclosure_title">Voordat je exporteert</string>
+    <string name="backup_disclosure_body">De back-up bevat elke transcriptie, afzendernaam en sprekerlabels in leesbare tekst. Deel hem alleen met ontvangers die je vertrouwt.</string>
 </resources>

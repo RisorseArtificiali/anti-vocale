@@ -31,12 +31,13 @@ object BackupHistoryCodec {
 
     /**
      * Streams the whole history into the archive: the caller supplies a
-     * page fetcher (the DAO's keyset query) so the codec never holds more
-     * than one page in memory; rows are written one JSON line at a time.
+     * suspend page fetcher (the DAO's keyset query) so the codec never
+     * holds more than one page in memory; rows are written one JSON line
+     * at a time.
      */
-    fun writeHistoryEntry(
+    suspend fun writeHistoryEntry(
         zip: ZipOutputStream,
-        pageFetcher: (beforeTimestamp: Long, limit: Int) -> List<LogEntity>,
+        pageFetcher: suspend (beforeTimestamp: Long, limit: Int) -> List<LogEntity>,
     ) {
         zip.putNextEntry(ZipEntry(HISTORY_ENTRY))
         val buffer = ByteArrayOutputStream()
@@ -58,28 +59,73 @@ object BackupHistoryCodec {
             // cheap).
             before -= 1
         }
-        zip.write(buffer.toByteArray())
         zip.closeEntry()
     }
 
     /**
      * Parses the history payload. Malformed lines are dropped, not fatal
      * (a one-line corruption costs one row); an empty payload reads as an
-     * empty list.
+     * empty list. Blocking convenience over the suspend walk (the tests'
+     * entry point; production rides the chunked variant).
      */
-    fun readHistoryEntry(bytes: ByteArray): List<LogEntity> {
-        if (bytes.isEmpty()) return emptyList()
-        val text = bytes.toString(Charsets.UTF_8)
-        return text.lineSequence()
-            .filter { it.isNotBlank() }
-            .mapNotNull { line ->
+    fun readHistoryEntry(bytes: ByteArray): List<LogEntity> =
+        kotlinx.coroutines.runBlocking { readHistoryEntryWithDropped(bytes).first }
+
+    /**
+     * TASK-844: the import arm's result: the parsed rows plus how many
+     * non-blank lines were dropped (the report the import toast shows).
+     * Full-materialization variant for the codec's own API and tests; the
+     * import path rides [readHistoryEntryChunked] instead.
+     */
+    suspend fun readHistoryEntryWithDropped(bytes: ByteArray): Pair<List<LogEntity>, Int> {
+        val rows = mutableListOf<LogEntity>()
+        val dropped = readHistoryEntryChunked(bytes) { chunk -> rows.addAll(chunk) }
+        return rows to dropped
+    }
+
+    /**
+     * The import's streaming parse: rows flush to [onChunk] in [chunkSize]
+     * batches (the insert page; the caller never holds the whole history
+     * in the heap, the 256MB lesson) and the return value is the dropped
+     * line count. The emitter is suspend because the caller's chunk
+     * handler is the DAO insert; each chunk is an INDEPENDENT list (the
+     * emitter may retain what it receives). Reads line-by-line: no
+     * full-text copy.
+     */
+    suspend fun readHistoryEntryChunked(
+        bytes: ByteArray,
+        chunkSize: Int = PAGE_SIZE,
+        onChunk: suspend (List<LogEntity>) -> Unit,
+    ): Int = readHistoryEntryChunked(
+        bytes.inputStream().bufferedReader(Charsets.UTF_8), chunkSize, onChunk)
+
+    /** The [readHistoryEntryChunked] core over a live reader (the zip
+     *  stream's, via BackupArchiveCodec.openHistoryReader; closing the
+     *  reader closes the stream). */
+    suspend fun readHistoryEntryChunked(
+        reader: java.io.BufferedReader,
+        chunkSize: Int = PAGE_SIZE,
+        onChunk: suspend (List<LogEntity>) -> Unit,
+    ): Int {
+        var dropped = 0
+        val chunk = ArrayList<LogEntity>(chunkSize)
+        reader.useLines { lines ->
+            lines.forEach { line ->
+                if (line.isBlank()) return@forEach
                 try {
-                    rowFromJson(JSONObject(line))
+                    chunk.add(rowFromJson(JSONObject(line)))
                 } catch (e: Exception) {
-                    null
+                    dropped++
+                    return@forEach
+                }
+                if (chunk.size >= chunkSize) {
+                    onChunk(chunk.toList())
+                    chunk.clear()
                 }
             }
-            .toList()
+        }
+        if (chunk.isNotEmpty()) onChunk(chunk.toList())
+        return dropped
     }
 
     /** Column-complete by construction: every LogEntity field, same key on both ends. */

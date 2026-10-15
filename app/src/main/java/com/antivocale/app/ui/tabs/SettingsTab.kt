@@ -173,6 +173,7 @@ fun SettingsTab(
     var showPerformanceSettings by remember { mutableStateOf(false) }
     var showAutomationSettings by remember { mutableStateOf(false) }
     var showVoiceNoteSettings by remember { mutableStateOf(false) }
+    var showBackupTransfer by remember { mutableStateOf(false) }
 
     // The ONE sub-page clear (TASK-632): system back and every nav-effect
     // branch share it, so a future sub-page flag cannot be cleared in one
@@ -186,6 +187,7 @@ fun SettingsTab(
         showPerformanceSettings = false
         showAutomationSettings = false
         showVoiceNoteSettings = false
+        showBackupTransfer = false
     }
 
     // 2026-09-30 regroup: system back on ANY subpage must return to the
@@ -193,7 +195,8 @@ fun SettingsTab(
     // these flags; without this, back from a subpage closes the app).
     androidx.activity.compose.BackHandler(enabled = showIconSettings || showExportSettings ||
         showPromptSettings || showPerAppSettings || showSpeakerSettings ||
-        showPerformanceSettings || showAutomationSettings || showVoiceNoteSettings) {
+        showPerformanceSettings || showAutomationSettings || showVoiceNoteSettings ||
+        showBackupTransfer) {
         closeSubPages()
     }
     // TASK-625 deep-link carrier: the memory-failure notification action
@@ -238,6 +241,7 @@ fun SettingsTab(
                     "performance" -> showPerformanceSettings = true
                     "automation" -> showAutomationSettings = true
                     "voice_notes" -> showVoiceNoteSettings = true
+                    "backup" -> showBackupTransfer = true
                 }
             }
             is AppNavigation.Destination.SettingsRow -> {
@@ -414,6 +418,14 @@ fun SettingsTab(
             initialScroll = pendingSubPageScroll,
             onScrollConsumed = { pendingSubPageScroll = null },
             onBack = { showAutomationSettings = false },
+        )
+    } else if (showBackupTransfer) {
+        // TASK-843/844 (the N>=2 subpage rule): export + import on one page.
+        BackupTransferScreen(
+            viewModel = viewModel,
+            initialScroll = pendingSubPageScroll,
+            onScrollConsumed = { pendingSubPageScroll = null },
+            onBack = { showBackupTransfer = false },
         )
     } else {
     // TASK-628: compact rendering while search is active (descriptions
@@ -1850,6 +1862,20 @@ fun SettingsTab(
                 )
             }
 
+            // TASK-843/844 (the N>=2 subpage rule): the backup entries
+            // (export + import) on one page. ABOVE the Integrations label:
+            // data management, not an integration, and the search registry
+            // leaves it ungrouped (the tree grouping must match). The hub's
+            // registry vocabulary is the union of its own and both
+            // children's strings.
+            SearchFilterRow(searchQuery, SettingsSearchId.BACKUP_HUB, searchState) {
+                SettingsHubCard(
+                    titleRes = R.string.backup_transfer_title,
+                    summaryRes = R.string.backup_transfer_summary,
+                    leadingIcon = Icons.Default.Archive,
+                ) { showBackupTransfer = true }
+            }
+
             SettingsGroupLabel(SettingsSearchGroup.INTEGRATIONS, searchState)
 
             // Advanced Sharing Card
@@ -2264,6 +2290,144 @@ internal fun VoiceNoteSettingsScreen(
                 }
             }
 
+    }
+}
+
+/**
+ * TASK-843/844 (the N>=2 subpage rule): the backup-and-transfer page:
+ * export (settings + full history to one SAF-picked zip, behind the
+ * plaintext disclosure dialog) and import (merge into this device). The
+ * ViewModel owns the archive work; this page owns the pickers, the
+ * disclosure, and the one-line outcome per action.
+ */
+@Composable
+internal fun BackupTransferScreen(
+    viewModel: SettingsViewModel,
+    initialScroll: AppNavigation.ScrollRequest? = null,
+    onScrollConsumed: () -> Unit = {},
+    onBack: () -> Unit,
+) {
+    val backupState by viewModel.backupState.collectAsState()
+    var showExportDisclosure by remember { mutableStateOf(false) }
+
+    // The export target is a fresh document every time (CreateDocument):
+    // no persisted grant, nothing to take; the SAF pick IS the consent.
+    // The state resets INSIDE the callbacks, not at button-tap: a cancelled
+    // pick must not wipe the other card's still-relevant outcome.
+    val exportPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        if (uri != null) {
+            viewModel.resetBackupState()
+            viewModel.exportBackup(uri)
+        }
+    }
+    val importPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.resetBackupState()
+            viewModel.importBackup(uri)
+        }
+    }
+
+    if (showExportDisclosure) {
+        AlertDialog(
+            onDismissRequest = { showExportDisclosure = false },
+            title = { Text(stringResource(R.string.backup_disclosure_title)) },
+            text = { Text(stringResource(R.string.backup_disclosure_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExportDisclosure = false
+                    exportPicker.launch(backupFileName())
+                }) { Text(stringResource(R.string.backup_export_action)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExportDisclosure = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
+
+    SubPageScrollScaffold(
+        titleRes = R.string.backup_transfer_title,
+        onBack = onBack,
+        scrollRequest = initialScroll,
+        onScrollConsumed = onScrollConsumed,
+        bodySpacing = Arrangement.spacedBy(12.dp),
+    ) { _ ->
+        SectionCard(
+            icon = Icons.Default.Archive,
+            title = stringResource(R.string.backup_export_title),
+            description = stringResource(R.string.backup_export_description),
+        ) {
+            Button(
+                onClick = { showExportDisclosure = true },
+                enabled = backupState !is SettingsViewModel.BackupState.Exporting &&
+                    backupState !is SettingsViewModel.BackupState.Importing,
+            ) { Text(stringResource(R.string.backup_export_action)) }
+            BackupOutcomeRow(backupState, export = true)
+        }
+
+        SectionCard(
+            icon = Icons.Default.FileDownload,
+            title = stringResource(R.string.backup_import_title),
+            description = stringResource(R.string.backup_import_description),
+        ) {
+            Button(
+                onClick = { importPicker.launch(arrayOf("*/*")) },
+                enabled = backupState !is SettingsViewModel.BackupState.Exporting &&
+                    backupState !is SettingsViewModel.BackupState.Importing,
+            ) { Text(stringResource(R.string.backup_import_action)) }
+            BackupOutcomeRow(backupState, export = false)
+        }
+    }
+}
+
+/** The export file name: dated, one per day is plenty (SAF overwrites on re-pick). */
+private fun backupFileName(): String =
+    "anti-vocale-backup-" +
+        java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US)
+            .format(java.util.Date()) + ".zip"
+
+/**
+ * The in-flight/terminal outcome line, scoped to ONE card by [export]: a
+ * shared unscoped row rendered the export result under the import card
+ * too (the state flow is one per page, not per action).
+ */
+@Composable
+private fun BackupOutcomeRow(state: SettingsViewModel.BackupState, export: Boolean) {
+    when (state) {
+        SettingsViewModel.BackupState.Idle -> Unit
+        SettingsViewModel.BackupState.Exporting -> if (export) {
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+            Text(
+                text = stringResource(R.string.backup_export_progress),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        SettingsViewModel.BackupState.Importing -> if (!export) {
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+            Text(
+                text = stringResource(R.string.backup_import_progress),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        is SettingsViewModel.BackupState.Done -> if (state.export == export) {
+            Text(
+                text = stringResource(state.messageRes, *state.args.toTypedArray()),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        is SettingsViewModel.BackupState.Failed -> if (state.export == export) {
+            Text(
+                text = stringResource(state.messageRes),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     }
 }
 
@@ -3421,7 +3585,7 @@ internal enum class SettingsSearchId {
     // Advanced
     BATTERY_EXEMPTION, HUGGINGFACE_AUTH, PERFORMANCE_HUB,
     SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, VOICE_NOTE_HUB, PER_APP_SETTINGS,
-    SHARE_SHORTCUT_ICONS,
+    SHARE_SHORTCUT_ICONS, BACKUP_HUB,
     // Feedback
     FEEDBACK,
 }
@@ -3759,6 +3923,17 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     SettingsSearchCard(
         SettingsSearchId.PER_APP_SETTINGS, SettingsSearchSection.ADVANCED,
         listOf(R.string.per_app_settings_title, R.string.per_app_settings_description),
+    ),
+    // TASK-843/844 (the N>=2 subpage rule): the backup hub, whose page
+    // hosts export + import. Static union vocabulary like the other hubs;
+    // UNGROUPED (data management, not an integration) and placed above
+    // the Integrations cluster to match the tree.
+    SettingsSearchCard(
+        SettingsSearchId.BACKUP_HUB, SettingsSearchSection.ADVANCED,
+        listOf(
+            R.string.backup_transfer_title, R.string.backup_transfer_summary,
+            R.string.backup_export_title, R.string.backup_export_description,
+            R.string.backup_import_title, R.string.backup_import_description),
     ),
     SettingsSearchCard(
         SettingsSearchId.SHARE_TARGETS, SettingsSearchSection.ADVANCED,

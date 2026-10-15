@@ -230,6 +230,20 @@ interface PreferencesManager {
     /** TASK-675: removes [backendId] from the demoted set (no-op when absent). */
     suspend fun clearDemotedBackend(backendId: String)
 
+    /**
+     * TASK-843: the whitelisted settings as raw values for the backup
+     * archive (name-gated by BackupSettingsKeys; the codec derives each
+     * entry's type tag from the runtime class).
+     */
+    suspend fun exportPortableSettings(): Map<String, Any>
+
+    /**
+     * TASK-843: restores a portable-settings payload in ONE DataStore
+     * transaction; only whitelisted names are applied (a hand-edited
+     * archive cannot inject device-bound keys).
+     */
+    suspend fun importPortableSettings(values: Map<String, Any>)
+
     suspend fun saveModelPath(path: String)
     suspend fun clearModelPath()
     suspend fun saveKeepAliveTimeout(minutes: Int)

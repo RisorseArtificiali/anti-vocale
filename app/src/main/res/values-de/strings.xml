@@ -1256,4 +1256,23 @@
     </plurals>
     <string name="folder_watch_period_label">Scan-Intervall</string>
     <string name="folder_watch_grant_failed">Der Zugriff auf diesen Ordner konnte nicht dauerhaft gespeichert werden, er wurde daher nicht hinzugefügt. Bitte erneut auswählen.</string>
+
+    <!-- Backup und Übertragung (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">Backup und Übertragung</string>
+    <string name="backup_transfer_summary">Einstellungen und Verlauf in einer Datei sichern oder auf einem anderen Gerät wiederherstellen</string>
+    <string name="backup_export_title">Backup exportieren</string>
+    <string name="backup_export_description">Schreibt eine Datei mit deinen Einstellungen und deinem gesamten Transkriptionsverlauf. Die Datei ist Klartext: Wer sie hat, kann jedes Transkript und jeden Absendernamen lesen.</string>
+    <string name="backup_export_action">Backupdatei erstellen</string>
+    <string name="backup_import_title">Backup importieren</string>
+    <string name="backup_import_description">Fügt Einstellungen und frühere Transkriptionen aus einer Backupdatei zu diesem Gerät hinzu. Was du bereits hast, bleibt erhalten.</string>
+    <string name="backup_import_action">Backupdatei auswählen</string>
+    <string name="backup_export_progress">Backup wird geschrieben…</string>
+    <string name="backup_import_progress">Backup wird gelesen…</string>
+    <string name="backup_export_done">Backup gespeichert</string>
+    <string name="backup_export_failed">Backup konnte nicht geschrieben werden</string>
+    <string name="backup_import_done">Importiert: %1$d, übersprungen: %2$d</string>
+    <string name="backup_import_failed">Backupdatei konnte nicht gelesen werden</string>
+    <string name="backup_import_history_failed">Einstellungen importiert, aber der Verlauf konnte nicht hinzugefügt werden. Ein erneuter Versuch ist sicher.</string>
+    <string name="backup_disclosure_title">Vor dem Export</string>
+    <string name="backup_disclosure_body">Das Backup enthält jedes Transkript, jeden Absendernamen und jede Sprecherkennzeichnung als lesbaren Text. Teile es nur mit Stellen, denen du vertraust.</string>
 </resources>

@@ -309,4 +309,13 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun clearDemotedBackend(backendId: String) {
         _demotedBackends.value = _demotedBackends.value - backendId
     }
+
+    // TASK-843: the portable-settings round-trip (in-memory mirror; the
+    // import filters by the whitelist like the real impl, so a future
+    // ViewModel-level test cannot assert semantics the Impl does not have).
+    private val _portableSettings = MutableStateFlow<Map<String, Any>>(emptyMap())
+    override suspend fun exportPortableSettings(): Map<String, Any> = _portableSettings.value
+    override suspend fun importPortableSettings(values: Map<String, Any>) {
+        _portableSettings.value = values.filterKeys { BackupSettingsKeys.isPortable(it) }
+    }
 }

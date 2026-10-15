@@ -1262,4 +1262,23 @@
     </plurals>
     <string name="folder_watch_period_label">Intervallo di scansione</string>
     <string name="folder_watch_grant_failed">Impossibile mantenere l\'accesso a quella cartella, quindi non è stata aggiunta. Riprova a selezionarla.</string>
+
+    <!-- Backup e trasferimento (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">Backup e trasferimento</string>
+    <string name="backup_transfer_summary">Salva impostazioni e cronologia in un file, oppure ripristinale su un altro dispositivo</string>
+    <string name="backup_export_title">Esporta backup</string>
+    <string name="backup_export_description">Scrive un unico file con le impostazioni e tutta la cronologia delle trascrizioni. Il file è in chiaro: chiunque lo abbia può leggere ogni trascrizione e ogni nome mittente.</string>
+    <string name="backup_export_action">Crea file di backup</string>
+    <string name="backup_import_title">Importa backup</string>
+    <string name="backup_import_description">Aggiunge a questo dispositivo impostazioni e trascrizioni passate da un file di backup. Quello che hai già viene conservato.</string>
+    <string name="backup_import_action">Scegli file di backup</string>
+    <string name="backup_export_progress">Scrittura del backup…</string>
+    <string name="backup_import_progress">Lettura del backup…</string>
+    <string name="backup_export_done">Backup salvato</string>
+    <string name="backup_export_failed">Impossibile scrivere il backup</string>
+    <string name="backup_import_done">Importate: %1$d, saltate: %2$d</string>
+    <string name="backup_import_failed">Impossibile leggere il file di backup</string>
+    <string name="backup_import_history_failed">Impostazioni importate, ma non è stato possibile aggiungere la cronologia. Riprovare è sicuro.</string>
+    <string name="backup_disclosure_title">Prima di esportare</string>
+    <string name="backup_disclosure_body">Il backup contiene ogni trascrizione, nome mittente ed etichetta parlante in testo leggibile. Condividilo solo con destinazioni di cui ti fidi.</string>
 </resources>

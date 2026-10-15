@@ -1272,4 +1272,23 @@
     </plurals>
     <string name="folder_watch_period_label">Scan interval</string>
     <string name="folder_watch_grant_failed">Could not keep access to that folder, so it was not added. Try picking it again.</string>
+
+    <!-- Backup and transfer (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">Backup and transfer</string>
+    <string name="backup_transfer_summary">Save your settings and history to a file, or restore them on another device</string>
+    <string name="backup_export_title">Export backup</string>
+    <string name="backup_export_description">Writes one file with your settings and your full transcription history. The file is plaintext: anyone who has it can read every transcript and sender name.</string>
+    <string name="backup_export_action">Create backup file</string>
+    <string name="backup_import_title">Import backup</string>
+    <string name="backup_import_description">Adds settings and past transcriptions from a backup file to this device. What you already have is kept.</string>
+    <string name="backup_import_action">Choose backup file</string>
+    <string name="backup_export_progress">Writing the backup…</string>
+    <string name="backup_import_progress">Reading the backup…</string>
+    <string name="backup_export_done">Backup saved</string>
+    <string name="backup_export_failed">Could not write the backup</string>
+    <string name="backup_import_done">Imported: %1$d, skipped: %2$d</string>
+    <string name="backup_import_failed">Could not read the backup file</string>
+    <string name="backup_import_history_failed">Settings imported, but the history could not be added. Retrying is safe.</string>
+    <string name="backup_disclosure_title">Before you export</string>
+    <string name="backup_disclosure_body">The backup contains every transcript, sender name, and speaker label in readable text. Share it only with places you trust.</string>
 </resources>

@@ -1267,4 +1267,23 @@
     </plurals>
     <string name="folder_watch_period_label">מרווח סריקה</string>
     <string name="folder_watch_grant_failed">לא הייתה אפשרות לשמור על גישה לתיקייה, ולכן היא לא נוספה. נסו לבחור אותה שוב.</string>
+
+    <!-- גיבוי והעברה (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">גיבוי והעברה</string>
+    <string name="backup_transfer_summary">שמרו את ההגדרות וההיסטוריה לקובץ, או שחזרו אותם במכשיר אחר</string>
+    <string name="backup_export_title">ייצוא גיבוי</string>
+    <string name="backup_export_description">כותב קובץ אחד עם ההגדרות שלכם וכל היסטוריית התמלילים. הקובץ הוא טקסט גלוי: מי שמחזיק בו יכול לקרוא כל תמליל וכל שם שולח.</string>
+    <string name="backup_export_action">יצירת קובץ גיבוי</string>
+    <string name="backup_import_title">ייבוא גיבוי</string>
+    <string name="backup_import_description">מוסיף למכשיר הזה הגדרות ותמלילים קודמים מקובץ גיבוי. מה שכבר יש לכם נשמר.</string>
+    <string name="backup_import_action">בחירת קובץ גיבוי</string>
+    <string name="backup_export_progress">כותב את הגיבוי…</string>
+    <string name="backup_import_progress">קורא את הגיבוי…</string>
+    <string name="backup_export_done">הגיבוי נשמר</string>
+    <string name="backup_export_failed">לא ניתן היה לכתוב את הגיבוי</string>
+    <string name="backup_import_done">יובאו: %1$d, דילגו: %2$d</string>
+    <string name="backup_import_failed">לא ניתן היה לקרוא את קובץ הגיבוי</string>
+    <string name="backup_import_history_failed">ההגדרות יובאו, אך לא ניתן היה להוסיף את ההיסטוריה. ניתן לנסות שוב בבטחה.</string>
+    <string name="backup_disclosure_title">לפני הייצוא</string>
+    <string name="backup_disclosure_body">הגיבוי מכיל כל תמליל, שם שולח ותווית דובר בטקסט קריא. שתפו אותו רק עם יעדים מהימנים.</string>
 </resources>

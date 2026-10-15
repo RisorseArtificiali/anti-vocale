@@ -94,11 +94,14 @@ object AppNavigation {
     /** TASK-835: the voice-note settings page (the N>=2 subpage rule). */
     const val SUBPAGE_KEY_VOICE_NOTES = "voice_notes"
 
+    /** TASK-843/844: the backup-and-transfer page (the N>=2 subpage rule). */
+    const val SUBPAGE_KEY_BACKUP = "backup"
+
     /** Settings sections reachable by key (single source for parser + UI). */
     val SECTION_KEYS = setOf("transcription", "appearance", "advanced", "feedback")
 
     /** Settings sub-pages reachable by key. */
-    val SUBPAGE_KEYS = setOf("icon_picker", "prompt", "per_app", SUBPAGE_KEY_EXPORT, "speaker", "performance", "automation", SUBPAGE_KEY_VOICE_NOTES)
+    val SUBPAGE_KEYS = setOf("icon_picker", "prompt", "per_app", SUBPAGE_KEY_EXPORT, "speaker", "performance", "automation", SUBPAGE_KEY_VOICE_NOTES, SUBPAGE_KEY_BACKUP)
 
     /**
      * TASK-632: Settings ROWS reachable by key (the deep-link targets one

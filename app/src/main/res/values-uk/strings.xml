@@ -1284,4 +1284,23 @@
     </plurals>
     <string name="folder_watch_period_label">Інтервал перевірки</string>
     <string name="folder_watch_grant_failed">Не вдалося зберегти доступ до цієї папки, тому її не додано. Виберіть її ще раз.</string>
+
+    <!-- Резервна копія та перенесення (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">Резервна копія та перенесення</string>
+    <string name="backup_transfer_summary">Збережіть налаштування та історію у файл або відновіть їх на іншому пристрої</string>
+    <string name="backup_export_title">Експорт резервної копії</string>
+    <string name="backup_export_description">Записує один файл з налаштуваннями та всією історією розшифрувань. Файл у відкритому вигляді: хто ним володіє, може прочитати кожне розшифрування і кожне ім\'я відправника.</string>
+    <string name="backup_export_action">Створити файл копії</string>
+    <string name="backup_import_title">Імпорт резервної копії</string>
+    <string name="backup_import_description">Додає на цей пристрій налаштування та минулі розшифрування з файлу копії. Те, що вже є, зберігається.</string>
+    <string name="backup_import_action">Вибрати файл копії</string>
+    <string name="backup_export_progress">Запис копії…</string>
+    <string name="backup_import_progress">Читання копії…</string>
+    <string name="backup_export_done">Копію збережено</string>
+    <string name="backup_export_failed">Не вдалося записати копію</string>
+    <string name="backup_import_done">Імпортовано: %1$d, пропущено: %2$d</string>
+    <string name="backup_import_failed">Не вдалося прочитати файл копії</string>
+    <string name="backup_import_history_failed">Налаштування імпортовано, але не вдалося додати історію. Повторити безпечно.</string>
+    <string name="backup_disclosure_title">Перед експортом</string>
+    <string name="backup_disclosure_body">Копія містить кожне розшифрування, ім\'я відправника та мітку мовця у читабельному вигляді. Передавайте її лише тим, кому довіряєте.</string>
 </resources>

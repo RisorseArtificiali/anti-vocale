@@ -1089,4 +1089,23 @@
     <plurals name="transcription_partial">
         <item quantity="other">转写不完整（%1$d 个分块失败）</item>
     </plurals>
+
+    <!-- 备份与迁移 (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">备份与迁移</string>
+    <string name="backup_transfer_summary">将设置和历史记录保存到文件，或在其他设备上恢复</string>
+    <string name="backup_export_title">导出备份</string>
+    <string name="backup_export_description">将设置和完整的转写历史写入一个文件。该文件为明文：持有它的任何人都可以读取每条转写和每个发件人姓名。</string>
+    <string name="backup_export_action">创建备份文件</string>
+    <string name="backup_import_title">导入备份</string>
+    <string name="backup_import_description">从备份文件将设置和过去的转写添加到此设备。你已有的内容会被保留。</string>
+    <string name="backup_import_action">选择备份文件</string>
+    <string name="backup_export_progress">正在写入备份…</string>
+    <string name="backup_import_progress">正在读取备份…</string>
+    <string name="backup_export_done">备份已保存</string>
+    <string name="backup_export_failed">无法写入备份</string>
+    <string name="backup_import_done">已导入 %1$d 条，跳过 %2$d 条</string>
+    <string name="backup_import_failed">无法读取备份文件</string>
+    <string name="backup_import_history_failed">设置已导入，但无法添加历史记录。重试是安全的。</string>
+    <string name="backup_disclosure_title">导出之前</string>
+    <string name="backup_disclosure_body">备份以可读文本形式包含每条转写、发件人姓名和说话者标签。只与你信任的对象分享。</string>
 </resources>

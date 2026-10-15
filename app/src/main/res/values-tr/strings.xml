@@ -1256,4 +1256,23 @@
     </plurals>
     <string name="folder_watch_period_label">Tarama aralığı</string>
     <string name="folder_watch_grant_failed">Bu klasöre erişim korunamadığı için eklenmedi. Lütfen yeniden seçin.</string>
+
+    <!-- Yedekleme ve aktarma (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">Yedekleme ve aktarma</string>
+    <string name="backup_transfer_summary">Ayarlarınızı ve geçmişinizi bir dosyaya kaydedin ya da başka bir cihazda geri yükleyin</string>
+    <string name="backup_export_title">Yedeği dışa aktar</string>
+    <string name="backup_export_description">Ayarlarınızı ve tüm transkripsiyon geçmişinizi tek bir dosyaya yazar. Dosya düz metindir: dosyaya sahip olan herkes her transkripsiyonu ve her gönderen adını okuyabilir.</string>
+    <string name="backup_export_action">Yedek dosyası oluştur</string>
+    <string name="backup_import_title">Yedeği içe aktar</string>
+    <string name="backup_import_description">Bir yedek dosyasından bu cihaza ayarlar ve geçmiş transkripsiyonlar ekler. Elinizde olanlar korunur.</string>
+    <string name="backup_import_action">Yedek dosyası seç</string>
+    <string name="backup_export_progress">Yedek yazılıyor…</string>
+    <string name="backup_import_progress">Yedek okunuyor…</string>
+    <string name="backup_export_done">Yedek kaydedildi</string>
+    <string name="backup_export_failed">Yedek yazılamadı</string>
+    <string name="backup_import_done">İçe aktarıldı: %1$d, atlandı: %2$d</string>
+    <string name="backup_import_failed">Yedek dosyası okunamadı</string>
+    <string name="backup_import_history_failed">Ayarlar içe aktarıldı ancak geçmiş eklenemedi. Yeniden denemek güvenlidir.</string>
+    <string name="backup_disclosure_title">Dışa aktarmadan önce</string>
+    <string name="backup_disclosure_body">Yedek, her transkripsiyonu, gönderen adını ve konuşmacı etiketini okunabilir metin olarak içerir. Yalnızca güvendiğiniz kişilerle paylaşın.</string>
 </resources>

@@ -83,4 +83,18 @@ class BackupHistoryCodecTest {
             row.errorMessage)
         assertEquals("", row.result)
     }
+
+    @Test
+    fun `the chunked import flushes bounded batches and counts drops`() = kotlinx.coroutines.runBlocking {
+        // The import path's memory contract: rows reach the emitter in
+        // chunkSize batches, never as one list; drops count, not abort.
+        val good = BackupHistoryCodec.rowToJson(fullRow).toString()
+        val payload = listOf(good, good, "{ not json", good, good)
+            .joinToString("\n").toByteArray()
+        val batches = mutableListOf<Int>()
+        val dropped = BackupHistoryCodec.readHistoryEntryChunked(
+            payload, chunkSize = 2) { chunk -> batches.add(chunk.size) }
+        assertEquals(listOf(2, 2), batches)
+        assertEquals(1, dropped)
+    }
 }

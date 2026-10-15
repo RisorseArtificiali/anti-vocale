@@ -1070,7 +1070,7 @@ class PreferencesManagerImpl(
      * (BackupSettingsKeys); the type comes from the live value, so the
      * archive round-trips the same typed keys the app writes.
      */
-    suspend fun exportPortableSettings(): Map<String, Any> {
+    override suspend fun exportPortableSettings(): Map<String, Any> {
         return dataStore.data.first().asMap()
             .filterKeys { BackupSettingsKeys.isPortable(it.name) }
             .mapKeys { it.key.name }
@@ -1080,8 +1080,14 @@ class PreferencesManagerImpl(
      * Restores a portable-settings payload in ONE DataStore transaction.
      * Only whitelisted names are applied (a hand-edited archive cannot
      * inject device-bound keys); unlisted names in the payload are dropped.
+     * The edit is followed by a full cache re-prime (the same shape as the
+     * init prime): every save method keeps the in-memory cache in step with
+     * the store because the flows seed from it (.onStart emits the cache),
+     * and a bulk import touching many keys at once would otherwise leave
+     * one-shot .first() consumers (benchmark config, catalog fetch,
+     * retranscribe) reading the PRE-import values until process restart.
      */
-    suspend fun importPortableSettings(values: Map<String, Any>) {
+    override suspend fun importPortableSettings(values: Map<String, Any>) {
         dataStore.edit { prefs ->
             values.entries
                 .filter { (name, _) -> BackupSettingsKeys.isPortable(name) }
@@ -1093,5 +1099,6 @@ class PreferencesManagerImpl(
                     }
                 }
         }
+        cache.set(dataStore.data.first().toCached())
     }
 }

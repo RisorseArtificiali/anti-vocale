@@ -1124,4 +1124,23 @@
     </plurals>
     <string name="folder_watch_period_label">Intervalo de análisis</string>
     <string name="folder_watch_grant_failed">No se pudo conservar el acceso a esa carpeta, así que no se añadió. Vuelve a elegirla.</string>
+
+    <!-- Copia de seguridad y transferencia (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">Copia de seguridad y transferencia</string>
+    <string name="backup_transfer_summary">Guarda tus ajustes y tu historial en un archivo, o restáuralos en otro dispositivo</string>
+    <string name="backup_export_title">Exportar copia de seguridad</string>
+    <string name="backup_export_description">Escribe un archivo con tus ajustes y todo tu historial de transcripciones. El archivo es texto sin cifrar: quien lo tenga puede leer cada transcripción y cada nombre de remitente.</string>
+    <string name="backup_export_action">Crear archivo de copia</string>
+    <string name="backup_import_title">Importar copia de seguridad</string>
+    <string name="backup_import_description">Añade a este dispositivo ajustes y transcripciones anteriores desde un archivo de copia. Lo que ya tienes se conserva.</string>
+    <string name="backup_import_action">Elegir archivo de copia</string>
+    <string name="backup_export_progress">Escribiendo la copia…</string>
+    <string name="backup_import_progress">Leyendo la copia…</string>
+    <string name="backup_export_done">Copia guardada</string>
+    <string name="backup_export_failed">No se pudo escribir la copia de seguridad</string>
+    <string name="backup_import_done">Importadas: %1$d, omitidas: %2$d</string>
+    <string name="backup_import_failed">No se pudo leer el archivo de copia</string>
+    <string name="backup_import_history_failed">Ajustes importados, pero no se pudo añadir el historial. Reintentarlo es seguro.</string>
+    <string name="backup_disclosure_title">Antes de exportar</string>
+    <string name="backup_disclosure_body">La copia contiene cada transcripción, nombre de remitente y etiqueta de hablante en texto legible. Compártela solo con destinatarios de confianza.</string>
 </resources>

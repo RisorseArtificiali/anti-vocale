@@ -1255,4 +1255,23 @@
     </plurals>
     <string name="folder_watch_period_label">स्कैन अंतराल</string>
     <string name="folder_watch_grant_failed">उस फ़ोल्डर तक पहुँच बनाए नहीं रखी जा सकी, इसलिए उसे जोड़ा नहीं गया। कृपया उसे फिर से चुनें।</string>
+
+    <!-- बैकअप और स्थानांतरण (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">बैकअप और स्थानांतरण</string>
+    <string name="backup_transfer_summary">अपनी सेटिंग्स और इतिहास को एक फ़ाइल में सहेजें, या किसी दूसरे डिवाइस पर पुनर्स्थापित करें</string>
+    <string name="backup_export_title">बैकअप निर्यात करें</string>
+    <string name="backup_export_description">आपकी सेटिंग्स और पूरा ट्रांसक्रिप्शन इतिहास एक ही फ़ाइल में लिखा जाता है। फ़ाइल सादे पाठ में है: जिसके पास यह फ़ाइल है, वह हर ट्रांसक्रिप्शन और हर भेजने वाले का नाम पढ़ सकता है।</string>
+    <string name="backup_export_action">बैकअप फ़ाइल बनाएँ</string>
+    <string name="backup_import_title">बैकअप आयात करें</string>
+    <string name="backup_import_description">बैकअप फ़ाइल से इस डिवाइस पर सेटिंग्स और पिछले ट्रांसक्रिप्शन जुड़ जाते हैं। आपके पास पहले से जो है, वह बना रहता है।</string>
+    <string name="backup_import_action">बैकअप फ़ाइल चुनें</string>
+    <string name="backup_export_progress">बैकअप लिखा जा रहा है…</string>
+    <string name="backup_import_progress">बैकअप पढ़ा जा रहा है…</string>
+    <string name="backup_export_done">बैकअप सहेजा गया</string>
+    <string name="backup_export_failed">बैकअप नहीं लिखा जा सका</string>
+    <string name="backup_import_done">आयातित: %1$d, छोड़े गए: %2$d</string>
+    <string name="backup_import_failed">बैकअप फ़ाइल नहीं पढ़ी जा सकी</string>
+    <string name="backup_import_history_failed">सेटिंग्स आयात हो गईं, लेकिन इतिहास जोड़ा नहीं जा सका। दोबारा कोशिश करना सुरक्षित है।</string>
+    <string name="backup_disclosure_title">निर्यात से पहले</string>
+    <string name="backup_disclosure_body">बैकअप में हर ट्रांसक्रिप्शन, भेजने वाले का नाम और वक्ता लेबल पढ़ने योग्य पाठ में होते हैं। इसे केवल भरोसेमंद जगहों पर साझा करें।</string>
 </resources>

@@ -1124,4 +1124,23 @@
     </plurals>
     <string name="folder_watch_period_label">Intervalle d\'analyse</string>
     <string name="folder_watch_grant_failed">Impossible de conserver l\'accès à ce dossier, il n\'a donc pas été ajouté. Choisissez-le à nouveau.</string>
+
+    <!-- Sauvegarde et transfert (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">Sauvegarde et transfert</string>
+    <string name="backup_transfer_summary">Enregistrez vos réglages et votre historique dans un fichier, ou restaurez-les sur un autre appareil</string>
+    <string name="backup_export_title">Exporter la sauvegarde</string>
+    <string name="backup_export_description">Écrit un fichier avec vos réglages et tout votre historique de transcriptions. Le fichier est en clair : quiconque le possède peut lire chaque transcription et chaque nom d\'expéditeur.</string>
+    <string name="backup_export_action">Créer le fichier de sauvegarde</string>
+    <string name="backup_import_title">Importer une sauvegarde</string>
+    <string name="backup_import_description">Ajoute à cet appareil des réglages et d\'anciennes transcriptions depuis un fichier de sauvegarde. Ce que vous avez déjà est conservé.</string>
+    <string name="backup_import_action">Choisir un fichier de sauvegarde</string>
+    <string name="backup_export_progress">Écriture de la sauvegarde…</string>
+    <string name="backup_import_progress">Lecture de la sauvegarde…</string>
+    <string name="backup_export_done">Sauvegarde enregistrée</string>
+    <string name="backup_export_failed">Impossible d\'écrire la sauvegarde</string>
+    <string name="backup_import_done">Importées : %1$d, ignorées : %2$d</string>
+    <string name="backup_import_failed">Impossible de lire le fichier de sauvegarde</string>
+    <string name="backup_import_history_failed">Réglages importés, mais l\'historique n\'a pas pu être ajouté. Réessayer est sans risque.</string>
+    <string name="backup_disclosure_title">Avant d\'exporter</string>
+    <string name="backup_disclosure_body">La sauvegarde contient chaque transcription, nom d\'expéditeur et étiquette de locuteur en texte lisible. Ne la partagez qu\'avec des destinataires de confiance.</string>
 </resources>

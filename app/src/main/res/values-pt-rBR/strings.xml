@@ -1124,4 +1124,23 @@
     </plurals>
     <string name="folder_watch_period_label">Intervalo de verificação</string>
     <string name="folder_watch_grant_failed">Não foi possível manter o acesso a essa pasta, então ela não foi adicionada. Tente escolher novamente.</string>
+
+    <!-- Backup e transferência (TASK-843/844, GH #158) -->
+    <string name="backup_transfer_title">Backup e transferência</string>
+    <string name="backup_transfer_summary">Salve suas configurações e histórico em um arquivo, ou restaure-os em outro aparelho</string>
+    <string name="backup_export_title">Exportar backup</string>
+    <string name="backup_export_description">Grava um arquivo com suas configurações e todo o seu histórico de transcrições. O arquivo é texto sem criptografia: quem o tiver pode ler cada transcrição e cada nome de remetente.</string>
+    <string name="backup_export_action">Criar arquivo de backup</string>
+    <string name="backup_import_title">Importar backup</string>
+    <string name="backup_import_description">Adiciona a este aparelho configurações e transcrições anteriores de um arquivo de backup. O que você já tem é mantido.</string>
+    <string name="backup_import_action">Escolher arquivo de backup</string>
+    <string name="backup_export_progress">Gravando o backup…</string>
+    <string name="backup_import_progress">Lendo o backup…</string>
+    <string name="backup_export_done">Backup salvo</string>
+    <string name="backup_export_failed">Não foi possível gravar o backup</string>
+    <string name="backup_import_done">Importadas: %1$d, ignoradas: %2$d</string>
+    <string name="backup_import_failed">Não foi possível ler o arquivo de backup</string>
+    <string name="backup_import_history_failed">Configurações importadas, mas não foi possível adicionar o histórico. Repetir é seguro.</string>
+    <string name="backup_disclosure_title">Antes de exportar</string>
+    <string name="backup_disclosure_body">O backup contém cada transcrição, nome de remetente e etiqueta de falante em texto legível. Compartilhe apenas com destinatários de confiança.</string>
 </resources>
