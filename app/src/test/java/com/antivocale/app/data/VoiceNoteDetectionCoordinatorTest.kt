@@ -64,6 +64,7 @@ class VoiceNoteDetectionCoordinatorTest {
             every { detector.detections } returns detections
             every { detector.subscribe() } just Runs
             every { detector.dispose() } just Runs
+            every { detector.refresh() } just Runs
         }
 
         /**
@@ -229,6 +230,26 @@ class VoiceNoteDetectionCoordinatorTest {
         h.preferences._voiceNoteDetectionEnabled.value = false
         // Blocking verify: the collector runs on a real dispatcher.
         verify(timeout = 5_000) { h.detector.dispose() }
+        h.scope.cancel()
+    }
+
+    @Test
+    fun `while armed the detector is blindly re-subscribed on a cadence`() = runBlocking {
+        // TASK-830: the watches can die silently (the state lies), so the
+        // cure is periodic refresh, not checks. Driven through reconcile
+        // directly (the lifecycle idiom of this file): dispose completes
+        // inside reconcile(false), so the post-disarm count is exact.
+        var refreshes = 0
+        val h = Harness({ true })
+        every { h.detector.refresh() } answers { refreshes++ }
+        h.coordinator.rearmIntervalMs = 100L
+        h.coordinator.reconcile(true, TREE_URI)
+        delay(400)
+        assertTrue("cadence loop ran (refreshes=$refreshes)", refreshes >= 2)
+        h.coordinator.reconcile(false, TREE_URI)
+        val atDisarm = refreshes
+        delay(250)
+        assertEquals("disarm stopped the cadence", atDisarm.toLong(), refreshes.toLong())
         h.scope.cancel()
     }
 }

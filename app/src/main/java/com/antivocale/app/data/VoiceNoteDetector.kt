@@ -60,8 +60,9 @@ class VoiceNoteDetector @Inject constructor() {
     val detections: Flow<VoiceNoteEntry> = _detections.receiveAsFlow()
 
     private val seen = VoiceNoteFilter.IncrementalFilter()
-    private val observers = mutableListOf<FileObserver>()
-    private val watchedDirs = mutableSetOf<String>()
+    // vars: refresh() swaps in fresh collections gap-free (review F2)
+    private var observers = mutableListOf<FileObserver>()
+    private var watchedDirs = mutableSetOf<String>()
 
     // Guards watch() from observer threads too: without it, a late watch
     // (a counter CREATE racing dispose) could add an observer AFTER the
@@ -75,12 +76,17 @@ class VoiceNoteDetector @Inject constructor() {
     @Synchronized
     fun subscribe() {
         if (observers.isNotEmpty()) return
+        armWatchers()
+        Log.i(TAG, "subscribed: ${observers.size} watchers under ${root.absolutePath}")
+    }
+
+    /** The watcher enumeration both subscribe() and refresh() ride. */
+    private fun armWatchers() {
         armed = true
         watch(root)
         root.listFiles()
             ?.filter { VoiceNoteFilter.isCounterFolderName(it.name) }
             ?.forEach { watch(it) }
-        Log.i(TAG, "subscribed: ${observers.size} watchers under ${root.absolutePath}")
     }
 
     @Synchronized
@@ -90,6 +96,30 @@ class VoiceNoteDetector @Inject constructor() {
         observers.clear()
         watchedDirs.clear()
         Log.i(TAG, "disposed")
+    }
+
+    /**
+     * TASK-830: the blind periodic re-subscribe. The internal state lies
+     * after storage churn (watchers register as live while delivering
+     * nothing; the 2026-10-14 device evidence), so the cure is
+     * re-subscribing, not checking. GAP-FREE: the fresh observers start
+     * BEFORE the old ones stop (review F2: a stop-then-start swap would
+     * open a recurring event-loss window on healthy channels; the brief
+     * overlap is safe because the `seen` filter dedups the double
+     * delivery). A no-op when not armed: a refresh can never resurrect a
+     * disarmed detector. Notes that arrived while the channel was dead
+     * are NOT recovered here (their events never fired); that catch-up is
+     * TASK-831's sweep.
+     */
+    @Synchronized
+    fun refresh() {
+        if (!armed) return
+        val oldObservers = observers
+        observers = mutableListOf()
+        watchedDirs = mutableSetOf()
+        armWatchers()
+        oldObservers.forEach { it.stopWatching() }
+        Log.i(TAG, "refreshed: ${observers.size} watchers (gap-free)")
     }
 
     @Synchronized

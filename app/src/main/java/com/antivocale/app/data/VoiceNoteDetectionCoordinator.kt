@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
@@ -64,6 +65,19 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
     private var started = false
     private var active = false
     private var collectJob: Job? = null
+    private var rearmJob: Job? = null
+
+    /**
+     * TASK-830: the blind re-subscribe cadence. A var (not a constructor
+     * param: a defaulted Long param breaks Dagger's provider resolution,
+     * the ExternalModelStore lesson) settable by the tests before the
+     * first arm; read at arm time so a change while armed takes effect on
+     * the next arm. Volatile for the same cross-thread reason as
+     * LlmManager.generationTimeoutMs (the write is not under the mutex).
+     */
+    @androidx.annotation.VisibleForTesting
+    @Volatile
+    internal var rearmIntervalMs = DEFAULT_REARM_INTERVAL_MS
 
     // The runtime permission has no observable state on Android, so grant
     // events arrive as pokes: each one re-evaluates the conjunction with the
@@ -130,11 +144,41 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
                 withContext(Dispatchers.IO) { detector.subscribe() }
                 active = true
                 collectJob = scope.launch(Dispatchers.IO) { collectSignals() }
+                // TASK-830: the watches can die silently under storage churn
+                // while every internal read still says armed (the 2026-10-14
+                // overnight evidence), so while armed a blind re-subscribe
+                // runs on a cadence: milliseconds of work, the same
+                // ms-scale blind window an arm cycle has. Serialized on the
+                // lifecycle mutex so a refresh can never race a disarm.
+                val interval = rearmIntervalMs
+                rearmJob = scope.launch(Dispatchers.IO) {
+                    while (true) {
+                        delay(interval)
+                        // Contained per iteration (review F1: this loop
+                        // exists to survive storage churn, the condition
+                        // most likely to make a refresh throw; one failure
+                        // must not kill the cadence while active stays
+                        // true). The collector's runCatching states the
+                        // same principle for reconcile; cancellation is
+                        // control flow and rethrows.
+                        try {
+                            lifecycleMutex.withLock {
+                                if (active) detector.refresh()
+                            }
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Log.e(TAG, "detection rearm failed", e)
+                        }
+                    }
+                }
                 Log.i(TAG, "detection active")
             } else {
                 active = false
                 val job = collectJob
                 collectJob = null
+                rearmJob?.cancel()
+                rearmJob = null
                 withContext(Dispatchers.IO) { detector.dispose() }
                 // The signal flow is a hot SharedFlow that never completes,
                 // so cancelling the collector job is what ends it; dispose
@@ -175,5 +219,14 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
 
     private companion object {
         const val TAG = "VoiceNoteDetection"
+
+        /**
+         * The re-subscribe cadence: short enough that an overnight channel
+         * death costs at most one interval, long enough that the
+         * re-enumeration (a listFiles over the counter folders) stays
+         * negligible. Design note (TASK-830): 20 minutes was picked inside
+         * the 15-30 band the maintainer discussion settled on.
+         */
+        const val DEFAULT_REARM_INTERVAL_MS = 20 * 60 * 1000L
     }
 }
