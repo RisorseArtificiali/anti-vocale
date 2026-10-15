@@ -1,21 +1,13 @@
 package com.antivocale.app.ui.viewmodel
 
-import android.app.Application
 import android.content.ContentResolver
-import android.content.Context
 import android.net.Uri
 import com.antivocale.app.R
-import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.BackupArchiveCodec
 import com.antivocale.app.data.BackupHistoryCodec
-import com.antivocale.app.data.FakeExternalRecordsProvider
-import com.antivocale.app.data.ExternalModelRecordsProvider
 import com.antivocale.app.data.FakePreferencesManager
-import com.antivocale.app.data.ScheduledFolderStore
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.LogEntity
-import com.antivocale.app.transcription.staticRegistry
-import com.antivocale.app.ui.appearance.LauncherIconVariant
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -23,8 +15,8 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeout
@@ -36,79 +28,46 @@ import org.junit.Test
 
 /**
  * TASK-847 (code-review F8 of the backup delta): the SettingsViewModel
- * backup arms. Construction follows SettingsViewModelOnboardingSeedTest
- * (StandardTestDispatcher as Main, real FakePreferencesManager, every
- * other dependency a relaxed mockk). The arms run on Dispatchers.IO by
- * design (SAF I/O), so each test polls the terminal state on real time
- * instead of advancing the test scheduler.
+ * backup arms. Construction goes through [SettingsViewModelTestHelper]
+ * (TASK-848); the arms' seams are the resolver-stubbed Application and the
+ * hoisted DAO. The arms run on Dispatchers.IO by design (SAF I/O), so each
+ * test polls the terminal state on real time instead of advancing the test
+ * scheduler.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelBackupTest {
 
-    private val testDispatcher = kotlinx.coroutines.test.StandardTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
+    private lateinit var harness: SettingsViewModelTestHelper
     private lateinit var fakePrefs: FakePreferencesManager
     private lateinit var logDao: LogDao
-    private lateinit var application: Application
     private lateinit var viewModel: SettingsViewModel
 
     private val resolver = mockk<ContentResolver>(relaxed = true)
 
-    /** Uri is abstract with no Robolectric here, so a mock is the only
-     *  instantiable Uri; RELAXED also survives the $uri interpolation in
-     *  the arms' log lines (the resolver stubs match any Uri). */
+    /** android.net.Uri is a null stub off Robolectric; a relaxed mock is
+     *  the only instantiable Uri, and it survives the $uri interpolation
+     *  in the arms' log lines (the resolver stubs match any Uri). */
     private val testUri: Uri = mockk(relaxed = true)
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        fakePrefs = FakePreferencesManager()
-        logDao = mockk(relaxed = true)
-        application = mockk(relaxed = true) {
-            every { contentResolver } returns resolver
-        }
-        viewModel = SettingsViewModel(
-            externalRecordsProvider = object : ExternalModelRecordsProvider {
-                override val records = MutableStateFlow(emptyList<com.antivocale.app.data.ExternalModelRecord>())
+        // The shared construction harness (TASK-848); the backup arms'
+        // seams: a resolver-stubbed Application and the hoisted DAO.
+        harness = SettingsViewModelTestHelper(
+            application = mockk(relaxed = true) {
+                every { contentResolver } returns resolver
             },
-            application = application,
-            preferencesManager = fakePrefs,
-            logDao = logDao,
-            huggingFaceTokenManager = mockk(relaxed = true),
-            huggingFaceAuthManager = mockk(relaxed = true),
-            huggingFaceApiClient = mockk(relaxed = true),
-            perAppPreferencesManager = mockk(relaxed = true),
-            scheduledFolderStore = ScheduledFolderStore(FakePreferencesManager()),
-            transcriptionCalibrator = mockk(relaxed = true),
-            backendManager = mockk(relaxed = true),
-            llmManager = mockk(relaxed = true),
-            shareTargetManager = mockk(relaxed = true),
-            shareShortcutManager = mockk(relaxed = true),
-            backendRegistry = staticRegistry(),
-            shortcutIconStore = mockk(relaxed = true),
-            launcherIconManager = mockk(relaxed = true) {
-                every { current() } returns LauncherIconVariant.DEFAULT
-            },
-            remoteOmnivoiceBackend = mockk(relaxed = true),
-            oomBreadcrumbRecorder = com.antivocale.app.transcription.OomBreadcrumbRecorder(
-                fakePrefs,
-                backendManager = mockk(relaxed = true),
-                llmManager = mockk(relaxed = true),
-                backendRegistry = staticRegistry(),
-            ),
-            activeModelRepository = ActiveModelRepository(
-                fakePrefs,
-                mockk<Context>(relaxed = true),
-                staticRegistry(), FakeExternalRecordsProvider(),
-            ),
-            speakerEnroller = mockk(),
-            voiceNoteDetectionCoordinator = mockk(relaxed = true),
-            speakerIdentityStore = com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
-                java.nio.file.Files.createTempDirectory("speaker-ids").toFile()),
         )
+        fakePrefs = harness.fakePrefs
+        logDao = harness.logDao
+        viewModel = harness.viewModel
     }
 
     @After
     fun tearDown() {
+        harness.cleanup()
         Dispatchers.resetMain()
     }
 

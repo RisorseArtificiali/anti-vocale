@@ -1,16 +1,10 @@
 package com.antivocale.app.ui.viewmodel
 
-import android.app.Application
 import android.content.Context
 import com.antivocale.app.R
-import com.antivocale.app.data.ActiveModelRepository
-import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.ExternalModelRecord
-import com.antivocale.app.data.ExternalModelRecordsProvider
 import com.antivocale.app.data.FakePreferencesManager
 import com.antivocale.app.data.ModelFamily
-import com.antivocale.app.transcription.staticRegistry
-import com.antivocale.app.ui.appearance.LauncherIconVariant
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -31,14 +25,14 @@ import org.junit.Test
 
 /**
  * Unit tests proving that a preference change propagates reactively into
- * [SettingsViewModel.uiState] through the REAL [ActiveModelRepository]
+ * [SettingsViewModel.uiState] through the REAL
+ * [com.antivocale.app.data.ActiveModelRepository]
  * (TASK-258 acceptance #4).
  *
- * Construction follows the house LogsViewModel pattern: a
+ * Construction goes through [SettingsViewModelTestHelper] (TASK-848): a
  * [StandardTestDispatcher] is installed as Main in [setup] and reset in
- * [tearDown]. [FakePreferencesManager] and [ActiveModelRepository] are real;
- * every other constructor dependency is a relaxed mockk. The Application
- * parameter is a relaxed mockk (SettingsViewModel is an AndroidViewModel).
+ * [tearDown], with this suite's seams (the class-level records flow and
+ * the getString-stubbed repository context) passed to the helper.
  *
  * runCurrent() drains the StandardTestDispatcher's queue one step at a time
  * so the multi-hop flatMapLatest chain (backend flow -> per-backend path
@@ -48,78 +42,31 @@ import org.junit.Test
 class SettingsViewModelActiveModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private lateinit var fakePrefs: FakePreferencesManager
     private val externalRecords = MutableStateFlow<List<ExternalModelRecord>>(emptyList())
+    private lateinit var harness: SettingsViewModelTestHelper
+    private lateinit var fakePrefs: FakePreferencesManager
     private lateinit var viewModel: SettingsViewModel
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        fakePrefs = FakePreferencesManager()
-        viewModel = SettingsViewModel(
-            // TASK-611: a real StateFlow, not a relaxed mock; a mocked flow
-            // never emits, so the availability combine would be dead and every
-            // test would pass against the seed alone.
-            externalRecordsProvider = object : ExternalModelRecordsProvider {
-                override val records = externalRecords
+        // The shared construction harness (TASK-848); this suite's seam:
+        // the class-level mutable records flow, plus the getString-stubbed
+        // repository context (fixed catalog display names resolve
+        // distinguishably instead of a relaxed-mock empty string).
+        harness = SettingsViewModelTestHelper(
+            externalRecords = externalRecords,
+            repositoryContext = mockk<Context>(relaxed = true) {
+                every { getString(any()) } answers { "str:${args[0]}" }
             },
-            application = mockk<Application>(relaxed = true),
-            preferencesManager = fakePrefs,
-            logDao = mockk(relaxed = true),
-            huggingFaceTokenManager = mockk(relaxed = true),
-            huggingFaceAuthManager = mockk(relaxed = true),
-            huggingFaceApiClient = mockk(relaxed = true),
-            perAppPreferencesManager = mockk(relaxed = true),
-            // TASK-741: the folder-watch store; these tests never watch.
-            scheduledFolderStore = com.antivocale.app.data.ScheduledFolderStore(
-                com.antivocale.app.data.FakePreferencesManager()),
-            transcriptionCalibrator = mockk(relaxed = true),
-            backendManager = mockk(relaxed = true),
-            llmManager = mockk(relaxed = true),
-            shareTargetManager = mockk(relaxed = true),
-            shareShortcutManager = mockk(relaxed = true),
-            backendRegistry = staticRegistry(),
-            // TASK-490: these tests never pick an icon; a relaxed mock of
-            // the store keeps the construction honest without Robolectric.
-            shortcutIconStore = mockk<com.antivocale.app.data.ShortcutIconStore>(relaxed = true),
-            // Enum returns are stubbed explicitly: a relaxed mock's enum answer
-            // is version-dependent, and the ViewModel reads current() at init.
-            launcherIconManager = mockk(relaxed = true) {
-                every { current() } returns LauncherIconVariant.DEFAULT
-            },
-            // TASK-681: the LAN-offload probe backend; relaxed mock, these
-            // tests never trigger a connection test.
-            remoteOmnivoiceBackend = mockk(relaxed = true),
-            // TASK-679: real recorder over relaxed mocks; these tests never
-            // open the memory panel.
-            oomBreadcrumbRecorder = com.antivocale.app.transcription.OomBreadcrumbRecorder(
-                fakePrefs,
-                backendManager = mockk(relaxed = true),
-                llmManager = mockk(relaxed = true),
-                backendRegistry = staticRegistry(),
-            ),
-            // getString is stubbed so the fixed catalog display name (whisper_title)
-            // resolves to a distinguishable value instead of a relaxed-mock empty string.
-            activeModelRepository = ActiveModelRepository(
-                fakePrefs,
-                mockk<Context>(relaxed = true) {
-                    every { getString(any()) } answers { "str:${args[0]}" }
-                },
-                staticRegistry(), FakeExternalRecordsProvider(),
-            ),
-            // TASK-670 simplify F2: the enrollment pipeline seam; these
-            // tests never enroll, a mock enroller and an empty real store
-            // keep the construction honest.
-            speakerEnroller = mockk<com.antivocale.app.transcription.diarization.SpeakerEnroller>(),
-            // TASK-271: the permission-poke seam; never poked here.
-            voiceNoteDetectionCoordinator = mockk(relaxed = true),
-            speakerIdentityStore = com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
-                java.nio.file.Files.createTempDirectory("speaker-ids").toFile()),
         )
+        fakePrefs = harness.fakePrefs
+        viewModel = harness.viewModel
     }
 
     @After
     fun tearDown() {
+        harness.cleanup()
         Dispatchers.resetMain()
     }
 
