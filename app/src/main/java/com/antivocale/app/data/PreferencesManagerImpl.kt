@@ -1061,4 +1061,37 @@ class PreferencesManagerImpl(
             if (next.isEmpty()) preferences.remove(DEMOTED_BACKENDS) else preferences[DEMOTED_BACKENDS] = next
         }
     }
+    // ---- TASK-843: the portable-settings backup (GH #158) ----
+
+    /**
+     * The whitelisted settings as raw values for the backup archive
+     * (BackupArchiveCodec.build derives each entry's type tag from the
+     * runtime class). The whitelist gates by NAME only
+     * (BackupSettingsKeys); the type comes from the live value, so the
+     * archive round-trips the same typed keys the app writes.
+     */
+    suspend fun exportPortableSettings(): Map<String, Any> {
+        return dataStore.data.first().asMap()
+            .filterKeys { BackupSettingsKeys.isPortable(it.name) }
+            .mapKeys { it.key.name }
+    }
+
+    /**
+     * Restores a portable-settings payload in ONE DataStore transaction.
+     * Only whitelisted names are applied (a hand-edited archive cannot
+     * inject device-bound keys); unlisted names in the payload are dropped.
+     */
+    suspend fun importPortableSettings(values: Map<String, Any>) {
+        dataStore.edit { prefs ->
+            values.entries
+                .filter { (name, _) -> BackupSettingsKeys.isPortable(name) }
+                .forEach { (name, typed) ->
+                    when (val v = typed) {
+                        is Boolean -> prefs[booleanPreferencesKey(name)] = v
+                        is Int -> prefs[intPreferencesKey(name)] = v
+                        else -> prefs[stringPreferencesKey(name)] = v as String
+                    }
+                }
+        }
+    }
 }
