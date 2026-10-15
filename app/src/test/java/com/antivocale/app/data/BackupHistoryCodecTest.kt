@@ -43,6 +43,9 @@ class BackupHistoryCodecTest {
         savedFolderName = "Transcripts",
         savedFileName = "t.txt",
         saveFailureReason = "FAIL_VERIFY_EMPTY",
+        // TASK-842's column rides the full-fidelity rule (non-default, so a
+        // dropped key fails the round-trip assert).
+        contentHash = "deadbeef00",
     )
 
     @Test

@@ -112,6 +112,9 @@ object BackupHistoryCodec {
         .put("savedFolderName", row.savedFolderName ?: JSONObject.NULL)
         .put("savedFileName", row.savedFileName ?: JSONObject.NULL)
         .put("saveFailureReason", row.saveFailureReason ?: JSONObject.NULL)
+        // TASK-842's column joined after the format shipped; a missing key
+        // on import reads null (backwards compatible, no version bump).
+        .put("contentHash", row.contentHash ?: JSONObject.NULL)
 
     /** The inverse: a missing key reads the entity's own default (never a silent 0-vs-null swap). */
     internal fun rowFromJson(o: JSONObject): LogEntity = LogEntity(
@@ -143,5 +146,6 @@ object BackupHistoryCodec {
         savedFolderName = if (o.isNull("savedFolderName")) null else o.optString("savedFolderName"),
         savedFileName = if (o.isNull("savedFileName")) null else o.optString("savedFileName"),
         saveFailureReason = if (o.isNull("saveFailureReason")) null else o.optString("saveFailureReason"),
+        contentHash = if (o.isNull("contentHash")) null else o.optString("contentHash"),
     )
 }
