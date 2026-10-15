@@ -1267,6 +1267,7 @@
     <!-- TASK-840 (GH #157 pt 1): result-row playback -->
     <string name="result_play_audio">پخش صدا</string>
     <string name="result_pause_audio">توقف صدا</string>
+    <string name="result_skip_silences">رد کردن سکوت‌ها</string>
     <string name="result_playback_speed">سرعت پخش (%1$s)</string>
 
     <string name="backup_transfer_title">پشتیبان‌گیری و انتقال</string>

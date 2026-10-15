@@ -1130,6 +1130,7 @@
     <!-- TASK-840 (GH #157 pt 1): result-row playback -->
     <string name="result_play_audio">Reproduzir áudio</string>
     <string name="result_pause_audio">Pausar o áudio</string>
+    <string name="result_skip_silences">Pular silêncios</string>
     <string name="result_playback_speed">Velocidade de reprodução (%1$s)</string>
 
     <string name="backup_transfer_title">Backup e transferência</string>

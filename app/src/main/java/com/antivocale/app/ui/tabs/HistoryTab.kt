@@ -20,6 +20,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -68,6 +69,7 @@ import com.antivocale.app.service.InferenceService
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.animation.Crossfade
 import com.antivocale.app.ui.components.SkeletonTranscriptionCard
+import com.antivocale.app.ui.components.PlaybackCueGaps
 import com.antivocale.app.ui.components.ResultPlaybackController
 import com.antivocale.app.ui.components.playbackFileExists
 import com.antivocale.app.ui.components.rememberResultPlayback
@@ -462,22 +464,56 @@ private fun RowScope.PlaybackControls(
     taskId: String,
     filePath: String?,
     compact: Boolean,
+    cuesJson: String? = null,
 ) {
     val now by playback.state.collectAsState()
     val mine = now?.taskId == taskId
     val filePresent = remember(filePath) {
         playbackFileExists(filePath)
     }
+    // TASK-841: the row's cues, parsed once per payload; the skip toggle is
+    // OFFERED only when a skippable gap exists (rows without one never see
+    // the button - hiding a useless control beats explaining it).
+    val cues = remember(cuesJson) {
+        com.antivocale.app.data.local.TimedSegmentsConverter.fromJson(cuesJson)
+    }
+    val skippable = remember(cues) { PlaybackCueGaps.hasSkippableGap(cues) }
+    val skipSilences by playback.skipSilences.collectAsState()
+    // The read-along flow: play starts from a COLLAPSED row (lean read, no
+    // segments) and the row expands while listening; push the now-parsed
+    // cues into the active playback the moment they exist (guarded to this
+    // row's taskId inside the controller).
+    LaunchedEffect(mine, cues) {
+        if (mine) playback.attachCues(taskId, cues)
+    }
     ResultActionButton(
         compact = compact,
         // A missing file disables (the honest ~24h-sweep limit) but keeps
         // the row's affordance visible, the retranscribe-not-found class.
         enabled = filePresent,
-        onClick = { playback.toggle(taskId, filePath) },
+        onClick = { playback.toggle(taskId, filePath, cues) },
         icon = if (mine && now?.playing == true) Icons.Default.Pause else Icons.Default.PlayArrow,
         labelRes = if (mine && now?.playing == true) R.string.result_pause_audio
         else R.string.result_play_audio,
     )
+    if (mine && skippable) {
+        // TASK-841: a Switch-role toggle (the TASK-384 pattern: color alone
+        // does not carry state to TalkBack); the primary tint is the visual
+        // ON state.
+        Icon(
+            Icons.Default.FastForward,
+            contentDescription = null,
+            modifier = Modifier
+                .size(24.dp)
+                .toggleable(
+                    value = skipSilences,
+                    role = Role.Switch,
+                    onValueChange = { playback.toggleSkipSilences() },
+                ),
+            tint = if (skipSilences) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
     if (mine) {
         // Compact ALWAYS (icon-only): in labeled mode a sixth weighted
         // TextButton re-opens the TASK-345 label-overflow class on long
@@ -1824,6 +1860,7 @@ fun LogEntryItem(
                                         taskId = log.taskId,
                                         filePath = log.filePath,
                                         compact = compactActions,
+                                        cuesJson = rowSegmentsJson ?: log.segments,
                                     )
                                 }
                                 // Re-transcribe button (audio entries with file)

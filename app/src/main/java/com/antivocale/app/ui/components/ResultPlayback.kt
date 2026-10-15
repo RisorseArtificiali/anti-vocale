@@ -64,6 +64,22 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
     private val _state = MutableStateFlow<NowPlaying?>(null)
     val state: StateFlow<NowPlaying?> = _state.asStateFlow()
 
+    /**
+     * TASK-841 (GH #157 pt 2b): cue-gap silence skipping, offered only on
+     * rows that actually carry a skippable gap. Kept across rows for the
+     * controller's lifetime, like the speed.
+     */
+    private val _skipSilences = MutableStateFlow(false)
+    val skipSilences: StateFlow<Boolean> = _skipSilences.asStateFlow()
+
+    /** The active row's cues (absolute ms, sorted at attach). */
+    private var cues: List<com.antivocale.app.transcription.TimedSegment> = emptyList()
+
+    /** The pending async seek's target: seekTo completes late on some
+     *  OEMs, and re-issuing the same seek every 200ms tick until it does
+     *  is pipeline thrash (and clicks on some audio stacks). */
+    private var pendingSeekTargetMs: Long? = null
+
     /** Survives row switches and replays (the state flow does not). */
     private var speed = 1f
 
@@ -104,7 +120,16 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
      *  other row's playback. A vanished file neither kills another row's
      *  live playback nor surfaces anything (the button disables on the next
      *  recomposition, the honest ~24h-sweep limit). */
-    fun toggle(taskId: String, filePath: String?) {
+    fun toggle(
+        taskId: String,
+        filePath: String?,
+        rowCues: List<com.antivocale.app.transcription.TimedSegment> = emptyList(),
+    ) {
+        // Attach on EVERY entry, not only a new play: the read-along flow
+        // plays from a collapsed row (empty cues: segments are lean-read
+        // only when expanded) and expands while listening; the expanded
+        // row pushes its cues through [attachCues] as soon as it composes.
+        cues = rowCues.sortedBy { it.startMs }
         if (filePath == null || !playbackFileExists(filePath)) return
         val current = _state.value
         if (current?.taskId == taskId) {
@@ -112,6 +137,17 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
             return
         }
         start(taskId, filePath)
+    }
+
+    /** The expanded row's live cue push (the read-along flow): applies only
+     *  while [taskId] is the active one, so a recycled row's stale cues
+     *  cannot leak into another row's playback. */
+    fun attachCues(taskId: String, rowCues: List<com.antivocale.app.transcription.TimedSegment>) {
+        if (_state.value?.taskId == taskId) cues = rowCues.sortedBy { it.startMs }
+    }
+
+    fun toggleSkipSilences() {
+        _skipSilences.value = !_skipSilences.value
     }
 
     fun cycleSpeed() {
@@ -214,6 +250,23 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
                     break
                 }
                 val duration = runCatching { mp.duration }.getOrNull() ?: 0
+                if (_skipSilences.value && _state.value?.playing == true) {
+                    // Skip while INSIDE a gap (not while a cue plays): the
+                    // seek target is always a cue start, so the audio lands
+                    // on recognized speech. Contained: a seek on a broken
+                    // player tears down instead of crashing Main.
+                    val pending = pendingSeekTargetMs
+                    val target = PlaybackCueGaps.seekTarget(cues, position)
+                    if (target == null) {
+                        // Position caught up (or moved past): the pending
+                        // seek, if any, is moot.
+                        pendingSeekTargetMs = null
+                    } else if (target != pending) {
+                        pendingSeekTargetMs = target
+                        runCatching { mp.seekTo(target.toInt()) }
+                            .onFailure { teardown() }
+                    }
+                }
                 _state.value = _state.value?.copy(positionMs = position, durationMs = duration)
                 delay(200)
             }
@@ -232,6 +285,8 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
         player = null
         audioManager.abandonAudioFocusRequest(focusRequest)
         _state.value = null
+        cues = emptyList()
+        pendingSeekTargetMs = null
     }
 
     /** The composition-exit hook; also the tab-switch cleaner. */
@@ -260,3 +315,81 @@ fun rememberResultPlayback(): ResultPlaybackController {
  *  durable user paths are the exception, per the task's honest limit). */
 fun playbackFileExists(filePath: String?): Boolean =
     filePath != null && File(filePath).exists()
+
+/**
+ * TASK-841 (GH #157 pt 2b): the pure cue-gap decision logic, split out of
+ * the controller so the skip semantics stay unit-testable (the
+ * TASK-850-class testability gap does not recur here).
+ *
+ * SEMANTIC NOTES: (1) skipping lands on RECOGNIZED speech; on partial or
+ * failed recognition rows the skipped audio includes audio the model
+ * missed. (2) The offer gate is honest about utility: a row qualifies only
+ * when its cues contain a skippable inter-cue gap (a leading pause alone
+ * never lights the toggle: it is near-universal, and seekTarget's lead-in
+ * skip then only serves rows already armed by another gap). (3) KNOWN
+ * LIMITATION, undetectable per row: sentence cues built from VAD-MERGED
+ * chunk groups carry timestamps drifted early by the stripped intra-group
+ * silence (SentenceCueBuilder shifts by the group start only), so on those
+ * rows a "gap" can contain the tail of real speech and skipping cuts it.
+ * The root fix (carrying per-segment original offsets into cue building)
+ * is tracked separately; see TASK-851. Positional cues and single-segment
+ * groups are unaffected (their spans are original-timeline).
+ */
+internal object PlaybackCueGaps {
+
+    /**
+     * Below this, an inter-cue pause is prosody, not silence; skipping it
+     * would sound like a stutter. Device trial tunes; 1s is the
+     * conservative first cut.
+     */
+    const val SKIPPABLE_GAP_MS = 1_000L
+
+    /**
+     * The ticker polls at 200ms and MediaPlayer's seekTo is async: stop
+     * seeking when the target is this close, or each tick re-issues the
+     * same seek before it completes (thrash).
+     */
+    const val MIN_SEEK_AHEAD_MS = 250L
+
+    /**
+     * The seek target when [positionMs] sits inside a skippable gap
+     * (including leading silence before the first cue), or null when the
+     * position is inside a cue, in a sub-threshold pause, too close to the
+     * target for a settle-safe seek ([MIN_SEEK_AHEAD_MS]), or past the last
+     * cue (trailing silence has nothing to land on). Input MUST be sorted
+     * by startMs (the controller sorts at attach; this helper does not
+     * re-sort per tick).
+     */
+    fun seekTarget(
+        cues: List<com.antivocale.app.transcription.TimedSegment>,
+        positionMs: Int,
+    ): Long? {
+        if (cues.isEmpty()) return null
+        val first = cues.first()
+        // Leading silence: before the first cue's start.
+        if (positionMs < first.startMs &&
+            first.startMs - positionMs >= SKIPPABLE_GAP_MS
+        ) {
+            return first.startMs
+        }
+        for (i in 0 until cues.size - 1) {
+            val gapStart = cues[i].endMs
+            val gapEnd = cues[i + 1].startMs
+            if (positionMs >= gapStart && positionMs < gapEnd &&
+                gapEnd - gapStart >= SKIPPABLE_GAP_MS
+            ) {
+                return gapEnd.takeIf { it - positionMs > MIN_SEEK_AHEAD_MS }
+            }
+        }
+        return null
+    }
+
+    /** The offer gate: does skipping this row's cues do anything at all? */
+    fun hasSkippableGap(cues: List<com.antivocale.app.transcription.TimedSegment>): Boolean {
+        if (cues.size < 2) return false
+        val sorted = cues.sortedBy { it.startMs }
+        return sorted.zipWithNext().any { (a, b) ->
+            b.startMs - a.endMs >= SKIPPABLE_GAP_MS
+        }
+    }
+}
