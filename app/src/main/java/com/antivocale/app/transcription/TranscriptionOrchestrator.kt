@@ -2723,7 +2723,9 @@ class TranscriptionOrchestrator @Inject constructor(
                         // construction, so no per-path offset arithmetic exists here.
                         val range = preprocessingResult.chunkRangesMs.firstOrNull()
                         val segments = if (range != null) {
-                            cuesForChunk(tr.tokens, trimmed, range.first, range.second)
+                            cuesForChunk(
+                                tr.tokens, trimmed, range.first, range.second,
+                                preprocessingResult.chunkAnchorsMs.firstOrNull().orEmpty())
                         } else emptyList()
                         // Tokens are chunk-relative intermediates; the assembled result
                         // carries cues only, same convention as the other three paths.
@@ -2798,6 +2800,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     chunks = preprocessingResult.chunks,
                     sampleRate = preprocessingResult.sampleRate,
                     segmentRangesMs = preprocessingResult.chunkRangesMs,
+                    segmentAnchorsMs = preprocessingResult.chunkAnchorsMs,
                     prompt = promptPlan.perChunk,
                     backend = backend,
                     audioDurationSeconds = audioDurationSeconds,
@@ -2824,6 +2827,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 chunks = preprocessingResult.chunks,
                 sampleRate = preprocessingResult.sampleRate,
                 segmentRangesMs = preprocessingResult.chunkRangesMs,
+                segmentAnchorsMs = preprocessingResult.chunkAnchorsMs,
                 prompt = promptPlan.perChunk,
                 backend = backend,
                 audioDurationSeconds = audioDurationSeconds,
@@ -2981,9 +2985,13 @@ class TranscriptionOrchestrator @Inject constructor(
         trimmedChunkText: String,
         startMs: Long,
         endMs: Long,
+        // TASK-851: the chunk's VAD-merge anchors (empty = one unstripped
+        // span, the flat shift SentenceCueBuilder applies then is exact).
+        anchors: List<Pair<Long, Long>> = emptyList(),
     ): List<TimedSegment> =
-        if (tokens.isNotEmpty()) SentenceCueBuilder.build(tokens, startMs, endMs, trimmedChunkText)
-        else listOf(TimedSegment(startMs, endMs, trimmedChunkText))
+        if (tokens.isNotEmpty()) {
+            SentenceCueBuilder.build(tokens, startMs, endMs, trimmedChunkText, anchors)
+        } else listOf(TimedSegment(startMs, endMs, trimmedChunkText))
 
     /**
      * TASK-673: the offline partials contract, VAD-segmented arm. Each
@@ -3005,6 +3013,7 @@ class TranscriptionOrchestrator @Inject constructor(
         chunks: List<FloatArray>,
         sampleRate: Int,
         segmentRangesMs: List<Pair<Long, Long>>,
+        segmentAnchorsMs: List<List<Pair<Long, Long>>> = emptyList(),
         prompt: String = "",
         backend: TranscriptionBackend,
         audioDurationSeconds: Int,
@@ -3051,7 +3060,9 @@ class TranscriptionOrchestrator @Inject constructor(
                         accumulatedText.append(trimmed)
                         // GH #92: a failed segment leaves no cue (honest gap).
                         segmentRangesMs.getOrNull(i)?.let { (startMs, endMs) ->
-                            segments.addAll(cuesForChunk(tr.tokens, trimmed, startMs, endMs))
+                            segments.addAll(cuesForChunk(
+                                tr.tokens, trimmed, startMs, endMs,
+                                segmentAnchorsMs.getOrNull(i).orEmpty()))
                         }
                         // TASK-602: the crash-recovery partial must refresh even
                         // when interim writes are suppressed (dual phase 2),
@@ -3169,6 +3180,8 @@ class TranscriptionOrchestrator @Inject constructor(
         sampleRate: Int,
         /** GH #92: per-chunk offsets aligned with the chunks; empty when no timing exists. */
         segmentRangesMs: List<Pair<Long, Long>>,
+        /** TASK-851: the per-chunk VAD-merge anchors, same alignment. */
+        segmentAnchorsMs: List<List<Pair<Long, Long>>> = emptyList(),
         prompt: String = "",
         backend: TranscriptionBackend,
         audioDurationSeconds: Int,
@@ -3393,7 +3406,8 @@ class TranscriptionOrchestrator @Inject constructor(
             results.mapIndexedNotNull { index, text ->
                 text?.let {
                     cuesForChunk(chunkTokens[index].orEmpty(), it,
-                        segmentRanges[index].first, segmentRanges[index].second)
+                        segmentRanges[index].first, segmentRanges[index].second,
+                        segmentAnchorsMs.getOrNull(index).orEmpty())
                 }
             }.flatten()
         } else emptyList()
@@ -3575,6 +3589,12 @@ class TranscriptionOrchestrator @Inject constructor(
             val trimmed = tr.text.trim()
             if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
             accumulatedText.append(trimmed)
+            // TASK-851 invariant: NO anchors here, deliberately. This arm
+            // hardcodes enableVad=false (below), so its chunks are
+            // contiguous decoded windows and the flat shift from the
+            // accumulated decoded seconds is exact; if VAD ever runs on
+            // this stream, the chunks arrive silence-STRIPPED and this site
+            // must learn anchors before its cues can stay on the timeline.
             segments.addAll(cuesForChunk(tr.tokens, trimmed, startMs, endMs))
             updateInterimResult(taskId, accumulatedText.toString(), writeRow = emitInterim)
             if (interimSubText != null && progressiveEnabled && emitInterim) {

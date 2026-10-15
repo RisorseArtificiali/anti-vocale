@@ -211,4 +211,56 @@ class SentenceCueBuilderTest {
         assertEquals(1, cues.size)
         assertEquals("Ihr war", cues[0].text)
     }
+
+    // ---- TASK-851: the original-timeline mapping inside VAD-merged chunks ----
+
+    @Test
+    fun `originalTimelineMs is the flat shift without anchors`() {
+        assertEquals(6_200L, SentenceCueBuilder.originalTimelineMs(1_200L, 5_000L, emptyList()))
+        // A single anchor at buffer 0 IS the flat shift.
+        assertEquals(6_200L, SentenceCueBuilder.originalTimelineMs(
+            1_200L, 5_000L, listOf(0L to 5_000L)))
+    }
+
+    @Test
+    fun `originalTimelineMs restores the stripped silence past each anchor`() {
+        // A merged chunk of two segments: buffer [0,1000) is original
+        // [0,1000); the second segment starts at buffer 1000 but its
+        // ORIGINAL start is 5000 (3000ms of stripped silence between them).
+        val anchors = listOf(0L to 0L, 1_000L to 5_000L)
+        // Inside the first segment: identity.
+        assertEquals(700L, SentenceCueBuilder.originalTimelineMs(700L, 0L, anchors))
+        // At the second anchor: the original start.
+        assertEquals(5_000L, SentenceCueBuilder.originalTimelineMs(1_000L, 0L, anchors))
+        // Past it: advance in lockstep (no stripping inside a segment).
+        assertEquals(5_500L, SentenceCueBuilder.originalTimelineMs(1_500L, 0L, anchors))
+        // A non-zero chunk start rides along (the anchor carries originals).
+        assertEquals(6_500L, SentenceCueBuilder.originalTimelineMs(1_500L, 1_000L,
+            listOf(0L to 1_000L, 1_000L to 6_000L)))
+    }
+
+    @Test
+    fun `a cue in the second merged segment lands on the original timeline`() {
+        // The drift case from TASK-851: without anchors the second
+        // segment's cue lands 3000ms early.
+        val anchors = listOf(0L to 0L, 1_000L to 5_000L)
+        // The inter-token pause (900->1800 = 900ms) exceeds PAUSE_SPLIT_MS,
+        // so the two tokens land in two cues.
+        val cues = SentenceCueBuilder.build(
+            listOf(
+                token("hello", 100, 900),
+                token("world", 1_800, 2_600)),
+            chunkStartMs = 0, chunkEndMs = 6_000,
+            anchors = anchors)
+        assertEquals(2, cues.size)
+        // First cue: inside segment one, identity.
+        assertEquals(100L, cues[0].startMs)
+        assertEquals(900L, cues[0].endMs)
+        // Second cue: shifted past the stripped silence to the original
+        // (buffer 1800 is 800ms past the 1000ms anchor).
+        assertEquals(5_800L, cues[1].startMs)
+        // The mapped end (6600) clamps to the chunk range.
+        assertEquals(6_000L, cues[1].endMs)
+        assertEquals(5_800L, cues[1].tokens.single().startMs)
+    }
 }

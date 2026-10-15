@@ -125,7 +125,13 @@ class AudioPreprocessor @Inject constructor() {
          * Empty when no timing exists. Consumers build positional cues from
          * this and never re-derive offsets from chunk indices.
          */
-        val chunkRangesMs: List<Pair<Long, Long>> = emptyList()
+        val chunkRangesMs: List<Pair<Long, Long>> = emptyList(),
+        /** TASK-851: per-chunk (bufferMs, originalMs) anchors at every
+         * constituent VAD segment's start (empty = the chunk is one
+         * unstripped span; a flat chunkStartMs shift is then exact).
+         * SentenceCueBuilder maps token times through them to the
+         * ORIGINAL timeline, closing the merged-chunk cue drift. */
+        val chunkAnchorsMs: List<List<Pair<Long, Long>>> = emptyList(),
     )
 
     /**
@@ -255,11 +261,13 @@ class AudioPreprocessor @Inject constructor() {
                 if (segments.size > 1) {
                     val maxMergeSamples = audioData.sampleRate * vadMergeLimitSeconds(maxChunkDurationSeconds)
 
-                    val (mergedSegments, mergedRangesMs) =
+                    val grouping =
                         mergeVadSegmentGroups(
                             segments, maxMergeSamples,
                             rangesMs = rangesMs, sampleRate = audioData.sampleRate,
                         )
+                    val mergedSegments = grouping.merged
+                    val mergedRangesMs = grouping.rangesMs
                     segments.clear()
 
                     Log.i(TAG, "VAD progressive: ${vadResult.speechSegments.size} raw → ${mergedSegments.size} merged segments, " +
@@ -271,7 +279,8 @@ class AudioPreprocessor @Inject constructor() {
                         totalDurationSeconds = vadResult.totalSpeechDurationSeconds,
                         chunkCount = mergedSegments.size,
                         isVadSegmented = true,
-                        chunkRangesMs = mergedRangesMs
+                        chunkRangesMs = mergedRangesMs,
+                        chunkAnchorsMs = grouping.anchorsMs,
                     )
                 }
 
@@ -786,10 +795,11 @@ class AudioPreprocessor @Inject constructor() {
         maxMergeSamples: Int,
         rangesMs: List<Pair<Long, Long>> = emptyList(),
         sampleRate: Int = 1,
-    ): Pair<List<FloatArray>, List<Pair<Long, Long>>> {
+    ): VadGrouping {
         val merged = mutableListOf<FloatArray>()
         val rs = rangesMs
         val mergedRanges = mutableListOf<Pair<Long, Long>>()
+        val mergedAnchors = mutableListOf<List<Pair<Long, Long>>>()
         var start = 0
         while (start < segments.size) {
             // Pass 1: find the extent of this group and its total size.
@@ -811,6 +821,8 @@ class AudioPreprocessor @Inject constructor() {
                 while (offset < seg.size) {
                     val len = minOf(maxMergeSamples, seg.size - offset)
                     merged.add(seg.copyOfRange(offset, offset + len))
+                    // A split piece is one unstripped span: no anchors.
+                    mergedAnchors.add(emptyList())
                     if (segRange != null) {
                         val pieceStartMs = segRange.first + offset.toLong() * 1000L / sampleRate
                         val pieceEndMs = pieceStartMs + len.toLong() * 1000L / sampleRate
@@ -820,6 +832,8 @@ class AudioPreprocessor @Inject constructor() {
                 }
             } else if (end == start) {
                 merged.add(segments[start])
+                // One segment: one unstripped span, flat shift exact.
+                mergedAnchors.add(emptyList())
                 val segRange = rs.getOrNull(start)
                 if (segRange != null) mergedRanges.add(segRange)
             } else {
@@ -827,12 +841,39 @@ class AudioPreprocessor @Inject constructor() {
                 merged.add(combined)
                 // Range-free callers pass an empty list: the ranges pair with
                 // the input segments, so index them only when provided.
-                if (rs.isNotEmpty()) mergedRanges.add(rs[start].first to rs[end].second)
+                if (rs.isNotEmpty()) {
+                    mergedRanges.add(rs[start].first to rs[end].second)
+                    // TASK-851: the concatenation STRIPPED the silence between
+                    // this group's segments, so buffer times compress at every
+                    // boundary; anchor each constituent segment's start so cue
+                    // building can restore the original timeline.
+                    val anchors = mutableListOf<Pair<Long, Long>>()
+                    var bufferSamples = 0L
+                    for (j in start..end) {
+                        val bufferMs = bufferSamples * 1000L / sampleRate
+                        anchors.add(bufferMs to rs[j].first)
+                        bufferSamples += segments[j].size
+                    }
+                    mergedAnchors.add(anchors)
+                } else {
+                    // Range-free caller: nothing to anchor (and no ranges
+                    // either; the flat fallback applies downstream).
+                    mergedAnchors.add(emptyList())
+                }
             }
             start = end + 1
         }
-        return merged to mergedRanges
+        return VadGrouping(merged, mergedRanges, mergedAnchors)
     }
+
+    /** One merged chunk's grouping outputs (TASK-851 adds the anchors). */
+    data class VadGrouping(
+        val merged: List<FloatArray>,
+        val rangesMs: List<Pair<Long, Long>>,
+        /** Per-chunk (bufferMs, originalMs) anchors; EMPTY per chunk that is
+         *  one unstripped span (flat shift exact there). */
+        val anchorsMs: List<List<Pair<Long, Long>>>,
+    )
 
     private fun validateInputFile(inputPath: String) {
         val inputFile = File(inputPath)

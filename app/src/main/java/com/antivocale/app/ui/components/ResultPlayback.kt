@@ -326,14 +326,14 @@ fun playbackFileExists(filePath: String?): Boolean =
  * missed. (2) The offer gate is honest about utility: a row qualifies only
  * when its cues contain a skippable inter-cue gap (a leading pause alone
  * never lights the toggle: it is near-universal, and seekTarget's lead-in
- * skip then only serves rows already armed by another gap). (3) KNOWN
- * LIMITATION, undetectable per row: sentence cues built from VAD-MERGED
- * chunk groups carry timestamps drifted early by the stripped intra-group
- * silence (SentenceCueBuilder shifts by the group start only), so on those
- * rows a "gap" can contain the tail of real speech and skipping cuts it.
- * The root fix (carrying per-segment original offsets into cue building)
- * is tracked separately; see TASK-851. Positional cues and single-segment
- * groups are unaffected (their spans are original-timeline).
+ * skip then only serves rows already armed by another gap). (3) FIXED at
+ * the source by TASK-851: sentence cues from VAD-MERGED chunk groups used
+ * to drift early by the stripped intra-group silence (a "gap" could
+ * contain real speech); the merge now emits per-segment original-timeline
+ * anchors and SentenceCueBuilder maps through them, so cues persisted by
+ * this build on are original-timeline. Rows written by OLDER builds still
+ * carry the drift (undetectable per row): skipping can cut speech tails
+ * on those.
  */
 internal object PlaybackCueGaps {
 

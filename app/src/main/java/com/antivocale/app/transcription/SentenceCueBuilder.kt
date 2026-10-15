@@ -49,9 +49,47 @@ object SentenceCueBuilder {
     private val MULTIPLE_SPACES = Regex(" {2,}")
 
     /**
+     * TASK-851: maps a chunk-relative time to the ORIGINAL audio timeline.
+     * A VAD-merged chunk is a concatenation of speech segments with the
+     * silence between them STRIPPED, so token times compress with every
+     * merge boundary; a flat chunkStartMs shift lands every segment after
+     * the first early by the accumulated stripped silence (the drift that
+     * mis-timed subtitles and made gap-skipping cut real speech). Each
+     * anchor is (bufferMs, originalMs) at a constituent segment's start,
+     * emitted by AudioPreprocessor's group merge; within a segment the two
+     * timelines advance identically (no stripping inside a segment), so the
+     * piecewise map is exact. Empty or single-anchor input degenerates to
+     * the flat shift.
+     */
+    fun originalTimelineMs(
+        chunkRelativeMs: Long,
+        chunkStartMs: Long,
+        anchors: List<Pair<Long, Long>>,
+    ): Long {
+        if (anchors.size < 2) return chunkStartMs + chunkRelativeMs
+        // The last anchor at or before the time; anchors are buffer-ordered
+        // by construction. A time before the first anchor (defensive) falls
+        // back to it.
+        var anchor = anchors.first()
+        for (a in anchors) {
+            if (a.first <= chunkRelativeMs) anchor = a else break
+        }
+        return anchor.second + (chunkRelativeMs - anchor.first)
+    }
+
+    /**
      * Builds the sentence cues of one chunk. [chunkStartMs]/[chunkEndMs] are the
      * chunk's range on the audio's timeline; token times are relative to the
-     * chunk. [chunkText] is the recognizer's own text for this chunk: when the
+     * chunk; [anchors] (TASK-851, default flat) restores the original
+     * timeline inside VAD-merged chunks (see [originalTimelineMs]). The
+     * anchors carry ABSOLUTE original-clip times and their FIRST entry is
+     * (0, chunkStartMs), so the flat and anchor paths agree at the chunk
+     * start; [chunkStartMs] is not added again in the anchor branch.
+     * CUE GROUPING runs on the MAPPED timeline (the tokens are mapped up
+     * front): pause splits and the reading-speed cap must see the REAL
+     * gaps, not silence-stripped ones, or one cue spans a whole merged
+     * group across long original silences (code review F1).
+     * [chunkText] is the recognizer's own text for this chunk: when the
      * token sequence aligns to it (whitespace-stripped concatenation matches
      * exactly; trailing whitespace and word-start markers are skipped, real
      * trailing characters abort), cue texts are cut from it verbatim,
@@ -65,19 +103,34 @@ object SentenceCueBuilder {
         chunkStartMs: Long,
         chunkEndMs: Long,
         chunkText: String? = null,
+        anchors: List<Pair<Long, Long>> = emptyList(),
     ): List<TimedSegment> {
         if (tokens.isEmpty()) return emptyList()
         val lo = minOf(chunkStartMs, chunkEndMs)
         val hi = maxOf(chunkStartMs, chunkEndMs)
+        // TASK-851 review F1: map the WHOLE token list up front, so cue
+        // grouping (pause splits, the reading-speed cap) sees the REAL
+        // gaps: a merged chunk's buffer compresses every stripped silence,
+        // and grouping on compressed times let one cue span a whole group
+        // across long original silences (also hiding them from TASK-841's
+        // gap skipping). Text alignment uses the ORIGINAL list: alignToText
+        // slices by token INDEX, and the copy preserves order and count.
         val aligned = chunkText?.let { text -> alignToText(tokens, text)?.let { spans -> text to spans } }
+        val toks = if (anchors.size < 2) tokens.map {
+            it.copy(startMs = chunkStartMs + it.startMs, endMs = chunkStartMs + it.endMs)
+        } else tokens.map {
+            it.copy(
+                startMs = originalTimelineMs(it.startMs, chunkStartMs, anchors),
+                endMs = originalTimelineMs(it.endMs, chunkStartMs, anchors))
+        }
         val cues = mutableListOf<TimedSegment>()
-        for ((first, last) in cueBounds(tokens)) {
+        for ((first, last) in cueBounds(toks)) {
             val text = aligned?.let { (source, spans) ->
                 source.substring(spans[first].first, spans[last].second).trim()
             } ?: joinText(tokens, first, last)
             if (text.isBlank()) continue
-            val start = (chunkStartMs + tokens[first].startMs).coerceIn(lo, hi)
-            val end = (chunkStartMs + tokens[last].endMs).coerceIn(lo, hi).coerceAtLeast(start)
+            val start = toks[first].startMs.coerceIn(lo, hi)
+            val end = toks[last].endMs.coerceIn(lo, hi).coerceAtLeast(start)
             // Trim a previous cue that would reach past this start, keeping its
             // duration non-negative. Full non-overlap holds for the monotonic
             // token starts every wired sherpa family produces; badly inverted
@@ -87,11 +140,9 @@ object SentenceCueBuilder {
                     cues[cues.size - 1] = previous.copy(endMs = maxOf(start, previous.startMs))
                 }
             }
-            // TASK-678: the cue's tokens ride along (shifted to absolute
-            // ms), transient fuel for the speaker re-split.
-            val cueTokens = tokens.subList(first, last + 1).map {
-                it.copy(startMs = it.startMs + chunkStartMs, endMs = it.endMs + chunkStartMs)
-            }
+            // TASK-678: the cue's tokens ride along (absolute ms, already
+            // mapped), transient fuel for the speaker re-split.
+            val cueTokens = toks.subList(first, last + 1).toList()
             cues.add(TimedSegment(start, end, text, tokens = cueTokens))
         }
         return mergePunctuationOnlyCues(cues)
