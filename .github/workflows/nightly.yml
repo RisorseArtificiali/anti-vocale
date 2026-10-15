@@ -124,15 +124,20 @@ jobs:
           echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
           sed -i 's|storeFile=.*|storeFile=release.keystore|' keystore.properties
 
-      - name: Build playStore NIGHTLY APKs (per-ABI splits, the .nightly id)
-        run: ./gradlew :app:assemblePlayStoreNightly --console=plain
-
       # Review F3 (TASK-838): this workflow was the ONLY one assembling the
       # playStore RELEASE variant; leaving it nightly-only would turn a
       # release-only regression (signing, split packaging, the R8 path) into
-      # a release-day failure. One smoke build keeps the coverage.
-      - name: Smoke - the playStore release variant still builds
-        run: ./gradlew :app:assemblePlayStoreRelease --console=plain
+      # a release-day failure. One invocation builds both (review 2026-10-15:
+      # a single gradlew call shares configuration and the daemon; two calls
+      # doubled the workflow's time for nothing).
+      - name: Build playStore NIGHTLY APKs + the release smoke (per-ABI splits, the .nightly id)
+        run: ./gradlew :app:assemblePlayStoreNightly :app:assemblePlayStoreRelease --console=plain
+
+      # Review 2026-10-15: the nightly ships R8-minified with Crashlytics
+      # enabled; without the mapping upload every nightly crash report
+      # arrives obfuscated and undiagnosable.
+      - name: Upload Crashlytics mapping for the nightly build
+        run: ./gradlew :app:uploadCrashlyticsMappingFilePlayStoreNightly --console=plain
 
       # Asset names antivocale-nightly-<abi>.apk are DELIBERATELY distinct from
       # every name android-release.yml can publish (app-fdroid-<abi>-release.apk,

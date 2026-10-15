@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- TASK-845: the legacy single-channel rules (API 30 and below, read via
      android:fullBackupContent). The legacy channel is the cloud backup, so
-     the same exclusion as the cloud half of data_extraction_rules.xml: the
-     preferences directory (the remote-offload key lives in there) stays
-     out; everything else, the database included, keeps riding. -->
+     the same exclusion set as the cloud half of data_extraction_rules.xml
+     (widened by code review 2026-10-15): credentials (the DataStore set and
+     the HuggingFace token prefs) stay off the cloud, and the heavy/biometric
+     directories (models, speaker voiceprints, transient shared audio) stay
+     off it too, keeping the app under the ~25MB quota so the transcripts
+     database actually rides. -->
 <full-backup-content>
     <exclude domain="file" path="datastore/" />
+    <exclude domain="file" path="models/" />
+    <exclude domain="file" path="shared_audio/" />
+    <exclude domain="file" path="speaker_identities/" />
+    <exclude domain="sharedpref" path="huggingface_encrypted_prefs" />
 </full-backup-content>

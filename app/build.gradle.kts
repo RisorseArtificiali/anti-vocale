@@ -18,6 +18,11 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// The base application id, single-sourced for the OAuth redirect scheme
+// placeholders (review 2026-10-15): defaultConfig and the suffixed build
+// types all derive from this one literal.
+val APP_ID_BASE = "com.antivocale.app"
+
 android {
     namespace = "com.antivocale.app"
     compileSdk = 36
@@ -44,8 +49,11 @@ android {
             useSupportLibrary = true
         }
 
-        // AppAuth redirect scheme for HuggingFace OAuth
-        manifestPlaceholders["appAuthRedirectScheme"] = "com.antivocale.app"
+        // AppAuth redirect scheme for HuggingFace OAuth: DERIVED from the
+        // applicationId expression (review 2026-10-15: four hand-kept
+        // literals could drift; redirectUri() must match the placeholder).
+        // The buildType suffixes below append to the same literal.
+        manifestPlaceholders["appAuthRedirectScheme"] = APP_ID_BASE
 
         // TASK-643: version-scoped catalog index. Keyed by versionName
         // (flavor/ABI-independent; versionCode derives per-ABI on F-Droid),
@@ -119,7 +127,7 @@ android {
             // HuggingFaceOAuthConfig.redirectUri() derives from applicationId,
             // and this placeholder feeds the AppAuth library's redirect
             // activity to match. Needs the URI registered on the HF OAuth app.
-            manifestPlaceholders["appAuthRedirectScheme"] = "com.antivocale.app.debug"
+            manifestPlaceholders["appAuthRedirectScheme"] = APP_ID_BASE + applicationIdSuffix
         }
         // GH #159: the nightly build type, cloned from release so the nightly
         // APK is a true release artifact (R8, resource shrink) but carries its
@@ -132,7 +140,7 @@ android {
             initWith(getByName("release"))
             applicationIdSuffix = ".nightly"
             // Own OAuth redirect scheme, same rationale as the debug block.
-            manifestPlaceholders["appAuthRedirectScheme"] = "com.antivocale.app.nightly"
+            manifestPlaceholders["appAuthRedirectScheme"] = APP_ID_BASE + applicationIdSuffix
             if (keystoreProperties["storeFile"] != null) {
                 signingConfig = signingConfigs.getByName("release")
             }

@@ -59,8 +59,9 @@ The App requests the following permissions:
 - This list never touches disk, is cleared when the feature is turned off, and the process ending forgets it
 
 ### Android System Backup
-- Android's automatic backup may carry your transcription history (and nothing else that identifies you) through the OS backup transport to whatever cloud account backs up your device
-- Your settings and any credentials you configured (for example a remote-offload API key) are explicitly excluded from that backup and never leave the device through it; a direct device-to-device transfer keeps everything
+- Android's automatic backup may carry your transcription history through the OS backup transport to whatever cloud account backs up your device
+- Excluded from that backup, always: your settings and any credentials you configured (for example a remote-offload API key, HuggingFace login tokens), your speaker voiceprints and enrollment audio, and downloaded models (they re-download); the exclusions also keep the backup under Android's size quota, so the history itself actually rides
+- A direct device-to-device transfer (cable migration) keeps everything
 
 ## Data Sharing
 

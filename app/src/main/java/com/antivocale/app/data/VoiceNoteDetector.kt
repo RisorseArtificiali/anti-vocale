@@ -117,8 +117,15 @@ class VoiceNoteDetector @Inject constructor() {
         val oldObservers = observers
         observers = mutableListOf()
         watchedDirs = mutableSetOf()
-        armWatchers()
-        oldObservers.forEach { it.stopWatching() }
+        // finally (review 2026-10-15): armWatchers can throw mid-swap under
+        // the very storage churn this cadence survives; without the finally,
+        // the swapped-out observers leak forever (dispose cannot reach them
+        // anymore) and every failed tick leaks another full set.
+        try {
+            armWatchers()
+        } finally {
+            oldObservers.forEach { it.stopWatching() }
+        }
         Log.i(TAG, "refreshed: ${observers.size} watchers (gap-free)")
     }
 

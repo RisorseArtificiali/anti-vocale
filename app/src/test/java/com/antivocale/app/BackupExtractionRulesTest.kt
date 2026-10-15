@@ -31,11 +31,24 @@ class BackupExtractionRulesTest {
     }
 
     @Test
-    fun `the cloud channel excludes the datastore directory`() {
+    fun `the cloud channel excludes every credential, heavy, and biometric path`() {
         val cloudBlock = extractionRules.substringAfter("<cloud-backup>").substringBefore("</cloud-backup>")
-        assertTrue(
-            "the preferences directory (the offload key) must stay off the cloud backup",
-            cloudBlock.contains("<exclude domain=\"file\" path=\"datastore/\" />"))
+        // Review 2026-10-15: the exclusion set is load-bearing in three
+        // classes: credentials (the offload key's DataStore, the HuggingFace
+        // token prefs), the quota (models/ alone would blow the ~25MB
+        // per-app backup limit and abort the WHOLE backup, transcripts
+        // included), and biometrics (speaker voiceprints + enrollment
+        // audio). A missing line here falsifies the privacy policy's
+        // backup paragraph.
+        val required = listOf(
+            "<exclude domain=\"file\" path=\"datastore/\" />",
+            "<exclude domain=\"file\" path=\"models/\" />",
+            "<exclude domain=\"file\" path=\"shared_audio/\" />",
+            "<exclude domain=\"file\" path=\"speaker_identities/\" />",
+            "<exclude domain=\"sharedpref\" path=\"huggingface_encrypted_prefs\" />",
+        )
+        val missing = required.filterNot { cloudBlock.contains(it) }
+        assertTrue("cloud exclusion set incomplete: $missing", missing.isEmpty())
     }
 
     @Test
@@ -47,8 +60,13 @@ class BackupExtractionRulesTest {
     }
 
     @Test
-    fun `the legacy channel matches the cloud exclusion`() {
-        assertTrue(
-            legacyRules.contains("<exclude domain=\"file\" path=\"datastore/\" />"))
+    fun `the legacy channel matches the cloud exclusions`() {
+        for (line in extractionRules.substringAfter("<cloud-backup>").substringBefore("</cloud-backup>").lines()) {
+            if (line.contains("<exclude")) {
+                assertTrue(
+                    "legacy rules must mirror the cloud exclusion: $line",
+                    legacyRules.contains(line.trim()))
+            }
+        }
     }
 }

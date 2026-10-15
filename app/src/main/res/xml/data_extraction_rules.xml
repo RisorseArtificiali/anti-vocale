@@ -1,15 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- TASK-845 (maintainer decision 2026-10-14, option three of the allowBackup
-     assessment): the preferences directory (which carries the remote-offload
-     bearer API key and the whole DataStore set: localai_preferences,
-     transcription_calibration) never rides the OS CLOUD backup; the Room
-     database (transcripts) stays recoverable. Device-transfer (the local
-     D2D migration, under the user's physical control) keeps everything, so
-     a phone migration loses nothing. Directory-level on purpose: future
-     DataStores land inside datastore/ and are covered without a rule edit. -->
+     assessment; exclusion set widened by code review 2026-10-15): the cloud
+     backup channel carries the Room database (transcripts: the recoverable
+     user value) but NOTHING heavy or identifying. Excluded, with the reason
+     per class:
+     - datastore/: the DataStore set, whose localai_preferences carries the
+       remote-offload bearer API key.
+     - shared_prefs/huggingface_encrypted_prefs: OAuth tokens (and the
+       KeyStore-broken fallback writes them unencrypted there).
+     - models/: hundreds of MB; exceeding the ~25MB per-app auto-backup
+       quota makes the OS abort the WHOLE backup, which would take the
+       transcripts down with it. Models re-download per device.
+     - speaker_identities/: voiceprint embeddings and enrollment audio,
+       biometric-adjacent data that must not ride a cloud transport.
+     - shared_audio/: transient copies of shared voice notes.
+     Device-transfer (the local cable migration, under the user's physical
+     control) keeps everything, so a phone migration loses nothing. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="datastore/" />
+        <exclude domain="file" path="models/" />
+        <exclude domain="file" path="shared_audio/" />
+        <exclude domain="file" path="speaker_identities/" />
+        <exclude domain="sharedpref" path="huggingface_encrypted_prefs" />
     </cloud-backup>
     <device-transfer>
     </device-transfer>
