@@ -1257,6 +1257,12 @@
     <string name="folder_watch_grant_failed">उस फ़ोल्डर तक पहुँच बनाए नहीं रखी जा सकी, इसलिए उसे जोड़ा नहीं गया। कृपया उसे फिर से चुनें।</string>
 
     <!-- बैकअप और स्थानांतरण (TASK-843/844, GH #158) -->
+
+    <!-- TASK-840 (GH #157 pt 1): result-row playback -->
+    <string name="result_play_audio">ऑडियो चलाएँ</string>
+    <string name="result_pause_audio">ऑडियो रोकें</string>
+    <string name="result_playback_speed">प्लेबैक गति (%1$s)</string>
+
     <string name="backup_transfer_title">बैकअप और स्थानांतरण</string>
     <string name="backup_transfer_summary">अपनी सेटिंग्स और इतिहास को एक फ़ाइल में सहेजें, या किसी दूसरे डिवाइस पर पुनर्स्थापित करें</string>
     <string name="backup_export_title">बैकअप निर्यात करें</string>

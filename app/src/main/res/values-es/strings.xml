@@ -1126,6 +1126,12 @@
     <string name="folder_watch_grant_failed">No se pudo conservar el acceso a esa carpeta, así que no se añadió. Vuelve a elegirla.</string>
 
     <!-- Copia de seguridad y transferencia (TASK-843/844, GH #158) -->
+
+    <!-- TASK-840 (GH #157 pt 1): result-row playback -->
+    <string name="result_play_audio">Reproducir audio</string>
+    <string name="result_pause_audio">Pausar el audio</string>
+    <string name="result_playback_speed">Velocidad de reproducción (%1$s)</string>
+
     <string name="backup_transfer_title">Copia de seguridad y transferencia</string>
     <string name="backup_transfer_summary">Guarda tus ajustes y tu historial en un archivo, o restáuralos en otro dispositivo</string>
     <string name="backup_export_title">Exportar copia de seguridad</string>

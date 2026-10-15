@@ -1126,6 +1126,12 @@
     <string name="folder_watch_grant_failed">Não foi possível manter o acesso a essa pasta, então ela não foi adicionada. Tente escolher novamente.</string>
 
     <!-- Backup e transferência (TASK-843/844, GH #158) -->
+
+    <!-- TASK-840 (GH #157 pt 1): result-row playback -->
+    <string name="result_play_audio">Reproduzir áudio</string>
+    <string name="result_pause_audio">Pausar o áudio</string>
+    <string name="result_playback_speed">Velocidade de reprodução (%1$s)</string>
+
     <string name="backup_transfer_title">Backup e transferência</string>
     <string name="backup_transfer_summary">Salve suas configurações e histórico em um arquivo, ou restaure-os em outro aparelho</string>
     <string name="backup_export_title">Exportar backup</string>

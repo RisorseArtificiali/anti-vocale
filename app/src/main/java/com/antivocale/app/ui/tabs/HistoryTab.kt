@@ -68,6 +68,9 @@ import com.antivocale.app.service.InferenceService
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.animation.Crossfade
 import com.antivocale.app.ui.components.SkeletonTranscriptionCard
+import com.antivocale.app.ui.components.ResultPlaybackController
+import com.antivocale.app.ui.components.playbackFileExists
+import com.antivocale.app.ui.components.rememberResultPlayback
 import com.antivocale.app.ui.components.languageOptionLabel
 import com.antivocale.app.ui.components.transcriptionSentinelLabels
 import com.antivocale.app.ui.components.transcriptionPickerFor
@@ -448,6 +451,79 @@ private fun sharePlainText(context: Context, content: String) {
 }
 
 /**
+ * TASK-840 (GH #157 pt 1): the row's play/pause + speed controls. This is
+ * the ONLY place that reads the controller's state, so the 200ms progress
+ * tick recomposes just these controls, never the whole row. The speed
+ * button appears only while THIS row is the now-playing one.
+ */
+@Composable
+private fun RowScope.PlaybackControls(
+    playback: ResultPlaybackController,
+    taskId: String,
+    filePath: String?,
+    compact: Boolean,
+) {
+    val now by playback.state.collectAsState()
+    val mine = now?.taskId == taskId
+    val filePresent = remember(filePath) {
+        playbackFileExists(filePath)
+    }
+    ResultActionButton(
+        compact = compact,
+        // A missing file disables (the honest ~24h-sweep limit) but keeps
+        // the row's affordance visible, the retranscribe-not-found class.
+        enabled = filePresent,
+        onClick = { playback.toggle(taskId, filePath) },
+        icon = if (mine && now?.playing == true) Icons.Default.Pause else Icons.Default.PlayArrow,
+        labelRes = if (mine && now?.playing == true) R.string.result_pause_audio
+        else R.string.result_play_audio,
+    )
+    if (mine) {
+        // Compact ALWAYS (icon-only): in labeled mode a sixth weighted
+        // TextButton re-opens the TASK-345 label-overflow class on long
+        // localized labels. The description carries the CURRENT rate so
+        // TalkBack users hear the change, not a static phrase.
+        val rate = when (now?.speed) {
+            1.25f -> "1.25x"
+            1.5f -> "1.5x"
+            else -> "1x"
+        }
+        IconButton(onClick = { playback.cycleSpeed() }) {
+            Icon(
+                Icons.Default.Speed,
+                contentDescription = stringResource(R.string.result_playback_speed, rate),
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** TASK-840: the now-playing row's thin progress bar (see PlaybackControls
+ *  for the scoping rationale). */
+@Composable
+private fun PlaybackProgressBar(
+    playback: ResultPlaybackController,
+    taskId: String,
+) {
+    val now by playback.state.collectAsState()
+    val playing = now
+    val mine = playing?.taskId == taskId
+    if (mine && playing != null) {
+        val fraction = if (playing.durationMs > 0) {
+            (playing.positionMs.toFloat() / playing.durationMs).coerceIn(0f, 1f)
+        } else 0f
+        LinearProgressIndicator(
+            progress = { fraction },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp),
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+    }
+}
+
+/**
  * A result-card action rendered either as a compact icon-only button (localized
  * contentDescription) or as a labeled TextButton, per the user preference.
  */
@@ -457,11 +533,17 @@ private fun RowScope.ResultActionButton(
     onClick: () -> Unit,
     icon: ImageVector,
     labelRes: Int,
-    contentDescriptionRes: Int = labelRes
+    contentDescriptionRes: Int = labelRes,
+    // TASK-840: the playback button renders DISABLED (visible, with its
+    // play wording) when the row's sandbox audio is gone: the honest limit
+    // of the ~24h sweep beats a button that vanishes. rateLabel overrides
+    // the labeled text (the speed button shows the CURRENT rate, not the
+    // long localized phrase).
+    enabled: Boolean = true,
 ) {
     if (compact) {
         // TASK-381: no explicit size, IconButton defaults to 48dp touch target
-        IconButton(onClick = onClick) {
+        IconButton(onClick = onClick, enabled = enabled) {
             Icon(
                 icon,
                 contentDescription = stringResource(contentDescriptionRes),
@@ -472,7 +554,8 @@ private fun RowScope.ResultActionButton(
     } else {
         TextButton(
             onClick = onClick,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            enabled = enabled,
         ) {
             Icon(
                 icon,
@@ -620,6 +703,10 @@ fun HistoryTab(
     val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
     val compactActions by viewModel.compactResultActions.collectAsState()
     val advancedShare by viewModel.advancedShareFormats.collectAsState()
+    // TASK-840 (GH #157 pt 1): the ONE tab-owned audio player for result
+    // rows (hoisted above the LazyColumn: a row-local player would die
+    // mid-playback when its row recycles out; released with the tab).
+    val playbackController = rememberResultPlayback()
 
     if (retranscribeTarget != null) {
         val retranscribeBackends by produceState(
@@ -937,6 +1024,7 @@ fun HistoryTab(
                         onDeleted = { entry -> recentlyDeletedEntry = entry },
                         onDeleteLog = { id -> viewModel.deleteLog(id) },
                         viewModel = viewModel,
+                        playback = playbackController,
                         onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null,
                         compactActions = compactActions,
                         advancedShareFormats = advancedShare,
@@ -1246,6 +1334,7 @@ fun LogEntryItem(
     searchQuery: String = "",
     expanded: Boolean = false,
     onExpandChange: (Boolean) -> Unit = {},
+    playback: ResultPlaybackController? = null,
     onRetranscribe: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     onCancel: (() -> Unit)? = null,
@@ -1715,11 +1804,28 @@ fun LogEntryItem(
                         // The labeled layout remains available as a user preference.
                         if (log.result.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(if (compactActions) 4.dp else 8.dp))
+                            // TASK-840: the thin now-playing bar sits ABOVE the
+                            // action row; a fixed height (NOT an intrinsic one),
+                            // so the CappedTranscript 262142px class cannot
+                            // apply. Rendered only for the one playing row.
+                            if (playback != null && log.type == LogEntry.Type.AUDIO) {
+                                PlaybackProgressBar(playback = playback, taskId = log.taskId)
+                            }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // TASK-840 (GH #157 pt 1): play/pause with
+                                // speed, hoisted to the tab-level controller.
+                                if (playback != null && log.type == LogEntry.Type.AUDIO) {
+                                    PlaybackControls(
+                                        playback = playback,
+                                        taskId = log.taskId,
+                                        filePath = log.filePath,
+                                        compact = compactActions,
+                                    )
+                                }
                                 // Re-transcribe button (audio entries with file)
                                 if (onRetranscribe != null) {
                                     ResultActionButton(
@@ -2002,6 +2108,7 @@ private fun LogEntryWithSwipe(
     onDeleted: (LogEntry) -> Unit,
     onDeleteLog: (String) -> Unit,
     viewModel: LogsViewModel,
+    playback: ResultPlaybackController? = null,
     onRetranscribe: (() -> Unit)? = null,
     compactActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
     advancedShareFormats: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS,
@@ -2110,6 +2217,7 @@ private fun LogEntryWithSwipe(
                         onExpandChange(expanded)
                     }
                 },
+                playback = playback,
                 onRetranscribe = onRetranscribe,
                 onCancel = { cancelTask(context, log.taskId) },
                 onDelete = { onDeleted(log); viewModel.deleteLog(log.id) },
@@ -2168,6 +2276,7 @@ private fun LogEntryWithSwipe(
                 searchQuery = searchQuery,
                 expanded = isExpanded,
                 onExpandChange = onExpandChange,
+                playback = playback,
                 onRetranscribe = onRetranscribe,
                 onCancel = { cancelTask(context, log.taskId) },
                 onDelete = { onDeleted(log); onDeleteLog(log.id) },
