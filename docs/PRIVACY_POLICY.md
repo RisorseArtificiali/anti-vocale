@@ -58,6 +58,10 @@ The App requests the following permissions:
 - With sender recognition enabled, the sender name and voice-note length of recent WhatsApp notifications are held in memory only
 - This list never touches disk, is cleared when the feature is turned off, and the process ending forgets it
 
+### Android System Backup
+- Android's automatic backup may carry your transcription history (and nothing else that identifies you) through the OS backup transport to whatever cloud account backs up your device
+- Your settings and any credentials you configured (for example a remote-offload API key) are explicitly excluded from that backup and never leave the device through it; a direct device-to-device transfer keeps everything
+
 ## Data Sharing
 
 **Anti-Vocale does NOT share data with any third parties.**

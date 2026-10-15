@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TASK-845: the legacy single-channel rules (API 30 and below, read via
+     android:fullBackupContent). The legacy channel is the cloud backup, so
+     the same exclusion as the cloud half of data_extraction_rules.xml: the
+     preferences directory (the remote-offload key lives in there) stays
+     out; everything else, the database included, keeps riding. -->
+<full-backup-content>
+    <exclude domain="file" path="datastore/" />
+</full-backup-content>
