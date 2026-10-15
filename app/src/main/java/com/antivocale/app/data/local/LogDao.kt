@@ -24,6 +24,27 @@ interface LogDao {
     suspend fun deleteAll()
 
     /**
+     * TASK-844 (GH #158): the backup export's paged FULL-ROW read. Every
+     * LogEntity column (the lean list queries above intentionally drop
+     * segments and firstPassTranscript; an archive that dropped them would
+     * lose cues and two-pass text on migration). Keyset-paged on timestamp
+     * DESC: never load the whole history into the heap (the 256MB lesson
+     * two comments up). [beforeTimestamp] = Long.MAX_VALUE starts the walk.
+     */
+    @Query("SELECT * FROM logs WHERE timestamp < :beforeTimestamp " +
+        "ORDER BY timestamp DESC LIMIT :limit")
+    suspend fun pageBefore(beforeTimestamp: Long, limit: Int): List<LogEntity>
+
+    /**
+     * TASK-844: the import's batch write. OnConflictStrategy.REPLACE keyed
+     * on id makes a re-import of the same archive a no-op (idempotent
+     * merge, never a duplicate) and a same-id row a replace, both the
+     * designed semantics.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(rows: List<LogEntity>)
+
+    /**
      * Bounded recent-first query for the Logs UI (TASK-340 Fix 2a): the previous
      * unbounded getAll let the whole history pile into the 256MB heap, and the
      * ViewModel remaps the full list into new objects on every interim Room write.
