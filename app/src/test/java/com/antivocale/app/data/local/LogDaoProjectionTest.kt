@@ -90,6 +90,8 @@ class LogDaoProjectionTest {
             // save-outcome columns non-null (the test's own contract).
             savedFolderName = "Download", savedFileName = "note.srt",
             saveFailureReason = "fixture",
+            // TASK-842: the guard's column rides the same non-null rule.
+            contentHash = "abc123",
         )
         dao.insert(full)
 

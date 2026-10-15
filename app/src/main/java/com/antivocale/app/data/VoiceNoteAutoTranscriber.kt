@@ -36,9 +36,19 @@ class VoiceNoteAutoTranscriber @Inject constructor(
     private val treeGrant: VoiceNoteTreeGrant,
     private val audioPreprocessor: AudioPreprocessor,
     private val identityCache: VoiceNoteIdentityCache,
+    private val duplicateGuard: VoiceNoteDuplicateGuard,
 ) {
 
     suspend fun enqueue(whatsappPath: String, detectedAtMs: Long) {
+        // TASK-842: the completed-row silent dedup. The taskId derives from
+        // the note's unique PTT name (see serviceIntent), so "same taskId"
+        // IS "same note"; WhatsApp re-delivering an already-transcribed
+        // note (a redownload, a folder scan) transcribes once, not twice.
+        val taskId = "voicenote_${whatsappPath.substringAfterLast('/')}"
+        if (duplicateGuard.alreadyTranscribed(taskId)) {
+            Log.i(TAG, "note already transcribed, deduped: $whatsappPath")
+            return
+        }
         // Runs on the coordinator's IO dispatcher; resolve is suspend all
         // the way down (SAF queries + copy), never a blocking bridge.
         val localPath = treeGrant.resolve(whatsappPath)

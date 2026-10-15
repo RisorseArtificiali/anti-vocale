@@ -32,11 +32,17 @@ class VoiceNoteAutoTranscriberTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    private fun impl(resolveResult: String?) = VoiceNoteAutoTranscriber(
+    private fun impl(
+        resolveResult: String?,
+        alreadyTranscribed: Boolean = false,
+    ) = VoiceNoteAutoTranscriber(
         context,
         mockk<VoiceNoteTreeGrant> { coEvery { resolve(any()) } returns resolveResult },
         mockk<AudioPreprocessor>(),
         VoiceNoteIdentityCache(),
+        mockk<VoiceNoteDuplicateGuard> {
+            coEvery { alreadyTranscribed(any()) } returns alreadyTranscribed
+        },
     )
 
     @Test
@@ -69,6 +75,20 @@ class VoiceNoteAutoTranscriberTest {
         assertNull(
             impl.serviceIntent("/local/n.opus", "/w/PTT-1.opus")
                 .getStringExtra(InferenceService.EXTRA_SENDER_NAME))
+    }
+
+    @Test
+    fun `a note already transcribed is silently deduped`() = runBlocking {
+        // TASK-842: WhatsApp re-delivering a completed note (redownload,
+        // folder scan) must not re-run the transcription; the guard skips
+        // BEFORE the grant resolve, so an already-transcribed note costs
+        // nothing.
+        impl(resolveResult = "/local/n.opus", alreadyTranscribed = true)
+            .enqueue("/w/PTT-1.opus", 1_000L)
+        assertEquals(
+            "no service may start for a deduped note",
+            null,
+            shadowOf(context.applicationContext as android.app.Application).nextStartedService)
     }
 
     @Test

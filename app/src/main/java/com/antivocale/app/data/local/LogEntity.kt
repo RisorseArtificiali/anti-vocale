@@ -7,7 +7,7 @@ import com.antivocale.app.ui.viewmodel.LogEntry
 
 @Entity(
     tableName = "logs",
-    indices = [Index("timestamp")]
+    indices = [Index("timestamp"), Index("contentHash")]
 )
 data class LogEntity(
     @PrimaryKey val id: String,
@@ -69,6 +69,13 @@ data class LogEntity(
     val savedFolderName: String? = null,
     val savedFileName: String? = null,
     val saveFailureReason: String? = null,
+    /**
+     * TASK-842 (GH #157 part 3): SHA-256 of the audio content at intake
+     * (filePath cannot identify a re-share: sandbox copies get fresh
+     * random names). Null on legacy rows and on text-only entries; the
+     * duplicate guard matches hash + modelName.
+     */
+    val contentHash: String? = null,
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
