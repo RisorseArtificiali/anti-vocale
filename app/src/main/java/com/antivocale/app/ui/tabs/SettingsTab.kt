@@ -164,16 +164,30 @@ fun SettingsTab(
     val isTranscribing by InferenceService.isTranscribing.collectAsState()
     val scrollState = rememberScrollState()
     var tokenPasswordVisible by remember { mutableStateOf(false) }
-    var showOAuthConfigDialog by remember { mutableStateOf(false) }
-    var showPerAppSettings by remember { mutableStateOf(false) }
-    var showPromptSettings by remember { mutableStateOf(false) }
-    var showIconSettings by remember { mutableStateOf(false) }
-    var showExportSettings by remember { mutableStateOf(false) }
-    var showSpeakerSettings by remember { mutableStateOf(false) }
-    var showPerformanceSettings by remember { mutableStateOf(false) }
-    var showAutomationSettings by remember { mutableStateOf(false) }
-    var showVoiceNoteSettings by remember { mutableStateOf(false) }
-    var showBackupTransfer by remember { mutableStateOf(false) }
+    // TASK-846: SAVEABLE (the TASK-763 saveable-primitives lesson, applied
+    // to the family), each with an EXPLICIT key so a future flag inserted
+    // mid-list cannot shift a sibling's restored slot. The triggers are
+    // process death and the UNHANDLED config changes (uiMode, locale,
+    // density, font scale; orientation is handled in place by
+    // MainActivity's configChanges): then a plain remember flag dies
+    // false, the subpage never recomposes, and the ActivityResultRegistry
+    // STASHES the pending pick instead of delivering it (androidx.activity
+    // 1.8.2: mPendingResults, fired at the next register under the same
+    // key), so the user returns to the main tree and the pick only lands,
+    // out of context, on a later open of that subpage. Saveable flags
+    // re-compose the subpage during restore, the launcher re-registers
+    // under its restored key, and the pick lands in place. Deliberate
+    // consequence (desirable, matching searchQuery): a subpage now also
+    // survives a tab switch, not just process death.
+    var showPerAppSettings by rememberSaveable("showPerAppSettings") { mutableStateOf(false) }
+    var showPromptSettings by rememberSaveable("showPromptSettings") { mutableStateOf(false) }
+    var showIconSettings by rememberSaveable("showIconSettings") { mutableStateOf(false) }
+    var showExportSettings by rememberSaveable("showExportSettings") { mutableStateOf(false) }
+    var showSpeakerSettings by rememberSaveable("showSpeakerSettings") { mutableStateOf(false) }
+    var showPerformanceSettings by rememberSaveable("showPerformanceSettings") { mutableStateOf(false) }
+    var showAutomationSettings by rememberSaveable("showAutomationSettings") { mutableStateOf(false) }
+    var showVoiceNoteSettings by rememberSaveable("showVoiceNoteSettings") { mutableStateOf(false) }
+    var showBackupTransfer by rememberSaveable("showBackupTransfer") { mutableStateOf(false) }
 
     // The ONE sub-page clear (TASK-632): system back and every nav-effect
     // branch share it, so a future sub-page flag cannot be cleared in one

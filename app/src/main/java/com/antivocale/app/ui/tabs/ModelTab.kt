@@ -596,7 +596,12 @@ fun ModelTab(
         )
     }
 
-    var showGemmaDownloads by remember { mutableStateOf(false) }
+    // TASK-846: SAVEABLE with an explicit key (the Settings subpage family
+    // lesson, applied to the Models equivalent): a process death or
+    // unhandled config change while this screen's flows are in flight must
+    // re-compose the screen so pending results land in place; the explicit
+    // key keeps the slot stable across future flag insertions.
+    var showGemmaDownloads by rememberSaveable("showGemmaDownloads") { mutableStateOf(false) }
     // TASK-815: the programmatic scroll riding a models:gemma nav request.
     var gemmaScroll by remember { mutableStateOf<AppNavigation.ScrollRequest?>(null) }
 
