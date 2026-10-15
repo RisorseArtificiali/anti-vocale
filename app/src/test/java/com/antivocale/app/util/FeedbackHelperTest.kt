@@ -42,6 +42,24 @@ class FeedbackHelperTest {
     // --- Subjects ---
 
     @Test
+    fun `environment line carries every bug-report fact`() {
+        // GH #156 (TASK-839): the version row copies exactly this shape; a
+        // missing fact here is a missing field in every pasted bug report.
+        val line = FeedbackHelper.environmentLine(
+            versionName = "1.15.0-SNAPSHOT",
+            versionCode = 482L,
+            flavor = "playStore",
+            buildType = "nightly",
+            androidVersion = "16 (API 36)",
+            device = "realme RMX3853",
+        )
+        assertEquals(
+            "Anti-Vocale 1.15.0-SNAPSHOT (482) playStore/nightly, " +
+                "Android 16 (API 36), realme RMX3853",
+            line)
+    }
+
+    @Test
     fun `feedback subject uses the agreed prefix`() {
         assertEquals("[Anti-Vocale feedback]", FeedbackHelper.feedbackSubject())
     }

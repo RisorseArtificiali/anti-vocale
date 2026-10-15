@@ -235,6 +235,25 @@ object FeedbackHelper {
         )
     }
 
+    /**
+     * GH #156 (TASK-839): the one-line environment summary the version row
+     * copies to the clipboard for bug reports: version, build flavor and
+     * type (a nightly vs store report is a different triage), Android,
+     * device. Pure function of its inputs so the test pins the exact
+     * shape; the ABI needs no runtime read (versionCode already encodes
+     * it, base*10+abi).
+     */
+    fun environmentLine(
+        versionName: String,
+        versionCode: Long,
+        flavor: String,
+        buildType: String,
+        androidVersion: String,
+        device: String,
+    ): String =
+        "Anti-Vocale $versionName ($versionCode) $flavor/$buildType, " +
+            "Android $androidVersion, $device"
+
     /** Gathers the diagnostics from the running app; the model fields come from the ViewModel.
      *  [localeTag] lets the caller report the IN-APP language rather than the system locale. */
     fun currentDiagnostics(

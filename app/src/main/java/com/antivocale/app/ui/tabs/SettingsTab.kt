@@ -2658,10 +2658,31 @@ private fun FeedbackSection(
                 // Version row (TASK-459): lets users tell which build they run;
                 // the versionCode identifies the exact per-ABI build (F-Droid
                 // can serve an older version for days after a release)
+                val context = LocalContext.current
                 InfoRow(
                     icon = Icons.Default.Info,
                     title = stringResource(R.string.settings_feedback_version_title),
-                    value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
+                    value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    // GH #156: one tap puts the full environment line on the
+                    // clipboard (the string the bug-report template wants,
+                    // one field per fact); the toast confirms with the
+                    // shared copied_to_clipboard string.
+                    onCopy = {
+                        val line = com.antivocale.app.util.FeedbackHelper.environmentLine(
+                            versionName = BuildConfig.VERSION_NAME,
+                            versionCode = BuildConfig.VERSION_CODE.toLong(),
+                            flavor = BuildConfig.FLAVOR,
+                            buildType = BuildConfig.BUILD_TYPE,
+                            androidVersion = "${android.os.Build.VERSION.RELEASE} " +
+                                "(API ${android.os.Build.VERSION.SDK_INT})",
+                            device = "${android.os.Build.MANUFACTURER} " +
+                                "${android.os.Build.MODEL}".trim(),
+                        )
+                        com.antivocale.app.util.ClipboardWriter.copy(
+                            context, "environment", line)
+                        ToastCompat.show(
+                            context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT)
+                    }
                 )
 
                 // Replay the first-install tour on demand (TASK-491; the only
@@ -2711,9 +2732,21 @@ private fun RecheckOnResume(probe: () -> Unit) {
  * have a different shape and stay inline).
  */
 @Composable
-private fun InfoRow(icon: ImageVector, title: String, value: String) {
+private fun InfoRow(
+    icon: ImageVector,
+    title: String,
+    value: String,
+    // GH #156 (TASK-839): null keeps the row informational (the default for
+    // every caller); non-null makes it a copy trigger with a trailing icon.
+    onCopy: (() -> Unit)? = null,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (onCopy == null) Modifier
+                else Modifier.clickable(role = Role.Button) { onCopy() }
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -2727,6 +2760,14 @@ private fun InfoRow(icon: ImageVector, title: String, value: String) {
             textAlign = TextAlign.End,
             modifier = Modifier.weight(1f)
         )
+        if (onCopy != null) {
+            Icon(
+                imageVector = Icons.Default.ContentCopy,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
     }
 }
 
