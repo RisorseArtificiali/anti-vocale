@@ -50,7 +50,20 @@ import kotlinx.coroutines.launch
  *   contained: an error-state player throws from currentPosition, which
  *   must heal (teardown), never crash the Main dispatcher.
  */
-class ResultPlaybackController(private val audioManager: AudioManager) {
+private const val TAG = "ResultPlayback"
+
+class ResultPlaybackController(
+    private val audioFocus: AudioFocus,
+    // TASK-850: the two platform seams (player factory + focus) so the
+    // state machine is unit-drivable; production wiring in
+    // [rememberResultPlayback].
+    private val playerFactory: () -> MediaPlayer = { MediaPlayer() },
+    // ONE usage/content-type pairing (the design line above): the focus
+    // request and the player's routing hint are built from the SAME value,
+    // so they can never drift apart. Null (tests: plain-JVM stubs) = no
+    // routing hint; playback proceeds with platform defaults.
+    private val speechAttributes: AudioAttributes? = null,
+) {
 
     /** Null = nothing playing (idle, completed, or failed). */
     data class NowPlaying(
@@ -73,14 +86,19 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
     val skipSilences: StateFlow<Boolean> = _skipSilences.asStateFlow()
 
     /** The active row's cues (absolute ms, sorted at attach). */
+    @Volatile
     private var cues: List<com.antivocale.app.transcription.TimedSegment> = emptyList()
 
     /** The pending async seek's target: seekTo completes late on some
      *  OEMs, and re-issuing the same seek every 200ms tick until it does
-     *  is pipeline thrash (and clicks on some audio stacks). */
+     *  is pipeline thrash (and clicks on some audio stacks). Volatile: the
+     *  ticker thread reads it while the test/user thread writes. */
+    @Volatile
     private var pendingSeekTargetMs: Long? = null
 
-    /** Survives row switches and replays (the state flow does not). */
+    /** Survives row switches and replays (the state flow does not).
+     *  Volatile: the prepared listener can run off-Main on some OEMs. */
+    @Volatile
     private var speed = 1f
 
     /**
@@ -89,32 +107,18 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
      * prepared listener's unconditional start (audio would play with no
      * focus or against a Play icon).
      */
+    @Volatile
     private var wantsPlayback = true
 
+    @Volatile
     private var player: MediaPlayer? = null
     private var ticker: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    // ONE usage/content-type pairing (the design line above): the focus
-    // request and the player must never drift apart.
-    private val speechAttributes = AudioAttributes.Builder()
-        .setUsage(AudioAttributes.USAGE_MEDIA)
-        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-        .build()
-
-    private val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-        .setAudioAttributes(speechAttributes)
-        .setOnAudioFocusChangeListener { change ->
-            // Any loss pauses (v1: no ducking; voice-note playback is short
-            // and foreground).
-            if (change == AudioManager.AUDIOFOCUS_LOSS ||
-                change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT ||
-                change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK
-            ) {
-                pause()
-            }
-        }
-        .build()
+    /** The granted focus lease; null while idle. Volatile: teardown can
+     *  run on a media-error thread on some OEMs. */
+    @Volatile
+    private var focusHandle: FocusHandle? = null
 
     /** Toggle for a row: play / pause / resume, switching away from any
      *  other row's playback. A vanished file neither kills another row's
@@ -125,18 +129,17 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
         filePath: String?,
         rowCues: List<com.antivocale.app.transcription.TimedSegment> = emptyList(),
     ) {
-        // Attach on EVERY entry, not only a new play: the read-along flow
-        // plays from a collapsed row (empty cues: segments are lean-read
-        // only when expanded) and expands while listening; the expanded
-        // row pushes its cues through [attachCues] as soon as it composes.
-        cues = rowCues.sortedBy { it.startMs }
+        val cues = rowCues.sortedBy { it.startMs }
         if (filePath == null || !playbackFileExists(filePath)) return
         val current = _state.value
         if (current?.taskId == taskId) {
+            // Attach on EVERY entry (the read-along flow: play starts from
+            // a collapsed row and the row expands while listening).
+            this.cues = cues
             if (current.playing) pause() else resume()
             return
         }
-        start(taskId, filePath)
+        if (start(taskId, filePath)) this.cues = cues else teardown()
     }
 
     /** The expanded row's live cue push (the read-along flow): applies only
@@ -169,19 +172,27 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
         _state.value = current.copy(speed = next)
     }
 
-    private fun start(taskId: String, filePath: String) {
+    /** True when the run started; false = focus refused or the player
+     *  could not be built (both leave the controller idle and torn down). */
+    private fun start(taskId: String, filePath: String): Boolean {
         teardown()
-        if (audioManager.requestAudioFocus(focusRequest) !=
-            AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-        ) {
-            return
-        }
+        // The loss callback hops to the controller's scope: the platform
+        // delivers it on a binder thread, and MediaPlayer is not
+        // thread-safe against a concurrent tick.
+        // Null = the platform refused, or the request machinery itself is
+        // broken (the impl fails closed inside runCatching): no playback.
+        focusHandle = audioFocus.request { scope.launch { pause() } } ?: return false
         wantsPlayback = true
         _state.value = NowPlaying(
             taskId = taskId, playing = false, positionMs = 0, durationMs = 0, speed = speed)
         val created = runCatching {
-            MediaPlayer().apply {
-                setAudioAttributes(speechAttributes)
+            playerFactory().apply {
+                // The routing hint must not kill playback: a broken or
+                // absent attributes value plays with platform defaults
+                // rather than not at all.
+                speechAttributes?.let { attrs ->
+                    runCatching { setAudioAttributes(attrs) }
+                }
                 setDataSource(filePath)
                 setOnPreparedListener { mp ->
                     // The identity guard: a fast row switch released this
@@ -209,12 +220,13 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
                 setOnCompletionListener { teardown() }
                 prepareAsync()
             }
-        }.getOrNull()
+        }.onFailure { android.util.Log.w(TAG, "player construction failed", it) }.getOrNull()
         if (created == null) {
             teardown()
-            return
+            return false
         }
         player = created
+        return true
     }
 
     private fun pause() {
@@ -222,11 +234,13 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
         val mp = player ?: return
         runCatching { mp.pause() }
         ticker?.cancel()
-        // Contained like every native read: an error-state player throws
-        // here (the class's own containment rule), and losing the position
-        // snapshot is the right degradation, not a Main crash.
-        val position = runCatching { mp.currentPosition }.getOrNull() ?: return
-        _state.value = _state.value?.copy(playing = false, positionMs = position)
+        // The STATE flip precedes the contained position read: on an
+        // error-state player the read throws, and the UI must not keep
+        // claiming playing=true over a dead player.
+        _state.value = _state.value?.copy(playing = false)
+        runCatching { mp.currentPosition }.getOrNull()?.let { pos ->
+            _state.value = _state.value?.copy(positionMs = pos)
+        }
     }
 
     private fun resume() {
@@ -283,7 +297,8 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
         ticker?.cancel()
         player?.let { runCatching { it.release() } }
         player = null
-        audioManager.abandonAudioFocusRequest(focusRequest)
+        focusHandle?.abandon()
+        focusHandle = null
         _state.value = null
         cues = emptyList()
         pendingSeekTargetMs = null
@@ -296,13 +311,68 @@ class ResultPlaybackController(private val audioManager: AudioManager) {
     }
 }
 
+/**
+ * TASK-850: the focus seam. [request] returns the abandon handle on GRANT,
+ * or null when the platform refused or the request machinery itself is
+ * broken (the builder chain fails closed; a broken focus stack must not
+ * crash the controller's construction).
+ */
+fun interface AudioFocus {
+    fun request(onLoss: () -> Unit): FocusHandle?
+}
+
+/** The handle's one job: give the focus back. */
+fun interface FocusHandle {
+    fun abandon()
+}
+
+/** The production [AudioFocus]: USAGE_MEDIA + CONTENT_TYPE_SPEECH (voice
+ *  notes are speech; speaker route by design), any loss pauses. */
+private class PlatformAudioFocus(
+    private val audioManager: AudioManager,
+    private val speechAttributes: AudioAttributes,
+) : AudioFocus {
+    override fun request(onLoss: () -> Unit): FocusHandle? = runCatching {
+        val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(speechAttributes)
+            .setOnAudioFocusChangeListener { change ->
+                // Any loss pauses (v1: no ducking; voice-note playback is
+                // short and foreground).
+                if (change == AudioManager.AUDIOFOCUS_LOSS ||
+                    change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT ||
+                    change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK
+                ) {
+                    onLoss()
+                }
+            }
+            .build()
+        if (audioManager.requestAudioFocus(request) ==
+            AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+        ) {
+            FocusHandle { audioManager.abandonAudioFocusRequest(request) }
+        } else {
+            null
+        }
+    }.getOrNull()
+}
+
 /** The tab-owned controller: one per History composition, released with it. */
 @Composable
 fun rememberResultPlayback(): ResultPlaybackController {
     val context = LocalContext.current
     val controller = remember {
+        // ONE usage/content-type pairing for the focus request AND the
+        // player's routing hint: they can never drift apart.
+        val speechAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+            .build()
         ResultPlaybackController(
-            context.getSystemService(Context.AUDIO_SERVICE) as AudioManager)
+            audioFocus = PlatformAudioFocus(
+                context.getSystemService(Context.AUDIO_SERVICE) as AudioManager,
+                speechAttributes),
+            speechAttributes = speechAttributes,
+        )
     }
     DisposableEffect(controller) {
         onDispose { controller.release() }
