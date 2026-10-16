@@ -841,6 +841,24 @@ fun HistoryTab(
     ) { uri ->
         if (uri != null) viewModel.transcribeLocalFile(context, uri)
     }
+    // TASK-842 browse arm: the open-or-reprocess dialog (the same four
+    // strings and arms as the share flow's platform dialog; open rides the
+    // IN-PROCESS highlight - what MainActivity does with the deep link,
+    // without the activity roundtrip).
+    val pendingDuplicate by viewModel.pendingBrowseDuplicate.collectAsState()
+    pendingDuplicate?.let { hit ->
+        com.antivocale.app.ui.dialogs.DuplicateFoundDialog(
+            modelName = hit.modelName,
+            onOpen = {
+                viewModel.clearPendingBrowseDuplicate()
+                viewModel.highlightLogEntry(hit.existingTaskId)
+            },
+            onReprocess = {
+                viewModel.clearPendingBrowseDuplicate()
+                hit.continueRequest()
+            },
+        )
+    }
     // Lifecycle-aware (code review F1): collect only while RESUMED, so a
     // failure while the activity is STOPPED finds zero subscribers and the
     // ViewModel routes it to a notification instead of an invisible host.

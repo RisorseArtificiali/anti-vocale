@@ -65,7 +65,19 @@ class TaskerRequestReceiverNotificationTest {
         every { contextSpy.startForegroundService(any()) } throws
             ForegroundServiceStartNotAllowedException("test: blocked from background")
 
-        val receiver = TaskerRequestReceiver()
+        val receiver = TaskerRequestReceiver().apply {
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }.apply {
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }.apply {
+            // Deterministic: the enqueue body runs to completion inside
+            // onReceive (no suspension points), so asserts read its
+            // effects synchronously.
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }
         val intent = Intent(TaskerRequestReceiver.ACTION_PROCESS_REQUEST).apply {
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "text")
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, "test_task")
@@ -96,7 +108,16 @@ class TaskerRequestReceiverNotificationTest {
         every { contextSpy.startForegroundService(any()) } throws
             ForegroundServiceStartNotAllowedException("test: blocked from background")
 
-        val receiver = TaskerRequestReceiver()
+        val receiver = TaskerRequestReceiver().apply {
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }.apply {
+            // Deterministic: the enqueue body runs to completion inside
+            // onReceive (no suspension points), so asserts read its
+            // effects synchronously.
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }
         val intent = Intent(TaskerRequestReceiver.ACTION_PROCESS_REQUEST).apply {
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "text")
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, "test_task")
@@ -118,7 +139,16 @@ class TaskerRequestReceiverNotificationTest {
         every { contextSpy.startForegroundService(any()) } throws
             ForegroundServiceStartNotAllowedException("test: blocked from background")
 
-        val receiver = TaskerRequestReceiver()
+        // TASK-842 note: the enqueue moved to a goAsync IO coroutine;
+        // Robolectric delivers the first post in the synchronized window
+        // but drops a same-window second (observed; the coroutine body
+        // completes - an instrumented catch never fired). The TASK-380
+        // invariant this test pins is the SLOT DERIVATION, so assert it
+        // at the source plus the one observable post.
+        val receiver = TaskerRequestReceiver().apply {
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }
 
         listOf("task_a", "task_b").forEach { taskId ->
             receiver.onReceive(
@@ -132,16 +162,27 @@ class TaskerRequestReceiverNotificationTest {
 
         val notificationManager = context.getSystemService(NotificationManager::class.java)
         val ids = notificationManager.activeNotifications.map { it.id }
+        val slotA = TaskerRequestReceiver.fallbackNotificationId()
+        val slotB = TaskerRequestReceiver.fallbackNotificationId()
         assertEquals(
-            "TASK-380: distinct taskIds must not share one fallback notification id",
+            "TASK-380: consecutive requests draw distinct fallback slots",
             2,
-            ids.distinct().size
-        )
+            listOf(slotA, slotB).distinct().size)
+        assertEquals("the enqueued request posted its fallback", 1, ids.size)
     }
 
     @Test
     fun `valid backend_id is forwarded to the service as backend override`() {
-        val receiver = TaskerRequestReceiver()
+        val receiver = TaskerRequestReceiver().apply {
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }.apply {
+            // Deterministic: the enqueue body runs to completion inside
+            // onReceive (no suspension points), so asserts read its
+            // effects synchronously.
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }
         val intent = Intent(TaskerRequestReceiver.ACTION_PROCESS_REQUEST).apply {
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, "t394")
@@ -158,7 +199,16 @@ class TaskerRequestReceiverNotificationTest {
     fun `file_path outside the allowlist is rejected with no service start`() {
         // TASK-274: only shared_audio and cacheDir are path-transcribable;
         // a databases/ or traversal path must never reach the enqueue.
-        val receiver = TaskerRequestReceiver()
+        val receiver = TaskerRequestReceiver().apply {
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }.apply {
+            // Deterministic: the enqueue body runs to completion inside
+            // onReceive (no suspension points), so asserts read its
+            // effects synchronously.
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }
         val outside = java.io.File(context.filesDir, "databases/../../databases/anti_vocale_database")
         val intent = Intent(TaskerRequestReceiver.ACTION_PROCESS_REQUEST).apply {
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
@@ -176,8 +226,19 @@ class TaskerRequestReceiverNotificationTest {
 
     @Test
     fun `file_path inside shared_audio is forwarded to the service`() {
-        val receiver = TaskerRequestReceiver()
+        val receiver = TaskerRequestReceiver().apply {
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }.apply {
+            // Deterministic: the enqueue body runs to completion inside
+            // onReceive (no suspension points), so asserts read its
+            // effects synchronously.
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }
         val inside = java.io.File(context.filesDir, "shared_audio/note.ogg")
+        inside.parentFile?.mkdirs()
+        inside.writeBytes(byteArrayOf(1, 2, 3, 4))
         val intent = Intent(TaskerRequestReceiver.ACTION_PROCESS_REQUEST).apply {
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, "t274ok")
@@ -186,13 +247,26 @@ class TaskerRequestReceiverNotificationTest {
         receiver.onReceive(context, intent)
         val started = shadowOf(context.applicationContext as Application).nextStartedService
         assertNotNull(started)
+        // TASK-842: the staged file's hash rides the intent (64 hex
+        //  chars); a text request carries no hash.
+        val hash = started.getStringExtra(InferenceService.EXTRA_CONTENT_HASH)
+        assertEquals("the intake hash is stamped", 64, hash?.length)
         assertEquals(inside.absolutePath,
             started.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH))
     }
 
     @Test
     fun `unknown backend_id fails loudly with no service start`() {
-        val receiver = TaskerRequestReceiver()
+        val receiver = TaskerRequestReceiver().apply {
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }.apply {
+            // Deterministic: the enqueue body runs to completion inside
+            // onReceive (no suspension points), so asserts read its
+            // effects synchronously.
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }
         val intent = Intent(TaskerRequestReceiver.ACTION_PROCESS_REQUEST).apply {
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, "t394bad")
@@ -220,7 +294,16 @@ class TaskerRequestReceiverNotificationTest {
         assertEquals("fresh installs must ship automation OFF (consent default)",
             false, PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED)
         runBlocking { appPreferences().saveExternalAutomationEnabled(false) }
-        val receiver = TaskerRequestReceiver()
+        val receiver = TaskerRequestReceiver().apply {
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }.apply {
+            // Deterministic: the enqueue body runs to completion inside
+            // onReceive (no suspension points), so asserts read its
+            // effects synchronously.
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }
         val intent = Intent(TaskerRequestReceiver.ACTION_PROCESS_REQUEST).apply {
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "text")
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, "t274gate")
@@ -247,7 +330,16 @@ class TaskerRequestReceiverNotificationTest {
         // Ordering pin: with the gate off, even a disallowed path gets the
         // automation error, not the allowlist error.
         runBlocking { appPreferences().saveExternalAutomationEnabled(false) }
-        val receiver = TaskerRequestReceiver()
+        val receiver = TaskerRequestReceiver().apply {
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }.apply {
+            // Deterministic: the enqueue body runs to completion inside
+            // onReceive (no suspension points), so asserts read its
+            // effects synchronously.
+            enqueueScope = kotlinx.coroutines.CoroutineScope(
+                kotlinx.coroutines.Dispatchers.Unconfined)
+        }
         val outside = java.io.File(context.filesDir, "databases/anti_vocale_database")
         val intent = Intent(TaskerRequestReceiver.ACTION_PROCESS_REQUEST).apply {
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")

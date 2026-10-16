@@ -22,6 +22,7 @@ import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.VoiceNoteDuplicateGuard
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.receiver.TaskerRequestReceiver
@@ -32,6 +33,7 @@ import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.TranscriptionBackendManager
+import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.transcription.variantAwareDisplayName
 import kotlinx.coroutines.Dispatchers
@@ -157,6 +159,10 @@ class LogsViewModel @Inject constructor(
      *  Settings picker's owner; collected so the two pickers cannot drift). */
     private val activeModelRepository: ActiveModelRepository,
     @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: Context,
+    /** TASK-842 browse arm: the model-name derivation the rows stamp. */
+    private val orchestrator: TranscriptionOrchestrator,
+    /** TASK-842 browse arm: the duplicate lookup (shares the guard). */
+    private val duplicateGuard: VoiceNoteDuplicateGuard,
 ) : ViewModel() {
     companion object {
         private const val TAG = "LogsViewModel"
@@ -350,13 +356,73 @@ class LogsViewModel @Inject constructor(
                 }
             }
 
+            // TASK-842 browse arm: hash once (IO, size-capped by the
+            // guard), then the ONE-owner lookup. On a hit the
+            // open-or-reprocess dialog owns the request; reprocess resumes
+            // the normal flow. The closure captures only the hash, never
+            // the hit's row (the transcript text must not linger in the
+            // pending state).
+            val contentHash = duplicateGuard.hashOnIo(localPath)
+            if (contentHash != null) {
+                val hit = duplicateGuard.lookup(appContext, orchestrator, contentHash)
+                if (hit != null) {
+                    val hashForContinuation = contentHash
+                    _pendingBrowseDuplicate.value = PendingBrowseDuplicate(
+                        existingTaskId = hit.row.taskId,
+                        modelName = hit.modelName,
+                        continueRequest = {
+                            continueBrowseIntake(
+                                appContext, localPath, localizedContext, hashForContinuation)
+                        })
+                    return@launch
+                }
+            }
+
+            continueBrowseIntake(appContext, localPath, localizedContext, contentHash)
+        }
+    }
+
+    /**
+     * TASK-842 browse arm: a duplicate hit at browse intake, held for the
+     * History tab's dialog. [continueRequest] resumes the intake past the
+     * guard (the reprocess arm); [existingTaskId] names the row to open.
+     */
+    data class PendingBrowseDuplicate(
+        val existingTaskId: String,
+        /** The matched run's model, for the dialog copy. */
+        val modelName: String,
+        val continueRequest: () -> Unit,
+    )
+
+    private val _pendingBrowseDuplicate =
+        MutableStateFlow<PendingBrowseDuplicate?>(null)
+
+    /** Non-null while the open-or-reprocess dialog should show. */
+    val pendingBrowseDuplicate: StateFlow<PendingBrowseDuplicate?> =
+        _pendingBrowseDuplicate.asStateFlow()
+
+    /** Either arm's dismissal; also the dialog's cancel path (open). */
+    fun clearPendingBrowseDuplicate() {
+        _pendingBrowseDuplicate.value = null
+    }
+
+    /** The browse intake past the duplicate guard (both the no-hit path and
+     *  the dialog's reprocess arm land here). */
+    private fun continueBrowseIntake(
+        appContext: Context,
+        localPath: String,
+        localizedContext: Context,
+        contentHash: String?,
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
             // F5: the shared probe+offer; when a choice prompt is posted it
             // owns the request and this flow ends here.
             if (com.antivocale.app.receiver.SubtitleChoice.offerIfTracks(
                     appContext, UUID.randomUUID().toString(), localPath,
                     source = InferenceService.SOURCE_BROWSE,
                     sourcePackage = null,
-                    backendOverride = null)) {
+                    backendOverride = null,
+                    contentHash = contentHash)) {
                 return@launch
             }
 
@@ -372,7 +438,7 @@ class LogsViewModel @Inject constructor(
                     ?: preferencesManager.transcriptionBackend.first(),
                 localPath,
                 localizedContext,
-            ) { enqueueBrowse(appContext, localPath, localizedContext) }
+            ) { enqueueBrowse(appContext, localPath, localizedContext, contentHash) }
         }
     }
 
@@ -430,12 +496,18 @@ class LogsViewModel @Inject constructor(
     }
 
     /** The browse enqueue, shared by the direct and the warn-confirmed paths. */
-    private fun enqueueBrowse(appContext: Context, localPath: String, localizedContext: Context) {
+    private fun enqueueBrowse(
+        appContext: Context,
+        localPath: String,
+        localizedContext: Context,
+        contentHash: String? = null,
+    ) {
         val intent = Intent(appContext, InferenceService::class.java).apply {
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, UUID.randomUUID().toString())
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
             putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, localPath)
             putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_BROWSE)
+            contentHash?.let { putExtra(InferenceService.EXTRA_CONTENT_HASH, it) }
         }
         // F2: the unified enqueue owns the API 31+ restriction handling;
         // a restricted start posts the trampoline notification that

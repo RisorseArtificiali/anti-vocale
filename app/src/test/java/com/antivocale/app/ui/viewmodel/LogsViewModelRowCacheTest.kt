@@ -54,7 +54,7 @@ class LogsViewModelRowCacheTest {
         every { logDao.getFirstPass(any()) } returns firstPassSource
         every { logDao.getSegments(any()) } returns segmentsSource
         every { logDao.getResult(any()) } returns resultSource
-        viewModel = LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager(), com.antivocale.app.transcription.staticRegistry(), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true))
+        viewModel = LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager(), com.antivocale.app.transcription.staticRegistry(), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), orchestrator = io.mockk.mockk(relaxed = true), duplicateGuard = io.mockk.mockk(relaxed = true))
     }
 
     @After

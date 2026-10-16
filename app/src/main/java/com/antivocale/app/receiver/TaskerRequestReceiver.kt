@@ -10,7 +10,12 @@ import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.BuiltInBackendIds
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import com.antivocale.app.util.CrashReporter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -38,6 +43,14 @@ import kotlinx.coroutines.runBlocking
  */
 @AndroidEntryPoint
 class TaskerRequestReceiver : BroadcastReceiver() {
+
+    /** TASK-842: the goAsync enqueue scope. Injectable so tests run it
+     *  synchronously (Unconfined); production is the house shape
+     *  (IO + SupervisorJob + CrashReporter handler, like the other two
+     *  goAsync receivers). */
+    @androidx.annotation.VisibleForTesting
+    internal var enqueueScope: CoroutineScope = CoroutineScope(
+        Dispatchers.IO + SupervisorJob() + CrashReporter.handler)
 
     // TASK-274: the consent gate below reads the preference; this receiver
     // gained injection for exactly that (the ModelPreloadReceiver shape).
@@ -171,12 +184,26 @@ class TaskerRequestReceiver : BroadcastReceiver() {
 
         Log.d(TAG, "Request: type=$requestType, taskId=$taskId, prompt=${prompt.take(50)}...")
 
-        val serviceIntent = Intent(context, InferenceService::class.java).apply {
-            putExtra(EXTRA_REQUEST_TYPE, requestType)
-            putExtra(EXTRA_PROMPT, prompt)
-            putExtra(EXTRA_FILE_PATH, filePath)
-            putExtra(EXTRA_TASK_ID, taskId)
-            putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, backendOverride)
+        // TASK-842 Tasker arm: hash the staged audio OFF the main thread
+        // (goAsync extends the broadcast window past onReceive's return;
+        // the two existing goAsync receivers are the house pattern).
+        // Non-interactive by design: no dialog, matching the placement
+        // discipline; the row still carries the hash so future
+        // INTERACTIVE intakes match it. Text requests and a missing or
+        // unreadable file hash nothing (null = no hash on the row).
+        val pendingResult = goAsync()
+        enqueueScope.launch {
+            try {
+                val contentHash = filePath?.let {
+                    com.antivocale.app.data.VoiceNoteDuplicateGuard.hashOf(it)
+                }
+                val serviceIntent = Intent(context, InferenceService::class.java).apply {
+                    putExtra(EXTRA_REQUEST_TYPE, requestType)
+                    putExtra(EXTRA_PROMPT, prompt)
+                    putExtra(EXTRA_FILE_PATH, filePath)
+                    putExtra(EXTRA_TASK_ID, taskId)
+                    putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, backendOverride)
+                    contentHash?.let { putExtra(InferenceService.EXTRA_CONTENT_HASH, it) }
             // TASK-274(f): pin the reply sink. API 34+ names the sending
             // package; the reply broadcast becomes point-to-point instead of
             // world-visible. Below 34 (or system-sent) the field is absent and
@@ -186,19 +213,28 @@ class TaskerRequestReceiver : BroadcastReceiver() {
             }
         }
 
-        // F6: the shared enqueue owns the restriction fallback (trampoline
-        // notification preserving the request); this receiver's inline
-        // postFallbackNotification was the pattern's birthplace and moved
-        // to InferenceEnqueue. Direct start still works when the app is in
-        // the foreground or holds the explicit FGS exemption.
-        when (val outcome = com.antivocale.app.service.InferenceEnqueue.start(context, serviceIntent)) {
-            com.antivocale.app.service.InferenceEnqueue.Outcome.Started ->
-                Log.i(TAG, "Started InferenceService directly for taskId: $taskId")
-            com.antivocale.app.service.InferenceEnqueue.Outcome.FallbackNotificationPosted ->
-                Log.i(TAG, "Posted fallback notification for taskId: $taskId")
-            is com.antivocale.app.service.InferenceEnqueue.Outcome.Failed -> {
-                Log.e(TAG, "Enqueue failed for taskId: $taskId")
-                sendTaskerReply(context, taskId, STATUS_ERROR, errorMessage = "enqueue failed: ${outcome.exception.message}")
+            // F6: the shared enqueue owns the restriction fallback (trampoline
+            // notification preserving the request); this receiver's inline
+            // postFallbackNotification was the pattern's birthplace and moved
+            // to InferenceEnqueue. Direct start still works when the app is in
+            // the foreground or holds the explicit FGS exemption.
+            when (val outcome = com.antivocale.app.service.InferenceEnqueue.start(context, serviceIntent)) {
+                com.antivocale.app.service.InferenceEnqueue.Outcome.Started ->
+                    Log.i(TAG, "Started InferenceService directly for taskId: $taskId")
+                com.antivocale.app.service.InferenceEnqueue.Outcome.FallbackNotificationPosted ->
+                    Log.i(TAG, "Posted fallback notification for taskId: $taskId")
+                is com.antivocale.app.service.InferenceEnqueue.Outcome.Failed -> {
+                    Log.e(TAG, "Enqueue failed for taskId: $taskId")
+                    sendTaskerReply(context, taskId, STATUS_ERROR, errorMessage = "enqueue failed: ${outcome.exception.message}")
+                }
+            }
+            } catch (e: Exception) {
+                // The house goAsync pattern: contained + reported, never a
+                // background crash with no Crashlytics record.
+                CrashReporter.report(e, "TaskerRequestReceiver")
+                sendTaskerReply(context, taskId, STATUS_ERROR, errorMessage = "enqueue failed: ${e.message}")
+            } finally {
+                pendingResult.finish()
             }
         }
     }

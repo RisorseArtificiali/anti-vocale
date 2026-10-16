@@ -44,7 +44,7 @@ class LogsViewModelSuccessTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         logDao = mockk(relaxed = true)
-        viewModel = LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager(), staticRegistry(), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true))
+        viewModel = LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager(), staticRegistry(), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), orchestrator = io.mockk.mockk(relaxed = true), duplicateGuard = io.mockk.mockk(relaxed = true))
     }
 
     @After

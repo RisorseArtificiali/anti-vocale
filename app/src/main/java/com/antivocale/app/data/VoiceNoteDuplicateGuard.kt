@@ -5,6 +5,8 @@ import java.io.File
 import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * TASK-842 (GH #157 part 3): the duplicate-processing guard.
@@ -17,9 +19,9 @@ import javax.inject.Singleton
  * case is already covered by the service's own taskId dedup; this guard
  * closes the completed-row case.
  *
- * The interactive leg (the open-or-reprocess dialog at SHARE intake
- * today; the History browse FAB and Tasker arms are unwired, documented
- * here so the gap is visible) rides [hashOf] +
+ * The interactive leg (the open-or-reprocess dialog at SHARE and BROWSE
+ * intake; the Tasker arm is non-interactive by design and stamps the
+ * hash only) rides [hashOf] +
  * LogDao.findByContentHashAndModel: filePath
  * cannot identify a re-share (sandbox copies get fresh random names), so
  * the guard hashes the CONTENT. It runs on the caller's IO dispatcher;
@@ -30,14 +32,45 @@ class VoiceNoteDuplicateGuard @Inject constructor(
     private val logDao: LogDao,
 ) {
 
+    /** A duplicate hit: the row to open, plus the model name the dialog
+     *  copy shows (the DERIVED name the lookup keyed on, so both arms'
+     *  dialogs agree even when the row's own stamp drifted). */
+    data class DuplicateHit(
+        val row: com.antivocale.app.data.local.LogEntity,
+        val modelName: String,
+        /** The intake hash, reused by the reprocess arm (no re-hash). */
+        val contentHash: String,
+    )
+
     /**
-     * TASK-842 interactive leg: the completed row for the SAME content and
-     * the SAME model, newest first; null = no duplicate. The caller owns
-     * the dialog (interactive intakes only).
+     * TASK-842: the intake hash on IO (the guard's own contract: hashing
+     * never blocks the caller's dispatcher). Null = unreadable, or above
+     * [MAX_HASHED_BYTES] (the guard is best-effort; a huge staged video
+     * skips the hash rather than seconds of IO - a null hash simply means
+     * the row cannot match later intakes).
      */
-    suspend fun findByContentHash(contentHash: String, modelName: String):
-        com.antivocale.app.data.local.LogEntity? =
-            logDao.findByContentHashAndModel(contentHash, modelName)
+    suspend fun hashOnIo(filePath: String): String? = withContext(Dispatchers.IO) {
+        val size = try { File(filePath).length() } catch (e: Exception) { -1L }
+        if (size < 0 || size > MAX_HASHED_BYTES) null else hashOf(filePath)
+    }
+
+    /**
+     * TASK-842 interactive leg, ONE owner of the lookup: the model display
+     * name derives exactly as the row stamps it (displayNameForRequest),
+     * and the SUCCESS row lookup keys on it. Null = no duplicate. The
+     * caller owns the dialog and the activity-alive checks; pass the hash
+     * from [hashOnIo] so it is computed once and reused for stamping.
+     */
+    suspend fun lookup(
+        context: android.content.Context,
+        orchestrator: com.antivocale.app.transcription.TranscriptionOrchestrator,
+        contentHash: String,
+        backendOverride: String? = null,
+    ): DuplicateHit? {
+        val modelName = orchestrator.displayNameForRequest(context, backendOverride)
+        return logDao.findByContentHashAndModel(contentHash, modelName)
+            ?.let { DuplicateHit(row = it, modelName = modelName, contentHash = contentHash) }
+    }
 
     /**
      * True when this note should NOT be enqueued: a non-reprocessable
@@ -51,6 +84,12 @@ class VoiceNoteDuplicateGuard @Inject constructor(
     }
 
     companion object {
+        /** TASK-842: above this the hash is skipped (a null hash disables
+         *  matching for that row; the recompute it guards against is
+         *  bounded anyway). 256MB covers every voice note and any sane
+         *  shared audio; GB-scale staged videos skip. */
+        const val MAX_HASHED_BYTES = 256L * 1024 * 1024
+
         /**
          * SHA-256 of a file's content, hex-encoded (the
          * ExternalModelImporter digest precedent). Call on Dispatchers.IO;

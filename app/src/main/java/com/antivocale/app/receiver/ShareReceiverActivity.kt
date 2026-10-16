@@ -425,12 +425,10 @@ class ShareReceiverActivity : Activity() {
                 }
             }
 
-            // TASK-842: the intake content hash, once (the interactive
-            // duplicate guard's key; rides the service intent so the row
-            // carries it for FUTURE intakes).
-            val contentHash = withContext(Dispatchers.IO) {
-                VoiceNoteDuplicateGuard.hashOf(localPath)
-            }
+            // TASK-842: the intake content hash, once, on IO (the
+            // interactive duplicate guard's key; rides the service intent
+            // so the row carries it for FUTURE intakes).
+            val contentHash = appEntryPoint.duplicateGuard().hashOnIo(localPath)
 
             // External-family share target: the sentinel must become a concrete external:<id>
             // BEFORE any consumer (subtitle branch, timeout worker, service intent) sees it.
@@ -602,14 +600,14 @@ class ShareReceiverActivity : Activity() {
         contentHash: String,
     ): Boolean {
         if (isFinishing || isDestroyed) return false
-        val modelName = appEntryPoint.transcriptionOrchestrator()
-            .displayNameForRequest(this, backendOverride)
-        val existing = appEntryPoint.duplicateGuard()
-            .findByContentHash(contentHash, modelName) ?: return false
+        val hit = appEntryPoint.duplicateGuard()
+            .lookup(this, appEntryPoint.transcriptionOrchestrator(), contentHash, backendOverride)
+            ?: return false
+        val existing = hit.row
         // Three suspension points sit between the entry check and show():
         // re-check here so a destroy in that window cannot BadToken-crash.
         if (isFinishing || isDestroyed) return false
-        Log.i(TAG, "Duplicate content for model=$modelName: opening-or-reprompting taskId=${existing.taskId}")
+        Log.i(TAG, "Duplicate content for model=${hit.modelName}: opening-or-reprompting taskId=${existing.taskId}")
 
         fun openExisting() {
             startActivity(Intent(this, MainActivity::class.java).apply {
@@ -621,7 +619,7 @@ class ShareReceiverActivity : Activity() {
         }
         android.app.AlertDialog.Builder(this)
             .setTitle(R.string.duplicate_found_title)
-            .setMessage(getString(R.string.duplicate_found_message, modelName))
+            .setMessage(getString(R.string.duplicate_found_message, hit.modelName))
             .setPositiveButton(R.string.duplicate_found_open) { _, _ -> openExisting() }
             .setNegativeButton(R.string.duplicate_found_again) { _, _ ->
                 appScope.launch(Dispatchers.Main) {
