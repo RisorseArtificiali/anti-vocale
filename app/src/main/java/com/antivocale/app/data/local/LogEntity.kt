@@ -110,6 +110,7 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     savedFolderName = savedFolderName,
     savedFileName = savedFileName,
     saveFailureReason = saveFailureReason,
+    contentHash = contentHash,
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -141,4 +142,5 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     savedFolderName = savedFolderName,
     savedFileName = savedFileName,
     saveFailureReason = saveFailureReason,
+    contentHash = contentHash,
 )

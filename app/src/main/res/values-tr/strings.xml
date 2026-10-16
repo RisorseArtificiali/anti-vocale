@@ -1262,6 +1262,10 @@
     <!-- TASK-840 (GH #157 pt 1): result-row playback -->
     <string name="result_play_audio">Sesi çal</string>
     <string name="result_pause_audio">Sesi duraklat</string>
+    <string name="duplicate_found_title">Zaten transkribe edildi</string>
+    <string name="duplicate_found_message">Bu dosya %1$s ile zaten transkribe edildi.</string>
+    <string name="duplicate_found_open">Sonucu aç</string>
+    <string name="duplicate_found_again">Yeniden transkribe et</string>
     <string name="result_skip_silences">Sessizlikleri atla</string>
     <string name="result_playback_speed">Oynatma hızı (%1$s)</string>
 

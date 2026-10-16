@@ -47,6 +47,26 @@ class LogEntityMapperTest {
         assertNull(entity.copy(senderName = null).toLogEntry().senderName)
     }
 
+    // ── TASK-842: contentHash round trip, same class as senderName.
+    // A dropped mapper line silently nulls the hash on every whole-row
+    // @Update (logSuccess/logError), and the guard goes dead for new rows.
+
+    @Test
+    fun `contentHash survives the entity to entry to entity round trip`() {
+        val entity = LogEntity(
+            id = "test-id",
+            timestamp = 1000L,
+            taskId = "task-1",
+            type = "AUDIO",
+            status = "SUCCESS",
+            sourcePackageName = "com.whatsapp",
+            contentHash = "abc123"
+        )
+        val roundTrip = entity.toLogEntry().toEntity()
+        assertEquals("abc123", roundTrip.contentHash)
+        assertNull(entity.copy(contentHash = null).toLogEntry().contentHash)
+    }
+
     // ── toLogEntry: sourcePackageName null ─────────────────────────
 
     @Test

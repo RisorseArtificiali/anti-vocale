@@ -1278,6 +1278,10 @@
     <!-- TASK-840 (GH #157 pt 1): result-row playback -->
     <string name="result_play_audio">Audio afspelen</string>
     <string name="result_pause_audio">Audio pauzeren</string>
+    <string name="duplicate_found_title">Al getranscribeerd</string>
+    <string name="duplicate_found_message">Dit bestand is al getranscribeerd met %1$s.</string>
+    <string name="duplicate_found_open">Resultaat openen</string>
+    <string name="duplicate_found_again">Opnieuw transcriberen</string>
     <string name="result_skip_silences">Stiltes overslaan</string>
     <string name="result_playback_speed">Afspeelsnelheid (%1$s)</string>
 

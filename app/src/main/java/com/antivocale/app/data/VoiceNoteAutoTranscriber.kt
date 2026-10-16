@@ -58,7 +58,14 @@ class VoiceNoteAutoTranscriber @Inject constructor(
         }
         val senderName = VoiceNoteSenderResolution.matchForDetection(
             identityCache, audioPreprocessor, WHATSAPP, localPath, detectedAtMs)
-        when (val outcome = InferenceEnqueue.start(context, serviceIntent(localPath, whatsappPath, senderName))) {
+        // TASK-842 (review F4): the content hash rides the auto row too,
+        // so a later manual share of the SAME note matches it in the
+        // interactive dialog (the row is otherwise invisible to the guard:
+        // null hashes never match by construction). The file is local and
+        // small; hashing here on the coordinator's IO dispatcher is safe.
+        val contentHash = VoiceNoteDuplicateGuard.hashOf(localPath)
+        when (val outcome = InferenceEnqueue.start(
+            context, serviceIntent(localPath, whatsappPath, senderName, contentHash))) {
             InferenceEnqueue.Outcome.Started,
             InferenceEnqueue.Outcome.FallbackNotificationPosted -> {
                 Log.i(TAG, "voice note auto-enqueued: $localPath")
@@ -76,7 +83,12 @@ class VoiceNoteAutoTranscriber @Inject constructor(
      * the result notification can tell the origin apart, and the resolved
      * sender so the row lands in the sender's History group.
      */
-    internal fun serviceIntent(localPath: String, whatsappPath: String, senderName: String? = null): Intent =
+    internal fun serviceIntent(
+        localPath: String,
+        whatsappPath: String,
+        senderName: String? = null,
+        contentHash: String? = null,
+    ): Intent =
         Intent(context, InferenceService::class.java).apply {
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
             putExtra(
@@ -90,6 +102,7 @@ class VoiceNoteAutoTranscriber @Inject constructor(
             putExtra(InferenceService.EXTRA_SOURCE_PACKAGE, WHATSAPP)
             putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_VOICE_NOTE)
             senderName?.let { putExtra(InferenceService.EXTRA_SENDER_NAME, it) }
+            contentHash?.let { putExtra(InferenceService.EXTRA_CONTENT_HASH, it) }
         }
 
     private companion object {

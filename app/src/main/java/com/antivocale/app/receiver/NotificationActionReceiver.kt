@@ -110,6 +110,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
             intent.getStringExtra(InferenceService.EXTRA_BACKEND_OVERRIDE)?.let {
                 putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, it)
             }
+            // TASK-842: the intake content hash, onto the chosen arm's row.
+            intent.getStringExtra(InferenceService.EXTRA_CONTENT_HASH)?.let {
+                putExtra(InferenceService.EXTRA_CONTENT_HASH, it)
+            }
             if (requestType == TaskerRequestReceiver.REQUEST_TYPE_SUBTITLES) {
                 putExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, trackIndexFromIntent(intent))
             }

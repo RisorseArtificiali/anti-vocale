@@ -79,6 +79,9 @@ class InferenceService : Service(), TranscriptionListener {
         const val EXTRA_SOURCE_PACKAGE = "source_package"
         /** TASK-736: the matched voice-note sender (share flow only). */
         const val EXTRA_SENDER_NAME = "sender_name"
+        /** TASK-842: the intake content hash, from the interactive guard's
+         *  share flow; rides the row so FUTURE intakes can match it. */
+        const val EXTRA_CONTENT_HASH = "content_hash"
         const val SOURCE_SHARE = "share"
 
         /** TASK-500: the History browse FAB; not a share request. */
@@ -192,7 +195,9 @@ class InferenceService : Service(), TranscriptionListener {
         val languageOverride: String? = null,
         val trackIndex: Int = -1,
         /** TASK-274(f): reply-sink pin (null = pre-34 sender, unpinned reply). */
-        val requesterPackage: String? = null
+        val requesterPackage: String? = null,
+        /** TASK-842: the intake content hash, onto the row at enqueue. */
+        val contentHash: String? = null
     )
 
     // ---- Android Lifecycle ----
@@ -241,7 +246,8 @@ class InferenceService : Service(), TranscriptionListener {
             senderName = intent?.getStringExtra(EXTRA_SENDER_NAME),
             backendOverride = intent?.getStringExtra(EXTRA_BACKEND_OVERRIDE),
             languageOverride = intent?.getStringExtra(EXTRA_LANGUAGE_OVERRIDE),
-            trackIndex = intent?.getIntExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, -1) ?: -1
+            trackIndex = intent?.getIntExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, -1) ?: -1,
+            contentHash = intent?.getStringExtra(EXTRA_CONTENT_HASH)
         )
         rememberRequester(request)
 
@@ -270,6 +276,7 @@ class InferenceService : Service(), TranscriptionListener {
                     filePath = request.filePath,
                     sourcePackageName = request.sourcePackage,
                     senderName = request.senderName,
+                    contentHash = request.contentHash,
                 )
             }.onFailure { Log.w(TAG, "Failed to log queued request ${request.taskId}", it) }
         }

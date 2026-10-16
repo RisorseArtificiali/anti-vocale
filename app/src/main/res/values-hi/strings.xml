@@ -1261,6 +1261,10 @@
     <!-- TASK-840 (GH #157 pt 1): result-row playback -->
     <string name="result_play_audio">ऑडियो चलाएँ</string>
     <string name="result_pause_audio">ऑडियो रोकें</string>
+    <string name="duplicate_found_title">पहले से ट्रांसक्राइब किया गया</string>
+    <string name="duplicate_found_message">यह फ़ाइल पहले %1$s के साथ ट्रांसक्राइब की जा चुकी है।</string>
+    <string name="duplicate_found_open">परिणाम खोलें</string>
+    <string name="duplicate_found_again">फिर से ट्रांसक्राइब करें</string>
     <string name="result_skip_silences">मौन छोड़ें</string>
     <string name="result_playback_speed">प्लेबैक गति (%1$s)</string>
 

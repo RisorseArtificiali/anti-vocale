@@ -1267,6 +1267,10 @@
     <!-- TASK-840 (GH #157 pt 1): result-row playback -->
     <string name="result_play_audio">پخش صدا</string>
     <string name="result_pause_audio">توقف صدا</string>
+    <string name="duplicate_found_title">قبلاً رونوشت شده</string>
+    <string name="duplicate_found_message">این فایل قبلاً با %1$s رونوشت شده است.</string>
+    <string name="duplicate_found_open">باز کردن نتیجه</string>
+    <string name="duplicate_found_again">رونوشت دوباره</string>
     <string name="result_skip_silences">رد کردن سکوت‌ها</string>
     <string name="result_playback_speed">سرعت پخش (%1$s)</string>
 

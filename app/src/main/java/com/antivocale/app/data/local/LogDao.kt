@@ -40,10 +40,12 @@ interface LogDao {
      * first. modelName is the display name the row stores (the only per-row
      * model key): the guard compares against the ACTIVE model's display name
      * and documents that. Null contentHash rows (legacy, text-only) never
-     * match: the guard is off for them by construction.
+     * match: the guard is off for them by construction. SUCCESS-only (review
+     * F1): the dialog's copy promises a result to open; a FAILED run must
+     * retry naturally and an in-flight duplicate must queue, not prompt.
      */
     @Query("SELECT * FROM logs WHERE contentHash = :contentHash AND modelName = :modelName " +
-        "ORDER BY timestamp DESC LIMIT 1")
+        "AND status = 'SUCCESS' ORDER BY timestamp DESC LIMIT 1")
     suspend fun findByContentHashAndModel(contentHash: String, modelName: String): LogEntity?
 
     /**

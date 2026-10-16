@@ -131,6 +131,26 @@ class LogDaoProjectionTest {
         }
     }
     @Test
+    fun `the duplicate guard matches SUCCESS rows only, newest first`() = runBlocking {
+        // TASK-842: the interactive dialog's lookup. ERROR rows must NOT
+        // match (their re-share retries naturally), PROCESSING rows must
+        // NOT match (an in-flight duplicate queues, no false dialog), and
+        // among SUCCESS rows the newest wins.
+        val base = LogEntity(
+            id = "base", timestamp = 0L,
+            taskId = "dup", type = "AUDIO", status = "SUCCESS",
+            contentHash = "hash-x", modelName = "Parakeet TDT")
+        dao.insert(base.copy(id = "err", timestamp = 1L, status = "ERROR"))
+        dao.insert(base.copy(id = "old", timestamp = 2L))
+        dao.insert(base.copy(id = "new", timestamp = 3L))
+        dao.insert(base.copy(id = "proc", timestamp = 4L, status = "PROCESSING"))
+        val hit = dao.findByContentHashAndModel("hash-x", "Parakeet TDT")
+        assertEquals("newest SUCCESS row wins", "new", hit?.id)
+        assertNull("null-hash rows never match",
+            dao.findByContentHashAndModel("absent", "Parakeet TDT"))
+    }
+
+    @Test
     fun `like wildcards in the user query match literally`() = runBlocking {
         val full = LogEntity(
             id = "id", timestamp = 1_000_000L, taskId = "task", type = "AUDIO",

@@ -4037,7 +4037,22 @@ class TranscriptionOrchestrator @Inject constructor(
      *  reach the Logs model column: an unregistered external falls back to
      *  its RECORD's display name, and only an unresolvable id degrades to
      *  the manager's backend name (still a display string). */
-    private suspend fun displayNameForBackend(context: Context, backendId: String): String {
+    /**
+     * TASK-842: the model display name a run with [backendOverride] (null =
+     * the active preference) stamps on its row, USUALLY: a refinement-model
+     * pin, the two-pass F8 re-stamp, and a locale switch between runs all
+     * stamp a different name (documented on the DAO query). The guard's
+     * match is best-effort on the name agreeing; a miss simply means no
+     * duplicate dialog (never a wrong one). This also owns the
+     * override-or-active resolution (the ONE copy of that expression).
+     */
+    internal suspend fun displayNameForRequest(context: Context, backendOverride: String?): String =
+        displayNameForBackend(
+            context, backendOverride ?: preferencesManager.transcriptionBackend.first())
+
+    /** Internal: TASK-842's intake guard mirrors the row's exact model
+     *  name so the hash+model lookup cannot drift from what was stamped. */
+    internal suspend fun displayNameForBackend(context: Context, backendId: String): String {
         backendRegistry.byBackendId(backendId)
             ?.let { variantAwareDisplayName(context, it, modelPathForBackend(backendId)) }
             ?.takeIf { it.isNotBlank() }
@@ -4094,6 +4109,9 @@ class TranscriptionOrchestrator @Inject constructor(
         sourcePackageName: String? = null,
         /** TASK-736: the matched voice-note sender, from the share flow. */
         senderName: String? = null,
+        /** TASK-842: the intake content hash (the interactive guard's
+         *  lookup key); null on every legacy/non-interactive producer. */
+        contentHash: String? = null,
     ) {
         logDao.insert(
             LogEntry(
@@ -4103,7 +4121,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 prompt = prompt,
                 filePath = filePath,
                 sourcePackageName = sourcePackageName,
-                senderName = senderName
+                senderName = senderName,
+                contentHash = contentHash
             ).toEntity()
         )
     }

@@ -17,8 +17,10 @@ import javax.inject.Singleton
  * case is already covered by the service's own taskId dedup; this guard
  * closes the completed-row case.
  *
- * The interactive leg (the open-or-reprocess dialog at share/browse
- * intake) rides [hashOf] + LogDao.findByContentHashAndModel: filePath
+ * The interactive leg (the open-or-reprocess dialog at SHARE intake
+ * today; the History browse FAB and Tasker arms are unwired, documented
+ * here so the gap is visible) rides [hashOf] +
+ * LogDao.findByContentHashAndModel: filePath
  * cannot identify a re-share (sandbox copies get fresh random names), so
  * the guard hashes the CONTENT. It runs on the caller's IO dispatcher;
  * call sites must never hash on the main thread.
@@ -27,6 +29,15 @@ import javax.inject.Singleton
 class VoiceNoteDuplicateGuard @Inject constructor(
     private val logDao: LogDao,
 ) {
+
+    /**
+     * TASK-842 interactive leg: the completed row for the SAME content and
+     * the SAME model, newest first; null = no duplicate. The caller owns
+     * the dialog (interactive intakes only).
+     */
+    suspend fun findByContentHash(contentHash: String, modelName: String):
+        com.antivocale.app.data.local.LogEntity? =
+            logDao.findByContentHashAndModel(contentHash, modelName)
 
     /**
      * True when this note should NOT be enqueued: a non-reprocessable

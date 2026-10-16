@@ -110,6 +110,9 @@ data class LogEntry(
     val savedFolderName: String? = null,
     val savedFileName: String? = null,
     val saveFailureReason: String? = null,
+    /** TASK-842: the intake content hash (the interactive duplicate
+     *  guard's key); null on every producer that predates the guard. */
+    val contentHash: String? = null,
 ) {
     enum class Type { TEXT, AUDIO }
 

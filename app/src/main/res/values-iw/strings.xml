@@ -1273,6 +1273,10 @@
     <!-- TASK-840 (GH #157 pt 1): result-row playback -->
     <string name="result_play_audio">נגן שמע</string>
     <string name="result_pause_audio">השהה שמע</string>
+    <string name="duplicate_found_title">כבר תומלל</string>
+    <string name="duplicate_found_message">קובץ זה כבר תומלל עם %1$s.</string>
+    <string name="duplicate_found_open">פתח תוצאה</string>
+    <string name="duplicate_found_again">תמלל שוב</string>
     <string name="result_skip_silences">דלג על שקט</string>
     <string name="result_playback_speed">מהירות נגינה (%1$s)</string>
 

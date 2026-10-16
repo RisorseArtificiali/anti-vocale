@@ -1130,6 +1130,10 @@
     <!-- TASK-840 (GH #157 pt 1): result-row playback -->
     <string name="result_play_audio">Reproduzir áudio</string>
     <string name="result_pause_audio">Pausar o áudio</string>
+    <string name="duplicate_found_title">Já transcrito</string>
+    <string name="duplicate_found_message">Este arquivo já foi transcrito com %1$s.</string>
+    <string name="duplicate_found_open">Abrir resultado</string>
+    <string name="duplicate_found_again">Transcrever novamente</string>
     <string name="result_skip_silences">Pular silêncios</string>
     <string name="result_playback_speed">Velocidade de reprodução (%1$s)</string>
 

@@ -1095,6 +1095,10 @@
     <!-- TASK-840 (GH #157 pt 1): result-row playback -->
     <string name="result_play_audio">播放音频</string>
     <string name="result_pause_audio">暂停音频</string>
+    <string name="duplicate_found_title">已转录</string>
+    <string name="duplicate_found_message">此文件已使用 %1$s 转录过。</string>
+    <string name="duplicate_found_open">打开结果</string>
+    <string name="duplicate_found_again">重新转录</string>
     <string name="result_skip_silences">跳过静音</string>
     <string name="result_playback_speed">播放速度（%1$s）</string>
 
