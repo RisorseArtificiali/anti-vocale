@@ -99,6 +99,7 @@ import com.antivocale.app.ui.components.GroupHeader
 import com.antivocale.app.ui.components.HF_TOKEN_SETTINGS_URL
 import com.antivocale.app.ui.components.OAuthLoginSection
 import com.antivocale.app.ui.components.SectionCard
+import com.antivocale.app.ui.components.rememberResultPlayback
 import com.antivocale.app.ui.components.SettingsDropdown
 import com.antivocale.app.ui.components.TokenInputField
 import com.antivocale.app.ui.components.ToggleSettingCard
@@ -3290,31 +3291,11 @@ internal fun SpeakerIdentitiesCard(viewModel: SettingsViewModel) {
         if (uri != null) viewModel.enrollSpeakerSample(uri)
     }
 
-    // One replay player: a new play stops the previous one; released on
-    // leaving the composition (TASK-670).
-    var replayPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
-    DisposableEffect(Unit) {
-        onDispose {
-            replayPlayer?.release()
-            replayPlayer = null
-        }
-    }
-    val replaySample: (File) -> Unit = { sample ->
-        replayPlayer?.release()
-        replayPlayer = runCatching {
-            android.media.MediaPlayer().apply {
-                setDataSource(sample.absolutePath)
-                setOnPreparedListener { it.start() }
-                // Review R8: a failed async prepare must release the player
-                // (not linger in the error state holding its fd), and a
-                // COMPLETED player releases too (previously it sat until
-                // the next replay tap or leaving the composition).
-                setOnErrorListener { mp, _, _ -> mp.release(); true }
-                setOnCompletionListener { it.release() }
-                prepareAsync()
-            }
-        }.getOrNull()
-    }
+    // TASK-849: the shared playback controller replaces the hand-rolled
+    // replay player (TASK-670's one-live-player + release-on-exit
+    // discipline, now with the audio-focus handling the replay always
+    // lacked: a replay no longer overlaps another app's music).
+    val replayPlayback = rememberResultPlayback()
 
     SectionCard(
         icon = Icons.Default.RecordVoiceOver,
@@ -3331,7 +3312,9 @@ internal fun SpeakerIdentitiesCard(viewModel: SettingsViewModel) {
         for (identity in identities) {
             SpeakerIdentityRow(
                 identity = identity,
-                onReplay = { viewModel.speakerSampleFile(identity.id)?.let(replaySample) },
+                samplePath = viewModel.speakerSampleFile(identity.id)?.absolutePath,
+                taskId = speakerSampleTaskId(identity.id),
+                playback = replayPlayback,
                 onDelete = { viewModel.deleteSpeakerIdentity(identity.id) },
             )
         }
@@ -3364,12 +3347,28 @@ internal fun SpeakerIdentitiesCard(viewModel: SettingsViewModel) {
     }
 }
 
+/** TASK-849: the replay's stable per-sample taskId (ONE owner: the
+ *  playing-state derivation must match the toggle exactly). */
+private fun speakerSampleTaskId(id: String) = "speaker-sample-$id"
+
 @Composable
 private fun SpeakerIdentityRow(
     identity: com.antivocale.app.transcription.diarization.SpeakerIdentity,
-    onReplay: () -> Unit,
+    /** Null = the sample file is gone: the button disables (History's
+     *  honest-affordance rule), never a silent no-op. */
+    samplePath: String?,
+    taskId: String,
+    playback: com.antivocale.app.ui.components.ResultPlaybackController,
     onDelete: () -> Unit,
 ) {
+    // Row-scoped collection (the controller family's rule, History's
+    // PlaybackControls pattern): the 200ms progress tick recomposes this
+    // row only, never the whole card.
+    val now by playback.state.collectAsState()
+    val isPlaying = now?.let { it.taskId == taskId && it.playing } == true
+    val filePresent = remember(samplePath) {
+        com.antivocale.app.ui.components.playbackFileExists(samplePath)
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
@@ -3383,8 +3382,15 @@ private fun SpeakerIdentityRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        IconButton(onClick = onReplay) {
-            Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.speaker_id_replay))
+        IconButton(
+            onClick = { playback.toggle(taskId, samplePath) },
+            enabled = filePresent,
+        ) {
+            Icon(
+                if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = stringResource(
+                    if (isPlaying) R.string.result_pause_audio
+                    else R.string.speaker_id_replay))
         }
         IconButton(onClick = onDelete) {
             Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.speaker_id_delete))
