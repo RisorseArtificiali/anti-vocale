@@ -1271,6 +1271,7 @@
     <string name="duplicate_found_message">این فایل قبلاً با %1$s رونوشت شده است.</string>
     <string name="duplicate_found_open">باز کردن نتیجه</string>
     <string name="duplicate_found_again">رونوشت دوباره</string>
+    <string name="result_language_advisory">این مدل زبان را خودتش تشخیص می‌دهد. برای قفل کردن %1$s، زبان را در تنظیمات انتخاب کنید (مدل‌هایی که به این تنظیم پایبندند، مانند Whisper، آنجا مشخص شده‌اند).</string>
     <string name="result_skip_silences">رد کردن سکوت‌ها</string>
     <string name="result_playback_speed">سرعت پخش (%1$s)</string>
 

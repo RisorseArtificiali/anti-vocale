@@ -63,6 +63,7 @@ import com.antivocale.app.util.AudioDurationFormat
 import com.antivocale.app.util.ClipboardWriter
 import com.antivocale.app.util.DecodedOfTotalFormat
 import com.antivocale.app.util.SharedAudioHandler
+import com.antivocale.app.util.TranscriptLanguageHeuristic
 import com.antivocale.app.util.formatProcessingTime
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.service.InferenceService
@@ -1848,6 +1849,56 @@ fun LogEntryItem(
                                     onReRunWithLanguage = onReRunWithLanguage,
                                     onOpenSetting = { onOpenLanguageSetting?.invoke() },
                                 )
+                            }
+                            // TASK-809 (GH #146): the one-line language
+                            // advisory. Fires ONLY on the auto-detect path
+                            // (the chip convention: null OR the PREF_AUTO
+                            // sentinel the orchestrator persists), never on
+                            // subtitle-sourced rows (no model ran; the arm
+                            // above already labels them), and only when the
+                            // transcript reads CLEARLY in a language the
+                            // device does not use: the guess must differ
+                            // from EVERY locale the phone lists (the
+                            // multilingual-locale finding) and be honestly
+                            // distinguishable from the device language (the
+                            // heuristic's canDistinguish: same-script or
+                            // unrepresentable device languages stay silent).
+                            // The model's own detected language does NOT
+                            // veto: the latch case agrees with its own
+                            // output by construction, and the chip is
+                            // facts-only for conditioning-less models.
+                            if (log.type == LogEntry.Type.AUDIO &&
+                                (log.languagePin == null ||
+                                    log.languagePin == TranscriptionLanguagePolicy.PREF_AUTO) &&
+                                log.status == LogEntry.Status.SUCCESS &&
+                                !ProcessingContextConverter.isSubtitleSourced(log.processingContext)
+                            ) {
+                                val deviceLanguages = remember {
+                                    LocaleManager.phoneLocalesList(context)
+                                        .mapNotNull { it.language.takeIf { l -> l.isNotBlank() } }
+                                }
+                                val deviceLang = deviceLanguages.firstOrNull()
+                                val mismatch = remember(log.id, log.result, deviceLanguages) {
+                                    val guessed = TranscriptLanguageHeuristic.detect(log.result)
+                                    guessed != null &&
+                                        deviceLanguages.isNotEmpty() &&
+                                        guessed !in deviceLanguages &&
+                                        deviceLang?.let {
+                                            TranscriptLanguageHeuristic.canDistinguish(guessed, it)
+                                        } == true
+                                }
+                                if (mismatch) {
+                                    // The endonym, like the chip right above
+                                    // (LanguageNames is the one owner of
+                                    // code-to-name resolution).
+                                    Text(
+                                        text = stringResource(
+                                            R.string.result_language_advisory,
+                                            LanguageNames.nativeLanguageName(deviceLang!!)),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
 

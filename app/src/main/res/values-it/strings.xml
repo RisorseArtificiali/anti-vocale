@@ -1272,6 +1272,7 @@
     <string name="duplicate_found_message">Questo file è già stato trascritto con %1$s.</string>
     <string name="duplicate_found_open">Apri risultato</string>
     <string name="duplicate_found_again">Trascrivi di nuovo</string>
+    <string name="result_language_advisory">Questo modello rileva la lingua da solo. Per bloccare l\'%1$s, scegli la lingua nelle Impostazioni (i modelli che onorano l\'impostazione, come Whisper, sono indicati lì).</string>
     <string name="result_skip_silences">Salta i silenzi</string>
     <string name="result_playback_speed">Velocità di riproduzione (%1$s)</string>
 

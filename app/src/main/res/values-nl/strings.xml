@@ -1282,6 +1282,7 @@
     <string name="duplicate_found_message">Dit bestand is al getranscribeerd met %1$s.</string>
     <string name="duplicate_found_open">Resultaat openen</string>
     <string name="duplicate_found_again">Opnieuw transcriberen</string>
+    <string name="result_language_advisory">Dit model detecteert de taal zelf. Vergrendel %1$s door de taal in Instellingen te kiezen (modellen die de taalinstelling volgen, zoals Whisper, staan daar vermeld).</string>
     <string name="result_skip_silences">Stiltes overslaan</string>
     <string name="result_playback_speed">Afspeelsnelheid (%1$s)</string>
 

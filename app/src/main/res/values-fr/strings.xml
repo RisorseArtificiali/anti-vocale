@@ -1134,6 +1134,7 @@
     <string name="duplicate_found_message">Ce fichier a déjà été transcrit avec %1$s.</string>
     <string name="duplicate_found_open">Ouvrir le résultat</string>
     <string name="duplicate_found_again">Transcrire à nouveau</string>
+    <string name="result_language_advisory">Ce modèle détecte la langue tout seul. Pour verrouiller le %1$s, choisissez la langue dans les Paramètres (les modèles qui respectent ce réglage, comme Whisper, y sont indiqués).</string>
     <string name="result_skip_silences">Ignorer les silences</string>
     <string name="result_playback_speed">Vitesse de lecture (%1$s)</string>
 

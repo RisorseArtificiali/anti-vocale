@@ -1099,6 +1099,7 @@
     <string name="duplicate_found_message">此文件已使用 %1$s 转录过。</string>
     <string name="duplicate_found_open">打开结果</string>
     <string name="duplicate_found_again">重新转录</string>
+    <string name="result_language_advisory">此模型会自行检测语言。要锁定%1$s，请在设置中选择语言（遵循语言设置的模型（如 Whisper）会在那里注明）。</string>
     <string name="result_skip_silences">跳过静音</string>
     <string name="result_playback_speed">播放速度（%1$s）</string>
 

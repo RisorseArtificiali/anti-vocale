@@ -1280,6 +1280,7 @@
     <string name="duplicate_found_message">This file was already transcribed with %1$s.</string>
     <string name="duplicate_found_open">Open result</string>
     <string name="duplicate_found_again">Transcribe again</string>
+    <string name="result_language_advisory">This model detects the language by itself. To lock %1$s, pick the language in Settings (models that honor the language setting, like Whisper, are listed there).</string>
     <string name="result_skip_silences">Skip silences</string>
     <string name="result_playback_speed">Playback speed (%1$s)</string>
 

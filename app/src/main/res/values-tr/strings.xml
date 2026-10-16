@@ -1266,6 +1266,7 @@
     <string name="duplicate_found_message">Bu dosya %1$s ile zaten transkribe edildi.</string>
     <string name="duplicate_found_open">Sonucu aç</string>
     <string name="duplicate_found_again">Yeniden transkribe et</string>
+    <string name="result_language_advisory">Bu model dili kendisi algılar. %1$s kilitlemek için Ayarlar\'dan dili seçin (dil ayarına uyan modeller, örneğin Whisper, orada belirtilir).</string>
     <string name="result_skip_silences">Sessizlikleri atla</string>
     <string name="result_playback_speed">Oynatma hızı (%1$s)</string>
 

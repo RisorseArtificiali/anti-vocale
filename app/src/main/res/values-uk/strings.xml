@@ -1294,6 +1294,7 @@
     <string name="duplicate_found_message">Цей файл уже розшифровано за допомогою %1$s.</string>
     <string name="duplicate_found_open">Відкрити результат</string>
     <string name="duplicate_found_again">Розшифрувати знову</string>
+    <string name="result_language_advisory">Ця модель визначає мову сама. Щоб закріпити %1$s, виберіть мову в налаштуваннях (моделі, що враховують це налаштування, як-от Whisper, там позначені).</string>
     <string name="result_skip_silences">Пропускати тишу</string>
     <string name="result_playback_speed">Швидкість відтворення (%1$s)</string>
 

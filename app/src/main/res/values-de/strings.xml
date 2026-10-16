@@ -1266,6 +1266,7 @@
     <string name="duplicate_found_message">Diese Datei wurde bereits mit %1$s transkribiert.</string>
     <string name="duplicate_found_open">Ergebnis öffnen</string>
     <string name="duplicate_found_again">Erneut transkribieren</string>
+    <string name="result_language_advisory">Dieses Modell erkennt die Sprache selbst. Um %1$s festzulegen, wähle die Sprache in den Einstellungen (Modelle, die die Spracheinstellung beachten, z. B. Whisper, sind dort vermerkt).</string>
     <string name="result_skip_silences">Pausen überspringen</string>
     <string name="result_playback_speed">Wiedergabegeschwindigkeit (%1$s)</string>
 

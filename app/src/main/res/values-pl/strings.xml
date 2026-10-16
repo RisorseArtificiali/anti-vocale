@@ -1292,6 +1292,7 @@
     <string name="duplicate_found_message">Ten plik był już transkrybowany z %1$s.</string>
     <string name="duplicate_found_open">Otwórz wynik</string>
     <string name="duplicate_found_again">Transkrybuj ponownie</string>
+    <string name="result_language_advisory">Ten model sam wykrywa język. Aby zablokować %1$s, wybierz język w Ustawieniach (modele, które respektują to ustawienie, np. Whisper, są tam zaznaczone).</string>
     <string name="result_skip_silences">Pomijaj ciszę</string>
     <string name="result_playback_speed">Prędkość odtwarzania (%1$s)</string>
 

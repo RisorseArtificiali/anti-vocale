@@ -1277,6 +1277,7 @@
     <string name="duplicate_found_message">קובץ זה כבר תומלל עם %1$s.</string>
     <string name="duplicate_found_open">פתח תוצאה</string>
     <string name="duplicate_found_again">תמלל שוב</string>
+    <string name="result_language_advisory">המודל הזה מזהה את השפה לבד. כדי לנעול %1$s, בחרו את השפה בהגדרות (מודלים שמכבדים את הגדרת השפה, כמו Whisper, מצוינים שם).</string>
     <string name="result_skip_silences">דלג על שקט</string>
     <string name="result_playback_speed">מהירות נגינה (%1$s)</string>
 

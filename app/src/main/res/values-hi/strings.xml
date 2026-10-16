@@ -1265,6 +1265,7 @@
     <string name="duplicate_found_message">यह फ़ाइल पहले %1$s के साथ ट्रांसक्राइब की जा चुकी है।</string>
     <string name="duplicate_found_open">परिणाम खोलें</string>
     <string name="duplicate_found_again">फिर से ट्रांसक्राइब करें</string>
+    <string name="result_language_advisory">यह मॉडल भाषा स्वयं पहचानता है। %1$s को लॉक करने के लिए सेटिंग में भाषा चुनें (भाषा सेटिंग का पालन करने वाले मॉडल, जैसे Whisper, वहाँ सूचीबद्ध हैं)।</string>
     <string name="result_skip_silences">मौन छोड़ें</string>
     <string name="result_playback_speed">प्लेबैक गति (%1$s)</string>
 

@@ -1293,6 +1293,7 @@
     <string name="duplicate_found_message">Этот файл уже расшифрован с помощью %1$s.</string>
     <string name="duplicate_found_open">Открыть результат</string>
     <string name="duplicate_found_again">Расшифровать заново</string>
+    <string name="result_language_advisory">Эта модель определяет язык сама. Чтобы закрепить %1$s, выберите язык в настройках (модели, учитывающие эту настройку, например Whisper, отмечены там).</string>
     <string name="result_skip_silences">Пропускать тишину</string>
     <string name="result_playback_speed">Скорость воспроизведения (%1$s)</string>
 
