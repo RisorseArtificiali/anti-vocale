@@ -941,10 +941,6 @@ class TranscriptionOrchestrator @Inject constructor(
             val mode = PunctuationPolicy.modeFromPref(preferencesManager.punctuationMode.first())
             val modelPunctuates = backendRegistry.byBackendId(asrBackendId)?.punctuatesOutput ?: true
             if (!PunctuationPolicy.shouldRun(mode, modelPunctuates, result.text)) return@runCatching result
-            if (!PunctuationPolicy.withinContextLimit(result.text)) {
-                Log.i(TAG, "Punctuation pass skipped: ${result.text.length} chars exceeds the Gemma context guard")
-                return@runCatching result
-            }
             if (preferencesManager.modelPath.first().isNullOrBlank()) {
                 Log.i(TAG, "Punctuation pass skipped: no Gemma model configured (delivering raw transcript)")
                 return@runCatching result
@@ -956,36 +952,102 @@ class TranscriptionOrchestrator @Inject constructor(
             // override (an arbitrary override could break the fences the
             // token validation enforces); promptIsFenced is the policy's
             // one home for that dispatch.
-            val passPrompt = if (PunctuationPolicy.promptIsFenced(mode)) {
+            // TASK-666.2 review: one fence predicate for the prompt pin,
+            // the joiner, and the per-chunk acceptance below.
+            val fenced = PunctuationPolicy.promptIsFenced(mode)
+            val passPrompt = if (fenced) {
                 context.getString(R.string.punctuation_default_prompt_conservative)
             } else {
                 PunctuationPolicy.effectivePrompt(
                     preferencesManager.punctuationPrompt.first(),
                     context.getString(R.string.punctuation_default_prompt))
             }
-            val prompt = ChunkPromptPolicy.finalPrompt(passPrompt, result.text)
-            // TASK-674: the cleanup pass runs under the shared wall clock; a
-            // timeout degrades to the raw transcript exactly like any other
-            // generation failure (typed + breadcrumb inside the owner).
-            // TASK-698: the seed-heartbeat span lives at the run entry
-            // (processRequest; TASK-699 stage 2 folded the per-stretch spans
-            // into it).
-            val polished = LlmBudget.generateWithBudget(
-                llm, prompt, LlmBudget.CLEANUP_BUDGET_MS, pass = "Punctuation",
-            ).getOrThrow().trim()
-            if (!PunctuationPolicy.acceptablePolish(polished, result.text)) {
-                error("punctuation pass collapsed the transcript " +
-                    "(${polished.length} vs ${result.text.length} chars); keeping the original")
+            // TASK-666.2: over the context guard the pass runs CHUNKED (the
+            // summary pass's map-reduce precedent, TASK-520; ContextChunker
+            // splits at sentence boundaries under the same ceiling, so
+            // paragraphing stays available on the long walls of text the
+            // guard used to decline outright). Same prompt, same guards per
+            // chunk; a chunk that fails ANY guard (generation, collapse, or
+            // the conservative fence) contributes its ORIGINAL text, so one
+            // misbehaving chunk costs its own paragraphing, never the whole
+            // transcript. Chunks join with a paragraph break in fenced mode
+            // (paragraphing is the mode's point) and a plain space in the
+            // unfenced polish mode (flow restored).
+            // ContextChunker's own identity path covers the under-guard
+            // case (one chunk, same constant); the log fires only on a
+            // real split.
+            val chunks = ContextChunker.split(result.text)
+            if (chunks.size > 1) {
+                Log.i(TAG, "Punctuation pass chunked: ${result.text.length} chars -> ${chunks.size} chunks")
             }
-            // TASK-666: the conservative fence - anything beyond
-            // punctuation/paragraphs/casing (added, removed, reordered or
-            // translated words, or an inserted standalone punctuation
-            // token) discards the whole cleaned text.
-            if (PunctuationPolicy.promptIsFenced(mode) &&
-                !PunctuationPolicy.conservativeAcceptable(polished, result.text)
-            ) {
-                error("conservative cleanup altered the token sequence; keeping the original")
+            val joiner = if (fenced) "\n\n" else " "
+            // TASK-666.2 review: ONE shared wall for the whole pass. The
+            // summary ladder's rule verbatim: chunks cannot multiply the
+            // budget into a crawl, so the wall is CAPPED (a 10-chunk 2h
+            // wall gets the same 120s ceiling the summary pass gets, not
+            // 10x30s); a spent clock fails fast without entering the
+            // engine, and the chunks past it keep their original text.
+            val clock = LlmBudget.PassClock(
+                "Punctuation",
+                (LlmBudget.CLEANUP_BUDGET_MS * chunks.size)
+                    .coerceAtMost(LlmBudget.SUMMARY_BUDGET_MS))
+            val polishedParts = mutableListOf<String>()
+            var failedChunks = 0
+            var firstFailure: Throwable? = null
+            var engineTimedOut = false
+            for (chunk in chunks) {
+                if (engineTimedOut) {
+                    // TASK-594 breaker, the summary map stage's rule: a
+                    // wedge timeout means the ENGINE is stuck, not that
+                    // this chunk is hard; the remaining chunks keep their
+                    // original text without another engine entry.
+                    failedChunks++
+                    polishedParts += chunk
+                    continue
+                }
+                val generated = LlmBudget.guardedGenerate(
+                    clock, llm, ChunkPromptPolicy.finalPrompt(passPrompt, chunk))
+                val raw = generated.getOrNull()
+                val candidate = raw?.takeIf { PunctuationPolicy.acceptable(mode, it, chunk) }
+                if (candidate != null) {
+                    polishedParts += candidate
+                    continue
+                }
+                val failure = generated.exceptionOrNull()
+                if (LlmBudget.isEngineTimeout(failure)) {
+                    engineTimedOut = true
+                }
+                if (firstFailure == null) {
+                    // A guard rejection carries no exception: synthesize the
+                    // reason the pre-666.2 path logged (collapse with the
+                    // char counts, or the fence), so the degrade telemetry
+                    // never says nothing.
+                    firstFailure = failure ?: IllegalStateException(
+                        if (raw != null && !PunctuationPolicy.acceptablePolish(raw, chunk)) {
+                            "punctuation pass collapsed the transcript " +
+                                "(${raw.length} vs ${chunk.length} chars)"
+                        } else {
+                            "conservative cleanup altered the token sequence"
+                        })
+                }
+                failedChunks++
+                polishedParts += chunk
             }
+            if (failedChunks > 0) {
+                Log.w(TAG, "Punctuation pass: $failedChunks/${chunks.size} chunks kept their " +
+                    "original text (first failure: ${firstFailure?.message})")
+            }
+            if (failedChunks == chunks.size) {
+                // ALL chunks refused (the 1/1 single-shot case included):
+                // the pass as a whole failed, so the original is delivered
+                // verbatim; splicing our own paragraph breaks between raw
+                // chunks would deliver a text the model never approved. The
+                // first failure rides as the cause (the pre-666.2 path
+                // carried a real stack into the degrade telemetry).
+                throw IllegalStateException(
+                    "punctuation pass rejected the transcript; keeping the original", firstFailure)
+            }
+            val polished = polishedParts.joinToString(joiner)
             val effectiveText = polished.ifBlank { result.text }
             result.copy(
                 text = effectiveText,
@@ -1184,21 +1246,15 @@ class TranscriptionOrchestrator @Inject constructor(
             pending.addLast(MapUnit(chunk, canResplit = chunk.length > RE_SPLIT_FLOOR_CHARS))
             while (pending.isNotEmpty()) {
                 val unit = pending.removeFirst()
-                val generated = runCatching {
-                    clock.generate(llm, ChunkPromptPolicy.finalPrompt(instruction, unit.text)).map { it.trim() }
-                }.getOrElse { e ->
-                    if (e is kotlinx.coroutines.CancellationException) throw e
-                    Result.failure(e)
-                }
+                val generated = LlmBudget.guardedGenerate(
+                    clock, llm, ChunkPromptPolicy.finalPrompt(instruction, unit.text))
                 val candidate = generated.getOrNull()
                 if (candidate != null && SummaryPolicy.acceptableSummary(candidate, unit.text)) {
                     partials += candidate
                     continue
                 }
                 val failure = generated.exceptionOrNull()
-                if (failure is EngineWedgeTimeoutException ||
-                    failure is LlmBudget.PassTimeoutException
-                ) {
+                if (LlmBudget.isEngineTimeout(failure)) {
                     // TASK-594 circuit breaker: a timeout means the engine is
                     // wedged, not that this chunk is hard; grinding the
                     // remaining chunks at one ceiling each turns a hang into

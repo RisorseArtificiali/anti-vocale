@@ -23,14 +23,17 @@ import kotlinx.coroutines.withTimeout
  *
  * The defaults are calibration placeholders (desktop-grade Omnivoice uses 4s;
  * the maintainer calibrates on the RMX3853): summaries are generous for the
- * TASK-121.4 long-file reality, the cleanup pass is a single short shot.
+ * TASK-121.4 long-file reality; the cleanup pass is one short shot per
+ * chunk under one capped shared clock (TASK-666.2).
  */
 object LlmBudget {
 
     private const val TAG = "LlmBudget"
 
-    /** TASK-674: budget for the single-shot cleanup pass (TASK-666 contract:
-     *  one short generation). Calibration placeholder, not a measurement. */
+    /** TASK-674: budget for one cleanup generation (TASK-666 contract: one
+     *  short generation per chunk; TASK-666.2 scales it onto one shared
+     *  PassClock for the whole chunked pass). Calibration placeholder, not
+     *  a measurement. */
     const val CLEANUP_BUDGET_MS = 30_000L
 
     /** TASK-674: per-pass budget for the summary passes (single-shot ladder
@@ -39,6 +42,34 @@ object LlmBudget {
      *  TASK-121.4 long-file reality where on-device summaries legitimately
      *  take minutes. */
     const val SUMMARY_BUDGET_MS = 120_000L
+
+    /**
+     * TASK-666.2 review F3: the ONE guarded-generation shape both
+     * multi-chunk passes use (the summary map stage and the chunked
+     * cleanup). Cancellation rethrows (a cancelled run must not grind the
+     * remaining chunks); every other failure rides the Result so the
+     * engine-timeout breaker can see its type. The output is trimmed.
+     */
+    suspend fun guardedGenerate(
+        clock: PassClock,
+        llm: com.antivocale.app.transcription.TranscriptionBackend,
+        prompt: String,
+    ): Result<String> = runCatching {
+        clock.generate(llm, prompt).map { it.trim() }
+    }.getOrElse { e ->
+        if (e is kotlinx.coroutines.CancellationException) throw e
+        Result.failure(e)
+    }
+
+    /**
+     * The breaker predicate: a failure of either timeout family means the
+     * ENGINE (or the pass clock) is spent, not that the chunk is hard; the
+     * remaining chunks keep their original text without another engine
+     * entry (TASK-594).
+     */
+    fun isEngineTimeout(failure: Throwable?): Boolean =
+        failure is com.antivocale.app.manager.EngineWedgeTimeoutException ||
+            failure is PassTimeoutException
 
     /**
      * The typed timeout: a plain [java.util.concurrent.TimeoutException]

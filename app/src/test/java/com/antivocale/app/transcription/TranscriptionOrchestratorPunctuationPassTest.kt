@@ -213,6 +213,138 @@ class TranscriptionOrchestratorPunctuationPassTest : TranscriptionOrchestratorTe
         coVerify { logDao.update(match { it.rawTranscript == null }) }
     }
 
+    // ---- TASK-666.2: the chunked pass over the Gemma context guard ----
+
+    /** A sentence-rich Russian wall of text that exceeds MAX_TRANSCRIPT_CHARS. */
+    private fun longTranscript(sentences: Int): String =
+        "Привет как дела сегодня мы обсудим новый проект по распознаванию речи. "
+            .repeat(sentences)
+            .trim()
+
+    @Test
+    fun `over the context guard the conservative pass paragraphs chunk by chunk`() = runTest {
+        coEvery { logDao.getByTaskId(any()) } returns LogEntity(
+            id = "chunk-1", timestamp = 1, taskId = "chunk-1",
+            type = "AUDIO", status = "PROCESSING", prompt = "", result = "")
+        every { preferencesManager.punctuationMode } returns flowOf("conservative")
+        stubSwapToLlm()
+        val raw = longTranscript(sentences = 400) // 71 chars/sentence -> 28.4k chars -> 3 chunks
+        val chunks = ContextChunker.split(raw)
+        assertTrue("fixture must exceed the guard in >1 chunk", chunks.size > 1)
+        // Echo polish: each generation returns its chunk verbatim (passes the
+        // collapse guard and the conservative fence trivially); the visible
+        // effect under test is the CHUNKING and the paragraph join.
+        coEvery { llmBackend.generateText(any()) } returnsMany chunks.map { Result.success(it) }
+        val audioFile = temporaryFolder.newFile("long.ogg")
+        stubWholeFileDecode(gigaamBackend, raw)
+
+        val result = orchestrator.processRequest(
+            taskId = "chunk-1", requestType = "audio", prompt = "",
+            filePath = audioFile.absolutePath, source = null, sourcePackage = null,
+            queuePosition = 1, queueTotal = 1,
+            context = mockk(relaxed = true), cacheDir = temporaryFolder.root,
+            listener = listener, coroutineScope = this)
+
+        assertTrue("request failed: ${result.exceptionOrNull()}", result.isSuccess)
+        coVerify(exactly = chunks.size) { llmBackend.generateText(any()) }
+        // Fenced mode joins chunks with a paragraph break: the pre-666.2
+        // behavior here was NO pass at all (the guard declined outright).
+        assertEquals(chunks.joinToString("\n\n"), result.getOrNull())
+    }
+
+    @Test
+    fun `an engine wedge timeout stops the pass after one chunk`() = runTest {
+        coEvery { logDao.getByTaskId(any()) } returns LogEntity(
+            id = "chunk-3", timestamp = 1, taskId = "chunk-3",
+            type = "AUDIO", status = "PROCESSING", prompt = "", result = "")
+        every { preferencesManager.punctuationMode } returns flowOf("conservative")
+        stubSwapToLlm()
+        val raw = longTranscript(sentences = 400)
+        val chunks = ContextChunker.split(raw)
+        // Chunk 1 wedges the engine; every later chunk must keep its
+        // original WITHOUT another engine entry (the TASK-594 breaker).
+        coEvery { llmBackend.generateText(any()) } returns
+            Result.failure(com.antivocale.app.manager.EngineWedgeTimeoutException("wedge"))
+        val audioFile = temporaryFolder.newFile("wedge.ogg")
+        stubWholeFileDecode(gigaamBackend, raw)
+
+        val result = orchestrator.processRequest(
+            taskId = "chunk-3", requestType = "audio", prompt = "",
+            filePath = audioFile.absolutePath, source = null, sourcePackage = null,
+            queuePosition = 1, queueTotal = 1,
+            context = mockk(relaxed = true), cacheDir = temporaryFolder.root,
+            listener = listener, coroutineScope = this)
+
+        assertTrue("request failed: ${result.exceptionOrNull()}", result.isSuccess)
+        // One engine entry TOTAL (the wedge), then the breaker skips the rest.
+        coVerify(exactly = 1) { llmBackend.generateText(any()) }
+        // All chunks failed -> the original ships verbatim, no joiner splice.
+        assertEquals(raw, result.getOrNull())
+    }
+
+    @Test
+    fun `always mode joins polished chunks with a plain space`() = runTest {
+        coEvery { logDao.getByTaskId(any()) } returns LogEntity(
+            id = "chunk-4", timestamp = 1, taskId = "chunk-4",
+            type = "AUDIO", status = "PROCESSING", prompt = "", result = "")
+        every { preferencesManager.punctuationMode } returns flowOf("always")
+        stubSwapToLlm()
+        val raw = longTranscript(sentences = 400)
+        val chunks = ContextChunker.split(raw)
+        assertTrue(chunks.size > 1)
+        coEvery { llmBackend.generateText(any()) } returnsMany chunks.map { Result.success(it) }
+        val audioFile = temporaryFolder.newFile("long3.ogg")
+        stubWholeFileDecode(gigaamBackend, raw)
+
+        val result = orchestrator.processRequest(
+            taskId = "chunk-4", requestType = "audio", prompt = "",
+            filePath = audioFile.absolutePath, source = null, sourcePackage = null,
+            queuePosition = 1, queueTotal = 1,
+            context = mockk(relaxed = true), cacheDir = temporaryFolder.root,
+            listener = listener, coroutineScope = this)
+
+        assertTrue("request failed: ${result.exceptionOrNull()}", result.isSuccess)
+        // Unfenced polish restores flow: chunks join with a space, no
+        // invented paragraph breaks.
+        assertEquals(chunks.joinToString(" "), result.getOrNull())
+    }
+
+    @Test
+    fun `a chunk that violates the conservative fence keeps its original text`() = runTest {
+        coEvery { logDao.getByTaskId(any()) } returns LogEntity(
+            id = "chunk-2", timestamp = 1, taskId = "chunk-2",
+            type = "AUDIO", status = "PROCESSING", prompt = "", result = "")
+        every { preferencesManager.punctuationMode } returns flowOf("conservative")
+        stubSwapToLlm()
+        val raw = longTranscript(sentences = 400)
+        val chunks = ContextChunker.split(raw)
+        // Chunk 2 answers with an ALTERED token sequence (a whole new word):
+        // the conservative fence rejects it; chunks 1..n echo-clean.
+        val answers = chunks.mapIndexed { i, c ->
+            if (i == 1) Result.success(c + " лишнее слово") else Result.success(c)
+        }
+        coEvery { llmBackend.generateText(any()) } returnsMany answers
+        val audioFile = temporaryFolder.newFile("long2.ogg")
+        stubWholeFileDecode(gigaamBackend, raw)
+
+        val result = orchestrator.processRequest(
+            taskId = "chunk-2", requestType = "audio", prompt = "",
+            filePath = audioFile.absolutePath, source = null, sourcePackage = null,
+            queuePosition = 1, queueTotal = 1,
+            context = mockk(relaxed = true), cacheDir = temporaryFolder.root,
+            listener = listener, coroutineScope = this)
+
+        assertTrue("request failed: ${result.exceptionOrNull()}", result.isSuccess)
+        // The misbehaving chunk contributes its ORIGINAL text; the others'
+        // polish survives. One bad chunk costs its own paragraphing, never
+        // the whole transcript (the pre-666.2 whole-pass fence discarded
+        // EVERYTHING on a single violation below the guard).
+        // Chunks 1..n echoed verbatim, so the expectation is the plain
+        // join; the misbehaving chunk's ORIGINAL is also its echo form.
+        val expected = chunks.joinToString("\n\n")
+        assertEquals(expected, result.getOrNull())
+    }
+
     @Test
     fun `degenerate polished output is rejected in favor of the original`() = runTest {
         every { preferencesManager.punctuationMode } returns flowOf("always")

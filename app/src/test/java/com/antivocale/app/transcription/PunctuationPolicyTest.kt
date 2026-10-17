@@ -188,4 +188,17 @@ class PunctuationPolicyTest {
         assertFalse(PunctuationPolicy.conservativeAcceptable(
             "Hello, how are you today? I am fine, thanks. And you? All good here.", original))
     }
+
+    @Test
+    fun `acceptable composes the collapse and mode fences`() {
+        val original = "ciao come va oggi"
+        // Unfenced (ALWAYS): the collapse fence alone governs.
+        assertTrue(PunctuationPolicy.acceptable(PunctuationPolicy.Mode.ALWAYS, original, original))
+        assertFalse(PunctuationPolicy.acceptable(PunctuationPolicy.Mode.ALWAYS, "", original))
+        // Word-level touches pass ALWAYS (no token fence there).
+        assertTrue(PunctuationPolicy.acceptable(PunctuationPolicy.Mode.ALWAYS, "ciao come va domani", original))
+        // Fenced (CONSERVATIVE): the same word touch fails the token fence.
+        assertFalse(PunctuationPolicy.acceptable(PunctuationPolicy.Mode.CONSERVATIVE, "ciao come va domani", original))
+        assertTrue(PunctuationPolicy.acceptable(PunctuationPolicy.Mode.CONSERVATIVE, original, original))
+    }
 }

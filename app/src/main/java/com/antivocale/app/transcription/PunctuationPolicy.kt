@@ -80,6 +80,16 @@ object PunctuationPolicy {
     /** Whitespace words of the trimmed text; the object's one counting idiom. */
     private fun wordCount(text: String): Int = WHITESPACE.split(text.trim()).size
 
+    /**
+     * TASK-666.2: the per-chunk guard composition, owned here so callers
+     * cannot re-derive mode semantics at their own site: the collapse
+     * fence for every mode, plus the conservative token fence for the
+     * fenced modes.
+     */
+    fun acceptable(mode: Mode, polished: String, original: String): Boolean =
+        acceptablePolish(polished, original) &&
+            (!promptIsFenced(mode) || conservativeAcceptable(polished, original))
+
     /** Too-long transcripts cannot fit Gemma's context: skip rather than truncate. */
     fun withinContextLimit(transcript: String): Boolean = transcript.length <= MAX_TRANSCRIPT_CHARS
 
