@@ -26,6 +26,19 @@
             </intent-filter>
         </receiver>
 
+        <!-- TASK-826: the SPI's grant arm. Started only by TestSpiReceiver
+             (same app, explicit intent), so not exported; transparent (no
+             UI of its own: the system folder picker is the whole surface)
+             and excluded from recents so a trial never leaves a stray task.
+             Fires the same OpenDocumentTree picker the Settings grant card
+             uses and runs the shared acceptance policy on the result. -->
+        <activity
+            android:name=".testing.VoiceNoteGrantSpiActivity"
+            android:enabled="true"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- Lint quirk workaround (TASK-269 round): once an overlay
              declares ANY <service>, lint resolves startForeground call
              sites against the overlay manifest and reports false

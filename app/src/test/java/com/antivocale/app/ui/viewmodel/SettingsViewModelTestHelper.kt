@@ -106,6 +106,9 @@ internal class SettingsViewModelTestHelper(
         speakerEnroller = mockk(),
         // TASK-271: the permission-poke seam; never poked here.
         voiceNoteDetectionCoordinator = mockk(relaxed = true),
+        // TASK-826: the grant-acceptance owner; the helper's suites drive
+        // saveVoiceNoteTreeUri directly, acceptGrant is never awaited here.
+        voiceNoteTreeGrant = mockk(relaxed = true),
         speakerIdentityStore = com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
             speakerIdsDir),
     )

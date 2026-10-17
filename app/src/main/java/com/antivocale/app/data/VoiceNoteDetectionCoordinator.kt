@@ -63,7 +63,15 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
 ) {
     private val lifecycleMutex = Mutex()
     private var started = false
+
+    // @Volatile + a public read for the same cross-thread reason as
+    // rearmIntervalMs: the test SPI reads it from a binder thread while
+    // reconcile writes it under the mutex (TASK-826).
+    @Volatile
     private var active = false
+
+    /** Whether the detector is subscribed right now (the reconcile outcome). */
+    val armed: Boolean get() = active
     private var collectJob: Job? = null
     private var rearmJob: Job? = null
 

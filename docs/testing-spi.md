@@ -18,7 +18,7 @@ This SPI is deliberately separate from the production exported receivers (`PROCE
 
 ```text
 Action: com.antivocale.app.TEST_SPI   (string extras, one op per broadcast)
-  op     nav | get | set | records | identity_cache | import | notify_memory_error | clipboard | notifications | unload | help   (missing or unknown op answers with help; nav is receiver-side, TASK-486)
+  op     nav | get | set | records | identity_cache | import | notify_memory_error | clipboard | notifications | unload | voice_note_state | help   (missing or unknown op answers with help; nav and voice_note_grant_open are receiver-side, TASK-486/TASK-826)
   key    one of the set keys below    (op=set)
   value  the new value                (op=set)
   entry  catalog entry id             (op=set, only for key=sherpa_path)
@@ -49,6 +49,8 @@ capped at 64K chars (`textTruncated: true`).
 | `clipboard` | none | JSON `{"op":"clipboard","label":<string or null>,"text":<string or null>}` reading the primary clip (see the paragraph above) |
 | `notifications` | none | JSON `{"op":"notifications","count":N,"items":[{id,channel,actions,title,text,subText,bigText}]}` listing THIS app's active notifications (read content here, reserve the shade for visual checks) |
 | `unload` | none | JSON `{"op":"unload","unloaded":true}`; runs the production `TranscriptionBackendManager.unloadAll` (the exact call the UI Unload buttons make), so a mid-generation unload can be fired on device without a UI tap (TASK-791 drain-release proof). Logical unload: as the manager's own KDoc states, native memory frees only when an in-flight call drains, so do not read resident memory right after |
+| `voice_note_state` | none | JSON `{"op":"voice_note_state","enabled":<bool>,"treeUri":<string or null>,"audioPermissionGranted":<bool or null>,"grantHeld":<bool or null>,"armed":<bool or null>,"willArm":<bool or null>}` (TASK-826): the detection coordinator's conjunction read mechanically. `grantHeld` is the LIVE persisted-grant probe (a saved URI whose grant died reads false, which is what disarms detection), `armed` is the coordinator's subscription state right now, and `willArm` is the FULL arm conjunction evaluated server-side, platform support included (on Android 10 `willArm` is correctly false even with everything else granted; `audioPermissionGranted` is the permission probe alone); a script asserts `armed == willArm` after a beat. Context-derived fields are `null` under the unit fakes; on device they are always booleans |
+| `voice_note_grant_open` | none | JSON `{"op":"voice_note_grant_open","launched":true,...}` (TASK-826): opens the SAME system folder picker the Settings grant card uses (initial URI included) and runs the shared acceptance policy (take, validate, release-old-slot, save) on the picked folder; the outcome lands on the `TestSpi` logcat channel as `{"op":"voice_note_grant_open","result":"saved <uri>"}` (or `canceled` / `take_failed` / `wrong_folder` / `error` for an acceptance or picker failure). The USE-THIS-FOLDER tap in DocumentsUI is the one manual gesture; the persisted grant survives reinstalls, so this is once per device. Receiver-side like `nav` |
 | `help` | none | the op list, the set keys, the usage line, and the `PROCESS_REQUEST` pointer |
 
 Set keys and value formats:
@@ -201,6 +203,47 @@ Imported external models, and the help text:
 adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op records
 adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op help
 ```
+
+## Ready-to-paste: the voice-note detection trial (TASK-826)
+
+The whole trial is scriptable end to end except ONE gesture: the DocumentsUI
+USE-THIS-FOLDER confirmation (the OS requires it; after it the persisted
+grant survives reinstalls, so it is once per device).
+
+```bash
+# 1. Arm the gates: detection preference on, runtime audio permission granted
+#    (the permission dialog is the app's own runtime ask; grant once via
+#    Settings or the trial's UI step), then read the conjunction:
+adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op set --es key voice_note_detection_enabled --es value true
+adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op voice_note_state
+#    -> grantHeld false, armed false, willArm false: the tree grant is missing.
+
+# 2. Open the SAME folder picker the Settings grant card uses (initial URI
+#    points at the WhatsApp Voice Notes folder), then tap USE THIS FOLDER:
+adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op voice_note_grant_open
+adb shell logcat -s TestSpi:I -d | tail -2
+#    -> {"op":"voice_note_grant_open","result":"saved <tree uri>"}
+
+# 3. Assert the reconcile outcome mechanically (armed == willArm):
+adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op voice_note_state
+#    -> grantHeld true, armed true, willArm true
+```
+
+The detection TRIGGER (replacing the removed offer probe): the detector
+subscribes a FileObserver on the granted tree and fires on CLOSE_WRITE or
+MOVED_TO of a file named `PTT-*.opus` under a numeric counter directory.
+A synthetic note pushed through the shell lands the same events a real
+WhatsApp download does (writes through FUSE arrive as CLOSE_WRITE):
+
+```bash
+adb push note.opus "/storage/emulated/0/Android/media/com.whatsapp/WhatsApp Voice Notes/20991231/PTT-20991231-WA0001.opus"
+```
+
+If the push is refused on a locked-down device, a real note (any voice
+message sent to the installed WhatsApp) is the fallback trigger; the
+transcription result then appears in History and `op=notifications`.
+Removing the synthetic note re-arms nothing (detection stays subscribed);
+`voice_note_state` stays the source of truth.
 
 ## Triggering transcription
 

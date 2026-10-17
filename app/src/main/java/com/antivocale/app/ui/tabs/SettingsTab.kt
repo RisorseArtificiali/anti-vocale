@@ -21,18 +21,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.layout
 import kotlin.math.roundToInt
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
@@ -71,23 +68,17 @@ import com.antivocale.app.BuildConfig
 import com.antivocale.app.R
 import com.antivocale.app.ui.AppNavigation
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.BuiltInBackendIds
-import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.RemoteOmnivoiceBackend
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.transcription.diarization.SpeakerEnrollError
-import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
-import com.antivocale.app.data.HuggingFaceOAuthConfig
-import com.antivocale.app.data.ModelSource
 import com.antivocale.app.ui.components.SearchField
 import com.antivocale.app.ui.components.CardTitleRow
 import com.antivocale.app.ui.components.VoiceNoteFolderGrantCard
@@ -113,16 +104,13 @@ import com.antivocale.app.ui.screens.SpeakerSettingsScreen
 import com.antivocale.app.ui.screens.PerformanceSettingsScreen
 import com.antivocale.app.ui.screens.AutomationSettingsScreen
 import com.antivocale.app.ui.theme.TextScale
-import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.AutomationBroadcastSnippet
 import com.antivocale.app.util.ClipboardWriter
 import com.antivocale.app.util.FeedbackHelper
-import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.util.ToastCompat
 import java.io.File
 import com.antivocale.app.service.InferenceService
-import com.antivocale.app.ui.components.LanguageOption
 import com.antivocale.app.ui.components.EditablePromptCard
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 
@@ -2121,45 +2109,26 @@ internal fun VoiceNoteSettingsScreen(
                 ActivityResultContracts.OpenDocumentTree()
             ) { uri ->
                 if (uri == null) return@rememberLauncherForActivityResult
-                // Binder work off the main thread, the output-folder
-                // picker's pattern; the take must precede the validation
-                // query or the query itself is denied.
-                grantScope.launch(Dispatchers.IO) {
-                    if (!com.antivocale.app.util.TreeUris
-                            .takePersistableReadGrant(context, uri)
-                    ) {
-                        // A non-persistable OEM grant would die at process
-                        // death: refuse it, the row stays for a retry.
-                        Log.w("SettingsTab", "voice-note grant take failed for $uri")
-                        return@launch
-                    }
-                    if (!com.antivocale.app.data.VoiceNoteTreeGrant
-                            .looksLikeVoiceNotesTree(context, uri)
-                    ) {
-                        // A wrong tree would surface only as offers that
-                        // cancel on tap: refuse it AND give the grant slot
-                        // back (the platform caps persisted grants).
-                        com.antivocale.app.util.TreeUris
-                            .releasePersistableReadGrant(context, uri)
-                        withContext(Dispatchers.Main) {
+                // TASK-826: the take-validate-release-old-save sequence is
+                // the tree grant's own policy now (acceptGrant); this
+                // callback maps outcomes to UI. IO inside acceptGrant.
+                grantScope.launch {
+                    when (val outcome = viewModel.acceptVoiceNoteGrant(uri)) {
+                        com.antivocale.app.data.VoiceNoteTreeGrant.GrantOutcome.TakeFailed ->
+                            // A non-persistable OEM grant would die at process
+                            // death: refuse it, the row stays for a retry.
+                            Log.w("SettingsTab", "voice-note grant take failed for $uri")
+                        com.antivocale.app.data.VoiceNoteTreeGrant.GrantOutcome.WrongFolder ->
+                            // A wrong tree would surface only as notes that
+                            // never resolve: the grant slot was given back,
+                            // tell the user and leave the row for a retry.
+                            // (grantScope is Main; the binder work already
+                            // happened inside acceptGrant's IO hop.)
                             ToastCompat.show(
                                 context, R.string.voice_note_folder_grant_rejected,
                                 Toast.LENGTH_LONG)
-                        }
-                        return@launch
+                        is com.antivocale.app.data.VoiceNoteTreeGrant.GrantOutcome.Saved -> {}
                     }
-                    // A replacement pick abandons the old URI: release its
-                    // grant slot (platform cap 128/512) before overwriting.
-                    // The STORED value, not the StateFlow's: .value is still
-                    // the initialValue null until DataStore's first emission
-                    // reaches the flow, and a fast re-pick would leak the
-                    // old slot (review F9).
-                    val old = viewModel.currentVoiceNoteTreeUri()
-                    if (old != null && old != uri.toString()) {
-                        com.antivocale.app.util.TreeUris
-                            .releasePersistableReadGrant(context, android.net.Uri.parse(old))
-                    }
-                    viewModel.saveVoiceNoteTreeUri(uri.toString())
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

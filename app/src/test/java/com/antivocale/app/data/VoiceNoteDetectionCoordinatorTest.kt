@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -103,6 +104,20 @@ class VoiceNoteDetectionCoordinatorTest {
         verify(exactly = 1) { h.detector.subscribe() }
         h.untilEnqueued(entry())
         assertEquals(listOf("/voice/PTT-1.opus"), h.enqueued)
+        h.scope.cancel()
+    }
+
+    @Test
+    fun `armed mirrors the reconcile outcome in both directions`() = runBlocking {
+        // TASK-826: the SPI's voice_note_state reads this flag from a
+        // binder thread, so the pin is the FLAG, not just the observable
+        // side effects (subscribe/dispose already pinned by the siblings).
+        val h = Harness(permissionGranted = { true })
+        assertFalse(h.coordinator.armed)
+        h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
+        assertTrue(h.coordinator.armed)
+        h.coordinator.reconcile(prefEnabled = false, treeUri = TREE_URI)
+        assertFalse(h.coordinator.armed)
         h.scope.cancel()
     }
 

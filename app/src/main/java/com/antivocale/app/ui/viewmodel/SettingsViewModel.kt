@@ -99,6 +99,8 @@ class SettingsViewModel @Inject constructor(
     // TASK-271: permission grants have no observable state, so the grant
     // paths poke the coordinator for a re-evaluation.
     private val voiceNoteDetectionCoordinator: com.antivocale.app.data.VoiceNoteDetectionCoordinator,
+    // TASK-826: the grant-acceptance policy's owner (see acceptVoiceNoteGrant).
+    private val voiceNoteTreeGrant: com.antivocale.app.data.VoiceNoteTreeGrant,
     private val shareShortcutManager: ShareShortcutManager,
     private val backendRegistry: BackendRegistry,
     private val shortcutIconStore: ShortcutIconStore,
@@ -641,10 +643,20 @@ class SettingsViewModel @Inject constructor(
     }
 
     /**
-     * The persisted tree URI read once from the store. The picker
-     * callback's release step needs the STORED value: the StateFlow's
-     * .value can still be its initialValue before DataStore's first
-     * emission lands, and releasing nothing there would strand the old
+     * TASK-826: the acceptance sequence (take, validate, release-old,
+     * save) lives in [com.antivocale.app.data.VoiceNoteTreeGrant] so the
+     * Settings callback and the debug SPI grant activity run the same
+     * policy; the caller maps outcomes to UI.
+     */
+    suspend fun acceptVoiceNoteGrant(uri: android.net.Uri): com.antivocale.app.data.VoiceNoteTreeGrant.GrantOutcome =
+        voiceNoteTreeGrant.acceptGrant(uri)
+
+    /**
+     * The persisted tree URI read once from the store. Callers that must
+     * see the STORED value (the grant card's live-probe recompute, the
+     * Remove path's slot release) read this, never the StateFlow's
+     * .value: .value can still be its initialValue before DataStore's
+     * first emission lands, and acting on that would strand the old
      * grant slot (review F9, 2026-10-13).
      */
     suspend fun currentVoiceNoteTreeUri(): String? =

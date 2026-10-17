@@ -20,8 +20,10 @@ import kotlinx.coroutines.flow.firstOrNull
  * folder (the same "USE THIS FOLDER" gesture the auto-save output picker
  * uses). This class owns the resolution half end to end: fetch the grant
  * preference, find the note's document, copy it into the shared_audio
- * sandbox, and hand back a plain local path. The grant half (picker,
- * persistence, gating) lives in the Settings card and the coordinator.
+ * sandbox, and hand back a plain local path. The acceptance policy
+ * (take, validate, release-old, save: [acceptGrant]) lives here too; the
+ * picker PRESENTATION lives in the Settings card and the debug SPI grant
+ * activity, and the arm/disarm gating in the coordinator.
  */
 @Singleton
 class VoiceNoteTreeGrant @Inject constructor(
@@ -60,6 +62,47 @@ class VoiceNoteTreeGrant @Inject constructor(
      */
     fun holdsGrant(uriString: String): Boolean =
         com.antivocale.app.util.TreeUris.holdsPersistableReadGrant(context, Uri.parse(uriString))
+
+    /**
+     * TASK-826: the grant-acceptance policy in ONE place. The Settings
+     * picker callback and the debug SPI's grant activity both run this
+     * exact sequence (a second copy would drift: the release-old step is
+     * the F9 leak class, invisible until a later pick fails on the
+     * platform's grant cap). Binder work on IO.
+     */
+    sealed interface GrantOutcome {
+        data class Saved(val uriString: String) : GrantOutcome
+
+        /** The OEM picker returned a non-persistable grant; nothing stored. */
+        object TakeFailed : GrantOutcome
+
+        /** Not a voice-notes tree; the taken grant slot was given back. */
+        object WrongFolder : GrantOutcome
+    }
+
+    suspend fun acceptGrant(uri: Uri): GrantOutcome = kotlinx.coroutines.withContext(
+        kotlinx.coroutines.Dispatchers.IO,
+    ) {
+        // The take must precede the validation query or the query itself
+        // is denied (the Settings callback's ordering, unchanged).
+        if (!com.antivocale.app.util.TreeUris.takePersistableReadGrant(context, uri)) {
+            return@withContext GrantOutcome.TakeFailed
+        }
+        if (!looksLikeVoiceNotesTree(context, uri)) {
+            com.antivocale.app.util.TreeUris.releasePersistableReadGrant(context, uri)
+            return@withContext GrantOutcome.WrongFolder
+        }
+        // A replacement pick abandons the old URI: release its grant slot
+        // (platform cap 128/512) before overwriting. The STORED value, not
+        // a flow's .value (still initialValue before DataStore's first
+        // emission; review F9).
+        val old = preferencesManager.voiceNoteTreeUri.firstOrNull()
+        if (old != null && old != uri.toString()) {
+            com.antivocale.app.util.TreeUris.releasePersistableReadGrant(context, Uri.parse(old))
+        }
+        preferencesManager.saveVoiceNoteTreeUri(uri.toString())
+        GrantOutcome.Saved(uri.toString())
+    }
 
     /**
      * Copies [whatsappPath] (the detector's absolute path, unreadable

@@ -51,6 +51,8 @@ class TestSpiReceiver : BroadcastReceiver() {
     @Inject lateinit var importer: com.antivocale.app.data.ExternalModelImportOperations
     @Inject lateinit var voiceNoteIdentityCache: com.antivocale.app.receiver.VoiceNoteIdentityCache
     @Inject lateinit var backendManager: com.antivocale.app.transcription.TranscriptionBackendManager
+    // TASK-826: the armed flag behind op=voice_note_state.
+    @Inject lateinit var voiceNoteDetectionCoordinator: com.antivocale.app.data.VoiceNoteDetectionCoordinator
 
     companion object {
         const val TAG = "TestSpi"
@@ -72,7 +74,55 @@ class TestSpiReceiver : BroadcastReceiver() {
 
         /** TASK-815: optional scroll spec for op=nav (top|bottom|+N/-N). */
         const val EXTRA_SCROLL = "scroll"
+
+        /** TASK-826: op=voice_note_grant_open (no extras; the activity
+         *  opens the same folder picker the Settings row uses). */
+        const val OP_VOICE_NOTE_GRANT_OPEN = "voice_note_grant_open"
+
+        /**
+         * The receiver-side ops' one JSON envelope builder (the ops engine
+         * builds its own per op): every outcome, startActivity failures
+         * included, answers with one line of JSON on both channels, and a
+         * body with quotes/backslashes must not produce malformed JSON.
+         * The SPI grant activity shares it (TASK-826 review: three inline
+         * copies were two too many).
+         */
+        internal fun ack(op: String, body: org.json.JSONObject.() -> Unit = {}): String =
+            org.json.JSONObject().put("op", op).apply(body).toString()
+
+        /** The always-works channel as a one-liner for the activity too. */
+        internal fun logSpi(op: String, result: String) {
+            Log.i(TAG, ack(op) { put("result", result) })
+        }
     }
+
+    /**
+     * TASK-826: op=voice_note_grant_open. Starts the debug grant activity,
+     * which fires the SAME OpenDocumentTree picker the Settings row uses
+     * (initial URI included) and runs the shared acceptance policy on the
+     * result. The DocumentsUI USE-THIS-FOLDER tap is the one gesture the
+     * OS genuinely requires; after it the persisted grant survives
+     * reinstalls, so a scripted trial never navigates Settings again.
+     * Like nav, receiver-side: an activity start is beyond the JVM-pure
+     * ops engine. The op is deliberately absent from TestSpiOps.OPS.
+     */
+    private fun handleVoiceNoteGrantOpen(context: Context): String =
+        runCatching {
+            context.startActivity(
+                android.content.Intent(
+                    context, com.antivocale.app.testing.VoiceNoteGrantSpiActivity::class.java)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            ack(OP_VOICE_NOTE_GRANT_OPEN) {
+                put("launched", true)
+                put("note", "confirm USE THIS FOLDER in the DocumentsUI dialog; " +
+                    "op=voice_note_state reports grantHeld/armed after")
+            }
+        }.getOrElse { e ->
+            ack(OP_VOICE_NOTE_GRANT_OPEN) {
+                put("error", "grant picker failed to launch: ${e.message ?: e.javaClass.simpleName}")
+            }
+        }
 
     /**
      * TASK-486: op=nav dest=<token>. Starts MainActivity (singleTop) with the
@@ -83,14 +133,10 @@ class TestSpiReceiver : BroadcastReceiver() {
     private fun handleNav(context: Context, dest: String?, scroll: String?): String {
         // Same envelope as the ops engine: every outcome - including a
         // startActivity failure - answers with JSON on both channels.
-        // JSONObject acks like the engine's: a dest with quotes/backslashes
-        // must not produce malformed JSON.
-        fun ack(body: org.json.JSONObject.() -> Unit) =
-            org.json.JSONObject().put("op", "nav").apply(body).toString()
         return runCatching {
             val parsed = com.antivocale.app.ui.AppNavigation.parse(dest)
             if (parsed == null) {
-                return ack {
+                return ack("nav") {
                     put("error", "unknown dest '$dest' (expected tab:history|models|settings, " +
                         "models:import, models:gemma, settings:<section>, " +
                         "settings:<subpage>, or settings:<row>)")
@@ -103,7 +149,7 @@ class TestSpiReceiver : BroadcastReceiver() {
                 // Spec first: a malformed spec on a non-scrollable page must
                 // name the typo, not the page.
                 if (com.antivocale.app.ui.AppNavigation.parseScrollSpec(scroll) == null) {
-                    return ack {
+                    return ack("nav") {
                         put("error", "invalid scroll '$scroll' (expected top, bottom, or a " +
                             "signed viewport count like +2 / -1)")
                     }
@@ -111,7 +157,7 @@ class TestSpiReceiver : BroadcastReceiver() {
                 if (!com.antivocale.app.ui.AppNavigation.isScrollableDest(parsed)) {
                     val scrollable =
                         com.antivocale.app.ui.AppNavigation.scrollableDestTokens().joinToString("|")
-                    return ack {
+                    return ack("nav") {
                         put("error", "scroll is not supported on '$dest' (scrollable: $scrollable)")
                     }
                 }
@@ -125,12 +171,12 @@ class TestSpiReceiver : BroadcastReceiver() {
                     addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 }
             )
-            ack {
+            ack("nav") {
                 put("dest", dest)
                 if (scroll != null) put("scroll", scroll)
             }
         }.getOrElse { e ->
-            ack { put("error", "nav failed: ${e.message ?: e.javaClass.simpleName}") }
+            ack("nav") { put("error", "nav failed: ${e.message ?: e.javaClass.simpleName}") }
         }
     }
 
@@ -148,7 +194,9 @@ class TestSpiReceiver : BroadcastReceiver() {
             // TASK-736: the identity-cache dump op needs the live singleton.
             voiceNoteIdentityCache,
             // TASK-791: the unload op drives the production backend manager.
-            backendManager)
+            backendManager,
+            // TASK-826: op=voice_note_state reads the live armed flag.
+            { voiceNoteDetectionCoordinator.armed })
         val op = intent.getStringExtra(EXTRA_OP)
         val key = intent.getStringExtra(EXTRA_KEY)
         val value = intent.getStringExtra(EXTRA_VALUE)
@@ -168,9 +216,12 @@ class TestSpiReceiver : BroadcastReceiver() {
             try {
                 // TASK-486: navigation is receiver-side (it needs an activity
                 // start, which the JVM-pure ops engine cannot do). The ack
-                // mirrors the ops JSON shape.
+                // mirrors the ops JSON shape. TASK-826: same story for the
+                // grant picker.
                 val json = if (op == "nav") {
                     handleNav(context, dest, scroll)
+                } else if (op == OP_VOICE_NOTE_GRANT_OPEN) {
+                    handleVoiceNoteGrantOpen(context)
                 } else {
                     // handle() answers every request with JSON, errors included.
                     ops.handle(op, key, value, entry, url, family, modelType)

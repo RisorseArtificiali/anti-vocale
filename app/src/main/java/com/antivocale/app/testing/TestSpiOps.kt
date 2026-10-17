@@ -51,6 +51,10 @@ internal class TestSpiOps(
     /** TASK-791 device proof: the unload op needs the live backend manager
      *  (same debug-passes-it story as the two params above). */
     private val backendManager: com.antivocale.app.transcription.TranscriptionBackendManager? = null,
+    /** TASK-826: the detection coordinator's armed flag, passed by the
+     *  debug receiver as { coordinator.armed }; null under the shared unit
+     *  fakes, where the op answers null for the field. */
+    private val detectionArmed: (() -> Boolean)? = null,
 ) {
 
     suspend fun handle(
@@ -72,6 +76,7 @@ internal class TestSpiOps(
             OP_CLIPBOARD -> clipboard()
             OP_NOTIFICATIONS -> notifications()
             OP_UNLOAD -> unload()
+            OP_VOICE_NOTE_STATE -> voiceNoteState()
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -672,6 +677,62 @@ internal class TestSpiOps(
     private fun requireContext(op: String): android.content.Context =
         appContext ?: error("$op requires a Context (debug receiver only)")
 
+    /**
+     * TASK-826: the voice-note detection trial's assertion surface, so a
+     * scripted device trial reads the coordinator's conjunction
+     * mechanically instead of logcat. Reports the four facts the arm gate
+     * consumes (preference, runtime audio permission, stored URI, LIVE
+     * grant) plus the armed flag itself and [willArm], the FULL arm
+     * conjunction evaluated server-side, detectionAvailable included (the
+     * production permission checker folds that platform term in, so on
+     * Android 10 armed is correctly false; audioPermissionGranted is the
+     * permission probe alone). A script asserts armed == willArm after a
+     * beat. willArm deliberately re-derives the conjunction INDEPENDENTLY
+     * of reconcile: calling the coordinator's own gate would make the
+     * assertion tautological, and a gate term added later surfaces here
+     * as a failed armed==willArm. Context-derived probes answer null
+     * under the shared unit fakes (the clipboard degrade story), and
+     * willArm follows: null in, null out, never a fabricated false.
+     */
+    private suspend fun voiceNoteState(): String {
+        val enabled = preferences.voiceNoteDetectionEnabled.first()
+        val uri = preferences.voiceNoteTreeUri.first()
+        val audioGranted = appContext?.let {
+            com.antivocale.app.data.VoiceNoteDetectionPermission.granted(it)
+        }
+        // No URI saved = no grant, honestly false; a saved URI under the
+        // fakes = probe unavailable, null.
+        val grantHeld = if (uri == null) {
+            false
+        } else {
+            appContext?.let {
+                com.antivocale.app.util.TreeUris
+                    .holdsPersistableReadGrant(it, android.net.Uri.parse(uri))
+            }
+        }
+        val armed = detectionArmed?.invoke()
+        // The coordinator's REAL conjunction, detectionAvailable included:
+        // the production permission checker folds it into audioReadGranted
+        // (AppModule), so on Android 10 the coordinator stays disarmed no
+        // matter what the three visible fields say (review F1).
+        val willArm: Boolean? =
+            if (audioGranted != null && grantHeld != null) {
+                enabled && audioGranted && grantHeld &&
+                    com.antivocale.app.data.VoiceNoteDetectionPermission.detectionAvailable()
+            } else {
+                null
+            }
+        return JSONObject()
+            .put("op", OP_VOICE_NOTE_STATE)
+            .put("enabled", enabled)
+            .put("treeUri", uri ?: JSONObject.NULL)
+            .put("audioPermissionGranted", audioGranted ?: JSONObject.NULL)
+            .put("grantHeld", grantHeld ?: JSONObject.NULL)
+            .put("armed", armed ?: JSONObject.NULL)
+            .put("willArm", willArm ?: JSONObject.NULL)
+            .toString()
+    }
+
     private fun help(error: String? = null): String = JSONObject()
         .apply { error?.let { put("error", it) } }
         .put("op", OP_HELP)
@@ -706,15 +767,17 @@ internal class TestSpiOps(
         const val OP_CLIPBOARD = "clipboard"
         const val OP_NOTIFICATIONS = "notifications"
         const val OP_UNLOAD = "unload"
+        const val OP_VOICE_NOTE_STATE = "voice_note_state"
         const val OP_HELP = "help"
 
         /**
          * Every op handle() dispatches; help() renders the array and the
-         * usage line from this one list. The receiver's op=nav (TASK-486)
-         * is deliberately absent: it is intercepted receiver-side before
-         * handle() runs, so it lives in the receiver's own table.
+         * usage line from this one list. The receiver's ops nav (TASK-486)
+         * and voice_note_grant_open (TASK-826) are deliberately absent:
+         * both are intercepted receiver-side before handle() runs, so they
+         * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024
