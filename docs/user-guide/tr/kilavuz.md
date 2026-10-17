@@ -15,9 +15,10 @@ Kılavuz 1.15 sürümü için güncellendi.
 7. [Topluluk modelleri ve içe aktarma](#topluluk-modelleri-ve-içe-aktarma)
 8. [Tasker ve otomasyon](#tasker-ve-otomasyon)
 9. [Uygulama bazlı ayarlar](#uygulama-bazlı-ayarlar)
-10. [Gizlilik](#gizlilik)
-11. [Sorun giderme](#sorun-giderme)
-12. [SSS](#sss)
+10. [Yedekleme ve aktarım](#yedekleme-ve-aktarım)
+11. [Gizlilik](#gizlilik)
+12. [Sorun giderme](#sorun-giderme)
+13. [SSS](#sss)
 
 Bölüm 8a, 8b ve 8c otomasyon yüzeylerini kapsar: zamanlanmış klasör izleme, uzak aktarma ve Open Transcribe sağlayıcısı.
 
@@ -59,6 +60,8 @@ Pratik kurallar:
 - Auto-Copy açıkken (Settings) metin, bildirim geldiğinde zaten panonuzdadır; bildirim bunu belirtir.
 - Her transkripsiyon, kullanılan model, süre ve işlem süresiyle birlikte **Logs** sekmesinde tutulur. Bir kayda uzun basarak yeniden deneyebilir, kopyalayabilir, silebilir veya kötü bir sonucu e-postayla bildirebilirsiniz; **Yeniden metne çıkar** aynı sesi seçtiğiniz başka bir modelle yeniden işler.
 - **Whisper veya SenseVoice** modeliyle, açılan her transkript bir dil rozeti taşır: modelin algıladığı dilin bayrağı; tahmin yanlışsa tek dokunuşla kontrol edebilir veya sabitleyebilirsiniz (küçük modeller bazen yanılgıya düşer). Diğer model aileleri algılanan dili bildirmez, bu yüzden rozet onlarda çıkmaz; Settings'teki anahtar bunu belirtir ve devre dışı kalır.
+- Dili kendi başına algılayan modeller yanılabilir. Bir transkriptin dili telefonun dilinden bariz biçimde farklıysa, metnin altındaki tek satırlık ipucu, bu ayarı tanıyan modeller için dil ayarına işaret eder. İpucu kendi başına asla bir şey değiştirmez.
+- Aynı sesi iki kez paylaştığınızda hiçbir şey sizden sorulmadan yeniden çalışmaz: o dosya aynı modelle zaten transkript edildiyse, küçük bir diyalog var olan sonucu açmayı ya da yeniden transkript etmeyi önerir. Bir şey değiştiyse (farklı model, önceki başarısız bir deneme) transkript basitçe çalışır.
 - Auto-Save açıkken (Settings) her transkript ayrıca seçtiğiniz bir klasöre .txt dosyası olarak yazılır.
 
 ## WhatsApp sesli mesajları, otomatik
@@ -80,6 +83,7 @@ Bir uyarıyı açıkça belirtelim: agresif pil yöneticileri olan telefonlarda,
 ## Sonuçlar: etiketler, biçimler ve yüzen pencere
 
 - **Speaker labels**: Settings'ten açın; sohbet transkriptleri cümle bazında konuşmacı ataması alır ve sonuçta ya da her dışa aktarmada SPEAKER sıraları olarak gösterilir.
+- **Oynatma**: orijinal ses, açılan satırdan doğrudan çalınır. Oynat ve durdur, gezinmek için bir konum çubuğu, oynatma hızı ve uzun molalı kayıtlar için sessizlik atlama modu: boşlukları çalmak yerine üzerinden atlar.
 - **Metinden fazlasını paylaşma**: bir sonuç satırından düz metin, zamanlanmış metin, SRT veya VTT olarak paylaşın. Zamanlanmış biçimler ipucu (cue) taşıyan bir transkripsiyon gerektirir. "Şu olarak paylaş…" seçeneği Settings'ten açılır.
 - **Picture-in-Picture**: bir transkripsiyon sürerken yüzen bir pencere, metnin canlı olarak oluşunu gösterebilir; böylece başka uygulamaları kullanmaya devam edebilirsiniz.
 - **Yeniden metne çıkar**: herhangi bir kaydı, satırından doğrudan başka bir modelle yeniden işleyin ve karşılaştırın.
@@ -130,11 +134,16 @@ Açık Open Transcribe sözleşmesini konuşan uygulamalar, örneğin Forkgram (
 
 Paylaştığınız her uygulama için (WhatsApp, Telegram, ...) ayrı ayrı yapılandırabilirsiniz: geri gönderme eyleminin gösterilip gösterilmeyeceğini, otomatik kopyalamanın yapılıp yapılmayacağını ve bildirim sesini. Settings sekmesi, Per-app settings.
 
+## Yedekleme ve aktarım
+
+Ayarlarınız ve tüm transkripsiyon geçmişiniz başka bir telefona taşınabilir. **Ayarlar > Yedekleme ve aktarım**, seçtiğiniz bir klasöre bir zip arşivi dışa aktarır; herhangi bir cihazda içe aktarmak kayıtları yerel geçmişle birleştirir ve aynı arşivi iki kez içe aktarmak hiçbir şeyi değiştirmez. Arşiv dosyasına, içindeki veriler gibi davranın: transkriptler, gönderici adları ve konuşmacı etiketleri düz metin olarak oradadır ve dosyaya sahip herkes okuyabilir; dışa aktarma bunu yazmadan önce kendisi de bildirir.
+
 ## Gizlilik
 
 - Transkripsiyon %100 cihaz üzerindedir. Hiçbir ses, metin veya üst veri telefonunuzdan asla çıkmaz.
 - Uygulamanın transkripsiyon için internet izni yoktur; ağa yalnızca açıkça bir model indirdiğinizde çıkılır.
 - Kayıtlar cihazınızda kalır ve size aittir: Kayıtlar sekmesinden istediğiniz zaman temizleyin.
+- Elle alınan yedek arşivi (Ayarlar > Yedekleme ve aktarım) transkriptleri, gönderici adlarını ve konuşmacı etiketlerini düz metin olarak içerir: dosyaya sahip olan herkes bunları okuyabilir. Uygulama arşivi hiçbir yere göndermez; nereye koyarsanız oraya gider.
 - Play derlemesi Crashlytics çökme bildirimini içerir (Android ayarlarından görebilir ve devre dışı bırakabilirsiniz); F-Droid derlemesinde yoktur.
 
 ## Sorun giderme

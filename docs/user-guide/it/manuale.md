@@ -15,9 +15,10 @@ Manuale aggiornato alla versione 1.15.
 7. [Modelli community e importazioni](#modelli-community-e-importazioni)
 8. [Tasker e automazione](#tasker-e-automazione)
 9. [Impostazioni per app](#impostazioni-per-app)
-10. [Privacy](#privacy)
-11. [Risoluzione dei problemi](#risoluzione-dei-problemi)
-12. [Domande frequenti](#domande-frequenti)
+10. [Backup e trasferimento](#backup-e-trasferimento)
+11. [Privacy](#privacy)
+12. [Risoluzione dei problemi](#risoluzione-dei-problemi)
+13. [Domande frequenti](#domande-frequenti)
 
 Le sezioni 8a, 8b e 8c coprono le superfici di automazione: il controllo cartella programmato, l'offload remoto e il provider Open Transcribe.
 
@@ -59,6 +60,8 @@ Regole pratiche:
 - Con Copia automatica attiva (Impostazioni), il testo è già negli appunti quando arriva la notifica; la notifica te lo dice.
 - Ogni trascrizione resta nella scheda **Cronologia** con modello usato, durata e tempo di elaborazione. Tieni premuta una voce per riprovare, copiare, eliminare o segnalare un risultato sbagliato via email; **Ri-trascrivi** fa passare lo stesso audio per un modello diverso a tua scelta.
 - Con un modello **Whisper o SenseVoice**, ogni trascrizione espansa porta un chip lingua: la bandiera della lingua che il modello ha rilevato, con un tocco per verificare o bloccare quando il tiro è sbagliato (i modelli piccoli ogni tanto sbagliano). Le altre famiglie di modelli non riportano una lingua rilevata, quindi il chip resta spento per loro; l'interruttore nelle Impostazioni lo dice e resta disattivato.
+- I modelli che rilevano la lingua da soli possono sbagliarla. Quando la lingua di una trascrizione è chiaramente diversa da quella del telefono, una riga di suggerimento sotto il testo indica l'impostazione della lingua per i modelli che la rispettano. Il suggerimento da solo non cambia mai nulla.
+- Condividi lo stesso audio due volte e nulla viene rifatto senza chiedere: se quel file è già stato trascritto con lo stesso modello, un piccolo dialogo propone di aprire il risultato esistente o di trascriverlo di nuovo. Se qualcosa è cambiato (un modello diverso, un'esecuzione fallita in passato), si trascrive e basta.
 - Con Salvataggio automatico (Impostazioni) ogni trascrizione viene scritta anche come file .txt in una cartella a tua scelta.
 
 ## Note vocali WhatsApp, automaticamente
@@ -80,6 +83,7 @@ Un avvertimento, detto chiaramente: sui telefoni con gestori di batteria aggress
 ## Risultati: etichette, formati e finestra mobile
 
 - **Etichette dei parlanti**: si attivano dalle Impostazioni e le trascrizioni delle conversazioni ricevono l'attribuzione del parlante frase per frase, resa come turni SPEAKER nel risultato e in ogni esportazione.
+- **Riproduzione**: l'audio originale si ascolta direttamente dalla riga espansa. Play e pausa, una barra di posizione per scorrere, la velocità di riproduzione e una modalità salta-silenzi per le registrazioni con pause lunghe, che scavalca i vuoti invece di riprodurli.
 - **Condividi più del testo**: da una riga di risultato, condividi come testo semplice, testo con timestamp, SRT o VTT. I formati con i tempi richiedono una trascrizione che porta indicatori temporali. "Condividi come…" si attiva dalle Impostazioni.
 - **Picture-in-Picture**: mentre una trascrizione è in corso, una finestra mobile può mostrare il testo che appare dal vivo, così puoi continuare a usare le altre app.
 - **Ri-trascrivi**: riprova qualsiasi voce con un modello diverso direttamente dalla sua riga, e confronta.
@@ -130,11 +134,16 @@ Le app che parlano il contratto aperto Open Transcribe, come Forkgram (un client
 
 Per ogni app da cui condividi (WhatsApp, Telegram, ...) puoi configurare separatamente: se mostrare l'azione di invio, se copiare automaticamente e il suono di notifica. Scheda Impostazioni, Impostazioni per app.
 
+## Backup e trasferimento
+
+Le impostazioni e tutta la cronologia delle trascrizioni possono passare su un altro telefono. **Impostazioni > Backup e trasferimento** esporta un archivio zip in una cartella a scelta; importarlo su qualunque dispositivo unisce le righe alla cronologia locale, e importare due volte lo stesso archivio non cambia nulla. Tratta il file d'archivio come i dati che contiene: trascrizioni, nomi dei mittenti ed etichette dei parlanti stanno lì dentro in testo chiaro, leggibili da chiunque abbia il file, e l'esportazione stessa lo conferma prima di scrivere.
+
 ## Privacy
 
 - La trascrizione è 100% sul dispositivo. Nessun audio, testo o metadato lascia mai il tuo telefono.
 - L'app non ha il permesso internet per trascrivere; la rete si usa solo quando scarichi esplicitamente un modello.
 - La cronologia resta sul dispositivo ed è tua: svuotala quando vuoi dalla scheda Cronologia.
+- L'archivio manuale di backup (Impostazioni > Backup e trasferimento) contiene trascrizioni, nomi dei mittenti ed etichette dei parlanti in testo chiaro: chiunque abbia il file può leggerli. L'app non invia mai l'archivio da nessuna parte; va dove lo metti tu.
 - La build Play include la segnalazione crash di Crashlytics (visibile e disattivabile nelle impostazioni Android); la build F-Droid non ne ha.
 
 ## Risoluzione dei problemi

@@ -15,9 +15,10 @@ Handbuch aktualisiert für Version 1.15.
 7. [Community-Modelle und Importe](#community-modelle-und-importe)
 8. [Tasker und Automatisierung](#tasker-und-automatisierung)
 9. [App-spezifische Einstellungen](#app-spezifische-einstellungen)
-10. [Datenschutz](#datenschutz)
-11. [Fehlerbehebung](#fehlerbehebung)
-12. [FAQ](#faq)
+10. [Backup und Übertragung](#backup-und-übertragung)
+11. [Datenschutz](#datenschutz)
+12. [Fehlerbehebung](#fehlerbehebung)
+13. [FAQ](#faq)
 
 Die Abschnitte 8a, 8b und 8c behandeln die Automatisierung: die geplante Ordnerüberwachung, das Remote-Offload und den Open-Transcribe-Anbieter.
 
@@ -59,6 +60,8 @@ Faustregeln:
 - Mit aktiviertem Automatischem Kopieren (Einstellungen) liegt der Text bereits in der Zwischenablage, wenn die Benachrichtigung ankommt; die Benachrichtigung weist darauf hin.
 - Jede Transkription landet im Tab **Verlauf**, mit verwendetem Modell, Dauer und Bearbeitungszeit. Halte einen Eintrag lange gedrückt, um erneut zu versuchen, zu kopieren, zu löschen oder ein schlechtes Ergebnis per E-Mail zu melden; **Erneut transkribieren** führt dasselbe Audio durch ein anderes Modell deiner Wahl.
 - Mit einem **Whisper- oder SenseVoice-**Modell trägt jede aufgeklappte Transkript einen Sprach-Chip: die Flagge der vom Modell erkannten Sprache, mit einem Tipp zum Prüfen oder Festlegen, wenn die Schätzung falsch liegt (kleine Modelle raten manchmal daneben). Andere Modellfamilien melden keine erkannte Sprache, deshalb bleibt der Chip dort aus; der Schalter in den Einstellungen sagt das und bleibt deaktiviert.
+- Modelle, die die Sprache selbst erkennen, können sie falsch einschätzen. Weicht die Sprache eines Transkripts klar von der Telefonsprache ab, zeigt eine einzeilige Notiz unter dem Text auf die Spracheinstellung für die Modelle, die sie beachten. Die Notiz ändert von sich aus nie etwas.
+- Teile dasselbe Audio zweimal, läuft nichts zweimal ohne Nachfrage: Wurde diese Datei bereits mit demselben Modell transkribiert, bietet ein kleiner Dialog an, das bestehende Ergebnis zu öffnen oder neu zu transkribieren. Hat sich etwas geändert (ein anderes Modell, ein früher fehlgeschlagener Lauf), wird einfach transkribiert.
 - Mit Automatischem Speichern im Ordner (Einstellungen) wird jede Transkription zusätzlich als .txt-Datei in einen von dir gewählten Ordner geschrieben.
 
 ## WhatsApp-Sprachnachrichten, automatisch
@@ -80,6 +83,7 @@ Ein Vorbehalt, klar gesagt: Auf Telefonen mit aggressiven Akku-Managern können 
 ## Ergebnisse: Labels, Formate und das schwebende Fenster
 
 - **Sprecher-Labels**: einmal in den Einstellungen aktiviert, erhalten Transkripte von Unterhaltungen eine Sprecherzuordnung Satz für Satz, im Ergebnis und in jedem Export als SPEAKER-Beiträge dargestellt.
+- **Wiedergabe**: das Original-Audio lässt sich direkt aus der aufgeklappten Zeile abspielen. Play und Pause, ein Positionsbalken zum Spulen, die Wiedergabegeschwindigkeit und ein Stille-Überspringen-Modus für Aufnahmen mit langen Pausen, der Lücken überspringt, statt sie durchzuspielen.
 - **Mehr teilen als Text**: aus einer Ergebnis-Zeile heraus als reiner Text, mit Zeitmarken, als SRT oder als VTT teilen. Die Zeitformate brauchen eine Transkription, die Cues mitbringt. „Teilen als …“ ist ein Opt-in in den Einstellungen.
 - **Picture-in-Picture**: Während einer Transkription kann ein schwebendes Fenster zeigen, wie der Text live entsteht, sodass du andere Apps weiter nutzen kannst.
 - **Erneut transkribieren**: Jeden Eintrag direkt aus seiner Zeile mit einem anderen Modell erneut laufen lassen und vergleichen.
@@ -130,11 +134,16 @@ Apps, die den offenen Open-Transcribe-Vertrag unterstützen, wie Forkgram (ein T
 
 Für jede App, aus der du teilst (WhatsApp, Telegram, ...), stellst du getrennt ein: ob die Aktion Schnell-Zurückteilen erscheint, ob automatisch kopiert wird und welcher Benachrichtigungston erklingt. Tab Einstellungen, App-spezifische Einstellungen.
 
+## Backup und Übertragung
+
+Einstellungen und der gesamte Transkriptionsverlauf können auf ein anderes Telefon umziehen. **Einstellungen > Backup und Übertragung** exportiert ein Zip-Archiv in einen Ordner deiner Wahl; der Import auf einem beliebigen Gerät fügt die Einträge in die lokale Chronik ein, und derselbe Archivimport zweimal ändert nichts. Behandle die Archivdatei wie die Daten, die sie enthält: Transkripte, Absendernamen und Sprecher-Labels liegen darin im Klartext, lesbar für jeden mit der Datei, was der Export vor dem Schreiben bestätigt.
+
 ## Datenschutz
 
 - Die Transkription läuft zu 100 % auf dem Gerät. Kein Audio, kein Text und keine Metadaten verlassen jemals dein Telefon.
 - Die App hat keine Internet-Berechtigung für die Transkription; das Netzwerk wird nur genutzt, wenn du ausdrücklich ein Modell herunterlädst.
 - Der Verlauf bleibt auf deinem Gerät und gehört dir: Leere ihn jederzeit im Tab Verlauf.
+- Das manuelle Backup-Archiv (Einstellungen > Backup und Übertragung) enthält Transkripte, Absendernamen und Sprecher-Labels im Klartext: Jeder mit der Datei kann sie lesen. Die App sendet das Archiv nirgendwohin; es geht dorthin, wo du es speicherst.
 - Der Play-Build enthält die Absturzberichte von Crashlytics (einsehbar und abschaltbar in den Android-Einstellungen); der F-Droid-Build hat keine.
 
 ## Fehlerbehebung

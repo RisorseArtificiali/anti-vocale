@@ -15,9 +15,10 @@ Manual atualizado para a versão 1.15.
 7. [Modelos da comunidade e importações](#modelos-da-comunidade-e-importações)
 8. [Tasker e automação](#tasker-e-automação)
 9. [Configurações por aplicativo](#configurações-por-aplicativo)
-10. [Privacidade](#privacidade)
-11. [Solução de problemas](#solução-de-problemas)
-12. [Perguntas frequentes](#perguntas-frequentes)
+10. [Backup e transferência](#backup-e-transferência)
+11. [Privacidade](#privacidade)
+12. [Solução de problemas](#solução-de-problemas)
+13. [Perguntas frequentes](#perguntas-frequentes)
 
 As seções 8a, 8b e 8c cobrem as superfícies de automação: o monitoramento programado de pastas, o offload remoto e o provedor Open Transcribe.
 
@@ -59,6 +60,8 @@ Regras práticas:
 - Com a Auto-Cópia ativada (Configurações), o texto já está na sua área de transferência quando a notificação chega; a notificação avisa isso.
 - Toda transcrição fica na aba **Logs** com o modelo usado, a duração e o tempo de processamento. Toque e segure uma entrada para tentar novamente, copiar, excluir ou relatar um resultado ruim por e-mail; **Re-transcrever** roda o mesmo áudio por um modelo diferente, à sua escolha.
 - Com um modelo **Whisper ou SenseVoice**, cada transcrição expandida traz um selo de idioma: a bandeira do idioma que o modelo detectou, com um toque para conferir ou fixar quando a detecção estiver errada (modelos pequenos erram às vezes). As outras famílias de modelos não informam o idioma detectado, então o selo fica desligado para elas; a opção em Configurações avisa isso e permanece desabilitada.
+- Modelos que detectam o idioma sozinhos podem errar. Quando o idioma de uma transcrição difere claramente do idioma do telefone, uma linha de dica abaixo do texto aponta para a configuração de idioma dos modelos que a respeitam. A dica, por si só, nunca muda nada.
+- Compartilhe o mesmo áudio duas vezes e nada roda de novo sem perguntar: se aquele arquivo já foi transcrito com o mesmo modelo, um pequeno diálogo oferece abrir o resultado existente ou transcrever de novo. Se algo mudou (outro modelo, uma execução anterior que falhou), a transcrição simplesmente roda.
 - Com o Auto-Salvamento (Configurações), cada transcrição também é gravada como arquivo .txt em uma pasta que você escolher.
 
 ## Mensagens de voz do WhatsApp, automaticamente
@@ -80,6 +83,7 @@ Uma ressalva, dita claramente: em telefones com gerenciadores de bateria agressi
 ## Resultados: rótulos, formatos e janela flutuante
 
 - **Rótulos de falante**: ative em Configurações e as transcrições de conversas recebem atribuição de falante por frase, exibida como turnos de SPEAKER no resultado e em todas as exportações.
+- **Reprodução**: o áudio original toca direto da linha expandida. Tocar e pausar, uma barra de posição para arrastar, a velocidade de reprodução e um modo de pular silêncios para gravações com pausas longas, que salta os vazios em vez de reproduzi-los.
 - **Compartilhar como mais que texto**: em uma linha de resultado, compartilhe como texto simples, texto com marcações de tempo, SRT ou VTT. Os formatos com tempo exigem uma transcrição que carregue marcações. O "Compartilhar como…" é opcional e se ativa em Configurações.
 - **Picture-in-Picture**: enquanto uma transcrição roda, uma janela flutuante pode mostrar o texto aparecendo ao vivo, para você continuar usando outros aplicativos.
 - **Re-transcrever**: tente novamente qualquer entrada com um modelo diferente direto da sua linha, e compare.
@@ -130,11 +134,16 @@ Aplicativos que falam o contrato aberto Open Transcribe, como o Forkgram (um cli
 
 Para cada aplicativo de onde você compartilha (WhatsApp, Telegram, ...) você pode configurar separadamente: se a ação de envio de volta aparece, se há cópia automática e o som da notificação. Aba Configurações, Configurações por aplicativo.
 
+## Backup e transferência
+
+Suas configurações e todo o histórico de transcrições podem passar para outro telefone. **Configurações > Backup e transferência** exporta um arquivo zip para uma pasta que você escolher; importar em qualquer aparelho mescla as linhas ao histórico local, e importar o mesmo arquivo duas vezes não muda nada. Trate o arquivo como os dados que ele contém: transcrições, nomes de remetentes e rótulos de falante estão lá em texto puro, legíveis por qualquer pessoa que tenha o arquivo, e a própria exportação avisa isso antes de gravar.
+
 ## Privacidade
 
 - A transcrição é 100% no aparelho. Nenhum áudio, nenhum texto, nenhum metadado sai do seu telefone.
 - O aplicativo não tem permissão de internet para transcrição; a rede é usada apenas quando você baixa um modelo explicitamente.
 - Os logs ficam no seu aparelho e são seus: limpe-os quando quiser na aba Histórico.
+- O arquivo manual de backup (Configurações > Backup e transferência) contém transcrições, nomes de remetentes e rótulos de falante em texto puro: qualquer pessoa com o arquivo pode lê-los. O aplicativo nunca envia o arquivo para lugar nenhum; ele vai para onde você o colocar.
 - A versão Play inclui relatórios de falhas do Crashlytics (você pode ver e desativar nas configurações do Android); a versão F-Droid não tem nenhum.
 
 ## Solução de problemas

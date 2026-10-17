@@ -15,9 +15,10 @@ Manual updated for version 1.15.
 7. [Community models and imports](#community-models-and-imports)
 8. [Tasker and automation](#tasker-and-automation)
 9. [Per-app settings](#per-app-settings)
-10. [Privacy](#privacy)
-11. [Troubleshooting](#troubleshooting)
-12. [FAQ](#faq)
+10. [Backup and transfer](#backup-and-transfer)
+11. [Privacy](#privacy)
+12. [Troubleshooting](#troubleshooting)
+13. [FAQ](#faq)
 
 Sections 8a, 8b, and 8c cover the automation surfaces: the scheduled folder watch, remote offload, and the Open Transcribe provider.
 
@@ -59,6 +60,8 @@ Rules of thumb:
 - With Auto-Copy enabled (Settings), the text is already on your clipboard when the notification arrives; the notification says so.
 - Every transcription is kept in the **Logs** tab with the model used, duration, and processing time. Long-press an entry to retry, copy, delete, or report a bad result by email; **Re-transcribe** runs the same audio through a different model of your choice.
 - With a **Whisper or SenseVoice** model, each expanded transcript carries a language chip: the flag of the language the model detected, with a tap to check or pin it when the guess is wrong (small models misfire sometimes). Other model families do not report a detected language, so the chip stays off for them; the toggle in Settings says so and stays disabled.
+- Models that detect the language themselves can misjudge it. When a transcript's language clearly differs from your phone's language, a one-line hint under the text points to the language setting for the models that honor it. The hint never changes anything by itself.
+- Share the same audio twice and nothing runs twice without asking: if that file was already transcribed with the same model, a small dialog offers to open the existing result or transcribe it again. Anything that changed (a different model, a failed past run) just transcribes.
 - With Auto-Save (Settings) every transcript is also written as a .txt file into a folder you choose.
 
 ## WhatsApp voice notes, automatically
@@ -80,6 +83,7 @@ One caveat, stated plainly: on phones with aggressive battery managers, notes th
 ## Results: labels, formats, and the floating window
 
 - **Speaker labels**: opt in from Settings and transcripts of conversations get per-sentence speaker attribution, rendered as SPEAKER turns in the result and every export.
+- **Playback**: the original audio plays right from the expanded row. Play and pause, a position bar to scrub, playback speed, and a skip-silences mode for recordings with long pauses, which jumps the gaps instead of playing them through.
 - **Share as more than text**: from a result row, share as plain text, timed text, SRT, or VTT. The timed formats need a transcription that carries cues. "Share as..." is opt-in from Settings.
 - **Picture-in-Picture**: while a transcription runs, a floating window can show the text appearing live, so you can keep using other apps.
 - **Re-transcribe**: retry any entry with a different model straight from its row, and compare.
@@ -130,11 +134,16 @@ Apps that speak the open Open Transcribe contract, like Forkgram (a Telegram cli
 
 For each app you share from (WhatsApp, Telegram, ...) you can configure separately: whether to show the send-back action, whether to auto-copy, and the notification sound. Settings tab, Per-app settings.
 
+## Backup and transfer
+
+Your settings and your whole transcription history can move to another phone. **Settings > Backup and transfer** exports a zip archive to a folder you choose; importing it on any device merges the rows into the local history, and importing the same archive twice changes nothing. Treat the archive file like the data it holds: transcripts, sender names, and speaker labels sit in it in plain text, readable by anyone with the file, which the export itself confirms before writing.
+
 ## Privacy
 
 - Transcription is 100% on-device. No audio, no text, no metadata ever leaves your phone.
 - The app has no internet permission for transcription; network is used only when you explicitly download a model.
 - Logs stay on your device and are yours: clear them any time from the Logs tab.
+- The manual backup archive (Settings > Backup and transfer) holds transcripts, sender names, and speaker labels in plain text: anyone with the file can read them. The app never sends the archive anywhere; where it goes is where you put it.
 - The Play build includes Crashlytics crash reporting (you can see and disable it in Android settings); the F-Droid build has none.
 
 ## Troubleshooting

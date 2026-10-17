@@ -15,9 +15,10 @@ Podręcznik zaktualizowany do wersji 1.15.
 7. [Modele społeczności i importy](#modele-społeczności-i-importy)
 8. [Tasker i automatyzacja](#tasker-i-automatyzacja)
 9. [Ustawienia per aplikacja](#ustawienia-per-aplikacja)
-10. [Prywatność](#prywatność)
-11. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
-12. [FAQ](#faq)
+10. [Kopia zapasowa i przenoszenie](#kopia-zapasowa-i-przenoszenie)
+11. [Prywatność](#prywatność)
+12. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
+13. [FAQ](#faq)
 
 Sekcje 8a, 8b i 8c opisują płaszczyzny automatyzacji: zaplanowane obserwowanie folderów, przekazywanie zdalne oraz dostawcę Open Transcribe.
 
@@ -59,6 +60,8 @@ Kilka praktycznych wskazówek:
 - Przy włączonym automatycznym kopiowaniu (Ustawienia) tekst jest już w schowku, gdy przychodzi powiadomienie; powiadomienie o tym informuje.
 - Każda transkrypcja trafia do karty **Historia** z nazwą użytego modelu, długością nagrania i czasem przetwarzania. Przytrzymaj wpis, aby ponowić, skopiować, usunąć albo zgłosić zły wynik e-mailem; **Przepisz ponownie** przepuszcza to samo audio przez inny model wybrany przez Ciebie.
 - Z modelem **Whisper lub SenseVoice** każda rozwinięta transkrypcja ma znacznik języka: flagę języka wykrytego przez model; dotknij jej, aby sprawdzić lub przypiąć język, gdy rozpoznanie jest błędne (małe modele czasem się mylą). Inne rodziny modeli nie raportują wykrytego języka, więc znacznik pozostaje dla nich wyłączony; przełącznik w Ustawieniach tak właśnie mówi i jest nieaktywny.
+- Modele, które same wykrywają język, mogą się pomylić. Gdy język transkrypcji wyraźnie różni się od języka telefonu, jednozdaniowa wskazówka pod tekstem odsyła do ustawienia języka dla modeli, które je respektują. Wskazówka sama z siebie nigdy niczego nie zmienia.
+- Udostępnij to samo audio dwa razy i nic nie zostanie uruchomione ponownie bez pytania: jeśli ten plik był już transkrybowany tym samym modelem, mały dialog proponuje otwarcie istniejącego wyniku albo ponowną transkrypcję. Jeśli coś się zmieniło (inny model, wcześniejsze nieudane uruchomienie), transkrypcja po prostu startuje.
 - Z automatycznym zapisem (Ustawienia) każda transkrypcja zapisuje się dodatkowo jako plik .txt w wybranym przez Ciebie folderze.
 
 ## Wiadomości głosowe WhatsApp, automatycznie
@@ -80,6 +83,7 @@ Jedno zastrzeżenie, powiedziane wprost: na telefonach z agresywnymi menedżeram
 ## Wyniki: etykiety, formaty i pływające okno
 
 - **Identyfikuj mówców**: włącz w Ustawieniach, a transkrypcje rozmów dostaną przypisanie mówcy do każdego zdania, renderowane jako tury SPEAKER w wyniku i w każdym eksporcie.
+- **Odtwarzanie**: oryginalne audio odtwarza się prosto z rozwiniętego wiersza. Odtwarzanie i pauza, pasek pozycji do przewijania, prędkość odtwarzania oraz tryb pomijania ciszy dla nagrań z długimi pauzami, który przeskakuje przerwy zamiast ich odtwarzać.
 - **Udostępniaj więcej niż tekst**: z wiersza wyniku udostępnij jako zwykły tekst, tekst ze znacznikami czasu, SRT lub VTT. Formaty ze znacznikami czasu wymagają transkrypcji, która te znaczniki zawiera. „Udostępnij jako…” włącza się w Ustawieniach.
 - **Picture-in-Picture**: podczas transkrypcji pływające okno może pokazywać tekst pojawiający się na żywo, dzięki czemu możesz dalej używać innych aplikacji.
 - **Przepisz ponownie**: ponów dowolny wpis innym modelem prosto z jego wiersza i porównaj.
@@ -130,11 +134,16 @@ Aplikacje obsługujące otwarty kontrakt Open Transcribe, jak Forkgram (klient T
 
 Dla każdej aplikacji, z której udostępniasz (WhatsApp, Telegram, ...), możesz osobno skonfigurować: czy pokazywać akcję odesłania, czy kopiować automatycznie oraz dźwięk powiadomienia. Karta Ustawienia, Ustawienia per aplikacja.
 
+## Kopia zapasowa i przenoszenie
+
+Ustawienia i cała historia transkrypcji mogą przenieść się na inny telefon. **Ustawienia > Kopia zapasowa i przenoszenie** eksportuje archiwum zip do wybranego przez ciebie folderu; import na dowolnym urządzeniu scala wiersze z lokalną historią, a dwukrotny import tego samego archiwum niczego nie zmienia. Traktuj plik archiwum jak dane, które zawiera: transkrypcje, nazwy nadawców i etykiety mówców są w nim jawnym tekstem, odczyta je każdy, kto ma plik, o czym sam eksport informuje przed zapisem.
+
 ## Prywatność
 
 - Transkrypcja odbywa się w 100% na urządzeniu. Żadne audio, żaden tekst i żadne metadane nigdy nie opuszczają Twojego telefonu.
 - Aplikacja nie ma uprawnienia do internetu dla transkrypcji; sieć jest używana tylko wtedy, gdy sam pobierasz model.
 - Historia pozostaje na Twoim urządzeniu i jest Twoja: wyczyść ją w dowolnej chwili z karty Historia.
+- Ręczne archiwum kopii zapasowej (Ustawienia > Kopia zapasowa i przenoszenie) zawiera transkrypcje, nazwy nadawców i etykiety mówców jawnym tekstem: odczyta je każdy, kto ma plik. Aplikacja nigdzie nigdy nie wysyła archiwum; trafia ono tam, gdzie je zapiszesz.
 - Wersja z Play zawiera raportowanie awarii Crashlytics (możesz je zobaczyć i wyłączyć w ustawieniach Androida); wersja z F-Droid nie zawiera żadnego.
 
 ## Rozwiązywanie problemów

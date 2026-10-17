@@ -15,9 +15,10 @@ Manual actualizado para la versión 1.15.
 7. [Modelos de la comunidad e importaciones](#modelos-de-la-comunidad-e-importaciones)
 8. [Tasker y automatización](#tasker-y-automatización)
 9. [Ajustes por aplicación](#ajustes-por-aplicación)
-10. [Privacidad](#privacidad)
-11. [Solución de problemas](#solución-de-problemas)
-12. [Preguntas frecuentes](#preguntas-frecuentes)
+10. [Copia de seguridad y transferencia](#copia-de-seguridad-y-transferencia)
+11. [Privacidad](#privacidad)
+12. [Solución de problemas](#solución-de-problemas)
+13. [Preguntas frecuentes](#preguntas-frecuentes)
 
 Las secciones 8a, 8b y 8c tratan las funciones de automatización: la vigilancia programada de carpetas, la delegación remota y el proveedor de Open Transcribe.
 
@@ -59,6 +60,8 @@ Reglas prácticas:
 - Con la copia automática activada (Ajustes), el texto ya está en el portapapeles cuando llega la notificación; la notificación lo indica.
 - Cada transcripción se guarda en la pestaña **Logs** con el modelo usado, la duración y el tiempo de procesamiento. Mantén pulsada una entrada para reintentar, copiar, borrar o informar de un mal resultado por correo electrónico; **Volver a transcribir** procesa el mismo audio con otro modelo de tu elección.
 - Con un modelo **Whisper o SenseVoice**, cada transcripción expandida lleva una etiqueta de idioma: la bandera del idioma que el modelo detectó, con un toque para comprobarla o fijarla cuando la suposición es errónea (los modelos pequeños a veces se equivocan). Otras familias de modelos no informan del idioma detectado, así que la etiqueta no aparece para ellas; el interruptor en Ajustes lo indica y permanece desactivado.
+- Los modelos que detectan el idioma por sí solos pueden equivocarse. Cuando el idioma de una transcripción difiere claramente del idioma del teléfono, una línea de sugerencia bajo el texto señala el ajuste de idioma para los modelos que lo respetan. La sugerencia por sí sola nunca cambia nada.
+- Comparte el mismo audio dos veces y nada se repite sin preguntar: si ese archivo ya se transcribió con el mismo modelo, un pequeño diálogo ofrece abrir el resultado existente o transcribirlo de nuevo. Si algo cambió (otro modelo, una ejecución fallida anterior), simplemente se transcribe.
 - Con el guardado automático (Ajustes), cada transcripción también se escribe como archivo .txt en una carpeta que elijas.
 
 ## Notas de voz de WhatsApp, automáticamente
@@ -80,6 +83,7 @@ Una advertencia, dicha con claridad: en teléfonos con gestores de batería agre
 ## Resultados: etiquetas, formatos y la ventana flotante
 
 - **Etiquetas de hablante**: actívalas desde Ajustes y las transcripciones de conversaciones reciben atribución de hablante por frase, mostrada como turnos de SPEAKER en el resultado y en todas las exportaciones.
+- **Reproducción**: el audio original se reproduce directamente desde la fila expandida. Reproducir y pausar, una barra de posición para desplazarte, la velocidad de reproducción y un modo saltar-silencios para grabaciones con pausas largas, que salta los huecos en vez de reproducirlos.
 - **Compartir como más que texto**: desde una fila de resultado, comparte como texto plano, texto con marcas de tiempo, SRT o VTT. Los formatos con marcas de tiempo necesitan una transcripción que lleve señales. "Compartir como…" se activa desde Ajustes.
 - **Picture-in-Picture**: mientras se ejecuta una transcripción, una ventana flotante puede mostrar el texto apareciendo en vivo, de modo que puedes seguir usando otras aplicaciones.
 - **Volver a transcribir**: reintenta cualquier entrada con otro modelo directamente desde su fila y compara.
@@ -130,11 +134,16 @@ Las aplicaciones que hablan el contrato abierto Open Transcribe, como Forkgram (
 
 Para cada aplicación desde la que compartas (WhatsApp, Telegram, ...) puedes configurar por separado: si se muestra la acción de devolución, si se copia automáticamente y el sonido de notificación. Pestaña Ajustes, Ajustes por aplicación.
 
+## Copia de seguridad y transferencia
+
+Tus ajustes y todo tu historial de transcripciones pueden pasar a otro teléfono. **Ajustes > Copia de seguridad y transferencia** exporta un archivo zip a una carpeta que elijas; importarlo en cualquier dispositivo fusiona las filas en el historial local, e importar dos veces el mismo archivo no cambia nada. Trata el archivo como los datos que contiene: transcripciones, nombres de remitentes y etiquetas de hablante están dentro en texto plano, legibles por cualquiera que tenga el archivo, y la propia exportación lo confirma antes de escribir.
+
 ## Privacidad
 
 - La transcripción es 100% en el dispositivo. Ningún audio, ningún texto, ningún metadato sale jamás de tu teléfono.
 - La aplicación no tiene permiso de internet para transcribir; la red se usa solo cuando descargas un modelo de forma explícita.
 - Los registros se quedan en tu dispositivo y son tuyos: bórralos cuando quieras desde la pestaña Historial.
+- El archivo manual de copia de seguridad (Ajustes > Copia de seguridad y transferencia) contiene transcripciones, nombres de remitentes y etiquetas de hablante en texto plano: cualquiera con el archivo puede leerlos. La aplicación nunca envía el archivo a ninguna parte; va donde tú lo pongas.
 - La compilación de Play incluye el informe de fallos de Crashlytics (puedes verlo y desactivarlo en los ajustes de Android); la compilación de F-Droid no lo tiene.
 
 ## Solución de problemas

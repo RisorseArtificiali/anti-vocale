@@ -15,9 +15,10 @@ Manuel mis à jour pour la version 1.15.
 7. [Modèles de la communauté et import](#modèles-de-la-communauté-et-import)
 8. [Tasker et automatisation](#tasker-et-automatisation)
 9. [Paramètres par application](#paramètres-par-application)
-10. [Confidentialité](#confidentialité)
-11. [Dépannage](#dépannage)
-12. [FAQ](#faq)
+10. [Sauvegarde et transfert](#sauvegarde-et-transfert)
+11. [Confidentialité](#confidentialité)
+12. [Dépannage](#dépannage)
+13. [FAQ](#faq)
 
 Les sections 8a, 8b et 8c couvrent les surfaces d'automatisation : la surveillance planifiée des dossiers, le déport distant et le fournisseur Open Transcribe.
 
@@ -59,6 +60,8 @@ Quelques repères :
 - Avec la Copie automatique activée (Paramètres), le texte est déjà dans le presse-papiers quand la notification arrive ; la notification vous l'indique.
 - Chaque transcription est conservée dans l'onglet **Historique**, avec le modèle utilisé, la durée et le temps de traitement. Un appui long sur une entrée permet de réessayer, de copier, de supprimer ou de signaler un mauvais résultat par e-mail ; **Re-transcrire** relance le même audio avec un autre modèle de votre choix.
 - Avec un modèle **Whisper ou SenseVoice**, chaque transcription dépliée porte une puce de langue : le drapeau de la langue détectée par le modèle, avec un appui pour vérifier ou épingler quand l'estimation est fausse (les petits modèles se trompent parfois). Les autres familles de modèles ne rapportent pas de langue détectée, la puce reste donc absente pour elles ; le réglage dans les Paramètres le dit et reste désactivé.
+- Les modèles qui détectent la langue eux-mêmes peuvent se tromper. Quand la langue d'une transcription diffère clairement de celle du téléphone, une ligne d'indication sous le texte signale le réglage de langue pour les modèles qui le respectent. L'indication ne change jamais rien d'elle-même.
+- Partagez deux fois le même audio et rien ne se relance sans vous le demander : si ce fichier a déjà été transcrit avec le même modèle, une petite boîte de dialogue propose d'ouvrir le résultat existant ou de retranscrire. Si quelque chose a changé (un autre modèle, une exécution précédente échouée), la transcription part simplement.
 - Avec l'Enregistrement automatique dans un dossier (Paramètres), chaque transcription est aussi écrite dans un fichier .txt, dans le dossier de votre choix.
 
 ## Messages vocaux WhatsApp, automatiquement
@@ -80,6 +83,7 @@ Une réserve, dite sans détour : sur les téléphones aux économiseurs de batt
 ## Résultats : étiquettes, formats et la fenêtre flottante
 
 - **Étiquettes locuteur** : à activer dans les Paramètres ; les transcriptions de conversations reçoivent une attribution de locuteur phrase par phrase, rendue sous forme de tours SPEAKER dans le résultat et dans chaque export.
+- **Lecture** : l'audio original se lit directement depuis la ligne dépliée. Lecture et pause, une barre de position pour naviguer, la vitesse de lecture et un mode sauter-silences pour les enregistrements aux longues pauses, qui saute les trous au lieu de les jouer.
 - **Partager au-delà du texte** : depuis une ligne de résultat, partagez en texte brut, en texte horodaté, en SRT ou en VTT. Les formats horodatés exigent une transcription qui porte des cues. « Partager en... » s'active dans les Paramètres.
 - **Picture-in-Picture** : pendant qu'une transcription tourne, une fenêtre flottante peut afficher le texte au fur et à mesure, pour continuer à utiliser d'autres applications.
 - **Re-transcrire** : relancez n'importe quelle entrée avec un autre modèle directement depuis sa ligne, et comparez.
@@ -130,11 +134,16 @@ Les applications qui parlent le contrat ouvert Open Transcribe, comme Forkgram (
 
 Pour chaque application depuis laquelle vous partagez (WhatsApp, Telegram, ...), vous pouvez configurer séparément : l'affichage de l'action « Renvoi rapide » (renvoyer le texte dans le chat), la copie automatique et le son de notification. Onglet Paramètres, Paramètres par application.
 
+## Sauvegarde et transfert
+
+Vos paramètres et tout votre historique de transcription peuvent passer sur un autre téléphone. **Paramètres > Sauvegarde et transfert** exporte une archive zip vers un dossier de votre choix ; l'importer sur n'importe quel appareil fusionne les lignes dans l'historique local, et importer deux fois la même archive ne change rien. Traitez le fichier d'archive comme les données qu'il contient : transcriptions, noms d'expéditeurs et étiquettes locuteur y sont en texte clair, lisibles par quiconque possède le fichier, ce que l'export confirme avant d'écrire.
+
 ## Confidentialité
 
 - La transcription est 100 % sur l'appareil. Aucun audio, aucun texte, aucune métadonnée ne quitte jamais votre téléphone.
 - L'application n'a pas de permission Internet pour la transcription ; le réseau ne sert que quand vous téléchargez explicitement un modèle.
 - L'Historique reste sur votre appareil et vous appartient : effacez-le à tout moment depuis l'onglet Historique.
+- L'archive manuelle de sauvegarde (Paramètres > Sauvegarde et transfert) contient transcriptions, noms d'expéditeurs et étiquettes locuteur en texte clair : quiconque a le fichier peut les lire. L'application n'envoie jamais l'archive nulle part ; elle va là où vous la mettez.
 - La version Play inclut le rapport de plantages Crashlytics (visible et désactivable dans les paramètres Android) ; la version F-Droid n'en a pas.
 
 ## Dépannage
