@@ -262,12 +262,18 @@ adb shell am broadcast -a com.antivocale.app.PROCESS_REQUEST \
 
 ```bash
 adb push test_voice.wav /data/local/tmp/test_voice.wav
-adb shell run-as com.antivocale.app.debug cp /data/local/tmp/test_voice.wav files/test_voice.wav
+adb shell run-as com.antivocale.app.debug cp /data/local/tmp/test_voice.wav files/shared_audio/test_voice.wav
 adb shell am broadcast -a com.antivocale.app.PROCESS_REQUEST \
   -n com.antivocale.app.debug/com.antivocale.app.receiver.TaskerRequestReceiver \
   --es request_type audio \
-  --es file_path /data/user/0/com.antivocale.app.debug/files/test_voice.wav \
+  --es file_path /data/user/0/com.antivocale.app.debug/files/shared_audio/test_voice.wav \
   --es task_id spi-test
 ```
+
+The staged path must live under the app's `files/shared_audio/` (or `cache/`):
+the receiver's TASK-274 path allowlist canonicalizes `file_path` and rejects
+everything else with `Rejected file_path outside the allowlist` in logcat
+(rejected 2026-10-17 on device with a `files/`-root path; the shared_audio
+staging above is the working recipe).
 
 The readable-set analysis is in the security memo linked above.
