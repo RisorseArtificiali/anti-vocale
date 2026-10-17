@@ -499,9 +499,14 @@ class TestSpiOpsTest {
     @Test
     fun `voice_note_state echoes the armed seam when wired`() = runTest {
         val withArmed = TestSpiOps(
-            fake, ExternalModelStore(fake), fakeImporter, detectionArmed = { true })
+            fake, ExternalModelStore(fake), fakeImporter,
+            detectionArmed = { true },
+            detectionGateState = { com.antivocale.app.data.VoiceNoteGateState.Active })
         val json = JSONObject(withArmed.handle(TestSpiOps.OP_VOICE_NOTE_STATE))
         assertTrue("the debug receiver's lambda is the armed source", json.getBoolean("armed"))
+        assertEquals(
+            "the gate-state seam reports the data-object name",
+            "Active", json.getString("gateState"))
     }
 
     @Test

@@ -55,6 +55,11 @@ internal class TestSpiOps(
      *  debug receiver as { coordinator.armed }; null under the shared unit
      *  fakes, where the op answers null for the field. */
     private val detectionArmed: (() -> Boolean)? = null,
+    /** TASK-827 review F3: the coordinator's gate state next to armed, so a
+     *  scripted trial can see the DESIRED-vs-completed divergence the
+     *  coordinator's KDoc names (gateState=Active with armed=false after a
+     *  failed subscribe); same null-under-fakes story. */
+    private val detectionGateState: (() -> com.antivocale.app.data.VoiceNoteGateState)? = null,
 ) {
 
     suspend fun handle(
@@ -729,6 +734,7 @@ internal class TestSpiOps(
             .put("audioPermissionGranted", audioGranted ?: JSONObject.NULL)
             .put("grantHeld", grantHeld ?: JSONObject.NULL)
             .put("armed", armed ?: JSONObject.NULL)
+            .put("gateState", detectionGateState?.invoke()?.javaClass?.simpleName ?: JSONObject.NULL)
             .put("willArm", willArm ?: JSONObject.NULL)
             .toString()
     }

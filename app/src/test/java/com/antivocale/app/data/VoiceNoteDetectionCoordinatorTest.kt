@@ -122,6 +122,35 @@ class VoiceNoteDetectionCoordinatorTest {
     }
 
     @Test
+    fun `gateState is the one derivation the Settings card renders`() = runBlocking {
+        // TASK-827: every reconcile pass publishes the conjunction's
+        // outcome; the card renders this flow and nothing re-derives the
+        // conjunction screen-side. The four states are pinned through the
+        // same transitions the siblings drive.
+        val h = Harness(permissionGranted = { true })
+        assertEquals(VoiceNoteGateState.Inactive, h.coordinator.gateState.value)
+        h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
+        assertEquals(VoiceNoteGateState.Active, h.coordinator.gateState.value)
+        h.coordinator.reconcile(prefEnabled = false, treeUri = TREE_URI)
+        assertEquals(VoiceNoteGateState.Inactive, h.coordinator.gateState.value)
+
+        val deadGrant = Harness(permissionGranted = { true })
+        every { deadGrant.treeGrant.holdsGrant(TREE_URI) } returns false
+        deadGrant.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
+        assertEquals(VoiceNoteGateState.GrantMissing, deadGrant.coordinator.gateState.value)
+        // The null-uri disjunct of the same branch (the Remove path's
+        // production route): never supply a non-null URI alone.
+        deadGrant.coordinator.reconcile(prefEnabled = true, treeUri = null)
+        assertEquals(VoiceNoteGateState.GrantMissing, deadGrant.coordinator.gateState.value)
+
+        val noPermission = Harness(permissionGranted = { false })
+        noPermission.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
+        assertEquals(VoiceNoteGateState.PermissionMissing, noPermission.coordinator.gateState.value)
+
+        h.scope.cancel(); deadGrant.scope.cancel(); noPermission.scope.cancel()
+    }
+
+    @Test
     fun `a burst queues every note for transcription`() = runBlocking {
         val h = Harness(permissionGranted = { true })
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)

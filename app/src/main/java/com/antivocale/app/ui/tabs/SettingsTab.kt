@@ -2043,37 +2043,37 @@ internal fun VoiceNoteSettingsScreen(
             if (com.antivocale.app.data.VoiceNoteDetectionPermission.detectionAvailable()) {
             val voiceNoteDetectionEnabled by viewModel.voiceNoteDetectionEnabled.collectAsState()
             var voiceNoteAudioPermissionGranted by remember { mutableStateOf(false) }
+            // TASK-827: the grant card renders the COORDINATOR's own state
+            // (one derivation of the conjunction, updated by every
+            // reconcile pass); this screen no longer re-derives it. The
+            // coordinator's pokes below refresh the state on resume.
+            val voiceNoteGateState by viewModel.voiceNoteGateState.collectAsState()
+            // The card wants grant-held semantics, but gateState carries the
+            // whole conjunction: Inactive merely means the preference is off
+            // (or a reconcile hop has not landed yet after a toggle), NOT
+            // that the grant died. Remember the last RESOLVED grant verdict
+            // and let only Active/GrantMissing move it: the off->on toggle
+            // then never flashes the error-colored state for a frame (review
+            // F1; the pre-827 remembered probe behaved the same way).
             var voiceNoteGrantHeld by remember { mutableStateOf(false) }
-            // Declared before recomputeGrantHeld: the recompute reads the
-            // STORE (see currentVoiceNoteTreeUri), which suspends.
-            val grantScope = rememberCoroutineScope()
-            fun recomputeGrantHeld() {
-                // The STORED value, never the StateFlow's .value (still the
-                // initialValue before DataStore's first emission; review
-                // R2-3): a stale null would flash the card un-granted and
-                // (pre-fix) hide the Remove action.
-                grantScope.launch(Dispatchers.IO) {
-                    voiceNoteGrantHeld = viewModel.currentVoiceNoteTreeUri()?.let {
-                        com.antivocale.app.util.TreeUris
-                            .holdsPersistableReadGrant(context, android.net.Uri.parse(it))
-                    } ?: false
-                }
+            when (voiceNoteGateState) {
+                com.antivocale.app.data.VoiceNoteGateState.Active -> voiceNoteGrantHeld = true
+                com.antivocale.app.data.VoiceNoteGateState.GrantMissing -> voiceNoteGrantHeld = false
+                else -> {}
             }
+            val grantScope = rememberCoroutineScope()
             RecheckOnResume {
                 val granted =
                     com.antivocale.app.data.VoiceNoteDetectionPermission.granted(context)
                 if (granted != voiceNoteAudioPermissionGranted) {
                     voiceNoteAudioPermissionGranted = granted
-                    // A grant or revoke made OUTSIDE this screen (the system
-                    // dialog answered by a launcher, the app-settings page)
-                    // changes no preference value, so the coordinator must
-                    // be poked to re-evaluate its conjunction.
-                    viewModel.refreshVoiceNoteDetectionGate()
                 }
-                // The tree grant can die with the URI string unchanged
-                // (folder deleted and recreated, OEM cleanup): the probe
-                // re-runs on every resume, not only on URI changes.
-                recomputeGrantHeld()
+                // UNCONDITIONAL poke (TASK-827): a grant or revoke made
+                // outside this screen changes no preference value, and the
+                // tree grant can die with the URI string unchanged (folder
+                // recreated, OEM cleanup); the coordinator's reconcile
+                // re-probes both and its gateState refreshes the card.
+                viewModel.refreshVoiceNoteDetectionGate()
             }
             val audioPermissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission()
@@ -2169,10 +2169,10 @@ internal fun VoiceNoteSettingsScreen(
                     }
                 }
                 // A saved URI whose grant died (folder recreated, OEM
-                // cleanup) must re-offer the card: gating only on the string
-                // would strand the user with no re-pick path. recompute-
-                // GrantHeld runs on resume; a URI change recomputes here.
-                LaunchedEffect(voiceNoteTreeUri) { recomputeGrantHeld() }
+                // cleanup) must re-offer the card: the coordinator's own
+                // collector re-evaluates the gate on every URI emission
+                // (the URI flow is part of its combine), so gateState
+                // recomposes this card with no screen-side effect.
                 var voiceNoteGrantSheetVisible by remember { mutableStateOf(false) }
                 if (voiceNoteDetectionEnabled && voiceNoteAudioPermissionGranted) {
                     // TASK-272: the folder-grant card (mockup at the repo

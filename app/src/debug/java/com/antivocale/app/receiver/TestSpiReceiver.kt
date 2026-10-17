@@ -195,8 +195,11 @@ class TestSpiReceiver : BroadcastReceiver() {
             voiceNoteIdentityCache,
             // TASK-791: the unload op drives the production backend manager.
             backendManager,
-            // TASK-826: op=voice_note_state reads the live armed flag.
-            { voiceNoteDetectionCoordinator.armed })
+            // TASK-826: op=voice_note_state reads the live armed flag;
+            // TASK-827 adds the gate state beside it (the divergence of the
+            // two is a catchable signal, not an invariant).
+            { voiceNoteDetectionCoordinator.armed },
+            { voiceNoteDetectionCoordinator.gateState.value })
         val op = intent.getStringExtra(EXTRA_OP)
         val key = intent.getStringExtra(EXTRA_KEY)
         val value = intent.getStringExtra(EXTRA_VALUE)

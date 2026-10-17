@@ -653,8 +653,8 @@ class SettingsViewModel @Inject constructor(
 
     /**
      * The persisted tree URI read once from the store. Callers that must
-     * see the STORED value (the grant card's live-probe recompute, the
-     * Remove path's slot release) read this, never the StateFlow's
+     * see the STORED value (today: the Remove path's slot release) read
+     * this, never the StateFlow's
      * .value: .value can still be its initialValue before DataStore's
      * first emission lands, and acting on that would strand the old
      * grant slot (review F9, 2026-10-13).
@@ -700,6 +700,14 @@ class SettingsViewModel @Inject constructor(
     fun refreshVoiceNoteDetectionGate() {
         voiceNoteDetectionCoordinator.pokePermissionState()
     }
+
+    /**
+     * TASK-827: the coordinator-owned gate state (one derivation; the
+     * Settings grant card renders this instead of re-deriving the
+     * conjunction).
+     */
+    val voiceNoteGateState: StateFlow<com.antivocale.app.data.VoiceNoteGateState> =
+        voiceNoteDetectionCoordinator.gateState
 
     // ---- TASK-681: LAN offload (OmniVoice) ----
 

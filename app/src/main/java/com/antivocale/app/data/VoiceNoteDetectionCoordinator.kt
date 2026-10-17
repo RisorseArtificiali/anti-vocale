@@ -10,6 +10,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
@@ -20,6 +23,34 @@ import kotlinx.coroutines.withContext
 /** The injectable runtime-permission probe (a seam for unit tests). */
 fun interface VoiceNotePermissionChecker {
     fun audioReadGranted(): Boolean
+}
+
+/**
+ * TASK-827: the arming conjunction's outcome, owned by the coordinator
+ * and updated by every reconcile pass (preference changes, permission
+ * pokes, tree-grant writes). The Settings grant card renders THIS state
+ * instead of re-deriving the conjunction itself: one owner, no drift
+ * between what arms detection and what the card claims.
+ */
+sealed interface VoiceNoteGateState {
+    /** The preference is off; the privacy contract says nothing is read. */
+    data object Inactive : VoiceNoteGateState
+
+    /** The preference is on but the runtime audio permission is missing. */
+    data object PermissionMissing : VoiceNoteGateState
+
+    /** On + permitted, but the tree grant is absent or no longer live. */
+    data object GrantMissing : VoiceNoteGateState
+
+    /**
+     * The full conjunction holds. This is the DESIRED state, published
+     * pre-lock (see [VoiceNoteDetectionCoordinator.gateState]): the
+     * subscribe/dispose transition follows under the lifecycle mutex, and
+     * a thrown subscribe leaves [VoiceNoteDetectionCoordinator.armed]
+     * false while this reads Active - the divergent pair is a signal the
+     * SPI exposes, not an invariant violation.
+     */
+    data object Active : VoiceNoteGateState
 }
 
 /**
@@ -72,6 +103,23 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
 
     /** Whether the detector is subscribed right now (the reconcile outcome). */
     val armed: Boolean get() = active
+
+    /**
+     * TASK-827: the gate's current state for UI rendering; the Settings
+     * card renders this flow and never re-derives the conjunction.
+     * Published BEFORE the lifecycle mutex on purpose: the desired-state
+     * derivation must publish even when the transition short-circuits at
+     * `if (shouldRun == active) return`, which a post-check placement
+     * inside the lock would skip. Thread safety is StateFlow's own; the
+     * mutex still serializes the actual subscribe/dispose transitions
+     * ([armed] is the completed-transition flag, and the SPI deliberately
+     * reads THAT, so a divergent pair is a catchable signal, not a bug).
+     * Reconcile has exactly one production caller (the combine collector);
+     * a second concurrent caller would require moving publication under
+     * the lock.
+     */
+    private val _gateState = MutableStateFlow<VoiceNoteGateState>(VoiceNoteGateState.Inactive)
+    val gateState: StateFlow<VoiceNoteGateState> = _gateState.asStateFlow()
     private var collectJob: Job? = null
     private var rearmJob: Job? = null
 
@@ -143,9 +191,18 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
         // are EACCES and on-demand indexing lands in FILES, denied too);
         // arming without it would enqueue notes that can never resolve. The
         // LIVE grant is what gates (a saved URI whose grant died arms
-        // nothing), the folder-watch precedent.
-        val shouldRun = prefEnabled && permissionChecker.audioReadGranted() &&
-            treeUri != null && voiceNoteTreeGrant.holdsGrant(treeUri)
+        // nothing), the folder-watch precedent. TASK-827: the state is
+        // derived ONCE here and published to [gateState]; shouldRun is a
+        // projection, so the card and the arming can never disagree.
+        val state = when {
+            !prefEnabled -> VoiceNoteGateState.Inactive
+            !permissionChecker.audioReadGranted() -> VoiceNoteGateState.PermissionMissing
+            treeUri == null || !voiceNoteTreeGrant.holdsGrant(treeUri) ->
+                VoiceNoteGateState.GrantMissing
+            else -> VoiceNoteGateState.Active
+        }
+        _gateState.value = state
+        val shouldRun = state == VoiceNoteGateState.Active
         lifecycleMutex.withLock {
             if (shouldRun == active) return
             if (shouldRun) {
