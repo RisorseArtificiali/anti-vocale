@@ -80,6 +80,7 @@ import com.antivocale.app.transcription.audioLimitForVariants
 import com.antivocale.app.transcription.ModelVariant
 import com.antivocale.app.transcription.SherpaModelDownloader
 import androidx.compose.ui.text.style.TextOverflow
+import com.antivocale.app.ui.components.ReadOnlyDropdownField
 import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
 import com.antivocale.app.ui.components.SubPageScrollScaffold
@@ -1905,15 +1906,12 @@ private fun CanaryLanguageDropdown(
         onExpandedChange = { expanded = it },
         modifier = modifier,
     ) {
-        OutlinedTextField(
+        ReadOnlyDropdownField(
             // endonyms everywhere (PR #66 policy): the field shows the native
             // name of the selected code, defaulting to English's.
             value = LanguageNames.nativeLanguageName(selected.ifBlank { "en" }),
-            onValueChange = {},
-            readOnly = true,
             label = { Text(stringResource(R.string.external_decode_language)) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            singleLine = true,
+            expanded = expanded,
             modifier = Modifier.fillMaxWidth().menuAnchor()
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -1954,14 +1952,11 @@ private fun LanguageEndonymDropdown(
         onExpandedChange = { expanded = it },
         modifier = modifier
     ) {
-        OutlinedTextField(
+        ReadOnlyDropdownField(
             value = if (selected.isBlank()) blankText
             else LanguageNames.nativeLanguageName(selected),
-            onValueChange = {},
-            readOnly = true,
             label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            singleLine = true,
+            expanded = expanded,
             modifier = Modifier.fillMaxWidth().menuAnchor()
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -2128,16 +2123,10 @@ private fun ExternalModelsSection(
                     onExpandedChange = { dropdownExpanded = it },
                     modifier = Modifier.padding(bottom = 8.dp)
                 ) {
-                    OutlinedTextField(
+                    ReadOnlyDropdownField(
                         value = familyLabel(selection.family),
-                        onValueChange = {},
-                        readOnly = true,
                         label = { Text(stringResource(R.string.external_family)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
-                        // TASK-755: a wrapped value grew the field vertically
-                        // (the maintainer's report); every read-only dropdown in
-                        // this file carries the same one-line guard.
-                        singleLine = true,
+                        expanded = dropdownExpanded,
                         modifier = Modifier.fillMaxWidth().menuAnchor()
                     )
                     ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
@@ -2204,15 +2193,12 @@ private fun ExternalModelsSection(
                         onExpandedChange = { ctcExpanded = it },
                         modifier = Modifier.padding(bottom = 8.dp)
                     ) {
-                        OutlinedTextField(
+                        ReadOnlyDropdownField(
                             value = stringResource(
                                 CTC_SUBTYPE_LABELS.firstOrNull { it.first == selection.ctcModelType }
                                     ?.second ?: R.string.external_ctc_subtype_nemo),
-                            onValueChange = {},
-                            readOnly = true,
                             label = { Text(stringResource(R.string.external_ctc_subtype)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = ctcExpanded) },
-                            singleLine = true,
+                            expanded = ctcExpanded,
                             modifier = Modifier.fillMaxWidth().menuAnchor()
                         )
                         ExposedDropdownMenu(expanded = ctcExpanded, onDismissRequest = { ctcExpanded = false }) {

@@ -145,18 +145,24 @@ fun AppPreferencePanel(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    // One table, two consumers: the menu rows and the
+                    // field's own value. The field used to show the raw
+                    // persisted id ('bell') while the rows showed the
+                    // localized labels (TASK-756 review F1).
+                    val soundOptions = listOf(
+                        "default" to stringResource(R.string.per_app_settings_sound_default),
+                        "silent" to stringResource(R.string.per_app_settings_sound_silent),
+                        "chime" to stringResource(R.string.per_app_settings_sound_chime),
+                        "bell" to stringResource(R.string.per_app_settings_sound_bell))
                     ExposedDropdownMenuBox(
                         expanded = showSoundDropdown,
                         onExpandedChange = { showSoundDropdown = it }
                     ) {
-                        OutlinedTextField(
-                            value = notificationSound,
-                            onValueChange = {},
-                            readOnly = true,
+                        ReadOnlyDropdownField(
+                            value = soundOptions.firstOrNull { it.first == notificationSound }
+                                ?.second ?: notificationSound,
                             label = { Text(stringResource(R.string.per_app_settings_sound_label)) },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = showSoundDropdown)
-                            },
+                            expanded = showSoundDropdown,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .menuAnchor()
@@ -166,12 +172,7 @@ fun AppPreferencePanel(
                             expanded = showSoundDropdown,
                             onDismissRequest = { showSoundDropdown = false }
                         ) {
-                            listOf(
-                                "default" to stringResource(R.string.per_app_settings_sound_default),
-                                "silent" to stringResource(R.string.per_app_settings_sound_silent),
-                                "chime" to stringResource(R.string.per_app_settings_sound_chime),
-                                "bell" to stringResource(R.string.per_app_settings_sound_bell)
-                            ).forEach { (soundId, soundLabel) ->
+                            soundOptions.forEach { (soundId, soundLabel) ->
                                 DropdownMenuItem(
                                     text = { Text(soundLabel) },
                                     onClick = {

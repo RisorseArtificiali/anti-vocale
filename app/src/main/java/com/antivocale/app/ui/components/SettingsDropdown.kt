@@ -62,6 +62,11 @@ fun <T> SettingsDropdown(
             value = currentValueDisplay,
             onValueChange = {},
             readOnly = true,
+            // TASK-756: the one-line guard on the value row (14 call sites
+            // inherit; a long localized label no longer grows the field).
+            // The outlined read-only counterpart is ReadOnlyDropdownField;
+            // two visual variants on purpose, do not unify them.
+            singleLine = true,
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
