@@ -95,7 +95,15 @@ object VoiceNoteSenderResolution {
         detectedAtMs: Long,
     ): String? {
         val candidates = inWindow(cache, sourcePackage, detectedAtMs)
-        if (candidates.isEmpty()) return null
+        if (candidates.isEmpty()) {
+            // TASK-833 telemetry: the two unlabeled causes are different
+            // user classes (no notification at all vs the deferred-download
+            // window miss where the right notification sits in the cache
+            // outside the 60s window); the weekly log mix sizes them.
+            Log.i(TAG, "identity match: no candidates in window " +
+                "(${sourcePackage.orEmpty()}, detected $detectedAtMs)")
+            return null
+        }
         return selectAndLog(candidates, probeDurationSeconds(audioPreprocessor, localPath))?.sender
     }
 
