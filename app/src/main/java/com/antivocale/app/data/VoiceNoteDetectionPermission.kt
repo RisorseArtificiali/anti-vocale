@@ -16,12 +16,14 @@ import androidx.core.content.ContextCompat
 object VoiceNoteDetectionPermission {
 
     /**
-     * API 29 is deliberately excluded (review F2): scoped storage on Android
-     * 10 lets the listing see WhatsApp's tree but forbids reading another
-     * app's media by absolute file path, so the resolve-through-grant hop
-     * would fail silently. Direct path reads work again from API 30+.
-     * Supporting 29 needs the request to carry a MediaStore content URI
-     * end to end (filed as TASK-777).
+     * API 29 is deliberately excluded (review F2, premise NARROWED
+     * 2026-10-17): the original reason blamed the resolve-through-grant
+     * hop, but that hop is SAF-mediated (DocumentsContract + the persisted
+     * tree grant), not a path read, and works on 29. The LIVE question is
+     * the detection side: whether FileObserver + listing on another app's
+     * Android/media tree works on API 29 under scoped storage without the
+     * legacy-storage flag. That needs an actual Android 10 device probe
+     * (TASK-777 owns it); until then the gate stays conservative.
      */
     fun detectionAvailable(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
 
