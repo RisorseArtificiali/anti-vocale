@@ -26,6 +26,7 @@ import com.antivocale.app.data.VoiceNoteDuplicateGuard
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.receiver.TaskerRequestReceiver
+import com.antivocale.app.service.AudioRequestIntent
 import com.antivocale.app.service.InferenceEnqueue
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.util.LocaleManager
@@ -502,13 +503,10 @@ class LogsViewModel @Inject constructor(
         localizedContext: Context,
         contentHash: String? = null,
     ) {
-        val intent = Intent(appContext, InferenceService::class.java).apply {
-            putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, UUID.randomUUID().toString())
-            putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
-            putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, localPath)
-            putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_BROWSE)
-            contentHash?.let { putExtra(InferenceService.EXTRA_CONTENT_HASH, it) }
-        }
+        val intent = AudioRequestIntent.make(
+            appContext, InferenceService.SOURCE_BROWSE,
+            UUID.randomUUID().toString(), localPath,
+            contentHash = contentHash)
         // F2: the unified enqueue owns the API 31+ restriction handling;
         // a restricted start posts the trampoline notification that
         // preserves the request instead of dropping it.

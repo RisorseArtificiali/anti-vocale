@@ -20,6 +20,7 @@ import com.antivocale.app.MainActivity
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.VoiceNoteDuplicateGuard
 import com.antivocale.app.receiver.ChooserBroadcastReceiver
+import com.antivocale.app.service.AudioRequestIntent
 import com.antivocale.app.service.InferenceEnqueue
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.service.ResultNotificationFactory
@@ -572,7 +573,12 @@ class ShareReceiverActivity : Activity() {
                 sourcePackage,
                 localPath)
         }
-        val serviceIntent = buildServiceIntent(taskId, localPath, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO, trackIndex = -1, backendOverride = backendOverride, senderName = senderName, contentHash = contentHash)
+        val serviceIntent = AudioRequestIntent.make(
+            this, InferenceService.SOURCE_SHARE, taskId, localPath,
+            sourcePackage = sourcePackage,
+            backendOverride = backendOverride,
+            senderName = senderName,
+            contentHash = contentHash)
 
         // F6: unified enqueue (trampoline fallback on the API 31+
         // restriction). The Failed branch is the no-signal case (e.g.
@@ -642,11 +648,8 @@ class ShareReceiverActivity : Activity() {
      * standard success funnel with the cues preserved.
      */
     private fun dispatchSubtitleImport(taskId: String, localPath: String) {
-        val serviceIntent = buildServiceIntent(
-            taskId, localPath,
-            requestType = TaskerRequestReceiver.REQUEST_TYPE_SUBTITLE_IMPORT,
-            trackIndex = -1,
-            backendOverride = null)
+        val serviceIntent = AudioRequestIntent.subtitleImport(
+            this, taskId, localPath, sourcePackage = sourcePackage)
 
         enqueueAndFinish(taskId, serviceIntent, "subtitle import")
     }
@@ -677,33 +680,6 @@ class ShareReceiverActivity : Activity() {
 
         cleanup()
         finish()
-    }
-
-    /**
-     * Builds the [InferenceService] intent with the common extras shared by every path
-     * (ASR, subtitle extraction, and the choice-notification tap actions).
-     */
-    private fun buildServiceIntent(
-        taskId: String,
-        localPath: String,
-        requestType: String,
-        trackIndex: Int,
-        backendOverride: String?,
-        senderName: String? = null,
-        contentHash: String? = null,
-    ): Intent = Intent(this, InferenceService::class.java).apply {
-        putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, requestType)
-        putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, localPath)
-        putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
-        sourcePackage?.let { putExtra(EXTRA_SOURCE_PACKAGE, it) }
-        senderName?.let { putExtra(InferenceService.EXTRA_SENDER_NAME, it) }
-        // Don't pass a prompt - let InferenceService use the default from settings
-        putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_SHARE)
-        backendOverride?.let { putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, it) }
-        contentHash?.let { putExtra(InferenceService.EXTRA_CONTENT_HASH, it) }
-        if (requestType == TaskerRequestReceiver.REQUEST_TYPE_SUBTITLES) {
-            putExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, trackIndex)
-        }
     }
 
     private fun cleanup() {

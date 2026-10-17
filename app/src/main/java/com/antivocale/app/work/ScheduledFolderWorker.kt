@@ -19,9 +19,9 @@ import androidx.work.WorkerParameters
 import com.antivocale.app.data.FileSnapshot
 import com.antivocale.app.data.FolderScanPlanner
 import com.antivocale.app.data.ScheduledFolderStore
+import com.antivocale.app.service.AudioRequestIntent
 import com.antivocale.app.service.InferenceEnqueue
 import com.antivocale.app.service.InferenceService
-import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.util.SharedAudioHandler
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -222,18 +222,16 @@ class ScheduledFolderWorker @AssistedInject constructor(
      * origin apart; no source package (no calling app).
      */
     private fun buildServiceIntent(localPath: String, fileName: String, treeUri: String): Intent =
-        Intent(applicationContext, InferenceService::class.java).apply {
-            putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
-            putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, localPath)
-            putExtra(
-                TaskerRequestReceiver.EXTRA_TASK_ID,
-                // The tree uri rides the id: two folders holding a
-                // same-named file scanned in the same millisecond must not
-                // collide (the service drops duplicate task ids silently).
-                "fwatch_${treeUri.hashCode().toUInt()}_${System.currentTimeMillis()}_${fileName.hashCode().toUInt()}",
-            )
-            putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_FOLDER_WATCH)
-        }
+        // TASK-776: the shared audio-request factory; the taskId stays
+        // local because its derivation is this worker's contract.
+        AudioRequestIntent.make(
+            applicationContext,
+            InferenceService.SOURCE_FOLDER_WATCH,
+            // The tree uri rides the id: two folders holding a
+            // same-named file scanned in the same millisecond must not
+            // collide (the service drops duplicate task ids silently).
+            "fwatch_${treeUri.hashCode().toUInt()}_${System.currentTimeMillis()}_${fileName.hashCode().toUInt()}",
+            localPath)
 
     companion object {
         private const val TAG = "ScheduledFolderWorker"
