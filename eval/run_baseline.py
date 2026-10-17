@@ -128,6 +128,28 @@ BACKENDS = {
         # streaming encoder needs a complete final chunk). TASK-714.
         "tail_pad_seconds": 1.5,
     },
+    # Omnilingual 300M v1 int8: the catalog entry's pinned artifact
+    # (external-catalog/omnilingual-300m.json, TASK-635; hashes verified
+    # against the entry at download time). App config: ModelFamilySupport's
+    # CTC_TYPE_OMNILINGUAL route (dedicated OfflineOmnilingualAsrCtcModelConfig
+    # field, no model_type). TASK-824 A/B baseline; whole-file decode (CTC
+    # has no window constraint; chunk_seconds unset = 0).
+    "omnilingual_v1": {
+        "kind": "omnilingual_ctc",
+        "dir": MODELS_ROOT / "omnilingual-v1-300m-int8",
+        "encoder": "model.int8.onnx",
+        "tokens": "tokens.txt",
+    },
+    # Omnilingual 300M v2 int8: the TASK-824 candidate (235MB compressed
+    # tarball vs v1's 365MB loose onnx; 328MB onnx on disk). Same kind and
+    # file names, weights differ: the A/B is like-for-like.
+    "omnilingual_v2": {
+        "kind": "omnilingual_ctc",
+        "dir": MODELS_ROOT / "omnilingual-v2-300m-int8" /
+            "sherpa-onnx-omnilingual-asr-1600-languages-300M-ctc-v2-int8-2026-02-05",
+        "encoder": "model.int8.onnx",
+        "tokens": "tokens.txt",
+    },
 }
 
 # The decode-shape numbers above (chunk_seconds / tail_pad_seconds /
@@ -268,7 +290,11 @@ def repetition_loops(tokens: list[str], threshold: int = LOOP_THRESHOLD) -> int:
 
 def _missing(cfg: dict) -> list[str]:
     d = Path(cfg["dir"])
-    names = [cfg["tokens"], cfg["encoder"], cfg["decoder"]]
+    # CTC kinds (omnilingual, sense-voice style) are single-file models:
+    # tokens + encoder only, no decoder/joiner.
+    names = [cfg["tokens"], cfg["encoder"]]
+    if cfg["kind"] != "omnilingual_ctc":
+        names.append(cfg["decoder"])
     if "joiner" in cfg:
         names.append(cfg["joiner"])
     return [n for n in names if not (d / n).exists()]
@@ -342,6 +368,18 @@ def build_recognizer(cfg: dict):
             sample_rate=SAMPLE_RATE,
             feature_dim=80,
         ), True  # type: ignore[attr-defined]
+
+    if cfg["kind"] == "omnilingual_ctc":
+        # ModelFamilySupport.kt CTC_TYPE_OMNILINGUAL (TASK-635): the dedicated
+        # config field, no model_type; from_omnilingual_asr_ctc is the same
+        # factory the app's Kotlin preset mirrors.
+        return sherpa_onnx.OfflineRecognizer.from_omnilingual_asr_ctc(
+            model=str(d / cfg["encoder"]),
+            tokens=str(d / cfg["tokens"]),
+            num_threads=NUM_THREADS,
+            provider="cpu",
+            decoding_method="greedy_search",
+        ), False  # type: ignore[attr-defined]
 
     raise ValueError(f"Unknown backend kind: {cfg['kind']}")
 
