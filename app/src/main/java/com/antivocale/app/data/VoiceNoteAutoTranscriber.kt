@@ -39,7 +39,12 @@ class VoiceNoteAutoTranscriber @Inject constructor(
     private val duplicateGuard: VoiceNoteDuplicateGuard,
 ) {
 
-    suspend fun enqueue(whatsappPath: String, detectedAtMs: Long) {
+    /**
+     * TASK-832: the caller (the coordinator) passes its LIVE tree URI:
+     * zero preference-flow collections per note, and the same source the
+     * arming gate drew from (latest-wins; see VoiceNoteTreeGrant.resolve).
+     */
+    suspend fun enqueue(whatsappPath: String, detectedAtMs: Long, treeUri: String?) {
         // TASK-842: the completed-row silent dedup. The taskId derives from
         // the note's unique PTT name (see serviceIntent), so "same taskId"
         // IS "same note"; WhatsApp re-delivering an already-transcribed
@@ -51,7 +56,7 @@ class VoiceNoteAutoTranscriber @Inject constructor(
         }
         // Runs on the coordinator's IO dispatcher; resolve is suspend all
         // the way down (SAF queries + copy), never a blocking bridge.
-        val localPath = treeGrant.resolve(whatsappPath)
+        val localPath = treeGrant.resolve(treeUri, whatsappPath)
         if (localPath == null) {
             Log.i(TAG, "note unresolvable through the grant, skipped: $whatsappPath")
             return

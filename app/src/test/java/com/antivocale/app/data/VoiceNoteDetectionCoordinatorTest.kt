@@ -42,6 +42,7 @@ class VoiceNoteDetectionCoordinatorTest {
         val detections = MutableSharedFlow<VoiceNoteEntry>(extraBufferCapacity = 8)
         val detector = mockk<VoiceNoteDetector>()
         val enqueued = mutableListOf<String>()
+        val enqueuedUris = mutableListOf<String?>()
         val preferences = FakePreferencesManager()
         val treeGrant = mockk<VoiceNoteTreeGrant>()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
@@ -50,7 +51,10 @@ class VoiceNoteDetectionCoordinatorTest {
             preferences,
             treeGrant,
             mockk<VoiceNoteAutoTranscriber> {
-                coEvery { enqueue(any(), any()) } coAnswers { enqueued += firstArg<String>() }
+                coEvery { enqueue(any(), any(), any()) } coAnswers {
+                    enqueued += firstArg<String>()
+                    enqueuedUris += thirdArg<String?>()
+                }
             },
             VoiceNotePermissionChecker { permissionGranted() },
             scope,
@@ -104,6 +108,26 @@ class VoiceNoteDetectionCoordinatorTest {
         verify(exactly = 1) { h.detector.subscribe() }
         h.untilEnqueued(entry())
         assertEquals(listOf("/voice/PTT-1.opus"), h.enqueued)
+        // TASK-832: the LIVE uri travelled coordinator -> enqueue (a
+        // regression to a null pass-through skips every note silently).
+        assertEquals(listOf<String?>(TREE_URI), h.enqueuedUris)
+        h.scope.cancel()
+    }
+
+    @Test
+    fun `a re-picked grant swaps the live uri without re-arming`() = runBlocking {
+        // TASK-832 review F1: the latest-wins field. A live-to-live re-pick
+        // short-circuits reconcile (shouldRun == active, no re-arm), so the
+        // STILL-RUNNING collector must see the NEW uri; capturing at arm
+        // time would strand every later note on the released old grant.
+        val h = Harness(permissionGranted = { true })
+        every { h.treeGrant.holdsGrant(any()) } returns true
+        h.coordinator.reconcile(prefEnabled = true, treeUri = "content://tree/a")
+        h.coordinator.reconcile(prefEnabled = true, treeUri = "content://tree/b")
+        // No second subscribe: the short-circuit path.
+        verify(exactly = 1) { h.detector.subscribe() }
+        h.untilEnqueued(entry())
+        assertEquals(listOf<String?>("content://tree/b"), h.enqueuedUris)
         h.scope.cancel()
     }
 

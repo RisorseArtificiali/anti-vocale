@@ -18,8 +18,8 @@ import kotlinx.coroutines.flow.firstOrNull
  * the FILES collection whose read is still denied (probe 4). The ONE
  * read route is a persisted SAF tree grant on the WhatsApp Voice Notes
  * folder (the same "USE THIS FOLDER" gesture the auto-save output picker
- * uses). This class owns the resolution half end to end: fetch the grant
- * preference, find the note's document, copy it into the shared_audio
+ * uses). This class owns the resolution half: take the caller's live
+ * grant URI, find the note's document, copy it into the shared_audio
  * sandbox, and hand back a plain local path. The acceptance policy
  * (take, validate, release-old, save: [acceptGrant]) lives here too; the
  * picker PRESENTATION lives in the Settings card and the debug SPI grant
@@ -34,16 +34,25 @@ class VoiceNoteTreeGrant @Inject constructor(
     /**
      * Resolves one detected WhatsApp path into a readable sandbox copy,
      * or null when anything along the way fails (no grant, folder moved,
-     * file deleted, unreadable). The receiver's only resolution call:
-     * fetch, parse, resolve, and error mapping all live here, once.
+     * file deleted, unreadable). The caller holds the live tree URI
+     * (TASK-832: the coordinator's own collected value, not a per-note
+     * preference-flow collection; each was cache-served and cheap, but a
+     * burst cost N of them). The wins: zero flow collections per note and
+     * ONE source shared with the arming gate. LATEST-WINS semantics: the
+     * caller's field advances on the next emission even mid-burst, so a
+     * note gated under the previous URI resolves against the NEW tree or
+     * fails, never against the old one (a same-layout re-pick can even
+     * resolve to a DIFFERENT file's content under the new tree; do NOT
+     * "fix" this by capturing the URI at arm time: a live-to-live re-pick
+     * releases the old grant and never re-arms, so arm-time capture would
+     * strand every later note on a released grant).
      */
-    suspend fun resolve(whatsappPath: String): String? = try {
-        val uri = preferencesManager.voiceNoteTreeUri.firstOrNull()
-        if (uri == null) {
-            Log.w(TAG, "resolve called with no tree grant saved")
+    suspend fun resolve(treeUri: String?, whatsappPath: String): String? = try {
+        if (treeUri == null) {
+            Log.w(TAG, "resolve called with no live tree URI supplied")
             null
         } else {
-            resolveToSandbox(Uri.parse(uri), whatsappPath)
+            resolveToSandbox(Uri.parse(treeUri), whatsappPath)
         }
     } catch (e: kotlinx.coroutines.CancellationException) {
         // Disarm cancels the collector mid-copy: cancellation is control

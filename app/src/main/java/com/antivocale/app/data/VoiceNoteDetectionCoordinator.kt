@@ -105,6 +105,23 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
     val armed: Boolean get() = active
 
     /**
+     * TASK-832: the tree URI from the collector's OWN latest combine
+     * emission, read by transcribe so the resolve hop draws from the same
+     * FLOW that armed it (the DataStore flow is consumed once per
+     * emission here; notes read only this field). LATEST-WINS: a mid-burst
+     * emission swaps the URI under the running collector; the resolve
+     * fails safe on a dead grant, and capturing at arm time would be the
+     * bug (the released-grant stranding in VoiceNoteTreeGrant.resolve's
+     * KDoc). Like _gateState, this write assumes reconcile's ONE
+     * production caller (the combine collector); a second concurrent
+     * caller would require moving the write under the lifecycle mutex.
+     * @Volatile: written on the collector's Default thread, read on the
+     * collector's IO worker inside collectSignals' transcribe.
+     */
+    @Volatile
+    private var liveTreeUri: String? = null
+
+    /**
      * TASK-827: the gate's current state for UI rendering; the Settings
      * card renders this flow and never re-derives the conjunction.
      * Published BEFORE the lifecycle mutex on purpose: the desired-state
@@ -194,6 +211,7 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
         // nothing), the folder-watch precedent. TASK-827: the state is
         // derived ONCE here and published to [gateState]; shouldRun is a
         // projection, so the card and the arming can never disagree.
+        liveTreeUri = treeUri
         val state = when {
             !prefEnabled -> VoiceNoteGateState.Inactive
             !permissionChecker.audioReadGranted() -> VoiceNoteGateState.PermissionMissing
@@ -279,7 +297,7 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
      */
     private suspend fun transcribe(entry: VoiceNoteEntry) {
         val path = entry.path ?: return
-        autoTranscriber.enqueue(path, entry.detectedAtMs)
+        autoTranscriber.enqueue(path, entry.detectedAtMs, liveTreeUri)
     }
 
     private companion object {
