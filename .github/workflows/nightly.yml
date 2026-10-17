@@ -2,9 +2,14 @@ name: Nightly
 
 # TASK-465: rolling nightly pre-release built from main, playStore flavor.
 #
-# Dispatch ONLY, by design (maintainer decision 2026-09-08): no push trigger and
-# no schedule. No cron until the manual flow has been proven end-to-end at least
-# once (first run + device install check), per the approved plan.
+# TASK-784 automation (maintainer decision 2026-10-08, superseding the
+# dispatch-only 2026-09-08 stance taken before the manual flow was proven):
+# a daily schedule rebuilds the nightly ONLY when origin/main carries commits
+# newer than the commit recorded in the current nightly release body (the
+# gate job parses that line); an unchanged codebase is skipped, so the
+# channel is what the FAQ promises (rolling main) without empty rebuilds.
+# A MANUAL dispatch bypasses the gate on purpose: a human triggering by hand
+# (rotated secrets, a flaky asset) wants the rebuild regardless.
 #
 # F-DROID SAFETY: the release is published on the rolling tag `nightly`, which is
 # NOT semver ON PURPOSE. The fdroiddata recipe uses UpdateCheckMode: Tags, and
@@ -29,6 +34,11 @@ name: Nightly
 
 on:
   workflow_dispatch:
+  schedule:
+    # Daily at 03:23 UTC (05:23 CEST summer / 04:23 CET after the late-
+    # October switch): the maintainer's morning build.
+    # Off the :00 mark to share nobody's cron burst.
+    - cron: '23 3 * * *'
 
 permissions:
   contents: write
@@ -36,11 +46,74 @@ permissions:
 # Two manual runs must not race on the same rolling tag and release.
 concurrency:
   group: nightly
-  cancel-in-progress: true
+  # TASK-784 review: only a MANUAL dispatch supersedes a running build. A
+  # scheduled run queues instead (cancel-in-progress cancels the RUNNING
+  # run, so an unconditional true would let the 03:23 cron kill a live
+  # manual rebuild mid-publish); after the build finishes, the queued
+  # schedule run gates for ~1 minute and usually skips. A run killed
+  # between the tag re-point and the publish self-heals: the release body
+  # is written last, so the next gate sees main != recorded and rebuilds.
+  cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' }}
 
 jobs:
+  # TASK-784: the new-commits gate. Parses the rolling release body's
+  # `commit: <sha>` line and compares it against origin/main's HEAD; emits
+  # skip=true when they match (nothing new to build). The 404 first-run
+  # case means "no recorded commit yet": build.
+  gate:
+    name: Gate - new commits vs the published nightly?
+    runs-on: ubuntu-24.04
+    # Read-only job: ls-remote needs no token, the one gh call reads a
+    # public release (review F2; the workflow-level contents:write is for
+    # the build job's tag push and publish).
+    permissions:
+      contents: read
+    # Two ~1s network calls; the 360-minute default would pin a runner for
+    # hours on a stalled socket (review F2).
+    timeout-minutes: 5
+    outputs:
+      skip: ${{ steps.compare.outputs.skip }}
+    steps:
+      - name: Compare main HEAD with the nightly release body's commit
+        id: compare
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          HEAD_SHA=$(git ls-remote "https://github.com/${GITHUB_REPOSITORY}.git" refs/heads/main | cut -f1)
+          # The file's own release-fetch idiom (the Delete-previous-assets
+          # step): the JSON branch parses, the 404 branch builds, any other
+          # failure fails loudly. A plain grep-pipe under pipefail would
+          # kill the 404 first-run path at the parse line (review F1).
+          ERR=$(mktemp)
+          RELEASE_JSON=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/nightly" 2>"$ERR") || RELEASE_JSON=""
+          RECORDED=""
+          if [ -n "$RELEASE_JSON" ]; then
+            RECORDED=$(jq -r '.body' <<<"$RELEASE_JSON" \
+              | grep -m1 -oE -- '- commit: [0-9a-f]{40}' | cut -d' ' -f3) || RECORDED=""
+          else
+            grep -q "HTTP 404" "$ERR" || { cat "$ERR" >&2; exit 1; }
+          fi
+          echo "main HEAD:      $HEAD_SHA"
+          echo "nightly commit: ${RECORDED:-<none, first run>}"
+          if [ -n "$RECORDED" ] && [ "$RECORDED" = "$HEAD_SHA" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "No new commits since the published nightly; the build job will skip."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
   nightly:
     name: Build + publish nightly pre-release
+    needs: gate
+    # Schedule: only with new commits AND a healthy gate (a red gate on
+    # schedule means investigate, not rebuild blind). Manual dispatch:
+    # always, even past a red gate - a human dispatching by hand is the
+    # fallback precisely because something is already wrong (review F1:
+    # the bare || would have skipped the build on a failed gate via the
+    # implicit success() status check).
+    if: github.event_name == 'workflow_dispatch' ||
+        (needs.gate.result == 'success' && needs.gate.outputs.skip != 'true')
     runs-on: ubuntu-24.04  # TASK-683.9: pinned before the 2026-10-19 ubuntu-latest -> Ubuntu 26 migration
 
     steps:
@@ -52,6 +125,14 @@ jobs:
           # Full history is not needed, but the tag push below needs the origin
           # remote configured, which checkout provides.
           fetch-depth: 1
+
+      # TASK-784 review: record the CHECKOUT's HEAD, not github.sha. On
+      # schedule events github.sha is the trigger-time HEAD while the
+      # artifacts build from this fresh checkout a moment later; the tag
+      # and the release body (the gate's source of truth) must identify
+      # the tree that was actually built.
+      - name: Record the built commit
+        run: echo "BUILT_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - name: Set up JDK 21
         uses: actions/setup-java@v6
@@ -85,7 +166,7 @@ jobs:
             | awk -F/ '{print $NF}' | sort -V | tail -1)
           [ -n "$BASE" ] || { echo "no stable v* tag found" >&2; exit 1; }
           git fetch --depth=1 --quiet origin "refs/tags/$BASE:refs/tags/$BASE"
-          CHANGED=$(git diff --name-only "$BASE" "$GITHUB_SHA" -- \
+          CHANGED=$(git diff --name-only "$BASE" "$BUILT_SHA" -- \
             .sherpa-version \
             scripts/fetch-sherpa-aar.sh \
             app/src/main/assets/models_catalog.json \
@@ -183,7 +264,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -f nightly "$GITHUB_SHA"
+          git tag -f nightly "$BUILT_SHA"
           git push --force origin refs/tags/nightly
 
       # Replace the assets: drop any same-named assets from the existing
@@ -230,7 +311,6 @@ jobs:
             **Nightly build, generated automatically from main.**
 
             - versionName: ${{ env.VERSION_NAME }} (the About row in the app shows the same)
-            - commit: ${{ github.sha }}
             - built: ${{ steps.date.outputs.date }} (UTC)
             - models: ${{ steps.models.outputs.note }}
 
@@ -256,6 +336,16 @@ jobs:
           COUNT=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/nightly" --jq '[.assets[] | select(.name | startswith("antivocale-nightly-"))] | length')
           test "$COUNT" -eq 3 || { echo "::error::nightly release has $COUNT nightly assets, expected 3 (partial publish)"; exit 1; }
           echo "OK: 3 nightly assets on the rolling pre-release"
+          # TASK-784 review CR3: the commit line is the publish WITNESS,
+          # appended only now. softprops v3 writes the release body BEFORE
+          # uploading assets, so a body carrying the new commit alongside a
+          # partial upload would make every later gate skip forever (body
+          # == main HEAD, assets incomplete). With the line appended here,
+          # an interrupted publish leaves the body WITHOUT a commit line:
+          # the next gate sees "no recorded commit" and rebuilds.
+          BODY=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/nightly" --jq '.body')
+          printf '%s\n- commit: %s\n' "$BODY" "$BUILT_SHA" | gh release edit nightly --notes-file -
+          echo "commit witness appended: $BUILT_SHA"
 
       # Retention: after a successful publish, remove any OTHER nightly-*
       # pre-release (a dated-tag scheme from an earlier era, or an accidental

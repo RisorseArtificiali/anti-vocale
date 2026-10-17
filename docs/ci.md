@@ -6,7 +6,7 @@ Workflows live in `.github/workflows/`. Everything here is dispatch- or event-dr
 |----------|------|---------|--------------|
 | Android CI/CD | `android-release.yml` | push/PR to main, release published/prereleased, manual dispatch | Unit tests + lint, fdroid release APK, per-ABI tester APKs, Play AAB upload, reproducible F-Droid reference APKs, release sanity gates (see `docs/release-runbook.md`) |
 | Store listing | `store-listing.yml` | manual dispatch | Uploads Play Store listing text + screenshots via `scripts/upload-store-listing.py` |
-| Nightly | `nightly.yml` | manual dispatch ONLY | Builds playStore NIGHTLY APKs (the `.nightly` application id, labeled Anti-Vocale Nightly) from main and publishes them as a rolling `nightly` pre-release (TASK-465; the id change is GH #159) |
+| Nightly | `nightly.yml` | daily schedule (03:23 UTC) + manual dispatch | Builds playStore NIGHTLY APKs (the `.nightly` application id, labeled Anti-Vocale Nightly) from main and publishes them as a rolling `nightly` pre-release (TASK-465; the id change is GH #159) |
 
 ## Nightly builds (TASK-465)
 
@@ -18,7 +18,7 @@ Actions tab -> **Nightly** -> **Run workflow** (branch: `main`), or:
 gh workflow run nightly.yml --ref main
 ```
 
-Dispatch-only by design: no push trigger and no schedule. A cron can be added later only after the manual flow has been proven (first run + device install check, per the 2026-09-08 maintainer plan). A concurrency group (`nightly`, cancel-in-progress) prevents two manual runs from racing on the same rolling tag.
+Automated since TASK-784 (maintainer decision 2026-10-08, superseding the earlier dispatch-only stance): a daily schedule at 03:23 UTC rebuilds ONLY when origin/main carries commits newer than the commit recorded in the current nightly release body (a gate job parses that line and skips an unchanged codebase); the recorded commit is appended to the body as the LAST step, after the 3-asset sanity passes, so an interrupted publish never leaves a body that would gate-skip forever. Manual dispatch bypasses the gate and builds unconditionally (the human fallback). The concurrency group (`nightly`) lets a MANUAL dispatch supersede a running build; a scheduled run queues behind it instead (cancel-in-progress is dispatch-only).
 
 ### What it produces
 
