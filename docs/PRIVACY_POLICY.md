@@ -1,6 +1,6 @@
 # Privacy Policy - Anti-Vocale
 
-**Last Updated:** March 7, 2026
+**Last Updated:** October 17, 2026
 
 ## Introduction
 
@@ -63,6 +63,11 @@ The App requests the following permissions:
 - Excluded from that backup, always: your settings and any credentials you configured (for example a remote-offload API key, HuggingFace login tokens), your speaker voiceprints and enrollment audio, and downloaded models (they re-download); the exclusions also keep the backup under Android's size quota, so the history itself actually rides
 - A direct device-to-device transfer (cable migration) keeps everything
 
+### The Backup Archive (Backup and transfer)
+- The in-app backup (Settings, "Backup and transfer") writes a zip archive to a folder you choose. The archive contains your settings and your full transcription history, including the transcripts, the sender names of transcribed voice notes, and speaker-labeled text, all readable in plaintext inside the archive
+- Anyone who has the archive file can read everything in it. The export shows this disclosure and asks you to confirm before writing, and the file is written only to the destination you picked; the app never sends the archive anywhere else
+- Importing an archive merges its rows into your local history on this device; it does not transmit anything
+
 ## Data Sharing
 
 **Anti-Vocale does NOT share data with any third parties.**
@@ -87,4 +92,4 @@ For questions about this Privacy Policy, please contact: [INSERT EMAIL]
 
 ---
 
-**Effective Date:** March 7, 2026
+**Effective Date:** October 17, 2026

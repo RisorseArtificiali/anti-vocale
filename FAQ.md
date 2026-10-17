@@ -123,6 +123,22 @@ Swipe an entry to delete it. A standard long-press context menu is being added a
 
 Anti-Vocale only knows the app a voice message came from (WhatsApp, Telegram, Signal): the Android share system carries no contact or sender information. If your workflow needs that level of detail, a notification logger shows you what your messaging apps actually put in their notifications, including sender and conversation names: [NotificationLog](https://f-droid.org/en/packages/de.jl.notificationlog/) is a privacy-first, open-source option that stores your full notification history locally.
 
+### Can I play the original audio of a transcription?
+
+Yes: expand the history entry and the playback controls sit under the transcript. Play and pause, change the speed, scrub with the position bar, and for recordings with long pauses toggle skip-silences to jump the gaps ([#157](https://github.com/RisorseArtificiali/anti-vocale/issues/157)).
+
+### What happens if I share the same audio twice?
+
+Nothing runs twice without asking: if the file's content was already transcribed successfully with the same model, a dialog offers to open the existing result or transcribe it again. Re-running is always one tap away, and anything that changed (a different model, a failed past run) just transcribes.
+
+### Why does a hint appear under some transcripts about language?
+
+Some models detect the language from the audio on every run. When a transcript's language clearly differs from your phone's language, the hint tells you how to lock the language in Settings for the models that honor the setting, like Whisper. The hint never changes anything by itself ([#146](https://github.com/RisorseArtificiali/anti-vocale/issues/146)).
+
+### How do I move my history and settings to a new phone?
+
+Settings, "Backup and transfer": export a zip archive of your settings and full transcription history to a folder you choose, move that file to the other phone, and import it there; rows merge, and importing the same archive twice changes nothing. The archive holds every transcript, sender name, and speaker label in plaintext: anyone with the file can read them, which the export confirms before writing. This is a manual archive, not a sync ([#158](https://github.com/RisorseArtificiali/anti-vocale/issues/158)).
+
 ## Troubleshooting
 
 ### I shared audio from another app and nothing happened

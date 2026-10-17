@@ -68,6 +68,10 @@ Everything the app can transcribe with, on one page: bundled models with sizes, 
 ### Results & history
 
 - **Smart notifications** - Read long transcripts page-by-page without leaving the shade, copy the full result, or send it back to the source app with one tap
+- **In-row playback** - Play a result's original audio right from its history row: speed control, a position bar, and an optional skip-silences mode for gapped recordings ([#157](https://github.com/RisorseArtificiali/anti-vocale/issues/157))
+- **Duplicate guard** - Share a file that is already transcribed with the same model and the app offers to open the existing result instead of running it again ([#157](https://github.com/RisorseArtificiali/anti-vocale/issues/157))
+- **Language hint** - When a transcript's language clearly differs from your phone's, a one-line hint names how to lock the language for models that honor the setting ([#146](https://github.com/RisorseArtificiali/anti-vocale/issues/146))
+- **Backup & transfer** - Export your settings and full history to a zip archive you choose, and merge it back on any device; the archive is plaintext, so treat the file like the data it holds ([#158](https://github.com/RisorseArtificiali/anti-vocale/issues/158))
 - **Re-transcribe** - Retry any transcription with a different model straight from the history
 - **History actions** - Swipe or long-press any entry for copy, re-transcribe, and delete
 - **Per-entry metadata** - Each entry shows which model produced it and how long it took
