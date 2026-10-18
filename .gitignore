@@ -160,3 +160,7 @@ claudedocs/
 .superpowers/
 .kotlin/
 whistle.cact
+app/libs/whistle/
+app/src/main/cpp/include/needle.h
+android-arm64/
+android-armv7/
