@@ -128,6 +128,20 @@ BACKENDS = {
         # streaming encoder needs a complete final chunk). TASK-714.
         "tail_pad_seconds": 1.5,
     },
+    # Parakeet Ultra (leogaudin int8, 2026-10-13): the THIRD independent
+    # conversion; the TASK-823 retest (two prior converters disagreed with
+    # the pinned v3: Alexqwqw NO-GO; the converter confound stood).
+    "parakeet_ultra_leogaudin": {
+        "kind": "transducer",
+        "dir": MODELS_ROOT / "parakeet-ultra-leogaudin-int8",
+        "encoder": "encoder.int8.onnx",
+        "decoder": "decoder.int8.onnx",
+        "joiner": "joiner.int8.onnx",
+        "tokens": "tokens.txt",
+        "model_type": "nemo_transducer",
+        "tail_pad_seconds": 1.0,
+        "chunk_seconds": 60,
+    },
     # Omnilingual 300M v1 int8: the catalog entry's pinned artifact
     # (external-catalog/omnilingual-300m.json, TASK-635; hashes verified
     # against the entry at download time). App config: ModelFamilySupport's
