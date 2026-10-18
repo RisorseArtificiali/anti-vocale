@@ -193,6 +193,7 @@
     <string name="gigaam_name">GigaAM v3</string>
     <string name="whistle_name">Whistle (17 MB)</string>
     <string name="whistle_description">~17MB • بسیار سریع • 7 زبان، تشخیص خودکار</string>
+    <string name="benchmark_unsupported_engine">محک برای این موتور پشتیبانی نمی‌شود</string>
     <string name="model_info_best_for_whistle">سریع‌ترین شروع روی دستگاه: 17 مگابایت، 7 زبان، متن اول فوری</string>
     <string name="model_info_notes_whistle">دقت کمتر از Parakeet در ایتالیایی؛ موسیقی می‌تواند به متن تبدیل شود (بدون فیلتر موسیقی)</string>
     <string name="gigaam_download_confirm_title">GigaAM v3 دانلود شود؟</string>

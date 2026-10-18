@@ -59,12 +59,9 @@ class WhistleBackendTest {
         // the registry builds its descriptor.
         assertTrue(BuiltInBackendIds.WHISTLE in BuiltInBackendIds.ALL)
         assertTrue(BuiltInBackendIds.isSelectableBackendId(BuiltInBackendIds.WHISTLE))
-        val store = com.antivocale.app.data.ExternalModelStore(
-            com.antivocale.app.data.FakePreferencesManager(),
-            dirExists = { true })
-        val registry = BackendRegistry(store, object : com.antivocale.app.data.ExternalModelRecordsProvider {
-            override val records = kotlinx.coroutines.flow.MutableStateFlow(emptyList<com.antivocale.app.data.ExternalModelRecord>())
-        })
-        org.junit.Assert.assertNotNull(registry.byBackendId(BuiltInBackendIds.WHISTLE))
+        // staticRegistry() seeds the bundled catalog (a hand-built registry
+        // would throw on first descriptor access in an isolated JVM run -
+        // the review's isolation catch).
+        org.junit.Assert.assertNotNull(staticRegistry().byBackendId(BuiltInBackendIds.WHISTLE))
     }
 }

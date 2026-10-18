@@ -200,6 +200,7 @@
     <string name="gigaam_name">GigaAM v3</string>
     <string name="whistle_name">Whistle (17 MB)</string>
     <string name="whistle_description">~17 МБ • Дуже швидко • 7 мов, автовизначення</string>
+    <string name="benchmark_unsupported_engine">Бенчмарк не підтримується для цього рушія</string>
     <string name="model_info_best_for_whistle">Найшвидший старт на пристрої: 17 МБ, 7 мов, миттєвий перший текст</string>
     <string name="model_info_notes_whistle">Точність нижча за Parakeet на італійській; музика може розпізнатися як текст (без музичного фільтра)</string>
     <string name="gigaam_download_confirm_title">Завантажити GigaAM v3?</string>

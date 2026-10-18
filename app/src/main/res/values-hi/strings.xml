@@ -174,6 +174,7 @@
     <string name="gigaam_name">GigaAM v3</string>
     <string name="whistle_name">Whistle (17 MB)</string>
     <string name="whistle_description">~17MB • बहुत तेज़ • 7 भाषाएँ, अपने आप पहचानी जाती हैं</string>
+    <string name="benchmark_unsupported_engine">इस इंजन के लिए बेंचमार्क समर्थित नहीं है</string>
     <string name="model_info_best_for_whistle">डिवाइस पर सबसे तेज़ शुरुआत: 17MB, 7 भाषाएँ, तुरंत पहला टेक्स्ट</string>
     <string name="model_info_notes_whistle">इटालियन में Parakeet से कम सटीक; संगीत टेक्स्ट बन सकता है (कोई संगीत फ़िल्टर नहीं)</string>
     <string name="gigaam_download_confirm_title">GigaAM v3 डाउनलोड करें?</string>

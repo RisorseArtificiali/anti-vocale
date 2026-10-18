@@ -194,6 +194,7 @@
     <string name="gigaam_name">GigaAM v3</string>
     <string name="whistle_name">Whistle (17 MB)</string>
     <string name="whistle_description">~17 מ״ב • מהיר מאוד • 7 שפות, זיהוי אוטומטי</string>
+    <string name="benchmark_unsupported_engine">מדד ביצועים אינו נתמך עבור מנוע זה</string>
     <string name="model_info_best_for_whistle">ההתחלה המהירה ביותר במכשיר: 17 מ״ב, 7 שפות, טקסט ראשון מיידי</string>
     <string name="model_info_notes_whistle">דיוק נמוך מ-Parakeet באיטלקית; מוזיקה עשויה להיתמלל כטקסט (אין מסנן מוזיקה)</string>
     <string name="gigaam_download_confirm_title">להוריד את GigaAM v3?</string>

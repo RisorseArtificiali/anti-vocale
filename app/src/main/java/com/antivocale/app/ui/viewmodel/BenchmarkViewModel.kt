@@ -2,6 +2,7 @@ package com.antivocale.app.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.benchmark.BenchmarkManager
 import com.antivocale.app.benchmark.BenchmarkState
 import com.antivocale.app.data.PreferencesManager
@@ -63,6 +64,14 @@ class BenchmarkViewModel @Inject constructor(
 
         val backend = backendManager.getBackend(backendId) ?: run {
             _benchmarkState.value = BenchmarkState.Error("Unknown backend: $backendId")
+            return
+        }
+        // TASK-853: the harness builds a SHERPA config; whistle (its own
+        // engine) is rejected HERE, at the root, so any future entry
+        // point cannot re-open the unload-then-fail trap.
+        if (backendId == BuiltInBackendIds.WHISTLE) {
+            _benchmarkState.value = BenchmarkState.Error(
+                appContext.getString(com.antivocale.app.R.string.benchmark_unsupported_engine))
             return
         }
 

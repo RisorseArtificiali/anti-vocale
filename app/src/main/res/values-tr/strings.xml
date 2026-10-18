@@ -196,6 +196,7 @@
     <string name="gigaam_name">GigaAM v3</string>
     <string name="whistle_name">Whistle (17 MB)</string>
     <string name="whistle_description">~17MB • Çok hızlı • 7 dil, otomatik algılanır</string>
+    <string name="benchmark_unsupported_engine">Bu motor icin benchmark desteklenmiyor</string>
     <string name="model_info_best_for_whistle">Cihazda en hızlı başlangıç: 17 MB, 7 dil, anında ilk metin</string>
     <string name="model_info_notes_whistle">Italyancada Parakeet\'ten dusuk dogruluk; müzik metin olarak çıkabilir (müzik filtresi yok)</string>
     <string name="gigaam_download_confirm_title">GigaAM v3 indirilsin mi?</string>

@@ -221,6 +221,9 @@ class BackendRegistry @Inject constructor(
             BuiltInBackendIds.QWEN3_ASR to R.color.share_shortcut_qwen3,
             BuiltInBackendIds.NEMOTRON to R.color.share_shortcut_nemotron,
             BuiltInBackendIds.GIGAAM to R.color.share_shortcut_gigaam,
+            // TASK-853: no dedicated shortcut color (no share alias); the
+            // LLM accent reads as the neutral "engine" tone.
+            BuiltInBackendIds.WHISTLE to R.color.share_shortcut_llm,
         )
     }
 
@@ -290,8 +293,9 @@ class BackendRegistry @Inject constructor(
      * download (one .cact file) and the display strings; the descriptor
      * is hand-written because the generic catalog descriptor assumes a
      * sherpa multi-file directory. The saved path is the keyed sherpa
-     * preference family (a plain file path; the load arm reads it the
-     * same way). RTF from the device probe: decode is ~50x real time
+     * preference family holding the variant DIR (every backend's
+     * convention; the .cact file is derived at config time). RTF from
+     * the device probe: decode is ~50x real time
      * (0.18s for 10s audio), so 50f overestimates the wait safely.
      */
     private fun whistleDescriptor(): BackendDescriptor = BackendDescriptor(
@@ -302,7 +306,8 @@ class BackendRegistry @Inject constructor(
         modelPathFlow = { it.sherpaModelPath(BuiltInBackendIds.WHISTLE) },
         saveModelPath = { prefs, path -> prefs.saveSherpaModelPath(BuiltInBackendIds.WHISTLE, path) },
         clearModelPath = { it.clearSherpaModelPath(BuiltInBackendIds.WHISTLE) },
-        accentColorRes = R.color.share_shortcut_llm,
+        accentColorRes = accentColorByBackendId[BuiltInBackendIds.WHISTLE]
+            ?: R.color.share_shortcut_llm,
     )
 
     private fun llmDescriptor(): BackendDescriptor = BackendDescriptor(

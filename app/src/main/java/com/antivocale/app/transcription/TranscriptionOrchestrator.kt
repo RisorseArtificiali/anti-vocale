@@ -1629,9 +1629,11 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     /**
-     * TASK-853: the whistle loader. The saved path is the downloaded
-     * .cact FILE (a file-existence check, not a directory); auto-resolution
-     * is the catalog downloader's model dir + whistle.cact. The language is
+     * TASK-853: the whistle loader. The saved path is the variant DIR
+     * (every backend's convention: the Active pill, the delete dialog,
+     * and variantChanged's predicates assume it); the .cact filename is
+     * derived at config time from the variant's own catalog data. The
+     * language is
      * the passLanguage resolution (a pinned code passes through, auto maps
      * to detect); the backend itself retires codes outside the engine's
      * seven to detect, and the residency identity keeps the RAW value so
@@ -1647,20 +1649,31 @@ class TranscriptionOrchestrator @Inject constructor(
         // encodes the one-file assumption loudly.
         val entry = BundledCatalog.byId(BuiltInBackendIds.WHISTLE)
             ?: return Result.failure(TranscriptionException.NotInitialized())
-        val cactName = entry.defaultVariant.files.singleOrNull()?.name
+        // The FILENAME follows the variant the SAVED PATH names (the
+        // resolution convention the language picker uses): a future
+        // non-default variant with its own filename must not silently fall
+        // back to the default's.
+        val savedDirProbe = backendRegistry.byBackendId(BuiltInBackendIds.WHISTLE)
+            ?.modelPathFlow?.invoke(preferencesManager)?.first()
+        val cactName = (entry.variantForSavedPath(savedDirProbe) ?: entry.defaultVariant)
+            .files.singleOrNull()?.name
             ?: return Result.failure(TranscriptionException.NotInitialized())
         // The saved-path convention is the variant DIR (every other
         // backend's convention: the Active pill, the delete dialog, and
         // variantChanged's endsWith predicates all assume it); the .cact
         // file is derived at config time.
-        val savedDir = preferencesManager.sherpaModelPath(BuiltInBackendIds.WHISTLE).first()
+        val savedDir = backendRegistry.byBackendId(BuiltInBackendIds.WHISTLE)
+            ?.modelPathFlow?.invoke(preferencesManager)?.first()
         val resolvedDir = when {
             !savedDir.isNullOrBlank() && File(File(savedDir), cactName).isFile -> savedDir
             else -> SherpaModelDownloader.of(BuiltInBackendIds.WHISTLE).getModelPath(context)
         } ?: return Result.failure(TranscriptionException.NotInitialized())
         val cactPath = File(File(resolvedDir), cactName).absolutePath
         if (resolvedDir != savedDir) {
-            preferencesManager.saveSherpaModelPath(BuiltInBackendIds.WHISTLE, resolvedDir)
+            // The DESCRIPTOR owns the write (the loadCatalogBackend
+            // convention): one home per backend for path storage.
+            backendRegistry.byBackendId(BuiltInBackendIds.WHISTLE)
+                ?.saveModelPath?.invoke(preferencesManager, resolvedDir)
         }
         val languagePref = languageOverride ?: preferencesManager.transcriptionLanguage.first()
         val language = TranscriptionLanguagePolicy.resolveForEntry(

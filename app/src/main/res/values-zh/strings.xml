@@ -165,6 +165,7 @@
     <string name="gigaam_name">GigaAM v3</string>
     <string name="whistle_name">Whistle (17 MB)</string>
     <string name="whistle_description">~17MB • 非常快 • 7 种语言，自动检测</string>
+    <string name="benchmark_unsupported_engine">此引擎不支持性能测试</string>
     <string name="model_info_best_for_whistle">设备上最快的启动：17MB，7 种语言，即时出字</string>
     <string name="model_info_notes_whistle">意大利语准确率低于 Parakeet；音乐可能被转成文字（无音乐过滤器）</string>
     <string name="gigaam_download_confirm_title">下载 GigaAM v3？</string>

@@ -193,6 +193,7 @@
     <string name="gigaam_name">GigaAM v3</string>
     <string name="whistle_name">Whistle (17 MB)</string>
     <string name="whistle_description">~17MB • Velocissimo • 7 lingue, rilevate automaticamente</string>
+    <string name="benchmark_unsupported_engine">Il benchmark non e supportato per questo motore</string>
     <string name="model_info_best_for_whistle">Avvio più rapido on-device: 17 MB, 7 lingue, primo testo immediato</string>
     <string name="model_info_notes_whistle">Accuratezza inferiore a Parakeet sull\'italiano; la musica può essere trascritta come testo (nessun filtro musicale)</string>
     <string name="gigaam_download_confirm_title">Scaricare GigaAM v3?</string>
