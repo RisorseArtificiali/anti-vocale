@@ -40,10 +40,11 @@ android {
     // TASK-853: the JNI bridge over the Cactus Needle speech engine
     // (libneedle.a, fetched by scripts/fetch-whistle-engine.sh into
     // app/libs/whistle/<abi>/). Upstream ships no android-x86_64 build, so
-    // the x86_64 APK links no whistle_jni and the backend gates itself by
-    // ABI at runtime (WhistleNative.available). Missing arm libs (fresh
-    // clone without the fetch script) fail the build loudly here rather
-    // than at first use - run the script after cloning.
+    // the x86_64 APK carries a STUB whistle_jni whose every call fails;
+    // WhistleNative.available only means the bridge linked, and callers
+    // gate on load()/isSpeechLoaded() (false on the stub). Missing arm
+    // libs (fresh clone without the fetch script) fail the build loudly
+    // here rather than at first use - run the script after cloning.
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
