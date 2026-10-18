@@ -863,6 +863,52 @@
           ]
         }
       ]
+    },
+    {
+      "id": "whistle",
+      "runtime": "offline",
+      "modelType": "",
+      "family": "",
+      "display": {
+        "resourceKey": "whistle_name"
+      },
+      "description": {
+        "resourceKey": "whistle_description"
+      },
+      "storageDir": "whistle",
+      "flags": {
+        "passLanguage": true,
+        "skipMetadataCheck": true
+      },
+      "languages": [
+        "en",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "nl",
+        "pl"
+      ],
+      "variants": [
+        {
+          "name": "v1",
+          "title": {
+            "resourceKey": "whistle_name"
+          },
+          "dirName": "whistle-v1",
+          "estimatedSizeMB": 17,
+          "source": {
+            "kind": "huggingface",
+            "repo": "Cactus-Compute/whistle"
+          },
+          "files": [
+            {
+              "name": "whistle.cact",
+              "sha256": "b6e02f048568ac5d01a2042556c658061e699acbc0aa2a1439f52f3d461dffeb"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -51,20 +51,22 @@ import java.io.File
 class BackendRegistryTest {
 
     // Static-backend fixture: an empty external-model provider derives no dynamic
-    // descriptors, so the static tests below pin exactly the static six.
+    // descriptors, so the static tests below pin exactly the static set.
     private val store = com.antivocale.app.data.ExternalModelStore(
         FakePreferencesManager(),
         dirExists = { true },
     )
     private val registry = BackendRegistry(store, emptyRecordsProvider())
 
-    /** The seven enabled backends, in canonical order (default backend first). */
+    /** The eight enabled backends, in canonical order (default backend first).
+     *  TASK-853: whistle joins the static set (own engine; no share alias). */
     private val expectedIds = listOf(
         BuiltInBackendIds.PARAKEET,
         BuiltInBackendIds.WHISPER,
         BuiltInBackendIds.QWEN3_ASR,
         BuiltInBackendIds.NEMOTRON,
         BuiltInBackendIds.GIGAAM,
+        BuiltInBackendIds.WHISTLE,
         LlmTranscriptionBackend.BACKEND_ID,
         RemoteOmnivoiceBackend.BACKEND_ID,
     )
@@ -90,7 +92,7 @@ class BackendRegistryTest {
     fun seedCatalog() = seedCatalogForTest()
 
     @Test
-    fun `static seven backend ids, dynamic externals counted separately`() {
+    fun `static eight backend ids, dynamic externals counted separately`() {
         val ids = registry.backends.map { it.backendId }
         assertEquals(expectedIds.size, ids.size)
         assertEquals(expectedIds, ids)
@@ -119,19 +121,26 @@ class BackendRegistryTest {
     @Test
     fun `share aliases are the manifest activity-alias values and are unique`() {
         // The OmniVoice backend carries the blank sentinel (TASK-681: no
-        // share target, the blank alias is a valid value for it), so it joins
-        // the set without a manifest literal.
-        val aliases = registry.backends.map { it.shareAlias }
+        // share target, the blank alias is a valid value for it), and
+        // whistle carries one too (TASK-853: its download is a catalog
+        // entry, no share target yet), so uniqueness is asserted over the
+        // NON-BLANK aliases only.
+        val aliases = registry.backends.map { it.shareAlias }.filter { it.isNotBlank() }
         assertEquals(aliases.size, aliases.toSet().size)
         // TASK-464: the expected set is DERIVED FROM THE MANIFEST on disk
         // (LauncherIconManifestTest's pattern), not a second hand-drawn
         // literal list: a manifest alias rename must fail HERE, not at
         // runtime alias resolution.
         val manifestAliases = readManifestShareAliases()
-        val expected = manifestAliases + ""
         assertEquals(
             "registry share aliases must equal the manifest activity-alias set",
-            expected, aliases.toSet())
+            manifestAliases, aliases.toSet())
+        // Blank means "no share target": exactly OmniVoice (TASK-681) and
+        // whistle (TASK-853, catalog-download entry, no alias yet). A third
+        // blank must fail here, not pass silently.
+        assertEquals(
+            setOf(RemoteOmnivoiceBackend.BACKEND_ID, BuiltInBackendIds.WHISTLE),
+            registry.backends.filter { it.shareAlias.isBlank() }.map { it.backendId }.toSet())
     }
 
     /** The manifest's activity-alias android:name values, read from disk. */
@@ -285,9 +294,13 @@ class BackendRegistryTest {
         // TASK-432: cold-start dialog estimate fallback (calibrator samples win after 2 runs)
         assertEquals(15f, registry.byBackendId(BuiltInBackendIds.PARAKEET)!!.rtfEstimate)
         for (descriptor in registry.backends) {
+            // TASK-853: whistle's 50f is probe-measured (RTF ~0.02 on the
+            // RMX3853: decode is ~50x real time), not a guess; the band
+            // covers the sherpa engines whose cold starts it estimates.
             assertTrue(
                 "rtfEstimate of ${descriptor.backendId} must stay within the conservative band",
-                descriptor.rtfEstimate in 1f..15f)
+                descriptor.rtfEstimate in 1f..15f ||
+                    descriptor.backendId == BuiltInBackendIds.WHISTLE && descriptor.rtfEstimate == 50f)
         }
         assertEquals(4f, registry.byBackendId(BuiltInBackendIds.WHISPER)!!.rtfEstimate)
         assertEquals(1f, registry.byBackendId(LlmTranscriptionBackend.BACKEND_ID)!!.rtfEstimate)
@@ -341,7 +354,7 @@ class BackendRegistryTest {
     }
 
     @Test
-    fun `static six plus N external backends coexist and stay unique`() = runTest {
+    fun `static eight plus N external backends coexist and stay unique`() = runTest {
         val fake = FakePreferencesManager()
         val store = com.antivocale.app.data.ExternalModelStore(fake, dirExists = { true })
         store.add(externalRecord("111111111111")); store.add(externalRecord("222222222222"))
@@ -370,7 +383,7 @@ class BackendRegistryTest {
         // family carries punctuatesOutput=false today. The field stays for
         // any future model that genuinely needs it.
         val ids = registry.backends.map { it.backendId }
-        assertTrue("expected the static seven plus external records", ids.size >= 7)
+        assertTrue("expected the static eight plus external records", ids.size >= 8)
         for (descriptor in registry.backends) {
             assertTrue("${descriptor.backendId} must be flagged punctuating",
                 descriptor.punctuatesOutput)

@@ -198,6 +198,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~326МБ • Швидка • Розпізнавання російської мови з пунктуацією</string>
     <string name="gigaam_name">GigaAM v3</string>
+    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_description">~17 МБ • Дуже швидко • 7 мов, автовизначення</string>
+    <string name="model_info_best_for_whistle">Найшвидший старт на пристрої: 17 МБ, 7 мов, миттєвий перший текст</string>
+    <string name="model_info_notes_whistle">Точність нижча за Parakeet на італійській; музика може розпізнатися як текст (без музичного фільтра)</string>
     <string name="gigaam_download_confirm_title">Завантажити GigaAM v3?</string>
     <string name="gigaam_download_confirm_message">Буде завантажено ~%1$dМБ. GigaAM v3 - це російськомовна модель ASR від Sber з високою точністю російської.</string>
     <string name="gigaam_download">Завантажити GigaAM</string>

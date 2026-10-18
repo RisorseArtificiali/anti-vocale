@@ -42,6 +42,8 @@ object CatalogStringKeys {
         "nemotron_description" to R.string.nemotron_description,
 
         "gigaam_name" to R.string.gigaam_name,
+        "whistle_name" to R.string.whistle_name,
+        "whistle_description" to R.string.whistle_description,
         "gigaam_description" to R.string.gigaam_description,
 
         "model_info_best_for_parakeet" to R.string.model_info_best_for_parakeet,

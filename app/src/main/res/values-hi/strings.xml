@@ -172,6 +172,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~326MB • तेज़ • विराम चिह्नों सहित रूसी ASR</string>
     <string name="gigaam_name">GigaAM v3</string>
+    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_description">~17MB • बहुत तेज़ • 7 भाषाएँ, अपने आप पहचानी जाती हैं</string>
+    <string name="model_info_best_for_whistle">डिवाइस पर सबसे तेज़ शुरुआत: 17MB, 7 भाषाएँ, तुरंत पहला टेक्स्ट</string>
+    <string name="model_info_notes_whistle">इटालियन में Parakeet से कम सटीक; संगीत टेक्स्ट बन सकता है (कोई संगीत फ़िल्टर नहीं)</string>
     <string name="gigaam_download_confirm_title">GigaAM v3 डाउनलोड करें?</string>
     <string name="gigaam_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा। GigaAM v3, Sber का सिर्फ़ रूसी भाषा वाला ASR मॉडल है जिसकी रूसी सटीकता मज़बूत है।</string>
     <string name="gigaam_download">GigaAM डाउनलोड करें</string>

@@ -173,7 +173,7 @@ internal fun variantAwareDisplayName(
  * Single source of truth for transcription-backend metadata: the ordered list
  * of [BackendDescriptor]s plus lookups by backend-id and share alias.
  *
- * The list is the static seven plus dynamic descriptors derived from the
+ * The list is the static eight plus dynamic descriptors derived from the
  * external model store (spec: external models platform v2a): every valid
  * [ExternalModelRecord] yields one descriptor appended after the static
  * backends. The registry is therefore NO LONGER STATELESS, and the
@@ -224,11 +224,17 @@ class BackendRegistry @Inject constructor(
         )
     }
 
-    /** The seven enabled static backends in canonical order (default backend first). */
+    /** The eight enabled static backends in canonical order (default backend first). */
     private val staticBackends: List<BackendDescriptor> by lazy {
         buildList {
             for (entryId in BuiltInBackendIds.ALL) {
-                add(catalogDescriptor(entryId))
+                // TASK-853: whistle HAS a catalog entry (download, storage,
+                // display) but its descriptor is hand-written: the sherpa
+                // descriptor's path accessors and display derivation are
+                // sherpa-specific (SherpaModelManager, CatalogVariantUi).
+                add(
+                    if (entryId == BuiltInBackendIds.WHISTLE) whistleDescriptor()
+                    else catalogDescriptor(entryId))
             }
             add(llmDescriptor())
             add(remoteOmnivoiceDescriptor())
@@ -278,6 +284,26 @@ class BackendRegistry @Inject constructor(
             clearModelPath = { it.clearSherpaModelPath(entry.id) },
         )
     }
+
+    /**
+     * TASK-853: the Cactus Whistle engine. The catalog entry owns the
+     * download (one .cact file) and the display strings; the descriptor
+     * is hand-written because the generic catalog descriptor assumes a
+     * sherpa multi-file directory. The saved path is the keyed sherpa
+     * preference family (a plain file path; the load arm reads it the
+     * same way). RTF from the device probe: decode is ~50x real time
+     * (0.18s for 10s audio), so 50f overestimates the wait safely.
+     */
+    private fun whistleDescriptor(): BackendDescriptor = BackendDescriptor(
+        backendId = BuiltInBackendIds.WHISTLE,
+        shareAlias = "",
+        displayNameResId = R.string.whistle_name,
+        rtfEstimate = 50f,
+        modelPathFlow = { it.sherpaModelPath(BuiltInBackendIds.WHISTLE) },
+        saveModelPath = { prefs, path -> prefs.saveSherpaModelPath(BuiltInBackendIds.WHISTLE, path) },
+        clearModelPath = { it.clearSherpaModelPath(BuiltInBackendIds.WHISTLE) },
+        accentColorRes = R.color.share_shortcut_llm,
+    )
 
     private fun llmDescriptor(): BackendDescriptor = BackendDescriptor(
         backendId = LlmTranscriptionBackend.BACKEND_ID,

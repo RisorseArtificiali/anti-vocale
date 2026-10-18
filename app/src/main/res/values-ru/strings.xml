@@ -180,6 +180,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~326 МБ • Быстрая • Распознавание русской речи с пунктуацией</string>
     <string name="gigaam_name">GigaAM v3</string>
+    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_description">~17 МБ • Очень быстро • 7 языков, автоопределение</string>
+    <string name="model_info_best_for_whistle">Самый быстрый запуск на устройстве: 17 МБ, 7 языков, мгновенный первый текст</string>
+    <string name="model_info_notes_whistle">Точность ниже Parakeet на итальянском; музыка может распознаться как текст (нет музыкального фильтра)</string>
     <string name="gigaam_download_confirm_title">Скачать GigaAM v3?</string>
     <string name="gigaam_download_confirm_message">Будет загружено ~%1$d МБ. GigaAM v3, модель распознавания речи только для русского языка от Сбера с высокой точностью для русского.</string>
     <string name="gigaam_download">Скачать GigaAM</string>

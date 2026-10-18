@@ -26,9 +26,12 @@ class BundledModelCatalogTest {
         ModelCatalogJson.parseCatalog(asset().readText())
 
     @Test
-    fun `catalog covers exactly the five built-in sherpa backends with unique ids`() {
+    fun `catalog covers exactly the six built-in backends with unique ids`() {
         val models = catalog()
-        assertEquals(5, models.size)
+        // TASK-853: five sherpa entries + the whistle engine entry (the
+        // ALL list carries all six; the whistle one is downloaded through
+        // the same catalog channel).
+        assertEquals(6, models.size)
         assertEquals(BuiltInBackendIds.ALL.toSet(), models.map { it.id }.toSet())
     }
 
@@ -180,7 +183,10 @@ class BundledModelCatalogTest {
     fun `every variant is well-formed and resolvable`() {
         for (m in catalog()) {
             assertTrue("${m.id}: runtime", m.runtime == "offline" || m.runtime == "online")
-            assertTrue("${m.id}: modelType required", m.modelType.isNotBlank() || m.isStreaming)
+            // TASK-853: whistle runs its OWN engine (not sherpa), so it
+            // carries no sherpa modelType; the pin allows exactly that id.
+            assertTrue("${m.id}: modelType required",
+                m.modelType.isNotBlank() || m.isStreaming || m.id == BuiltInBackendIds.WHISTLE)
             assertTrue("${m.id}: variants", m.variants.isNotEmpty())
             for (v in m.variants) {
                 assertTrue("${m.id}/${v.name}: dirName", v.dirName.isNotBlank())

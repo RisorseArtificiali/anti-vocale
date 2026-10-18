@@ -112,7 +112,11 @@ object CatalogModelValidator {
             val file = File(dir, name)
             // .ort joins .onnx (GH #89 moonshine v2 ships the ORT extension;
             // the completeness check is extension-agnostic, the magic check is not).
-            if (file.name.endsWith(".onnx", ignoreCase = true) || file.name.endsWith(".ort", ignoreCase = true)) {
+            // .cact joins both (TASK-853 whistle): the sidecar is written for
+            // every downloaded file, so a partial .cact must not pass either.
+            if (file.name.endsWith(".onnx", ignoreCase = true) ||
+                file.name.endsWith(".ort", ignoreCase = true) ||
+                file.name.endsWith(".cact", ignoreCase = true)) {
                 ResumeDownloadHelper.isFileComplete(file)
             } else {
                 file.exists()

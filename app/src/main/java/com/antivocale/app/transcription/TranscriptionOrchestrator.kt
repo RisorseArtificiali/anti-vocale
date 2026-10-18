@@ -1521,6 +1521,11 @@ class TranscriptionOrchestrator @Inject constructor(
             val loadResult = if (preferredBackendId.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX)) {
                 loadExternalBackend(context, preferredBackendId, languageOverride)
             } else when (preferredBackendId) {
+                // TASK-853: the whistle arm is NAMED (before the registry
+                // fallthrough): a whistle descriptor exists, and the generic
+                // fallthrough would build a sherpa DIRECTORY config for a
+                // single .cact FILE.
+                BuiltInBackendIds.WHISTLE -> loadWhistleBackend(context, languageOverride)
                 // The LLM backend ("llm") stores its model in the generic preference.
                 LlmTranscriptionBackend.BACKEND_ID -> loadLlmBackend(context)
                 // TASK-681: the LAN-offload backend; its loader owns the
@@ -1621,6 +1626,55 @@ class TranscriptionOrchestrator @Inject constructor(
             }
         }
         return expected.ifBlank { "auto" } != resident
+    }
+
+    /**
+     * TASK-853: the whistle loader. The saved path is the downloaded
+     * .cact FILE (a file-existence check, not a directory); auto-resolution
+     * is the catalog downloader's model dir + whistle.cact. The language is
+     * the passLanguage resolution (a pinned code passes through, auto maps
+     * to detect); the backend itself retires codes outside the engine's
+     * seven to detect, and the residency identity keeps the RAW value so
+     * this side and the expected side speak the same vocabulary.
+     */
+    private suspend fun loadWhistleBackend(
+        context: Context,
+        languageOverride: String?,
+    ): Result<Unit> {
+        // The filename is CATALOG DATA (the entry's own default-variant
+        // file), not a literal here: a future variant with a different
+        // filename must not silently strand auto-resolution. singleOrNull
+        // encodes the one-file assumption loudly.
+        val entry = BundledCatalog.byId(BuiltInBackendIds.WHISTLE)
+            ?: return Result.failure(TranscriptionException.NotInitialized())
+        val cactName = entry.defaultVariant.files.singleOrNull()?.name
+            ?: return Result.failure(TranscriptionException.NotInitialized())
+        // The saved-path convention is the variant DIR (every other
+        // backend's convention: the Active pill, the delete dialog, and
+        // variantChanged's endsWith predicates all assume it); the .cact
+        // file is derived at config time.
+        val savedDir = preferencesManager.sherpaModelPath(BuiltInBackendIds.WHISTLE).first()
+        val resolvedDir = when {
+            !savedDir.isNullOrBlank() && File(File(savedDir), cactName).isFile -> savedDir
+            else -> SherpaModelDownloader.of(BuiltInBackendIds.WHISTLE).getModelPath(context)
+        } ?: return Result.failure(TranscriptionException.NotInitialized())
+        val cactPath = File(File(resolvedDir), cactName).absolutePath
+        if (resolvedDir != savedDir) {
+            preferencesManager.saveSherpaModelPath(BuiltInBackendIds.WHISTLE, resolvedDir)
+        }
+        val languagePref = languageOverride ?: preferencesManager.transcriptionLanguage.first()
+        val language = TranscriptionLanguagePolicy.resolveForEntry(
+            phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(context),
+            preference = languagePref,
+            entry = entry)
+        return backendManager.setActiveBackend(
+            backendId = BuiltInBackendIds.WHISTLE,
+            context = context,
+            config = BackendConfig.WhistleConfig(
+                cactPath = cactPath,
+                language = language,
+            )
+        )
     }
 
     private suspend fun loadLlmBackend(context: Context): Result<Unit> {

@@ -48,6 +48,9 @@ class BundledCatalogMetadataPolicyTest {
         // Whisper exports carry n_mels/n_vocab style metadata, never
         // vocab_size: the scan would reject every loadable Whisper.
         "whisper" to "no vocab_size in Whisper exports (flags.skipMetadataCheck)",
+        // TASK-853: whistle is not an ONNX model at all (the Cactus .cact
+        // container, own engine): there is no encoder to scan.
+        "whistle" to "not an ONNX model: the .cact container carries no encoder metadata",
     )
 
     /** Where an entry's metadata policy comes from. */
@@ -95,8 +98,10 @@ class BundledCatalogMetadataPolicyTest {
             // GH #68: the qwen3 loader reads no encoder metadata and the export
             // carries none; the explicit empty arm is the decision.
             "qwen3-asr" to Policy.EXPLICIT_MODEL_TYPE,
-            // The only scan skip: Whisper exports never carry vocab_size.
+            // The scan skips: Whisper exports never carry vocab_size;
+            // whistle is a non-ONNX engine (.cact container).
             "whisper" to Policy.SKIPPED,
+            "whistle" to Policy.SKIPPED,
         )
         val classified = classifyCatalog().entries.associate { (entry, policy) -> entry.id to policy }
         assertEquals(

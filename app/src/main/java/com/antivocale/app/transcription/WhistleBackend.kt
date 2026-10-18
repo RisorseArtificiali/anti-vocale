@@ -5,6 +5,7 @@ import android.util.Log
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.di.ApplicationScope
 import com.antivocale.app.util.NativeKeepAlive
+import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -195,22 +196,29 @@ class WhistleBackend @Inject constructor(
 
     override fun isBusy(): Boolean = keepAlive.workInFlightCount() > 0
 
-    override fun getModelPath(): String? = cactPath
+    /** The variant DIR (the saved-path convention every surface assumes);
+     *  the .cact file itself is the config-time detail. */
+    override fun getModelPath(): String? = cactPath?.let { File(it).parent }
 
     /** Non-empty when loaded ("auto" = detect): a language pin change must
      *  force a reload, which a null identity would hide. */
     override fun getConfiguredLanguage(): String = languageIdentity
 
+    /**
+     * The engine's supported codes are CATALOG DATA (the entry's languages
+     * array, the forcedLanguage pattern): no second hardcoded set can drift
+     * from what the Settings picker offers.
+     */
     private fun toEngineLanguage(code: String): String? =
-        if (code in ENGINE_LANGUAGES) code else null
+        if (code in engineLanguages()) code else null
+
+    private fun engineLanguages(): Set<String> =
+        com.antivocale.app.data.catalog.BundledCatalog
+            .byId(BuiltInBackendIds.WHISTLE)?.languages?.toSet()
+            ?: emptySet()
 
     private companion object {
         const val TAG = "WhistleBackend"
-        /** Slice-2 placeholder: slice 3's catalog entry carries the seven
-         *  codes as its languages array; the backend then reads the entry
-         *  (the forcedLanguage pattern) instead of this set. */
-        val ENGINE_LANGUAGES =
-            setOf("en", "de", "fr", "es", "it", "nl", "pl")
         const val LANGUAGE_AUTO = "auto"
     }
 }

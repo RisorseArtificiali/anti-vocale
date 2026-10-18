@@ -163,6 +163,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">约 326MB · 快速 · 带标点的俄语 ASR</string>
     <string name="gigaam_name">GigaAM v3</string>
+    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_description">~17MB • 非常快 • 7 种语言，自动检测</string>
+    <string name="model_info_best_for_whistle">设备上最快的启动：17MB，7 种语言，即时出字</string>
+    <string name="model_info_notes_whistle">意大利语准确率低于 Parakeet；音乐可能被转成文字（无音乐过滤器）</string>
     <string name="gigaam_download_confirm_title">下载 GigaAM v3？</string>
     <string name="gigaam_download_confirm_message">将下载约 %1$dMB。GigaAM v3 是 Sber 出品的纯俄语 ASR 模型，标点表现很强。</string>
     <string name="gigaam_download">下载 GigaAM</string>

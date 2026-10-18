@@ -173,6 +173,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~326 MB • Schnell • Russische Spracherkennung mit Interpunktion</string>
     <string name="gigaam_name">GigaAM v3</string>
+    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_description">~17MB • Sehr schnell • 7 Sprachen, automatisch erkannt</string>
+    <string name="model_info_best_for_whistle">Schnellster Start auf dem Gerät: 17 MB, 7 Sprachen, sofortiger erster Text</string>
+    <string name="model_info_notes_whistle">Wortgenauigkeit hinter Parakeet bei Italienisch; Musik kann als Text erscheinen (kein Musikfilter)</string>
     <string name="gigaam_download_confirm_title">GigaAM v3 herunterladen?</string>
     <string name="gigaam_download_confirm_message">Dies lädt etwa %1$d MB herunter. GigaAM v3 ist ein russischsprachiges ASR-Modell von Sber mit starker Genauigkeit für Russisch.</string>
     <string name="gigaam_download">GigaAM herunterladen</string>

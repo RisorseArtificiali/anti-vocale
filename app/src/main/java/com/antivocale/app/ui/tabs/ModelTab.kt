@@ -1701,7 +1701,12 @@ private fun CatalogModelSection(
                     onExtraActionClick = { viewModel.clearOrphanedFiles(entry.id, variant.variantName) },
                     onUseClick = { guardedModelSwitch { viewModel.useModel(entry.id, variant.variantName) } },
                     onDeleteClick = { viewModel.showDeleteDialog(entry.id, variant.variantName) },
-                    onBenchmarkClick = {
+                    // TASK-853: the benchmark infra builds a SHERPA config;
+                    // whistle would unload the warm engine and then fail the
+                    // config-type check. No benchmark entry until the harness
+                    // grows a whistle arm.
+                    onBenchmarkClick = if (entry.id == BuiltInBackendIds.WHISTLE) null else {
+                        {
                         val path = SherpaModelDownloader.of(entry.id).getModelPath(context, variant.variantName)
                         if (path != null) {
                             benchmarkViewModel.startBenchmark(
@@ -1709,6 +1714,7 @@ private fun CatalogModelSection(
                                 path,
                                 context.countAwareString(variant.titleResId, variant.titleFormatArg())
                             )
+                        }
                         }
                     },
                     // TASK-742: offer the bundle share only for a present dir

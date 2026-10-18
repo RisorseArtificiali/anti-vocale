@@ -53,20 +53,18 @@ class WhistleBackendTest {
     }
 
     @Test
-    fun `whistle is registered dormant, id defined but not yet selectable`() {
-        // Slice 3's catalog entry flips this; until then the backend
-        // exists in the DI set without surfacing anywhere.
-        assertFalse(BuiltInBackendIds.WHISTLE in BuiltInBackendIds.ALL)
-        assertFalse(BuiltInBackendIds.isSelectableBackendId(BuiltInBackendIds.WHISTLE))
-        // And no registry descriptor either (the one ghost-row path the
-        // ALL pin does not cover: a descriptor appearing before the flip).
-        // Same fixture shape as BackendRegistryTest's.
+    fun `whistle is selectable and carries a registry descriptor, slice 3 active`() {
+        // The catalog entry landed: the id joined ALL (the catalog pin
+        // BundledModelCatalogTest enforces the same-commit coupling) and
+        // the registry builds its descriptor.
+        assertTrue(BuiltInBackendIds.WHISTLE in BuiltInBackendIds.ALL)
+        assertTrue(BuiltInBackendIds.isSelectableBackendId(BuiltInBackendIds.WHISTLE))
         val store = com.antivocale.app.data.ExternalModelStore(
             com.antivocale.app.data.FakePreferencesManager(),
             dirExists = { true })
         val registry = BackendRegistry(store, object : com.antivocale.app.data.ExternalModelRecordsProvider {
             override val records = kotlinx.coroutines.flow.MutableStateFlow(emptyList<com.antivocale.app.data.ExternalModelRecord>())
         })
-        org.junit.Assert.assertNull(registry.byBackendId(BuiltInBackendIds.WHISTLE))
+        org.junit.Assert.assertNotNull(registry.byBackendId(BuiltInBackendIds.WHISTLE))
     }
 }

@@ -146,6 +146,20 @@ object ModelInfoProvider {
                 performanceNotes = R.string.model_info_notes_gigaam
             ))
 
+            // TASK-853: the Cactus Whistle engine (single .cact file).
+            put("whistle-v1", ModelInfo(
+                architectureType = ArchitectureType.ENCODER_DECODER,
+                recommendedThreads = 1..4,
+                quantizationLevel = "INT8",
+                isArm64Only = true,
+                supportsProgressiveTranscription = false,
+                vadRecommended = false,
+                benchmarkWer = null,
+                relativeSpeed = null,
+                bestFor = R.string.model_info_best_for_whistle,
+                performanceNotes = R.string.model_info_notes_whistle
+            ))
+
             // Shared base for every Gemma variant: all are LLMs with the same hard
             // 30s audio cap (GH #49); per-variant entries override threads/quant.
             val gemmaInfoBase = ModelInfo(
