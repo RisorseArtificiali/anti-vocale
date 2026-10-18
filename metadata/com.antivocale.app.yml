@@ -21,7 +21,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -58,7 +64,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -95,7 +107,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -132,7 +150,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -169,7 +193,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -206,7 +236,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -243,7 +279,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -280,7 +322,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -317,7 +365,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -354,7 +408,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -392,7 +452,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -430,7 +496,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -468,7 +540,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -506,7 +584,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -544,7 +628,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -582,7 +672,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -620,7 +716,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -658,7 +760,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -696,7 +804,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -734,7 +848,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -772,7 +892,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -810,7 +936,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -848,7 +980,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -886,7 +1024,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -924,7 +1068,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -962,7 +1112,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -1000,7 +1156,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -1038,7 +1200,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -1075,7 +1243,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -1112,7 +1286,13 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ unzip
     gradle:
+      # TASK-854: whistleEngineDisabled - the fdroid build carries the
+      # whistle JNI stub (the needle engine ships only as a prebuilt .a,
+      # no buildable source upstream; F-Droid's native-binary policy
+      # rejects it). Whistle answers unavailable on fdroid builds; drop
+      # the property when upstream opens the engine source.
       - fdroid
+      - -PwhistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk

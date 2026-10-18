@@ -52,6 +52,20 @@ android {
         }
     }
 
+    // TASK-854: -PwhistleEngineDisabled (the F-Droid recipe sets it) makes
+    // every ABI build the stub bridge: the needle engine ships only as a
+    // prebuilt .a with no buildable source upstream, which F-Droid's
+    // native-binary policy rejects. Play/nightly builds leave it unset.
+    if (project.hasProperty("whistleEngineDisabled")) {
+        defaultConfig {
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DWHISTLE_ENGINE_DISABLED=ON"
+                }
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.antivocale.app"
         minSdk = 26
