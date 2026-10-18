@@ -169,6 +169,7 @@ jobs:
           CHANGED=$(git diff --name-only "$BASE" "$BUILT_SHA" -- \
             .sherpa-version \
             scripts/fetch-sherpa-aar.sh \
+            scripts/fetch-whistle-engine.sh \
             app/src/main/assets/models_catalog.json \
             app/src/main/java/com/antivocale/app/transcription/BuiltInBackendIds.kt \
             app/src/main/java/com/antivocale/app/transcription/OrphanedModelDirCleaner.kt \
@@ -194,6 +195,12 @@ jobs:
 
       - name: Fetch sherpa-onnx AAR
         run: ./scripts/fetch-sherpa-aar.sh
+
+      # TASK-853: the Whistle JNI bridge needs libneedle.a per arm ABI.
+      - name: Fetch whistle engine
+        run: |
+          pip install cactus-needle
+          ./scripts/fetch-whistle-engine.sh
 
       # Signing EXACTLY as android-release.yml signs its playStore release
       # builds: KEYSTORE_BASE64 -> app/release.keystore, KEYSTORE_PROPERTIES ->

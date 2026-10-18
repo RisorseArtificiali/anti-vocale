@@ -83,6 +83,13 @@ jobs:
       - name: Fetch sherpa-onnx AAR
         run: ./scripts/fetch-sherpa-aar.sh
 
+      # TASK-853: the Whistle JNI bridge needs libneedle.a per arm ABI (the
+      # CMake configure fails loudly without it).
+      - name: Fetch whistle engine
+        run: |
+          pip install cactus-needle
+          ./scripts/fetch-whistle-engine.sh
+
       # Fdroid flavor on purpose: the google-services plugin does not apply
       # to Fdroid tasks, so unit tests need no Firebase json. (The playStore
       # debug variant has the .debug applicationId suffix, which the Firebase

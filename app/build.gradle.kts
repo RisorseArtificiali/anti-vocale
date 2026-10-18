@@ -37,6 +37,20 @@ android {
     // Keep in sync with the recipe.
     ndkVersion = "27.0.12077973"
 
+    // TASK-853: the JNI bridge over the Cactus Needle speech engine
+    // (libneedle.a, fetched by scripts/fetch-whistle-engine.sh into
+    // app/libs/whistle/<abi>/). Upstream ships no android-x86_64 build, so
+    // the x86_64 APK links no whistle_jni and the backend gates itself by
+    // ABI at runtime (WhistleNative.available). Missing arm libs (fresh
+    // clone without the fetch script) fail the build loudly here rather
+    // than at first use - run the script after cloning.
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.antivocale.app"
         minSdk = 26

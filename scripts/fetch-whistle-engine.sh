@@ -6,9 +6,10 @@
 # the Whistle backend must gate itself by ABI at runtime.
 #
 # Mirrors the fetch-sherpa-aar.sh policy: prebuilt binaries are fetched, not
-# committed. The version pin lives below; bump NEEDLE_VERSION together with
-# the whistle.cact catalog pin (the engine reads the .cact container
-# version-tolerantly today, but a pinned pair is the tested shape).
+# committed. NEEDLE_VERSION below is INFORMATIONAL: the installed
+# cactus-needle pip package decides what downloads (unlike the sherpa pin,
+# which builds the URL); record here what you tested with, and pin the pip
+# package itself when reproducibility demands it.
 set -euo pipefail
 
 NEEDLE_VERSION="3.2.6"
