@@ -58,5 +58,15 @@ class WhistleBackendTest {
         // exists in the DI set without surfacing anywhere.
         assertFalse(BuiltInBackendIds.WHISTLE in BuiltInBackendIds.ALL)
         assertFalse(BuiltInBackendIds.isSelectableBackendId(BuiltInBackendIds.WHISTLE))
+        // And no registry descriptor either (the one ghost-row path the
+        // ALL pin does not cover: a descriptor appearing before the flip).
+        // Same fixture shape as BackendRegistryTest's.
+        val store = com.antivocale.app.data.ExternalModelStore(
+            com.antivocale.app.data.FakePreferencesManager(),
+            dirExists = { true })
+        val registry = BackendRegistry(store, object : com.antivocale.app.data.ExternalModelRecordsProvider {
+            override val records = kotlinx.coroutines.flow.MutableStateFlow(emptyList<com.antivocale.app.data.ExternalModelRecord>())
+        })
+        org.junit.Assert.assertNull(registry.byBackendId(BuiltInBackendIds.WHISTLE))
     }
 }

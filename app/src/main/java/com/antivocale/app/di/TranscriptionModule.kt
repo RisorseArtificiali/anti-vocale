@@ -29,15 +29,6 @@ class TranscriptionModule {
 
         // TASK-681: the opt-in LAN-offload backend (the user's own OmniVoice
         // server); derives its own timeouts from the shared OkHttp client.
-        // TASK-853: the Cactus Whistle engine (17MB, seven languages,
-        // the Needle runtime through WhistleNative).
-        @Provides
-        @IntoSet
-        @Singleton
-        fun provideWhistleBackend(
-            @ApplicationScope scope: kotlinx.coroutines.CoroutineScope
-        ): TranscriptionBackend = WhistleBackend(scope)
-
         @Provides
         @IntoSet
         @Singleton
@@ -47,6 +38,15 @@ class TranscriptionModule {
 
         // One SherpaBackend instance per bundled catalog entry: the model family and
         // tuning all come from the catalog, so the instances differ only in entry id.
+        // TASK-853: the Cactus Whistle engine (17MB, seven languages,
+        // the Needle runtime through WhistleNative).
+        @Provides
+        @IntoSet
+        @Singleton
+        fun provideWhistleBackend(
+            @ApplicationScope scope: kotlinx.coroutines.CoroutineScope
+        ): TranscriptionBackend = WhistleBackend(scope)
+
         @Provides
         @IntoSet
         @Singleton
