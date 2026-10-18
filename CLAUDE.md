@@ -156,6 +156,7 @@ Before every release, run this audit to catch R8 stripping issues:
 |---------|-------------|-------|
 | sherpa-onnx | `com.k2fsa.sherpa.onnx.**` | ONNX inference via JNI |
 | LiteRT-LM | `com.google.ai.edge.litertlm.**` | Gemma inference via JNI |
+| whistle (Cactus Needle) | own `whistle_jni` via CMake (TASK-853) | prebuilt `libneedle.a` fetched by `scripts/fetch-whistle-engine.sh` (arm ABIs only; x86_64 + the fdroid flavor under `-PwhistleEngineDisabled` build the stub form). Kotlin side is `WhistleNative` in `transcription/` (covered by the existing `com.antivocale.app.transcription.**` keep rule); the JNI symbol contract is pinned by `WhistleJniSymbolSetTest`, not proguard |
 
 <CRITICAL_INSTRUCTION>
 
