@@ -8,6 +8,7 @@ import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.RemoteOmnivoiceBackend
 import com.antivocale.app.transcription.SherpaBackend
 import com.antivocale.app.transcription.TranscriptionBackend
+import com.antivocale.app.transcription.WhistleBackend
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -28,6 +29,15 @@ class TranscriptionModule {
 
         // TASK-681: the opt-in LAN-offload backend (the user's own OmniVoice
         // server); derives its own timeouts from the shared OkHttp client.
+        // TASK-853: the Cactus Whistle engine (17MB, seven languages,
+        // the Needle runtime through WhistleNative).
+        @Provides
+        @IntoSet
+        @Singleton
+        fun provideWhistleBackend(
+            @ApplicationScope scope: kotlinx.coroutines.CoroutineScope
+        ): TranscriptionBackend = WhistleBackend(scope)
+
         @Provides
         @IntoSet
         @Singleton

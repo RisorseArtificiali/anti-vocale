@@ -13,6 +13,8 @@ object BuiltInBackendIds {
     const val QWEN3_ASR = "qwen3-asr"
     const val NEMOTRON = "nemotron-streaming"
     const val GIGAAM = "gigaam"
+    /** TASK-853: the Cactus Whistle engine (own Needle runtime, 17MB). */
+    const val WHISTLE = "whistle"
 
     /**
      * TASK-681: the opt-in LAN-offload backend (the user's own OmniVoice

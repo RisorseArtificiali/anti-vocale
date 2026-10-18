@@ -243,6 +243,13 @@ sealed class BackendConfig {
      * OmniVoice server). Not a model on disk: the "path identity" of this
      * backend is the endpoint URL (see RemoteOmnivoiceBackend.getModelPath).
      */
+    /** TASK-853: the Cactus Whistle engine (single .cact file). */
+    data class WhistleConfig(
+        val cactPath: String,
+        /** ISO code among the engine's seven, or blank = detect. */
+        val language: String = "",
+    ) : BackendConfig()
+
     data class RemoteConfig(
         val baseUrl: String,
         val apiKey: String,

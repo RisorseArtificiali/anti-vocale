@@ -77,6 +77,11 @@ internal object WhistleNative {
         return parse(String(jsonBytes, StandardCharsets.UTF_8))
     }
 
+    /** Unloads the engine (the NativeKeepAlive idle-unload hook). */
+    fun reset() {
+        if (available) resetNative()
+    }
+
     /** The engine's last error string (valid until the next call). */
     fun lastError(): String =
         if (available) String(lastErrorNative() ?: ByteArray(0), StandardCharsets.UTF_8)
@@ -105,4 +110,5 @@ internal object WhistleNative {
         wordTimestamps: Boolean,
     ): ByteArray?
     private external fun lastErrorNative(): ByteArray?
+    private external fun resetNative()
 }
