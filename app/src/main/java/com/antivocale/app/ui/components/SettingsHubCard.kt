@@ -56,7 +56,11 @@ fun SettingsHubCard(
                     imageVector = it,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(end = 12.dp)
+                    // The CardTitleRow gap (8dp), so a hub card's title sits on
+                    // the SAME 48dp grid as every ToggleSettingCard beside it
+                    // (12dp here left the titles 4dp apart: the field report
+                    // photo 2026-10-19).
+                    modifier = Modifier.padding(end = 8.dp)
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
