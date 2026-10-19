@@ -99,6 +99,18 @@ class ModelActivator @Inject constructor(
         preferencesManager.saveTranscriptionBackend(LlmTranscriptionBackend.BACKEND_ID)
     }
 
+    /**
+     * TASK-365: the inverse of [activateLlm], the no-dangling-preference
+     * contract for the llm lane: clears the generic model path and resets
+     * the backend to the default (the llm lane has no auto-fallback ladder,
+     * unlike sherpa: with the path gone a llm backend selection would
+     * surface a load error on next launch instead of a coherent state).
+     */
+    suspend fun deactivateLlm() {
+        preferencesManager.clearModelPath()
+        preferencesManager.saveTranscriptionBackend(com.antivocale.app.data.PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
+    }
+
     /** Activates an imported external model (Canary flips VAD on, TASK-408). */
     suspend fun activateExternal(record: ExternalModelRecord) {
         preferencesManager.saveTranscriptionBackend(record.backendId)

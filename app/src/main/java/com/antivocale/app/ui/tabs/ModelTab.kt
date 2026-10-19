@@ -82,7 +82,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.antivocale.app.ui.components.ReadOnlyDropdownField
 import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
-import com.antivocale.app.ui.components.SubPageScrollScaffold
 import com.antivocale.app.ui.components.InfoIconButton
 import com.antivocale.app.ui.components.VariantOverflowMenu
 import com.antivocale.app.ui.components.LanguageFilterBar
@@ -137,7 +136,6 @@ fun ModelTab(
     val uiState by viewModel.uiState.collectAsState()
     val activeBackendId by viewModel.activeBackendId.collectAsState()
     val activeModelLabel by viewModel.activeModelLabel.collectAsState()
-    val downloadUiState by viewModel.downloadUiState.collectAsState()
     val catalogStates by viewModel.catalogStates.collectAsState()
 
     // Transcription active state — used to warn about destructive operations

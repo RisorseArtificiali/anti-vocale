@@ -183,23 +183,6 @@ class ModelViewModel @Inject constructor(
     }
 
     /**
-     * Download UI state for model download management — uses per-variant maps.
-     */
-    data class DownloadUiState(
-        val selectedVariant: ModelDownloader.ModelVariant? = null,
-        val variantDownloadStates: Map<ModelDownloader.ModelVariant, VariantDownloadState> = emptyMap(),
-        val downloadError: ModelDownloader.DownloadError? = null,
-        val downloadedModels: Set<ModelDownloader.ModelVariant> = emptySet(),
-        val staleModels: Set<ModelDownloader.ModelVariant> = emptySet(),
-        val hasToken: Boolean = false,
-        val modelToDelete: ModelDownloader.ModelVariant? = null,
-        val modelToUpdate: ModelDownloader.ModelVariant? = null,
-        val showDownloadDialog: Boolean = false
-    ) {
-        val isAnyDownloading: Boolean get() = variantDownloadStates.values.any { it.isDownloading }
-    }
-
-    /**
      * Per-variant download state — isolates progress, errors, and downloading
      * flag so that concurrent downloads on different variants don't cross-contaminate.
      */
@@ -264,9 +247,6 @@ class ModelViewModel @Inject constructor(
     private val _filePickerEvent = MutableSharedFlow<Unit>()
     val filePickerEvent: SharedFlow<Unit> = _filePickerEvent.asSharedFlow()
 
-    // Download state
-    private val _downloadUiState = MutableStateFlow(DownloadUiState())
-    val downloadUiState: StateFlow<DownloadUiState> = _downloadUiState.asStateFlow()
 
     // Declared BEFORE the init block: init calls refreshTokenState(), and
     // Kotlin initializes properties and init blocks in source order.
@@ -571,25 +551,6 @@ class ModelViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val context = ctx
 
-            // Check Gemma variants (skip those currently downloading — their .tmp
-            // file is live, not a leftover from a cancelled/interrupted download)
-            val activeGemmaDownloads = _downloadUiState.value.variantDownloadStates
-                .filter { it.value.isDownloading }.keys
-            var gemmaPartialVariants = mapOf<ModelDownloader.ModelVariant, DownloadState.PartiallyDownloaded>()
-            for (variant in ModelDownloader.ModelVariant.entries) {
-                if (!ModelDownloader.isModelDownloaded(context, variant) && variant !in activeGemmaDownloads) {
-                    val partial = ModelDownloader.detectPartialDownload(context, variant)
-                    if (partial != null) {
-                        gemmaPartialVariants = gemmaPartialVariants + (variant to partial)
-                    }
-                }
-            }
-            if (gemmaPartialVariants.isNotEmpty()) {
-                _downloadUiState.update { state ->
-                    state.copy(variantDownloadStates = state.variantDownloadStates.mergePartials(gemmaPartialVariants))
-                }
-            }
-
             // Check catalog model entries generically (all variants of every entry)
             for (entryId in BuiltInBackendIds.ALL) {
                 val entry = BundledCatalog.byId(entryId) ?: continue
@@ -635,7 +596,6 @@ class ModelViewModel @Inject constructor(
      */
     fun refreshTokenState() {
         _hasHuggingFaceToken.value = tokenManager.hasToken()
-        _downloadUiState.update { it.copy(hasToken = tokenManager.hasToken()) }
     }
 
     // ==================== Catalog model state refresh ====================
@@ -1276,11 +1236,9 @@ class ModelViewModel @Inject constructor(
     fun deleteModel(entryId: String, variantName: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val context = ctx
-            // TASK-801: a variant present only through a linked record has no
-            // catalog dir to remove; the record IS the storage, so the delete
-            // routes there. Without this arm the downloader no-ops and reports
-            // success while the record re-lights the card on the next records
-            // emission (a confirmed delete that deleted nothing).
+            // TASK-801 review (slice 2b): the linked-record arm precedes the
+            // llm arm so a bundle import linked to the gemma dirName deletes
+            // (or quarantines) the RECORD, not the file below it.
             val linkedDir = BundledCatalog.byId(entryId)?.variant(variantName)?.dirName
             if (linkedDir != null && !SherpaModelDownloader.of(entryId).isModelDownloaded(context, variantName)) {
                 val linked = linkedRecordFor(recordsProvider.records.value, LinkedCatalogRef(entryId, linkedDir))
@@ -1288,6 +1246,10 @@ class ModelViewModel @Inject constructor(
                     deleteExternalModel(linked)
                     return@launch
                 }
+            }
+            if (com.antivocale.app.transcription.BuiltInBackendIds.isLlm(entryId)) {
+                deleteGemmaVariant(context, entryId, variantName)
+                return@launch
             }
             val downloader = SherpaModelDownloader.of(entryId)
             val success = downloader.deleteModel(context, variantName)
@@ -1323,6 +1285,83 @@ class ModelViewModel @Inject constructor(
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.catalog_model_deleted, displayName)))
             }
         }
+    }
+
+    /**
+     * TASK-365: deleting a Gemma variant. Both layouts are deleted (the
+     * catalog dir form and the legacy flat file), and when the deleted file
+     * was the ACTIVE model path the generic preference clears and the
+     * share/shortcut/refinement cleanup runs, exactly the sherpa arm's
+     * no-dangling-preference contract.
+     */
+    private suspend fun deleteGemmaVariant(
+        context: android.content.Context,
+        entryId: String,
+        variantName: String,
+    ) {
+        val entry = BundledCatalog.byId(entryId) ?: return
+        val variant = entry.variant(variantName) ?: return
+        val fileName = variant.files.firstOrNull()?.name ?: return
+        val modelsDir = File(context.filesDir, entry.storageDir ?: "models")
+        val candidates = listOf(
+            File(modelsDir, variant.dirName + File.separator + fileName),
+            File(modelsDir, fileName))
+        val activePath = preferencesManager.modelPath.firstOrNull()
+        val activeFile = activePath?.let { File(it) }
+        var deletedAny = false
+        var wasActive = false
+        for (candidate in candidates) {
+            if (!candidate.isFile) continue
+            // The delete must SUCCEED to count: a locked/fused file reports
+            // failure and the card keeps its Downloaded state (a confirmed
+            // delete that deleted nothing is the class this arm exists to
+            // avoid). Canonical compare: other flows may have written a
+            // non-canonically spelled path.
+            val removed = candidate.delete()
+            if (removed) deletedAny = true
+            if (activeFile != null && sameFile(candidate, activeFile)) wasActive = true
+        }
+        updateEntry(entryId) { it.copy(
+            downloadedVariants = it.downloadedVariants - variantName,
+            modelPath = if (wasActive) null else it.modelPath,
+        ) }
+        // The deleted variant was the ACTIVE one: fall back to another
+        // downloaded Gemma variant when one exists, otherwise deactivate the
+        // llm lane entirely (path cleared, backend to the default: no
+        // auto-fallback ladder exists here, unlike sherpa).
+        if (wasActive) {
+            val remaining = entry.variants.firstOrNull { v ->
+                v.name != variantName && v.name in (
+                    _catalogStates.value[entryId]?.downloadedVariants ?: emptySet())
+            }?.let { v ->
+                val fname = v.files.firstOrNull()?.name
+                fname?.let { fname ->
+                    listOf(File(modelsDir, v.dirName + File.separator + fname), File(modelsDir, fname))
+                        .firstOrNull(File::isFile)
+                }
+            }
+            if (remaining != null) {
+                modelActivator.activateLlm(remaining)
+            } else {
+                modelActivator.deactivateLlm()
+                _uiState.update { it.copy(modelPath = "", modelName = "") }
+                shareTargetManager.onModelDeletedNow(entryId)
+                shareShortcutManager.refresh()
+                if (preferencesManager.refinementModelBackendId.first() == entryId) {
+                    preferencesManager.saveRefinementModelBackendId("")
+                }
+            }
+        }
+        if (deletedAny) {
+            val displayName = context.getString(CatalogVariantUi.of(entryId, variantName).titleResId)
+            _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.catalog_model_deleted, displayName)))
+        }
+    }
+
+    private fun sameFile(a: File, b: File): Boolean = try {
+        a.canonicalPath == b.canonicalPath
+    } catch (_: Exception) {
+        a.absolutePath == b.absolutePath
     }
 
     // ==================== Catalog Confirmation Dialogs ====================
