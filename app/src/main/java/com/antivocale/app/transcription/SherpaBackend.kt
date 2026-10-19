@@ -690,14 +690,13 @@ class SherpaBackend(
             return transcribeAudioStreaming(samples, sampleRate, prompt) {}
         }
 
-        // beginWork BEFORE reading the recognizer: claiming work first closes
-        // the idle-unload race (a timer fire that already reserved the unload
-        // still wins, but then this read sees the post-unload null).
-        keepAlive.beginWork()
-        try {
+        // Claim work BEFORE reading the recognizer: withWork claiming first
+        // closes the idle-unload race (a timer fire that already reserved the
+        // unload still wins, but then this read sees the post-unload null).
+        return keepAlive.withWork {
             val rec = offlineRecognizer
-                ?: return Result.failure(TranscriptionException.NotInitialized())
-            return withContext(Dispatchers.IO) {
+                ?: return@withWork Result.failure(TranscriptionException.NotInitialized())
+            withContext(Dispatchers.IO) {
             // Release the native OfflineStream on EVERY path (happy, exception, blank-result)
             // so the JNI handle is freed deterministically, not left to GC finalization.
             var stream: OfflineStream? = null
@@ -781,8 +780,6 @@ class SherpaBackend(
                 stream?.release()
             }
             }
-        } finally {
-            keepAlive.endWork()
         }
     }
 
@@ -797,14 +794,13 @@ class SherpaBackend(
             return transcribeAudio(samples, sampleRate, prompt)
         }
 
-        keepAlive.beginWork()
-        try {
+        return keepAlive.withWork {
             // TASK-789 review T1: unload() resets the language field
             // mid-bracket; capture it with the recognizer local.
             val lang = language
             val rec = onlineRecognizer
-                ?: return Result.failure(TranscriptionException.NotInitialized())
-            return withContext(Dispatchers.IO) {
+                ?: return@withWork Result.failure(TranscriptionException.NotInitialized())
+            withContext(Dispatchers.IO) {
             var stream: OnlineStream? = null
             try {
                 Log.d(TAG, "Transcribing audio: ${samples.size} samples at ${sampleRate}Hz")
@@ -880,8 +876,6 @@ class SherpaBackend(
                 stream?.release()
             }
             }
-        } finally {
-            keepAlive.endWork()
         }
     }
 

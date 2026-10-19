@@ -49,11 +49,11 @@ class NativeKeepAliveRemainingTest {
         ka.start()
         f.now.set(60_000)
         assertEquals("one minute elapsed of two", 60L, ka.remainingSeconds())
-        ka.beginWork()
+        val work = ka.beginWork()
         assertNull("paused while transcribing", ka.remainingSeconds())
         f.now.set(90_000)
         assertNull(ka.remainingSeconds())
-        ka.endWork()
+        ka.endWork(work)
         assertEquals("re-armed to the full timeout after work", 2 * 60L, ka.remainingSeconds())
         ka.stop()
     }
@@ -79,9 +79,9 @@ class NativeKeepAliveRemainingTest {
         ka.start()
         assertEquals("cold base window", 2 * 60L, ka.remainingSeconds())
         // Work marks the backend warm: the next re-arm carries the warm window.
-        ka.beginWork()
+        val work = ka.beginWork()
         f.now.set(60_000)
-        ka.endWork()
+        ka.endWork(work)
         assertEquals("warm window after serving", 5 * 60L, ka.remainingSeconds())
         // An explicit setTimeout is the user taking control: flat window.
         ka.setTimeout(10)

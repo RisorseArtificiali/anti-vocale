@@ -23,7 +23,10 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * Concurrency: [beginWork]/[endWork] bracket a native call; the timer never
  * fires while work is in flight (the flag is re-checked after the delay too,
- * so a fire that races with new work aborts without unloading).
+ * so a fire that races with new work aborts without unloading). Since
+ * TASK-794 the bracket is a TOKEN ([WorkBracket]): a drain release waits for
+ * the brackets open at request time, never for the global count (sustained
+ * load on a re-loaded engine used to strand the old engine's release).
  */
 class NativeKeepAlive(
     private val scope: CoroutineScope,
@@ -141,27 +144,55 @@ class NativeKeepAlive(
     fun workInFlightForTest(): Int = workInFlight.get()
 
     // TASK-789 (the 1.13.2 FORTIFY crash): a manual unload requested the
-    // native release while work was in flight; the callback below runs once,
-    // under [lock], when the in-flight bracket drains to zero. Null means no
-    // drain is pending (job/idleDeadline discipline: plain fields under the
-    // monitor; only the fields read outside it stay atomic).
-    private var drainRelease: (() -> Unit)? = null
+    // native release while work was in flight; the callback runs once,
+    // under [lock], when the brackets open at request time have drained.
+    // TASK-794: the drain condition is per-request (a watermark), not the
+    // global counter, and a FIFO queue replaces the single chained callback
+    // (job/idleDeadline discipline: plain fields under the monitor; only
+    // the fields read outside it stay atomic).
+    private class DrainRequest(val watermark: Long, val callback: () -> Unit)
+
+    private val drainRequests = ArrayDeque<DrainRequest>()
+
+    // TASK-794: the brackets currently inside beginWork/endWork, by seq.
+    // Tiny by construction (concurrent native calls per backend instance).
+    // Invariant: under [lock], openBrackets.size == workInFlight.get() at
+    // every monitor exit (both mutate together below); the atomic counter
+    // exists ONLY for the lock-free isBusy read ([workInFlightCount]).
+    private val openBrackets = ArrayList<WorkBracket>()
+    private var nextBracketSeq = 0L
 
     /**
-     * TASK-789: run [onDrained] once the in-flight work bracket drains.
-     * Immediately when none is in flight; otherwise at the last [endWork],
-     * under [lock] (the same discipline as the idle-unload fire: a beginWork
-     * arriving meanwhile blocks at the monitor and observes the post-release
-     * state). The manual-unload path uses this instead of releasing native
-     * state under a live decode.
+     * TASK-794: the identity of one native-call bracket, returned by
+     * [beginWork] and consumed by [endWork] (only by the NativeKeepAlive
+     * instance that issued it; a foreign bracket is an inert no-op there).
+     * The drain release must wait for the brackets OPEN AT REQUEST TIME
+     * and for no others: an anonymous counter cannot tell a pre-request
+     * bracket (it captured the engine being released into a local) from a
+     * post-request one (it runs on the freshly loaded engine), so under
+     * sustained load the release waited for a global idle instant that
+     * never came and the old engine stayed resident beside the new one.
+     */
+    class WorkBracket internal constructor(internal val seq: Long)
+
+    /**
+     * TASK-789: run [onDrained] once the work brackets open NOW have
+     * drained. Immediately when none is open; otherwise at the [endWork]
+     * that closes the last of them, under [lock] (the same discipline as
+     * the idle-unload fire: a beginWork arriving meanwhile blocks at the
+     * monitor and observes the post-release state). The manual-unload path
+     * uses this instead of releasing native state under a live decode.
+     * TASK-794: brackets opened AFTER this request never postpone it; the
+     * owner's fields are already nulled by then, so a fresh bracket either
+     * failed NotInitialized or captured the freshly loaded engine.
      */
     fun requestDrainRelease(onDrained: () -> Unit) {
         synchronized(lock) {
             // A second request while one is pending must not drop the first
-            // release (its native bytes would leak); run both at the drain.
-            val previous = drainRelease
-            drainRelease = if (previous == null) onDrained else ({ previous(); onDrained() })
-            if (workInFlight.get() > 0) {
+            // release (its native bytes would leak); both queue and each
+            // drains at its own watermark, FIFO.
+            drainRequests.addLast(DrainRequest(nextBracketSeq, onDrained))
+            if (openBrackets.isNotEmpty()) {
                 android.util.Log.w(tag, "Native work in flight; deferring the requested release to the drain")
             } else {
                 tryDrainReleaseLocked()
@@ -170,17 +201,23 @@ class NativeKeepAlive(
     }
 
     private fun tryDrainReleaseLocked() {
-        val callback = drainRelease ?: return
-        if (workInFlight.get() == 0) {
-            drainRelease = null
+        while (drainRequests.isNotEmpty()) {
+            val request = drainRequests.first()
+            // Sorted by construction (seqs append in increasing order;
+            // removal keeps the relative order), so the head element is the
+            // minimum: one comparison instead of a scan.
+            val minOpenSeq = openBrackets.firstOrNull()?.seq
+            if (minOpenSeq != null && minOpenSeq < request.watermark) return
+            drainRequests.removeFirst()
             try {
-                callback()
+                request.callback()
             } catch (t: Throwable) {
                 // A throwing native release must not escape through endWork
                 // (it runs inside the withWork finally and would mask the
                 // bracketed work's own result, and it would skip the timer
-                // re-arm below). Logged and swallowed; the residual (a
-                // chained second release not running) is accepted: sherpa's
+                // re-arm below). Logged and swallowed; the residual (the
+                // throwing release abandoned mid-flight) is accepted: the
+                // FIFO loop still runs the queued later releases, sherpa's
                 // release() guards ptr == 0 and effectively cannot throw.
                 android.util.Log.e(tag, "Drain-release callback threw", t)
             }
@@ -199,16 +236,18 @@ class NativeKeepAlive(
 
     /** Must wrap every native inference call: pauses the idle timer. */
     inline fun <R> withWork(block: () -> R): R {
-        beginWork()
+        val bracket = beginWork()
         try {
             return block()
         } finally {
-            endWork()
+            endWork(bracket)
         }
     }
 
-    fun beginWork() {
-        synchronized(lock) {
+    fun beginWork(): WorkBracket {
+        val bracket = synchronized(lock) {
+            val b = WorkBracket(nextBracketSeq++)
+            openBrackets.add(b)
             workInFlight.incrementAndGet()
             // TASK-574: countdown pauses while work runs (endWork re-arms it).
             idleDeadline = null
@@ -222,15 +261,26 @@ class NativeKeepAlive(
             // the base. The residency identity semantics (TASK-626) are
             // untouched: only WHEN the idle unload fires changes.
             warm.set(true)
+            b
         }
+        return bracket
     }
 
-    fun endWork() {
+    fun endWork(bracket: WorkBracket) {
         synchronized(lock) {
-            // TASK-789: the last bracket member leaving runs a pending drain
-            // release BEFORE anything re-arms (a drain release disarms the
-            // timer anyway; unload() calls stop() first).
-            if (workInFlight.decrementAndGet() == 0) tryDrainReleaseLocked()
+            // The membership IS the double-end guard (identity remove:
+            // WorkBracket has no equals override): a second endWork, or a
+            // bracket from another keepAlive instance, is inert here
+            // instead of corrupting the count or the drain set.
+            if (!openBrackets.remove(bracket)) return
+            workInFlight.decrementAndGet()
+            // TASK-789/794: the endWork closing the last bracket of a
+            // pending request's watermark runs that release BEFORE anything
+            // re-arms (a drain release disarms the timer anyway; unload()
+            // calls stop() first). Requests whose watermark still has open
+            // brackets wait on; work left in flight (a post-request bracket
+            // on the fresh engine) no longer postpones anything.
+            if (drainRequests.isNotEmpty()) tryDrainReleaseLocked()
             if (timerActive.get()) restartLocked()
         }
     }

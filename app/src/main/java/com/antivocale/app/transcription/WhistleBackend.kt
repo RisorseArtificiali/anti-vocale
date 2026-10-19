@@ -96,23 +96,39 @@ class WhistleBackend @Inject constructor(
             return Result.success(Unit)
         }
         return runCatching {
-            // beginWork brackets the load AND cancels any pending idle fire
-            // (a fire mid-load would reset the engine right after success;
-            // unreachable today, live with slice 3's same-id reloads).
-            keepAlive.beginWork()
-            try {
-                // IO hop (the sherpa discipline): the native 17MB load never
-                // runs on whatever dispatcher the caller arrived on.
-                withContext(Dispatchers.IO) {
-                    if (!WhistleNative.loadFromFile(path)) {
-                        throw TranscriptionException.ModelLoadError(
-                            "Whistle load failed: " + WhistleNative.lastError())
+            // withWork brackets the load AND cancels any pending idle fire
+            // (an idle fire cannot run mid-load: the bracket holds the
+            // count above zero; a DRAIN release can, and the epoch below
+            // retires it). The epoch retires pending drain releases the
+            // moment a load ATTEMPT begins, not at its success: under the
+            // TASK-794 watermark drain the old decode's drain can fire
+            // while this load is still running, and a reset landing after
+            // a successful load would wipe the fresh engine (a failed load
+            // retires its pending releases too: the backend claims no
+            // residency then, and skipping the reset is the safe side).
+            keepAlive.withWork {
+                val epochAtLoad = loadEpoch.incrementAndGet()
+                try {
+                    // IO hop (the sherpa discipline): the native 17MB load
+                    // never runs on whatever dispatcher the caller arrived on.
+                    withContext(Dispatchers.IO) {
+                        if (!WhistleNative.loadFromFile(path)) {
+                            throw TranscriptionException.ModelLoadError(
+                                "Whistle load failed: " + WhistleNative.lastError())
+                        }
                     }
+                } catch (t: Throwable) {
+                    // The bump above already retired any pending release
+                    // from the previous life; a FAILED or CANCELLED load
+                    // must not also leak the engine: re-arm the reset at
+                    // THIS epoch (guarded against a later successful load),
+                    // firing once this load bracket drains.
+                    keepAlive.requestDrainRelease {
+                        if (loadEpoch.get() == epochAtLoad) WhistleNative.reset()
+                    }
+                    throw t
                 }
-            } finally {
-                keepAlive.endWork()
             }
-            loadEpoch.incrementAndGet()
             cactPath = path
             configuredLanguage = config.language.takeIf { it.isNotBlank() }?.let(::toEngineLanguage)
             // The residency identity speaks the POLICY's raw vocabulary (the
@@ -132,16 +148,22 @@ class WhistleBackend @Inject constructor(
         sampleRate: Int,
         prompt: String,
     ): Result<TranscriptionResult> {
-        if (cactPath == null) {
-            return Result.failure(TranscriptionException.NotInitialized())
-        }
-        keepAlive.beginWork()
-        return try {
+        return keepAlive.withWork {
+            // The owner discipline (review F1): the readiness gate and the
+            // language read belong INSIDE the bracket, like every handle
+            // field on the other owners. A gate outside it lets a straggler
+            // pass, get bracketed AFTER an unload's watermark, and decode
+            // on the old engine with already-nulled state; inside, an
+            // unload landing after this read waits for THIS bracket.
+            val language = configuredLanguage
+            if (cactPath == null) {
+                return@withWork Result.failure(TranscriptionException.NotInitialized())
+            }
             val result = withContext(Dispatchers.IO) {
-                WhistleNative.transcribe(samples, configuredLanguage)
+                WhistleNative.transcribe(samples, language)
             } ?: run {
                 Log.w(TAG, "transcribe failed: " + WhistleNative.lastError())
-                return Result.failure(TranscriptionException.NativeError(
+                return@withWork Result.failure(TranscriptionException.NativeError(
                     "Whistle decode failed: " + WhistleNative.lastError()))
             }
             Log.i(TAG, "decoded ${samples.size / sampleRate}s lang=${result.language} " +
@@ -151,8 +173,6 @@ class WhistleBackend @Inject constructor(
                     text = result.text,
                     detectedLanguage = result.language,
                 ))
-        } finally {
-            keepAlive.endWork()
         }
     }
 

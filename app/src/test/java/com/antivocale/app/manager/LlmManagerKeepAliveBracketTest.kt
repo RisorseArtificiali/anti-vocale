@@ -38,14 +38,14 @@ class LlmManagerKeepAliveBracketTest {
         val (_, keepAlive) = managerUnderTest(backgroundScope)
         keepAlive.start()
 
-        keepAlive.beginWork()
+        val work = keepAlive.beginWork()
         // Twice the idle timeout elapses DURING the generation: no fire.
         advanceTimeBy(2 * 60_000L + 1)
         runCurrent()
         assertTrue("no fire during a long generation", keepAlive.isTimerActiveForTest())
         assertEquals(1, keepAlive.workInFlightForTest())
 
-        keepAlive.endWork()
+        keepAlive.endWork(work)
         // Re-armed at end of work: only a FULL fresh idle period fires.
         advanceTimeBy(60_000L - 1)
         runCurrent()
@@ -60,13 +60,13 @@ class LlmManagerKeepAliveBracketTest {
         val (_, keepAlive) = managerUnderTest(backgroundScope)
         keepAlive.start()
 
-        keepAlive.beginWork()
+        val work = keepAlive.beginWork()
         try {
             throw IllegalStateException("generation exploded")
         } catch (_: IllegalStateException) {
             // swallowed, like Result.failure would
         } finally {
-            keepAlive.endWork()
+            keepAlive.endWork(work)
         }
         assertEquals("no leaked in-flight count after a failure", 0, keepAlive.workInFlightForTest())
         assertTrue("timer re-armed after a failed generation", keepAlive.isTimerActiveForTest())
@@ -77,14 +77,14 @@ class LlmManagerKeepAliveBracketTest {
         val (_, keepAlive) = managerUnderTest(backgroundScope)
         keepAlive.start()
 
-        keepAlive.beginWork()
-        keepAlive.beginWork()
-        keepAlive.endWork()
+        val first = keepAlive.beginWork()
+        val second = keepAlive.beginWork()
+        keepAlive.endWork(second)
         // One still in flight: nothing may fire, however long we wait.
         advanceTimeBy(3 * 60_000L)
         runCurrent()
         assertTrue("no fire while one of two works is still running", keepAlive.isTimerActiveForTest())
-        keepAlive.endWork()
+        keepAlive.endWork(first)
         advanceTimeBy(60_000L - 1)
         runCurrent()
         assertTrue(keepAlive.isTimerActiveForTest())

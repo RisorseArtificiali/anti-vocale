@@ -86,9 +86,9 @@ class NativeKeepAliveBytemanTest {
         // construction, not by scheduler luck.
         val claimed = AtomicBoolean(false)
         val worker = Thread {
-            ka.beginWork() // rule freezes here while the timer unloads
+            val claim = ka.beginWork() // rule freezes here while the timer unloads
             claimed.set(true)
-            ka.endWork()
+            ka.endWork(claim)
         }
         worker.start()
 
@@ -124,7 +124,7 @@ class NativeKeepAliveBytemanTest {
         val ka = newKeepAlive()
         recognizer = Any()
 
-        ka.beginWork()
+        val claim = ka.beginWork()
         ka.start() // delay(0) fire happens while work is claimed
 
         // Give the timer coroutine ample time to run its check; it must abort.
@@ -134,7 +134,7 @@ class NativeKeepAliveBytemanTest {
         assertFalse("unload must not fire while work is in flight", unloaded.get())
         assertNotNull("handle must stay live for the claimed work", recognizer)
 
-        ka.endWork() // releases; the re-armed delay(0) timer unloads now
+        ka.endWork(claim) // releases; the re-armed delay(0) timer unloads now
         assertTrue("idle unload must fire after the work ends", awaitUntil { unloaded.get() })
         assertNull(recognizer)
     }

@@ -363,10 +363,9 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
     }
 
     override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<TranscriptionResult> {
-        // beginWork before the recognizer read: closes the idle-unload race
+        // Claim work before the recognizer read: closes the idle-unload race
         // (see SherpaBackend for the full rationale).
-        keepAlive.beginWork()
-        try {
+        return keepAlive.withWork {
             // TASK-789 review T1: capture the case policy with the recognizer
             // local; unload() resets the field mid-bracket and an orphaned
             // decode must not return wrongly-cased text. TASK-816 review F2:
@@ -376,13 +375,13 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
             val lower = lowercaseOutput
             val trimLoops = trimsDegenerateRepetition
             onlineRecognizer?.let { rec ->
-                return withContext(Dispatchers.IO) {
+                return@withWork withContext(Dispatchers.IO) {
                     transcribeStreamingBatch(rec, samples, sampleRate, lower)
                 }
             }
             val rec = recognizer
-                ?: return Result.failure(TranscriptionException.NotInitialized())
-            return withContext(Dispatchers.IO) {
+                ?: return@withWork Result.failure(TranscriptionException.NotInitialized())
+            withContext(Dispatchers.IO) {
             // Release the native OfflineStream on EVERY path so the JNI handle is freed
             // deterministically, not left to GC finalization (NemotronStreamingBackend pattern).
             var stream: OfflineStream? = null
@@ -435,8 +434,6 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                 stream?.release()
             }
             }
-        } finally {
-            keepAlive.endWork()
         }
     }
 

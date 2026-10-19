@@ -171,9 +171,9 @@ class NativeKeepAliveRaceTest {
             val observedByWork = AtomicReference<Any?>(null)
             val worker = Thread {
                 workerArrived.countDown()
-                keepAlive.beginWork()
+                val claim = keepAlive.beginWork()
                 observedByWork.set(handle.ref)
-                keepAlive.endWork()
+                keepAlive.endWork(claim)
                 workerDone.countDown()
             }
             worker.start()

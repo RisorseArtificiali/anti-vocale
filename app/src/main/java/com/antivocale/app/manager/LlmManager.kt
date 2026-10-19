@@ -883,11 +883,10 @@ open class LlmManager @Inject constructor(
      * down. Accepted cost (the 789 swap tradeoff, both sites that open it:
      * initialize()'s path-change branch and TranscriptionBackendManager
      * .unloadAll during a backend switch): with a generation in flight the
-     * old engine stays resident until the DRAIN, and the drain needs a true
-     * idle instant (workInFlight back to zero), so back-to-back generations
-     * on the new engine can defer it well past one generation - doubled
-     * peak native memory for that whole stretch (sustained-load follow-up
-     * tracked as its own task).
+     * old engine stays resident until the DRAIN. Since TASK-794 the drain
+     * waits only for the brackets open at unload time, so back-to-back
+     * generations on the new engine no longer defer it: the doubled peak
+     * native memory lasts at most the in-flight generation's own return.
      */
     @Synchronized
     open fun unload() {
