@@ -198,9 +198,7 @@ jobs:
 
       # TASK-853: the Whistle JNI bridge needs libneedle.a per arm ABI.
       - name: Fetch whistle engine
-        run: |
-          pip install cactus-needle
-          ./scripts/fetch-whistle-engine.sh
+        run: ./scripts/fetch-whistle-engine.sh
 
       # Signing EXACTLY as android-release.yml signs its playStore release
       # builds: KEYSTORE_BASE64 -> app/release.keystore, KEYSTORE_PROPERTIES ->

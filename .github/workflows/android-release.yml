@@ -38,6 +38,13 @@ env:
   # instead of repeating the event matrix inline; the runbook's dispatch-mode
   # section remains the source of truth for what each mode means.
   TAG_ANCHORED: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '') }}
+  # TASK-853: true on the Play publish modes (a published release, or a
+  # dispatch carrying a play-store track). The whistle-engine fetch and the
+  # Release AAB build share this gate so they cannot drift apart (the AAB's
+  # CMake configure dies without the fetched engine); keyed once here
+  # instead of repeating the event matrix inline, the TAG_ANCHORED
+  # convention.
+  PLAY_RELEASE_BUILD: ${{ (github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '') }}
 
 jobs:
   # TASK-683.9: every runs-on in this file is pinned to ubuntu-24.04 because
@@ -83,12 +90,12 @@ jobs:
       - name: Fetch sherpa-onnx AAR
         run: ./scripts/fetch-sherpa-aar.sh
 
-      # TASK-853: the Whistle JNI bridge needs libneedle.a per arm ABI (the
-      # CMake configure fails loudly without it).
-      - name: Fetch whistle engine
-        run: |
-          pip install cactus-needle
-          ./scripts/fetch-whistle-engine.sh
+      # TASK-853/854: NO whistle-engine fetch here. The JVM suite never
+      # builds native code (libneedle.a is a link input, not a classpath
+      # entry, unlike the sherpa AAR above); the first version of this step
+      # fetched anyway and its unpinned pip dependency broke CI (the
+      # cactus-needle package reshuffled its entry points in 3.2.7). The
+      # Build job fetches the engine where the native builds need it.
 
       # Fdroid flavor on purpose: the google-services plugin does not apply
       # to Fdroid tasks, so unit tests need no Firebase json. (The playStore
@@ -162,14 +169,36 @@ jobs:
           else
             mkdir -p app/libs
             curl -fL --retry 3 -o app/libs/sherpa-onnx.aar \
-              https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.4/sherpa-onnx-1.13.4.aar
+              https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-1.13.8.aar
+          fi
+
+      # TASK-853: the Whistle JNI bridge needs libneedle.a per arm ABI (the
+      # CMake configure fails loudly without it). Pinned+verified downloads
+      # (scripts/fetch-whistle-engine.sh). Only the playStore AAB below
+      # consumes the real engine: every fdroid arm in this job builds the
+      # stub form under -PwhistleEngineDisabled, so the fetch carries the
+      # AAB's own condition and plain push/PR runs download nothing.
+      - name: Fetch whistle engine
+        if: env.PLAY_RELEASE_BUILD == 'true'
+        # The pre-script guard matters for the reachable pre-whistle cases
+        # (a release event on an old tag, a commit-input dispatch carrying a
+        # play-store track): those checkouts predate the script and their
+        # CMake wants no engine; skip with a note instead of exiting 127.
+        run: |
+          if [ -x scripts/fetch-whistle-engine.sh ]; then
+            ./scripts/fetch-whistle-engine.sh
+          else
+            echo "fetch-whistle-engine.sh absent on this ref (pre-TASK-853); no engine needed"
           fi
 
       - name: Build fdroid Release APK
         id: fdroid-apk
         # Firebase-free APK for F-Droid / GitHub Releases / sideloading.
         # No google-services.json or keystore needed (unsigned for F-Droid re-signing).
-        run: ./gradlew assembleFdroidRelease
+        # TASK-854: -PwhistleEngineDisabled mirrors the F-Droid recipe (the
+        # fdroid channel ships the stub bridge; upstream's prebuilt-only
+        # engine cannot enter a source-built package).
+        run: ./gradlew assembleFdroidRelease -PwhistleEngineDisabled
 
       # Issue #32: tester-friendly APKs with direct download links. Debug
       # builds are already signed with the standard Android debug keystore
@@ -187,13 +216,12 @@ jobs:
         if: >-
           github.event_name == 'release' ||
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.tag != '' || github.event.inputs.commit != ''))
-        run: ./gradlew assembleFdroidDebug
+        run: ./gradlew assembleFdroidDebug -PwhistleEngineDisabled
 
       - name: Build Release AAB
         id: playstore-aab
-        if: >-
-          (github.event_name == 'release' && github.event.action == 'published') ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
+        # The PLAY_RELEASE_BUILD gate (shared with the engine fetch above).
+        if: env.PLAY_RELEASE_BUILD == 'true'
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
           echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties

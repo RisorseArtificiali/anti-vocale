@@ -10,7 +10,7 @@ This document describes the verified steps to build the Anti-Vocale app with Lit
 - **adb**: Must be in PATH
 - **Kotlin**: 2.4.10 (AGP 9 built-in Kotlin compiles it; no kotlin.android plugin involved)
 - **sherpa-onnx AAR**: NOT committed to the repo. Run `./scripts/fetch-sherpa-aar.sh` once after cloning (downloads the pinned release into `app/libs/`; CI does the same in both workflow jobs). Without it Gradle fails resolving `app/libs/sherpa-onnx.aar`.
-- **Sherpa version sync**: when bumping sherpa-onnx, update the version in THREE places: (1) `SHERPA_ONNX_VERSION` in `scripts/fetch-sherpa-aar.sh`, (2) the `SRCLIB PIN` comment in `app/build.gradle.kts`, (3) the `.sherpa-version` marker file at the repo root. The marker file is what the F-Droid recipe tooling reads to pin the srclib (issue #38); the srclib commit is the matching k2-fsa/sherpa-onnx tag.
+- **Sherpa version sync**: when bumping sherpa-onnx, update the version in FIVE places: (1) `SHERPA_ONNX_VERSION` in `scripts/fetch-sherpa-aar.sh`, (2) the `SRCLIB PIN` comment in `app/build.gradle.kts`, (3) the `.sherpa-version` marker file at the repo root, (4) the `sherpa-onnx==` pin in `eval/requirements.txt`, (5) the inline fallback URL in `.github/workflows/android-release.yml` (scripts/check-sherpa-sync.sh verifies all five). The marker file is what the F-Droid recipe tooling reads to pin the srclib (issue #38); the srclib commit is the matching k2-fsa/sherpa-onnx tag.
 
 ## Quick Start (One-Liner Build)
 
