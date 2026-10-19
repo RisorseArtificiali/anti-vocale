@@ -54,8 +54,9 @@ class SherpaModelDownloader private constructor(val entryId: String) {
         context: Context,
         variantName: String? = null,
         onProgress: (Float) -> Unit = {},
-        onStateChange: (DownloadState) -> Unit = {}
-    ): Result<File> = delegate(variantName).downloadModel(context, onProgress, onStateChange)
+        onStateChange: (DownloadState) -> Unit = {},
+        tokenManager: com.antivocale.app.data.HuggingFaceTokenManager? = null,
+    ): Result<File> = delegate(variantName).downloadModel(context, onProgress, onStateChange, tokenManager)
 
     /** Cancels one variant's download, or every active download when [variantName] is null. */
     fun cancel(variantName: String? = null) {

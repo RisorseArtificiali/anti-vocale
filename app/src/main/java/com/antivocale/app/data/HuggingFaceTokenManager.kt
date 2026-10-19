@@ -2,6 +2,14 @@ package com.antivocale.app.data
 
 import kotlinx.coroutines.flow.StateFlow
 
+/**
+ * The Authorization header value for a HuggingFace token, or null when the
+ * token is absent or blank (blank means absent: a whitespace token must
+ * fail the gated pre-flight, not ride a 401 after a round trip).
+ */
+fun huggingFaceAuthHeader(token: String?): String? =
+    token?.takeUnless { it.isBlank() }?.let { "Bearer $it" }
+
 interface HuggingFaceTokenManager {
 
     val tokenState: StateFlow<TokenState>

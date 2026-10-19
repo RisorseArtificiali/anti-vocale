@@ -45,7 +45,6 @@ for v in $workflow_urls; do
         failures=$((failures+1))
     fi
 done
-workflow_ver="$marker_ver"
 if [ -z "$eval_ver" ] || [ "$eval_ver" = "v" ]; then
     echo "FAIL: eval/requirements.txt has no sherpa-onnx pin"
     failures=$((failures+1))
@@ -57,13 +56,13 @@ if [ "$failures" -gt 0 ]; then
 fi
 
 if [ "$marker_ver" != "$script_ver" ] || [ "$marker_ver" != "$gradle_ver" ] \
-   || [ "$marker_ver" != "$workflow_ver" ] || [ "$marker_ver" != "$eval_ver" ]; then
+   || [ "$marker_ver" != "$eval_ver" ]; then
     echo "FAIL: sherpa version out of sync:"
     echo "  .sherpa-version:            $marker_ver"
     echo "  fetch-sherpa-aar.sh:        $script_ver"
     echo "  build.gradle.kts (PIN):     $gradle_ver"
-    echo "  android-release.yml (URL):  $workflow_ver"
     echo "  eval/requirements.txt:      $eval_ver"
+    echo "  (the per-URL loop above reports any stale android-release.yml URL)"
     echo "Update ALL FIVE when bumping sherpa (see CLAUDE.md and docs/BUILD.md)."
     exit 1
 fi

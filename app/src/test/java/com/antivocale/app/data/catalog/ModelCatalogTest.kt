@@ -1,6 +1,7 @@
 package com.antivocale.app.data.catalog
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -10,6 +11,52 @@ import org.junit.Test
  * shape (literal name/description, files with mandatory url+sha256+size).
  */
 class ModelCatalogTest {
+
+    private val litertlmDoc = """
+        {
+          "schemaVersion": 1,
+          "models": [
+            {
+              "id": "llm-test",
+              "runtime": "litertlm",
+              "modelType": "",
+              "family": "",
+              "display": { "resourceKey": "gemma_name" },
+              "storageDir": "models",
+              "variants": [
+                {
+                  "name": "gated",
+                  "dirName": "gated-v1",
+                  "estimatedSizeMB": 10,
+                  "requiresAuth": true,
+                  "source": { "kind": "huggingface", "repo": "example/gated" },
+                  "files": [ { "name": "model.litertlm", "sha256": "aa" } ]
+                },
+                {
+                  "name": "public",
+                  "dirName": "public-v1",
+                  "estimatedSizeMB": 10,
+                  "source": { "kind": "huggingface", "repo": "example/public" },
+                  "files": [ { "name": "model.litertlm" } ]
+                }
+              ]
+            }
+          ]
+        }
+        """.trimIndent()
+
+    @Test
+    fun `a litertlm runtime entry parses with per-variant auth flags`() {
+        val entries = ModelCatalogJson.parseCatalog(litertlmDoc)
+        assertEquals(1, entries.size)
+        val entry = entries.first()
+        assertEquals("litertlm", entry.runtime)
+        assertFalse(entry.isStreaming)
+        val gated = entry.variant("gated")!!
+        val public = entry.variant("public")!!
+        assertTrue(gated.requiresAuth)
+        assertFalse(public.requiresAuth)
+    }
 
     private val builtInDoc = """
         {

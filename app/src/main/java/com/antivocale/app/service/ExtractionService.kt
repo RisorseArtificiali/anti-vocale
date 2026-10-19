@@ -206,7 +206,8 @@ class ExtractionService : Service() {
                     context = applicationContext,
                     variantName = variant,
                     onProgress = {},
-                    onStateChange = onStateChange
+                    onStateChange = onStateChange,
+                    tokenManager = huggingFaceTokenManager
                 )
             } else if (BuiltInBackendIds.isLlm(modelKey)) {
                 val gemmaVariant = GemmaVariant.fromString(variant)

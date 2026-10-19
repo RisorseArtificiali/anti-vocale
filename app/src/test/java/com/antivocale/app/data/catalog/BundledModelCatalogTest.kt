@@ -182,7 +182,9 @@ class BundledModelCatalogTest {
     @Test
     fun `every variant is well-formed and resolvable`() {
         for (m in catalog()) {
-            assertTrue("${m.id}: runtime", m.runtime == "offline" || m.runtime == "online")
+            // The SAME set the parser accepts (a mirror here drifted once:
+            // the parser widened for litertlm and this pin kept two values).
+            assertTrue("${m.id}: runtime", m.runtime in ModelCatalogJson.KNOWN_RUNTIMES)
             // TASK-853: whistle runs its OWN engine (not sherpa), so it
             // carries no sherpa modelType; the pin allows exactly that id.
             assertTrue("${m.id}: modelType required",

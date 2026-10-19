@@ -27,6 +27,13 @@ object ModelCatalogJson {
 
     const val SCHEMA_VERSION = 1
 
+    /**
+     * The runtime values a built-in entry may declare (message derives, no
+     * drift). Internal-visible so the bundled-catalog pin test asserts the
+     * SAME set instead of a drifting mirror.
+     */
+    internal val KNOWN_RUNTIMES = setOf("offline", "online", "litertlm")
+
     private const val HF_BASE_URL = "https://huggingface.co"
 
     /**
@@ -86,8 +93,8 @@ object ModelCatalogJson {
 
         val id = o.getString("id")
         val runtime = o.getString("runtime")
-        require(runtime == "offline" || runtime == "online") {
-            "entry $id: unsupported runtime '$runtime' (expected 'offline' or 'online')"
+        require(runtime in KNOWN_RUNTIMES) {
+            "entry $id: unsupported runtime '$runtime' (expected ${KNOWN_RUNTIMES.joinToString()})"
         }
         val variantArr = o.getJSONArray("variants")
         require(variantArr.length() > 0) { "entry $id has no variants" }
@@ -186,6 +193,7 @@ object ModelCatalogJson {
             languages = optStringList(o, "languages"),
             source = parseSource(o.getJSONObject("source"), entryId, name),
             files = files,
+            requiresAuth = o.optBoolean("requiresAuth", false),
         )
     }
 
@@ -356,6 +364,14 @@ data class CatalogVariant(
     val languages: List<String> = emptyList(),
     val source: CatalogSource,
     val files: List<CatalogFile>,
+    /**
+     * The repo is HuggingFace-gated: the download needs the user's token
+     * (HuggingFaceTokenManager) and the UI shows the add-token warning.
+     * The catalog states it per variant, so no public-access probe is
+     * needed (the pre-catalog Gemma downloader probed because it had no
+     * per-variant knowledge).
+     */
+    val requiresAuth: Boolean = false,
 )
 
 /** Reusable, per-entry tuning flags — the formalized per-model workarounds. */
@@ -421,7 +437,11 @@ data class CatalogFlags(
 data class CatalogEntry(
     /** Backend id: a built-in BACKEND_ID constant ("sherpa-onnx", ...) or "" for an external single entry. */
     val id: String,
-    /** Recognizer family: "offline" (OfflineRecognizer) or "online" (OnlineRecognizer, streaming). */
+    /**
+     * Recognizer family: "offline" (OfflineRecognizer), "online"
+     * (OnlineRecognizer, streaming), or "litertlm" (the LiteRT-LM lane,
+     * non-sherpa; never streaming).
+     */
     val runtime: String,
     /** sherpa-onnx modelType: "nemo_transducer", "whisper", "qwen3_asr", "" (Nemotron online). */
     val modelType: String,

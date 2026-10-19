@@ -68,7 +68,7 @@ class LitertLmUrlImporter(
         modelsDir.mkdirs()
         val downloaded = download(
             listing.resolveUrl(parseRepoIdOrThrow(url), fileName),
-            File(modelsDir, fileName), sizeBytes, token?.let { "Bearer $it" }).getOrThrow()
+            File(modelsDir, fileName), sizeBytes, com.antivocale.app.data.huggingFaceAuthHeader(token)).getOrThrow()
         require(downloaded.length() > 0) { "downloaded file is empty" }
         downloaded
     }

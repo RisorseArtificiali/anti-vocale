@@ -1,9 +1,14 @@
 package com.antivocale.app.data.download
 
 import android.content.Context
+import android.util.Log
+import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.catalog.CatalogEntry
 import com.antivocale.app.data.catalog.CatalogVariant
+import com.antivocale.app.data.huggingFaceAuthHeader
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Catalog-driven downloader for a built-in sherpa-onnx model.
@@ -39,8 +44,31 @@ class CatalogModelDownloader private constructor(
     suspend fun downloadModel(
         context: Context,
         onProgress: (Float) -> Unit = {},
-        onStateChange: (DownloadState) -> Unit = {}
-    ): Result<File> = delegate.downloadModel(context, VARIANT_KEY, onProgress, onStateChange)
+        onStateChange: (DownloadState) -> Unit = {},
+        tokenManager: HuggingFaceTokenManager? = null,
+    ): Result<File> {
+        // Gated repos state it per variant (no public-access probe needed):
+        // fail fast with the actionable error BEFORE any bytes move, the
+        // pre-catalog Gemma downloader's contract (the user adds the token
+        // in Settings and retries). The token reads are encrypted-prefs
+        // (disk + keystore IPC): resolve them on IO.
+        val authHeader = if (variant.requiresAuth) {
+            val header = withContext(Dispatchers.IO) {
+                huggingFaceAuthHeader(tokenManager?.getEffectiveToken())
+            }
+            if (header == null) {
+                val error = DownloadException.AuthRequired(
+                    "This model requires a HuggingFace account. Please add your token in Settings.")
+                Log.w(TAG, "entry ${entry.id}/${variant.name}: ${error.message}")
+                onStateChange(DownloadState.Error(error.message ?: "", error))
+                return Result.failure(error)
+            }
+            header
+        } else {
+            null
+        }
+        return delegate.downloadModel(context, VARIANT_KEY, onProgress, onStateChange, authHeader)
+    }
 
     fun cancel() = delegate.cancel(VARIANT_KEY)
 
@@ -69,7 +97,7 @@ class CatalogModelDownloader private constructor(
             isValidModel = { dir -> CatalogModelValidator.isValidModelDir(dir, fileNames) },
             ensureParentDirs = entry.flags.ensureParentDirs,
             expectedSha256 = buildExpectedSha256(),
-            hfRepoNames = mapOf(VARIANT_KEY to repo)
+            hfRepoNames = mapOf(VARIANT_KEY to repo),
         )
     }
 
@@ -81,6 +109,7 @@ class CatalogModelDownloader private constructor(
     }
 
     companion object {
+        private const val TAG = "CatalogModelDownloader"
         private const val VARIANT_KEY = "selected"
 
         /**
@@ -110,13 +139,10 @@ object CatalogModelValidator {
         if (!dir.isDirectory) return false
         return fileNames.all { name ->
             val file = File(dir, name)
-            // .ort joins .onnx (GH #89 moonshine v2 ships the ORT extension;
-            // the completeness check is extension-agnostic, the magic check is not).
-            // .cact joins both (TASK-853 whistle): the sidecar is written for
-            // every downloaded file, so a partial .cact must not pass either.
-            if (file.name.endsWith(".onnx", ignoreCase = true) ||
-                file.name.endsWith(".ort", ignoreCase = true) ||
-                file.name.endsWith(".cact", ignoreCase = true)) {
+            // Sidecar-tracked extensions (the helper owns the set: the
+            // sidecar is written for every downloaded file, so a partial
+            // copy must not pass; membership history lives there).
+            if (ResumeDownloadHelper.isSidecarTracked(file.name)) {
                 ResumeDownloadHelper.isFileComplete(file)
             } else {
                 file.exists()

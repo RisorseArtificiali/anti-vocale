@@ -84,7 +84,14 @@ class SherpaOnnxModelDownloader<V>(
         context: Context,
         variant: V,
         onProgress: (Float) -> Unit = {},
-        onStateChange: (DownloadState) -> Unit = {}
+        onStateChange: (DownloadState) -> Unit = {},
+        /**
+         * Authorization header for gated repos ("Bearer ..."): known at
+         * downloadModel time, not at config-construction time (the
+         * per-download token pre-flight). Null (the default) downloads
+         * anonymously.
+         */
+        authHeader: String? = null,
     ): Result<File> = withContext(Dispatchers.IO) {
         cancelFlags[variant] = false
         try {
@@ -172,7 +179,8 @@ class SherpaOnnxModelDownloader<V>(
                                 estimatedSizeBytes = 0L,
                                 connectTimeoutMs = 60_000,
                                 readTimeoutMs = 120_000,
-                                isCancelled = { cancelFlags[variant] == true }
+                                isCancelled = { cancelFlags[variant] == true },
+                                authHeader = authHeader
                             )
 
                             val downloadResult = downloadWithRetry(
@@ -342,5 +350,5 @@ data class SherpaOnnxModelConfig<V>(
     val ensureParentDirs: Boolean = false,
     val expectedSha256: Map<V, Map<String, String>> = emptyMap(),
     /** Full "owner/repo" overrides for variants that don't live under the default "pantinor/" namespace. */
-    val hfRepoNames: Map<V, String> = emptyMap()
+    val hfRepoNames: Map<V, String> = emptyMap(),
 )

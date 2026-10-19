@@ -341,7 +341,7 @@ object ModelDownloader {
                 tempFile = tempFile,
                 targetFile = targetFile,
                 estimatedSizeBytes = variant.estimatedSizeMB * 1024 * 1024,
-                authHeader = accessToken?.let { "Bearer $it" },
+                authHeader = com.antivocale.app.data.huggingFaceAuthHeader(accessToken),
                 connectTimeoutMs = CONNECT_TIMEOUT_MS,
                 readTimeoutMs = READ_TIMEOUT_MS,
                 isCancelled = { cancelFlags[variant] == true }

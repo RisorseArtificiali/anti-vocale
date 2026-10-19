@@ -26,6 +26,61 @@ import org.robolectric.annotation.Config
 @Config(sdk = [34], application = Application::class)
 class CatalogModelDownloaderTest {
 
+    private fun syntheticGatedEntry() = com.antivocale.app.data.catalog.CatalogEntry(
+        id = "test-gated", runtime = "litertlm", modelType = "", family = "",
+        display = com.antivocale.app.data.catalog.CatalogDisplay.Literal("Gated Test"),
+        storageDir = "models",
+        variants = listOf(com.antivocale.app.data.catalog.CatalogVariant(
+            name = "v1", dirName = "test-gated-v1", estimatedSizeMB = 1,
+            source = com.antivocale.app.data.catalog.CatalogSource(kind = "huggingface", repo = "example/gated"),
+            files = listOf(com.antivocale.app.data.catalog.CatalogFile(name = "model.litertlm")),
+            requiresAuth = true)))
+
+    @Test
+    fun `a gated variant without a token fails fast with the add-token error`() {
+        val downloader = CatalogModelDownloader.of(syntheticGatedEntry(), "v1")
+        var observed: DownloadState? = null
+        val result = kotlinx.coroutines.runBlocking {
+            downloader.downloadModel(context, onStateChange = { observed = it }, tokenManager = null)
+        }
+        assertTrue(result.isFailure)
+        // The typed pre-flight error the UI layer will key on (slice 2).
+        assertTrue(result.exceptionOrNull() is DownloadException.AuthRequired)
+        assertTrue(observed is DownloadState.Error)
+        // Not even an empty dir: the pre-flight returns before the delegate
+        // creates anything.
+        assertFalse(java.io.File(context.filesDir, "models/test-gated-v1").exists())
+    }
+
+    @Test
+    fun `a blank token is the same fast failure`() {
+        val blank = io.mockk.mockk<com.antivocale.app.data.HuggingFaceTokenManager>()
+        io.mockk.every { blank.getEffectiveToken() } returns "   "
+        val downloader = CatalogModelDownloader.of(syntheticGatedEntry(), "v1")
+        val result = kotlinx.coroutines.runBlocking {
+            downloader.downloadModel(context, tokenManager = blank)
+        }
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("requires a HuggingFace account") == true)
+    }
+
+    @Test
+    fun `litertlm joins the validator completeness set`() {
+        val dir = kotlin.io.path.createTempDirectory("litertlm-validator").toFile()
+        try {
+        // Missing file: invalid.
+        assertFalse(CatalogModelValidator.isValidModelDir(dir, listOf("model.litertlm")))
+        // Present non-empty, no sidecar (the legacy flat layout): valid.
+        java.io.File(dir, "model.litertlm").writeBytes(byteArrayOf(1, 2, 3))
+        assertTrue(CatalogModelValidator.isValidModelDir(dir, listOf("model.litertlm")))
+        // Empty file: invalid.
+        java.io.File(dir, "model.litertlm").writeBytes(ByteArray(0))
+        assertFalse(CatalogModelValidator.isValidModelDir(dir, listOf("model.litertlm")))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
     private lateinit var context: Context
 
     @Before

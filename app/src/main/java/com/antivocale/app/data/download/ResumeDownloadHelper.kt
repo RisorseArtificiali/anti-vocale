@@ -8,11 +8,14 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Typed download errors with explicit HTTP status codes.
+ * Typed download errors. The HTTP arms carry explicit status codes;
+ * [AuthRequired] is the pre-flight form (auth is KNOWN required and no
+ * usable token is present, before any request is made).
  */
 sealed class DownloadException(message: String, cause: Throwable? = null) : Exception(message, cause) {
     class Unauthorized(message: String) : DownloadException(message)
     class Forbidden(message: String) : DownloadException(message)
+    class AuthRequired(message: String) : DownloadException(message)
     class RangeNotSatisfiable(message: String) : DownloadException(message)
     class HttpError(val statusCode: Int, message: String) : DownloadException(message)
     class NetworkError(message: String, cause: Throwable? = null) : DownloadException(message, cause)
@@ -40,6 +43,18 @@ data class DownloadConfig(
  * [ProgressThrottler] and [DownloadRateTracker] for UI-friendly reporting.
  */
 object ResumeDownloadHelper {
+
+    /**
+     * Extensions whose completeness is verified against the .size sidecar:
+     * the sidecar is written for EVERY file this helper downloads, so a
+     * partial copy of any of these must not pass a completeness check.
+     * Membership history: .onnx, .ort (GH #89), .cact (TASK-853),
+     * .litertlm (the Gemma catalog fold).
+     */
+    val COMPLETENESS_CHECKED_EXTENSIONS = setOf(".onnx", ".ort", ".cact", ".litertlm")
+
+    fun isSidecarTracked(name: String): Boolean =
+        COMPLETENESS_CHECKED_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) }
 
     private const val TAG = "ResumeDownloadHelper"
     private const val BUFFER_SIZE = 8192
