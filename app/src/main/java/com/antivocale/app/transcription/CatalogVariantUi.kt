@@ -52,6 +52,14 @@ data class CatalogVariantUi(
     override val countPlaceholder: Boolean = false,
     override val titleCountPlaceholder: Boolean = false,
     val badgeKey: String? = null,
+    /** TASK-365: the repo is HuggingFace-gated (the add-token warning row). */
+    val requiresAuth: Boolean = false,
+    /**
+     * TASK-365: the variant's file name when it is a single-file layout
+     * (the litertlm entry: the saved path is the FILE, so active-state
+     * matching extends to it); null for multi-file (sherpa) variants.
+     */
+    val singleFileName: String? = null,
 ) : ModelVariant {
 
     companion object {
@@ -78,6 +86,8 @@ data class CatalogVariantUi(
                 // otherwise; either may format the count.
                 titleCountPlaceholder = ((variant.title ?: entry.display)
                     as? CatalogDisplay.Resource)?.countPlaceholder == true,
+                requiresAuth = variant.requiresAuth,
+                singleFileName = variant.files.singleOrNull()?.name,
                 estimatedSizeMB = variant.estimatedSizeMB,
                 supportedLanguageCodes = entry.languagesFor(variant).toSet(),
                 badgeKey = variant.badgeKey,

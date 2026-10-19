@@ -909,6 +909,206 @@
           ]
         }
       ]
+    },
+    {
+      "id": "llm",
+      "runtime": "litertlm",
+      "modelType": "",
+      "family": "",
+      "display": {
+        "resourceKey": "llm_backend_name"
+      },
+      "description": {
+        "resourceKey": "gemma_advanced_features_description"
+      },
+      "storageDir": "models",
+      "flags": {
+        "skipMetadataCheck": true,
+        "chunkDurationSeconds": 30
+      },
+      "languages": [
+        "af",
+        "am",
+        "ar",
+        "as",
+        "az",
+        "be",
+        "bg",
+        "bn",
+        "bs",
+        "ca",
+        "cs",
+        "cy",
+        "da",
+        "de",
+        "el",
+        "en",
+        "eo",
+        "es",
+        "et",
+        "eu",
+        "fa",
+        "fi",
+        "fo",
+        "fr",
+        "ga",
+        "gd",
+        "gl",
+        "gu",
+        "ha",
+        "he",
+        "hi",
+        "hr",
+        "ht",
+        "hu",
+        "hy",
+        "id",
+        "ig",
+        "is",
+        "it",
+        "ja",
+        "ka",
+        "kk",
+        "km",
+        "kn",
+        "ko",
+        "la",
+        "lb",
+        "lo",
+        "lt",
+        "lv",
+        "mg",
+        "mi",
+        "mk",
+        "ml",
+        "mn",
+        "mr",
+        "ms",
+        "mt",
+        "my",
+        "ne",
+        "nl",
+        "nn",
+        "no",
+        "ny",
+        "oc",
+        "pa",
+        "pl",
+        "ps",
+        "pt",
+        "ro",
+        "ru",
+        "rw",
+        "sa",
+        "sd",
+        "si",
+        "sk",
+        "sl",
+        "sn",
+        "so",
+        "sq",
+        "sr",
+        "st",
+        "su",
+        "sv",
+        "sw",
+        "ta",
+        "te",
+        "tg",
+        "th",
+        "ti",
+        "tk",
+        "tl",
+        "tr",
+        "tt",
+        "ug",
+        "uk",
+        "ur",
+        "uz",
+        "vi",
+        "wo",
+        "xh",
+        "yi",
+        "yo",
+        "zh",
+        "zu"
+      ],
+      "variants": [
+    {
+      "name": "gemma-4-e2b",
+      "title": {
+        "resourceKey": "model_title_gemma_4_e2b"
+      },
+      "dirName": "gemma-4-e2b",
+      "estimatedSizeMB": 2468,
+      "source": {
+        "kind": "huggingface",
+        "repo": "litert-community/gemma-4-E2B-it-litert-lm"
+      },
+      "files": [
+        {
+          "name": "gemma-4-E2B-it.litertlm",
+          "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c"
+        }
+      ]
+    },
+    {
+      "name": "gemma-4-e4b",
+      "title": {
+        "resourceKey": "model_title_gemma_4_e4b"
+      },
+      "dirName": "gemma-4-e4b",
+      "estimatedSizeMB": 3490,
+      "source": {
+        "kind": "huggingface",
+        "repo": "litert-community/gemma-4-E4B-it-litert-lm"
+      },
+      "files": [
+        {
+          "name": "gemma-4-E4B-it.litertlm",
+          "sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0"
+        }
+      ]
+    },
+    {
+      "name": "gemma-3n-e2b",
+      "title": {
+        "resourceKey": "model_title_gemma_3n_e2b"
+      },
+      "dirName": "gemma-3n-e2b",
+      "estimatedSizeMB": 3486,
+          "requiresAuth": true,
+      "source": {
+        "kind": "huggingface",
+        "repo": "google/gemma-3n-E2B-it-litert-lm"
+      },
+      "files": [
+        {
+          "name": "gemma-3n-E2B-it-int4.litertlm",
+          "sha256": "2ed7bc3a0026c93d5b8a4544b352d9d00cd66ff0bac3ef6a20ac3d2cba4010d6"
+        }
+      ]
+    },
+    {
+      "name": "gemma-3n-e4b",
+      "title": {
+        "resourceKey": "model_title_gemma_3n_e4b"
+      },
+      "dirName": "gemma-3n-e4b",
+      "estimatedSizeMB": 4691,
+          "requiresAuth": true,
+      "source": {
+        "kind": "huggingface",
+        "repo": "google/gemma-3n-E4B-it-litert-lm"
+      },
+      "files": [
+        {
+          "name": "gemma-3n-E4B-it-int4.litertlm",
+          "sha256": "2e67a6cd51dfe0f793431e6bd4ed8d029c88e10f52ca0469ad38445e3cd3c1f4"
+        }
+      ]
+    }
+      ]
     }
   ]
 }

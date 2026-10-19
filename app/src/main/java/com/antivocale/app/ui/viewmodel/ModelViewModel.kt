@@ -54,6 +54,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -266,6 +267,13 @@ class ModelViewModel @Inject constructor(
     // Download state
     private val _downloadUiState = MutableStateFlow(DownloadUiState())
     val downloadUiState: StateFlow<DownloadUiState> = _downloadUiState.asStateFlow()
+
+    // Declared BEFORE the init block: init calls refreshTokenState(), and
+    // Kotlin initializes properties and init blocks in source order.
+    private val _hasHuggingFaceToken = MutableStateFlow(tokenManager.hasToken())
+
+    /** TASK-365: gated variants' add-token warning (the catalog section reads this). */
+    val hasHuggingFaceToken: StateFlow<Boolean> = _hasHuggingFaceToken.asStateFlow()
 
     // Generic catalog model state (keyed by catalog entry id)
     private val _catalogStates = MutableStateFlow<Map<String, ModelEntryUiState>>(emptyMap())
@@ -686,6 +694,7 @@ class ModelViewModel @Inject constructor(
      * Refreshes the token state from the token manager.
      */
     fun refreshTokenState() {
+        _hasHuggingFaceToken.value = tokenManager.hasToken()
         _downloadUiState.update { it.copy(hasToken = tokenManager.hasToken()) }
     }
 
@@ -694,6 +703,34 @@ class ModelViewModel @Inject constructor(
     /** Refreshes download/path state for every catalog entry, off the main thread. */
     fun refreshCatalogEntries() {
         viewModelScope.launch(Dispatchers.IO) { refreshAllCatalogEntries() }
+    }
+
+    /**
+     * TASK-365: the Gemma (litertlm) entry's state. Both on-disk layouts
+     * count as downloaded: the catalog convention (files/models/<dirName>/
+     * <file>, what new downloads write) and the pre-fold flat layout
+     * (files/models/<file>, what legacy installs and the URL importer
+     * write). The active path is the generic llm preference (a FILE path,
+     * unlike the sherpa dirs).
+     */
+    private suspend fun refreshGemmaEntry(entry: com.antivocale.app.data.catalog.CatalogEntry) {
+        val context = ctx
+        val modelsDir = File(context.filesDir, entry.storageDir ?: "models")
+        val downloadedVariants = entry.variants
+            .filter { v ->
+                val fileName = v.files.firstOrNull()?.name ?: return@filter false
+                File(modelsDir, v.dirName + File.separator + fileName).isFile ||
+                    File(modelsDir, fileName).isFile
+            }
+            .map { it.name }
+            .toSet()
+        val activePath = preferencesManager.modelPath.firstOrNull()
+        updateEntry(entry.id) {
+            it.copy(
+                downloadedVariants = downloadedVariants,
+                modelPath = activePath,
+            )
+        }
     }
 
     private suspend fun refreshAllCatalogEntries() {
@@ -725,6 +762,10 @@ class ModelViewModel @Inject constructor(
     private suspend fun refreshCatalogEntry(entryId: String, records: List<ExternalModelRecord>) {
         val context = ctx
         val entry = BundledCatalog.byId(entryId) ?: return
+        if (com.antivocale.app.transcription.BuiltInBackendIds.isLlm(entryId)) {
+            refreshGemmaEntry(entry)
+            return
+        }
         val downloader = SherpaModelDownloader.of(entryId)
         val manager = SherpaModelManager.of(entryId)
         // TASK-801: a valid linked record (a bundle imported from this entry)
@@ -766,8 +807,16 @@ class ModelViewModel @Inject constructor(
 
     /** Saved model-path preference flow for a catalog entry (survives restarts). */
     fun savedModelPath(entryId: String): StateFlow<String?> =
-        preferencesManager.sherpaModelPath(entryId)
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+        if (com.antivocale.app.transcription.BuiltInBackendIds.isLlm(entryId)) {
+            // TASK-365: the llm backend owns the GENERIC model-path
+            // preference (a file path); the keyed sherpa family is wrong
+            // for it.
+            preferencesManager.modelPath
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+        } else {
+            preferencesManager.sherpaModelPath(entryId)
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+        }
 
     /**
      * TASK-685 (GH #112): the Models-tab language filter's persisted
@@ -1469,6 +1518,37 @@ class ModelViewModel @Inject constructor(
     /**
      * Uses a catalog model variant (switches the transcription backend to the entry id).
      */
+    /**
+     * TASK-365: activating a Gemma variant: resolve the FILE (the catalog
+     * dir form first, the legacy flat form second) and activate the llm
+     * backend on it (the generic model-path preference + the explicit llm
+     * backend id, the pre-fold useDownloadedModel contract).
+     */
+    private suspend fun useGemmaVariant(context: android.content.Context, entryId: String, variantName: String?) {
+        val entry = BundledCatalog.byId(entryId) ?: return
+        val variant = entry.variant(variantName) ?: entry.defaultVariant
+        val fileName = variant.files.firstOrNull()?.name
+        val modelsDir = File(context.filesDir, entry.storageDir ?: "models")
+        val file = fileName?.let {
+            listOf(File(modelsDir, variant.dirName + File.separator + it), File(modelsDir, it))
+                .firstOrNull(File::isFile)
+        }
+        if (file == null) {
+            val displayName = context.getString(CatalogVariantUi.of(entryId, variant.name).titleResId)
+            _snackbarEvent.tryEmit(SnackbarEvent.Message(
+                context.getString(R.string.model_use_missing_files, displayName)))
+            return
+        }
+        modelActivator.activateLlm(file)
+        val displayName = context.getString(CatalogVariantUi.of(entryId, variant.name).titleResId)
+        val message = context.getString(R.string.model_selected_message, displayName)
+        _uiState.update {
+            it.copy(modelPath = file.absolutePath, modelName = displayName,
+                status = ModelStatus.UNLOADED, statusMessage = message)
+        }
+        _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
+    }
+
     fun useModel(entryId: String, variantName: String) {
         viewModelScope.launch {
             val context = ctx
@@ -1494,6 +1574,10 @@ class ModelViewModel @Inject constructor(
             // shortcut trampoline shares it); resolution ladder, the
             // backend+path writes, and the demotion clear are ONE
             // implementation.
+            if (com.antivocale.app.transcription.BuiltInBackendIds.isLlm(entryId)) {
+                useGemmaVariant(context, entryId, variantName)
+                return@launch
+            }
             val modelPath = modelActivator.activateCatalog(
                 context, entryId, variantName, _catalogStates.value[entryId]?.modelPath)
             if (modelPath != null) {

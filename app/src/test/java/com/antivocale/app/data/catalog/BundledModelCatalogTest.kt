@@ -26,12 +26,12 @@ class BundledModelCatalogTest {
         ModelCatalogJson.parseCatalog(asset().readText())
 
     @Test
-    fun `catalog covers exactly the six built-in backends with unique ids`() {
+    fun `catalog covers exactly the seven built-in backends with unique ids`() {
         val models = catalog()
         // TASK-853: five sherpa entries + the whistle engine entry (the
         // ALL list carries all six; the whistle one is downloaded through
         // the same catalog channel).
-        assertEquals(6, models.size)
+        assertEquals(7, models.size)
         assertEquals(BuiltInBackendIds.ALL.toSet(), models.map { it.id }.toSet())
     }
 
@@ -187,8 +187,12 @@ class BundledModelCatalogTest {
             assertTrue("${m.id}: runtime", m.runtime in ModelCatalogJson.KNOWN_RUNTIMES)
             // TASK-853: whistle runs its OWN engine (not sherpa), so it
             // carries no sherpa modelType; the pin allows exactly that id.
+            // whistle (own engine) and llm (the litertlm lane) carry no
+            // sherpa modelType; the pin allows exactly those ids.
             assertTrue("${m.id}: modelType required",
-                m.modelType.isNotBlank() || m.isStreaming || m.id == BuiltInBackendIds.WHISTLE)
+                m.modelType.isNotBlank() || m.isStreaming ||
+                    m.id == BuiltInBackendIds.WHISTLE ||
+                    m.id == com.antivocale.app.transcription.LlmTranscriptionBackend.BACKEND_ID)
             assertTrue("${m.id}: variants", m.variants.isNotEmpty())
             for (v in m.variants) {
                 assertTrue("${m.id}/${v.name}: dirName", v.dirName.isNotBlank())

@@ -677,6 +677,7 @@ fun ModelTab(
         // sections hide behind "Browse all languages" (their installed models
         // still surface as fully functional cards inside the recommendations).
         val catalogEntriesVisible = if (showCuratedSection) emptyList() else viewModel.catalogEntries
+        val hasToken by viewModel.hasHuggingFaceToken.collectAsState()
         if (showCuratedSection) {
             CuratedLanguageSection(
                 profile = curatedProfile,
@@ -717,7 +718,9 @@ fun ModelTab(
                     isTranscribing = isTranscribing,
                     visibleVariants = visibleVariants,
                     guardedModelSwitch = guardedSwitch,
-                    onInfoClick = { modelInfoVariant = it }
+                    onInfoClick = { modelInfoVariant = it },
+                    hasToken = hasToken,
+                    onNavigateToSettings = onNavigateToSettings,
                 )
             }
         }
@@ -1549,6 +1552,8 @@ private fun CatalogModelSection(
     visibleVariants: List<CatalogVariantUi>,
     guardedModelSwitch: (() -> Unit) -> Unit,
     onInfoClick: (ModelVariant) -> Unit,
+    hasToken: Boolean = true,
+    onNavigateToSettings: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val savedPath by viewModel.savedModelPath(entry.id).collectAsState()
@@ -1657,7 +1662,12 @@ private fun CatalogModelSection(
                         // only if this entry is the active backend AND this variant's directory
                         // is the saved (auto-resolved) one, OR the active backend is this
                         // variant's linked record (a bundle-imported copy, TASK-801).
-                        isActive = (isEntryActive && savedPath?.endsWith(variant.dirName) == true) ||
+                        // A single-FILE layout (the litertlm entry: the saved
+                        // path is the file, not the variant dir) matches by
+                        // file name too; dir-based entries are unaffected.
+                        isActive = (isEntryActive && (
+                            savedPath?.endsWith(variant.dirName) == true ||
+                                variant.singleFileName?.let { savedPath?.endsWith(it) } == true)) ||
                             activeBackendId == state.linkedVariantBackendIds[variant.dirName],
                         downloadProgress = variantState?.downloadProgress ?: 0f,
                         downloadState = variantState?.downloadState ?: DownloadState.Idle,
@@ -1703,9 +1713,10 @@ private fun CatalogModelSection(
                     onDeleteClick = { viewModel.showDeleteDialog(entry.id, variant.variantName) },
                     // TASK-853: the benchmark infra builds a SHERPA config;
                     // whistle would unload the warm engine and then fail the
-                    // config-type check. No benchmark entry until the harness
-                    // grows a whistle arm.
-                    onBenchmarkClick = if (entry.id == BuiltInBackendIds.WHISTLE) null else {
+                    // config-type check. TASK-365: the LLM entry joins the
+                    // same gate (no benchmark config builder for it either).
+                    onBenchmarkClick = if (entry.id == BuiltInBackendIds.WHISTLE
+                        || entry.id == com.antivocale.app.transcription.LlmTranscriptionBackend.BACKEND_ID) null else {
                         {
                         val path = SherpaModelDownloader.of(entry.id).getModelPath(context, variant.variantName)
                         if (path != null) {
@@ -1732,6 +1743,34 @@ private fun CatalogModelSection(
                     },
                     onInfoClick = { onInfoClick(variant) }
                 )
+                // TASK-365: the gated-repo warning (the pre-fold bespoke
+                // section's row, generalized): a requiresAuth variant with no
+                // stored token shows the add-in-settings pointer.
+                if (variant.requiresAuth && !hasToken) {
+                    val tokenWarning = stringResource(R.string.requires_huggingface_token)
+                    val addSettings = stringResource(R.string.add_in_settings)
+                    val errorColor = MaterialTheme.colorScheme.error
+                    val primaryColor = MaterialTheme.colorScheme.primary
+                    val authWarningText = remember(tokenWarning, addSettings, errorColor, primaryColor) {
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = errorColor)) {
+                                append(tokenWarning + " ")
+                            }
+                            withStyle(SpanStyle(
+                                color = primaryColor,
+                                textDecoration = TextDecoration.Underline
+                            )) {
+                                append(addSettings)
+                            }
+                        }
+                    }
+                    // TASK-384: Text+clickable with Button role; ClickableText has no role for talkback
+                    Text(
+                        text = authWarningText,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.clickable(role = Role.Button) { onNavigateToSettings() }
+                    )
+                }
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }

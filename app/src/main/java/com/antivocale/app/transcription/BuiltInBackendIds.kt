@@ -25,8 +25,15 @@ object BuiltInBackendIds {
      * [isSelectableBackendId].
      */
 
-    /** All six built-in catalog entry ids, in canonical UI order (default backend first). */
-    val ALL: List<String> = listOf(PARAKEET, WHISPER, QWEN3_ASR, NEMOTRON, GIGAAM, WHISTLE)
+    /**
+     * All seven built-in catalog entry ids, in canonical UI order (default
+     * backend first). TASK-365: the LLM id joins via the backend's own
+     * constant (the Gemma catalog fold); its descriptor is hand-written
+     * (the registry routes it), not sherpa-derived.
+     */
+    val ALL: List<String> = listOf(
+        PARAKEET, WHISPER, QWEN3_ASR, NEMOTRON, GIGAAM, WHISTLE,
+        com.antivocale.app.transcription.LlmTranscriptionBackend.BACKEND_ID)
 
     /**
      * The ONE backend-id predicate for external callers (Tasker override,
@@ -39,8 +46,7 @@ object BuiltInBackendIds {
      * spaces (code review 2026-09-03).
      */
     fun isSelectableBackendId(id: String): Boolean =
-        id == com.antivocale.app.transcription.LlmTranscriptionBackend.BACKEND_ID ||
-            id == com.antivocale.app.transcription.RemoteOmnivoiceBackend.BACKEND_ID ||
+        id == com.antivocale.app.transcription.RemoteOmnivoiceBackend.BACKEND_ID ||
             id in ALL ||
             id.startsWith(com.antivocale.app.data.ExternalModelRecord.BACKEND_ID_PREFIX)
 

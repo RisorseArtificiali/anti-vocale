@@ -81,10 +81,13 @@ class LogsViewModelRetranscribeNamesTest {
     }
 
     @Test
-    fun `gemma entry shows its fixed localized name not a path-derived label`() = runTest {
-        // The LLM descriptor is the only static one without a catalog display:
-        // parity with main requires the fixed "Gemma (LiteRT-LM)" label, not the
-        // path-derived fallback (review nit 2, PR #28).
+    fun `gemma entry shows its localized catalog names not a path-derived label`() = runTest {
+        // TASK-365: the llm id is a catalog entry now, so the picker derives
+        // the SAME variant-aware pair every multi-variant entry shows
+        // (entry title + variant title, both localized resources). The
+        // original pin's concern (no path-derived "gemma-4-e2b" leak,
+        // review nit 2 PR #28) holds; the fixed-name expectation was the
+        // pre-fold world.
         every { manager.activeBackendId } returns MutableStateFlow("llm")
         every { preferences.modelPath } returns flowOf("/data/models/gemma-4-e2b")
         every { manager.getAvailableBackends() } returns listOf(mockk<com.antivocale.app.transcription.LlmTranscriptionBackend>(relaxed = true) {
@@ -95,6 +98,6 @@ class LogsViewModelRetranscribeNamesTest {
 
         val options = viewModel.getAvailableAudioBackendsWithModels(context)
 
-        assertEquals(listOf("Gemma (LiteRT-LM)"), options.map { it.displayName })
+        assertEquals(listOf("Gemma (LiteRT-LM) Gemma 4 E2B"), options.map { it.displayName })
     }
 }

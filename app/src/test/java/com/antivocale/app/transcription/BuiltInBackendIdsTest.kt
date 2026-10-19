@@ -23,7 +23,11 @@ class BuiltInBackendIdsTest {
     @Test
     fun `isLlm is true only for the LLM backend id`() {
         assertTrue(BuiltInBackendIds.isLlm(LlmTranscriptionBackend.BACKEND_ID))
-        BuiltInBackendIds.ALL.forEach { assertFalse(BuiltInBackendIds.isLlm(it)) }
+        // TASK-365: the llm id IS a catalog member now (the Gemma fold); the
+        // predicate stays a KIND test, so every OTHER member must be false.
+        BuiltInBackendIds.ALL
+            .filter { it != LlmTranscriptionBackend.BACKEND_ID }
+            .forEach { assertFalse(BuiltInBackendIds.isLlm(it)) }
     }
 
     @Test

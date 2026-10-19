@@ -227,7 +227,7 @@ class BackendRegistry @Inject constructor(
         )
     }
 
-    /** The eight enabled static backends in canonical order (default backend first). */
+    /** The nine enabled static backends in canonical order (default backend first). */
     private val staticBackends: List<BackendDescriptor> by lazy {
         buildList {
             for (entryId in BuiltInBackendIds.ALL) {
@@ -237,9 +237,9 @@ class BackendRegistry @Inject constructor(
                 // sherpa-specific (SherpaModelManager, CatalogVariantUi).
                 add(
                     if (entryId == BuiltInBackendIds.WHISTLE) whistleDescriptor()
+                    else if (entryId == LlmTranscriptionBackend.BACKEND_ID) llmDescriptor()
                     else catalogDescriptor(entryId))
             }
-            add(llmDescriptor())
             add(remoteOmnivoiceDescriptor())
         }
     }

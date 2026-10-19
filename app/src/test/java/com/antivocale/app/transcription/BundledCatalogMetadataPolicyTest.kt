@@ -51,6 +51,9 @@ class BundledCatalogMetadataPolicyTest {
         // TASK-853: whistle is not an ONNX model at all (the Cactus .cact
         // container, own engine): there is no encoder to scan.
         "whistle" to "not an ONNX model: the .cact container carries no encoder metadata",
+        // TASK-365: the litertlm container is not ONNX either (the LiteRT-LM
+        // lane owns the file; no sherpa encoder exists to scan).
+        "llm" to "not an ONNX model: the .litertlm container has no sherpa encoder",
     )
 
     /** Where an entry's metadata policy comes from. */
@@ -102,6 +105,7 @@ class BundledCatalogMetadataPolicyTest {
             // whistle is a non-ONNX engine (.cact container).
             "whisper" to Policy.SKIPPED,
             "whistle" to Policy.SKIPPED,
+            "llm" to Policy.SKIPPED,
         )
         val classified = classifyCatalog().entries.associate { (entry, policy) -> entry.id to policy }
         assertEquals(

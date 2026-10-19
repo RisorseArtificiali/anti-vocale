@@ -43,6 +43,12 @@ object CatalogStringKeys {
 
         "gigaam_name" to R.string.gigaam_name,
         "whistle_name" to R.string.whistle_name,
+        "llm_backend_name" to R.string.llm_backend_name,
+        "gemma_advanced_features_description" to R.string.gemma_advanced_features_description,
+        "model_title_gemma_4_e2b" to R.string.model_title_gemma_4_e2b,
+        "model_title_gemma_4_e4b" to R.string.model_title_gemma_4_e4b,
+        "model_title_gemma_3n_e2b" to R.string.model_title_gemma_3n_e2b,
+        "model_title_gemma_3n_e4b" to R.string.model_title_gemma_3n_e4b,
         "whistle_description" to R.string.whistle_description,
         "gigaam_description" to R.string.gigaam_description,
 
