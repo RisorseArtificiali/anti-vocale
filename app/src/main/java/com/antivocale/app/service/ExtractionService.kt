@@ -108,12 +108,11 @@ class ExtractionService : Service() {
 
     /** Resolves a human-readable model name for the notification. */
     private fun resolveDisplayName(modelKey: String, variant: String?): String {
+        // The llm key is a catalog key now (TASK-365): the catalog arm
+        // covers every built-in, so no Gemma fallback remains.
         if (BundledCatalog.byId(modelKey) != null) {
             val variantName = variant ?: BundledCatalog.byId(modelKey)!!.defaultVariant.name
             return getString(CatalogVariantUi.of(modelKey, variantName).titleResId)
-        }
-        if (BuiltInBackendIds.isLlm(modelKey)) {
-            return GemmaVariant.fromString(variant).displayName
         }
         return modelKey
     }
@@ -209,15 +208,6 @@ class ExtractionService : Service() {
                     onStateChange = onStateChange,
                     tokenManager = huggingFaceTokenManager
                 )
-            } else if (BuiltInBackendIds.isLlm(modelKey)) {
-                val gemmaVariant = GemmaVariant.fromString(variant)
-                ModelDownloader.downloadModel(
-                    context = applicationContext,
-                    variant = gemmaVariant,
-                    tokenManager = huggingFaceTokenManager,
-                    onProgress = {},
-                    onStateChange = onStateChange
-                )
             } else {
                 _progressState.tryEmit(ExtractionProgress(
                     modelKey, variant,
@@ -265,12 +255,6 @@ class ExtractionService : Service() {
     private fun cancelDownloaderFor(modelKey: String, variant: String? = null) {
         if (BundledCatalog.byId(modelKey) != null) {
             SherpaModelDownloader.of(modelKey).cancel(variant)
-        } else if (BuiltInBackendIds.isLlm(modelKey)) {
-            if (variant != null) {
-                ModelDownloader.cancel(GemmaVariant.fromString(variant))
-            } else {
-                ModelDownloader.cancel()
-            }
         }
         // Unknown/external keys: no service-driven downloader.
     }
@@ -425,16 +409,5 @@ class ExtractionService : Service() {
 
     // ---- Variant helpers ----
 
-    /** Resolves a string variant name to a Gemma [ModelDownloader.ModelVariant]. */
-    private object GemmaVariant {
-        fun fromString(name: String?): ModelDownloader.ModelVariant {
-            return when (name) {
-                "gemma_4_e2b" -> ModelDownloader.ModelVariant.GEMMA_4_E2B
-                "gemma_4_e4b" -> ModelDownloader.ModelVariant.GEMMA_4_E4B
-                "gemma_3n_e2b" -> ModelDownloader.ModelVariant.GEMMA_3N_E2B
-                "gemma_3n_e4b" -> ModelDownloader.ModelVariant.GEMMA_3N_E4B
-                else -> ModelDownloader.ModelVariant.GEMMA_4_E2B
-            }
-        }
-    }
+
 }

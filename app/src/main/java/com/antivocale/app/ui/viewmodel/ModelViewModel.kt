@@ -304,15 +304,14 @@ class ModelViewModel @Inject constructor(
         viewModelScope.launch {
             ExtractionService.progressState.collect { progress ->
                 when {
+                    // TASK-365: the llm id is a catalog key now (the Gemma
+                    // fold); every dispatched model rides the catalog arm.
                     BundledCatalog.byId(progress.modelKey) != null -> handleCatalogProgress(progress.modelKey, progress)
-                    BuiltInBackendIds.isLlm(progress.modelKey) -> handleServiceProgressGemma(progress)
                 }
             }
         }
         // Load saved model path on initialization
         loadSavedModelPath()
-        // Check for downloaded models
-        refreshDownloadedModels()
         // Check for HuggingFace token
         refreshTokenState()
         // Refresh all catalog-backed model entries
@@ -448,11 +447,16 @@ class ModelViewModel @Inject constructor(
                     }) }
                 }
             },
-            onError = { msg, _ ->
+            onError = { msg, throwable ->
                 if (variantName != null) {
                     updateEntry(entryId) { it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variantName) {
                         copy(isDownloading = false, errorMessage = msg)
                     }) }
+                }
+                // TASK-365 parity: the typed pre-flight error carries the
+                // add-token snackbar (the bespoke Gemma flow's contract).
+                if (throwable is com.antivocale.app.data.download.DownloadException.AuthRequired) {
+                    viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.AuthRequired) }
                 }
                 detectPartialDownloads()
             },
@@ -471,9 +475,16 @@ class ModelViewModel @Inject constructor(
                     shareShortcutManager.refresh()
                 }
                 if (variantName != null) {
-                    // Persist the freshly downloaded variant as the saved preference.
+                    // Persist the freshly downloaded variant as the saved
+                    // preference. TASK-365: the llm entry owns the GENERIC
+                    // model-path preference (a file path), not the keyed
+                    // sherpa family.
                     viewModelScope.launch {
-                        preferencesManager.saveSherpaModelPath(entryId, file.absolutePath)
+                        if (com.antivocale.app.transcription.BuiltInBackendIds.isLlm(entryId)) {
+                            preferencesManager.saveModelPath(file.absolutePath)
+                        } else {
+                            preferencesManager.saveSherpaModelPath(entryId, file.absolutePath)
+                        }
                     }
                     // TASK-675: the first-run auto-selection skips demoted models.
                     if (_uiState.value.modelName.isBlank()) {
@@ -493,77 +504,6 @@ class ModelViewModel @Inject constructor(
             }
         )
     }
-
-    private fun handleServiceProgressGemma(progress: ExtractionService.ExtractionProgress) {
-        val variant = ModelDownloader.ModelVariant.entries
-            .find { it.name.lowercase() == progress.variant }
-
-        handleServiceProgress(
-            state = progress.downloadState,
-            updateFlow = { state, prog ->
-                if (variant != null) {
-                    _downloadUiState.update {
-                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
-                            copy(downloadState = state, downloadProgress = prog ?: downloadProgress)
-                        })
-                    }
-                }
-            },
-            onError = { msg, throwable ->
-                val error = when (throwable) {
-                    is ModelDownloader.DownloadError -> throwable
-                    else -> ModelDownloader.DownloadError.NetworkError(msg, throwable)
-                }
-                if (variant != null) {
-                    _downloadUiState.update {
-                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
-                            copy(isDownloading = false, errorMessage = msg)
-                        })
-                    }
-                }
-                _downloadUiState.update { it.copy(downloadError = error) }
-                val message = when (error) {
-                    is ModelDownloader.DownloadError.AuthRequired -> "auth_required"
-                    is ModelDownloader.DownloadError.AuthError -> "Invalid token. Check Settings."
-                    is ModelDownloader.DownloadError.LicenseError -> "Accept license on HuggingFace"
-                    is ModelDownloader.DownloadError.StorageError -> "Not enough storage"
-                    is ModelDownloader.DownloadError.NetworkError -> "Network error: ${error.message}"
-                }
-                val event = if (error is ModelDownloader.DownloadError.AuthRequired) {
-                    SnackbarEvent.AuthRequired
-                } else {
-                    SnackbarEvent.Message(message)
-                }
-                viewModelScope.launch { _snackbarEvent.tryEmit(event) }
-            },
-            onComplete = { file ->
-                _downloadUiState.update {
-                    it.copy(
-                        variantDownloadStates = it.variantDownloadStates.removeVariant(variant)
-                    )
-                }
-                refreshDownloadedModels()
-                applicationScope.launch {
-                    // TASK-738: alias sync ordered BEFORE the shortcut refresh (see above).
-                    shareTargetManager.syncAllNow()
-                    shareShortcutManager.refresh()
-                }
-                if (_uiState.value.modelName.isBlank()) setDownloadedModel(file)
-            },
-            onCancelled = {
-                if (variant != null) {
-                    _downloadUiState.update {
-                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
-                            copy(isDownloading = false, errorMessage = null)
-                        })
-                    }
-                }
-                detectPartialDownloads()
-            }
-        )
-    }
-
-    // ==================== Variant state helpers ====================
 
     /** Applies a block to one catalog entry's UI state, creating the default when absent. */
     private fun updateEntry(entryId: String, block: (ModelEntryUiState) -> ModelEntryUiState) {
@@ -1162,281 +1102,6 @@ class ModelViewModel @Inject constructor(
             statusMessage = ctx.getString(R.string.model_externally_loaded)
         )}
     }
-
-    // ==================== Model Download Management ====================
-
-    /**
-     * Refreshes the list of downloaded models.
-     */
-    fun refreshDownloadedModels() {
-        viewModelScope.launch {
-            val downloaded = ModelDownloader.ModelVariant.entries
-                .filter { variant ->
-                    ModelDownloader.isModelDownloaded(
-                        ctx,
-                        variant
-                    )
-                }
-                .toSet()
-
-            // Stale (update-available) variants are computed here, not in the Composable,
-            // so per-recomposition file I/O stays out of the UI. Gated on the build flag so
-            // there's zero stat/readText cost while speculative decoding is disabled.
-            val stale = if (BuildConfig.MTP_SPECULATIVE_DECODING_ENABLED) {
-                downloaded.filter { ModelDownloader.isModelUpdateAvailable(ctx, it) }.toSet()
-            } else {
-                emptySet()
-            }
-
-            _downloadUiState.update { it.copy(downloadedModels = downloaded, staleModels = stale) }
-        }
-    }
-
-    /**
-     * Selects a model variant for info/download.
-     */
-    fun selectModel(variant: ModelDownloader.ModelVariant) {
-        _downloadUiState.update { it.copy(selectedVariant = variant) }
-    }
-
-    /**
-     * Starts a download for the selected Gemma model variant via [ExtractionService].
-     */
-    fun startDownload(variant: ModelDownloader.ModelVariant) {
-        _downloadUiState.update { it.copy(
-            selectedVariant = variant,
-            variantDownloadStates = it.variantDownloadStates + (variant to VariantDownloadState(
-                downloadState = DownloadState.Idle,
-                downloadProgress = 0f,
-                isDownloading = true,
-                errorMessage = null,
-                partialDownload = null
-            )),
-            downloadError = null
-        )}
-
-        val context = ctx
-        val intent = Intent(context, ExtractionService::class.java).apply {
-            putExtra(ExtractionService.EXTRA_MODEL_KEY, LlmTranscriptionBackend.BACKEND_ID)
-            putExtra(ExtractionService.EXTRA_VARIANT, variantKey(variant))
-        }
-        ContextCompat.startForegroundService(context, intent)
-    }
-
-    /**
-     * Resumes a partial Gemma download.
-     */
-    fun resumeDownload(variant: ModelDownloader.ModelVariant) {
-        _downloadUiState.update { it.copy(
-            variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
-                copy(partialDownload = null)
-            }
-        ) }
-        startDownload(variant)
-    }
-
-    /**
-     * Clears a partial Gemma download.
-     */
-    fun clearPartialDownload(variant: ModelDownloader.ModelVariant) {
-        viewModelScope.launch {
-            ModelDownloader.clearPartialDownload(ctx, variant)
-            _downloadUiState.update { it.copy(
-                variantDownloadStates = it.variantDownloadStates - variant,
-                downloadError = null
-            )}
-        }
-    }
-
-    /**
-     * Cancels the ongoing Gemma download.
-     */
-    fun cancelDownload(variant: ModelDownloader.ModelVariant) {
-        ModelDownloader.cancel(variant)
-        stopExtractionService(LlmTranscriptionBackend.BACKEND_ID, variantKey(variant))
-        viewModelScope.launch(Dispatchers.IO) {
-            val partial = ModelDownloader.detectPartialDownload(ctx, variant)
-            val current = _downloadUiState.value.variantDownloadStates
-            val updated = if (partial != null) {
-                current + (variant to VariantDownloadState(partialDownload = partial))
-            } else {
-                current - variant
-            }
-            _downloadUiState.update { it.copy(variantDownloadStates = updated, downloadError = null) }
-        }
-    }
-
-    /**
-     * Checks if a model variant is already downloaded.
-     */
-    fun isModelDownloaded(variant: ModelDownloader.ModelVariant): Boolean {
-        return _downloadUiState.value.downloadedModels.contains(variant)
-    }
-
-    /**
-     * Sets a downloaded model as the active model.
-     */
-    fun useDownloadedModel(variant: ModelDownloader.ModelVariant) {
-        viewModelScope.launch {
-            val modelPath = ModelDownloader.getLocalModelPath(
-                ctx,
-                variant
-            )
-            if (modelPath != null) {
-                preferencesManager.saveModelPath(modelPath)
-                // Switch to LLM backend when selecting an LLM model. Must be the
-                // explicit "llm" id: the old DEFAULT_TRANSCRIPTION_BACKEND value
-                // ("sherpa-onnx") is itself a catalog entry since the PR #28
-                // consolidation, so it resolves to Parakeet instead of falling
-                // through to the LLM loader and Gemma never became active.
-                preferencesManager.saveTranscriptionBackend(LlmTranscriptionBackend.BACKEND_ID)
-                val message = ctx.getString(R.string.model_selected_message, variant.displayName)
-                _uiState.update { it.copy(
-                    modelPath = modelPath,
-                    modelName = variant.displayName,
-                    status = ModelStatus.UNLOADED,
-                    statusMessage = message
-                )}
-                _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
-            }
-        }
-    }
-
-    /**
-     * Deletes a downloaded model and refreshes the state.
-     */
-    fun deleteModel(variant: ModelDownloader.ModelVariant) {
-        // Review: the catalog-delete twin wraps the identical disk work in
-        // IO; a multi-GB .taskini deletion must not run on Main.immediate.
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            val success = ModelDownloader.deleteModel(ctx, variant)
-            if (success) {
-                refreshDownloadedModels()
-                // Clear model path if this was the selected model
-                if (_uiState.value.modelPath.contains(variant.fileName)) {
-                    preferencesManager.saveModelPath("")
-                    // TASK-738 review: the suspend form keeps the alias
-                    // retirement ordered BEFORE the shortcut refresh below.
-                    shareTargetManager.onModelDeletedNow(LlmTranscriptionBackend.BACKEND_ID)
-                    shareShortcutManager.refresh()
-                    // TASK-761: a dead refine pin degrades every two-pass
-                    // run while the dropdown shows "Inherit".
-                    if (preferencesManager.refinementModelBackendId.first() ==
-                        LlmTranscriptionBackend.BACKEND_ID) {
-                        preferencesManager.saveRefinementModelBackendId("")
-                    }
-                    _uiState.update { it.copy(
-                        modelPath = "",
-                        modelName = "",
-                        status = ModelStatus.UNLOADED,
-                        statusMessage = ctx.getString(R.string.model_deleted_status)
-                    )}
-                }
-            }
-        }
-    }
-
-    /**
-     * Shows the delete confirmation dialog for a model.
-     */
-    fun showDeleteDialog(variant: ModelDownloader.ModelVariant) {
-        _downloadUiState.update { it.copy(modelToDelete = variant) }
-    }
-
-    /**
-     * Dismisses the delete confirmation dialog.
-     */
-    fun dismissDeleteDialog() {
-        _downloadUiState.update { it.copy(modelToDelete = null) }
-    }
-
-    /**
-     * Confirms deletion of the model.
-     */
-    fun confirmDeleteModel() {
-        _downloadUiState.value.modelToDelete?.let { variant ->
-            deleteModel(variant)
-        }
-        dismissDeleteDialog()
-    }
-
-    /**
-     * Clears the download error state.
-     */
-    fun clearDownloadError() {
-        _downloadUiState.update { it.copy(downloadError = null) }
-    }
-
-    // ==================== Gemma Confirmation Dialogs ====================
-
-    /**
-     * Shows the Gemma download confirmation dialog.
-     */
-    fun showDownloadDialog(variant: ModelDownloader.ModelVariant) {
-        _downloadUiState.update { it.copy(selectedVariant = variant, showDownloadDialog = true) }
-    }
-
-    /**
-     * Dismisses the Gemma download confirmation dialog.
-     */
-    fun dismissDownloadDialog() {
-        _downloadUiState.update { it.copy(showDownloadDialog = false) }
-    }
-
-    /**
-     * Confirms and starts the Gemma download.
-     */
-    fun confirmDownload() {
-        val variant = _downloadUiState.value.selectedVariant ?: return
-        // TASK-395: per-model RAM gate. Warn-and-proceed (not block): a user
-        // on a borderline device may still want to try; the global 1.5GB floor
-        // in DeviceCompatibility.check remains the hard gate.
-        if (!DeviceCompatibility.hasRamForModel(ctx, variant.estimatedSizeMB)) {
-            Log.w(TAG, "Device RAM below the estimated budget for ${variant.displayName} " +
-                "(${variant.estimatedSizeMB}MB * headroom); proceeding with warning")
-            _snackbarEvent.tryEmit(SnackbarEvent.Message(
-                ctx.getString(R.string.model_ram_warning, variant.displayName)))
-        }
-        _downloadUiState.update { it.copy(showDownloadDialog = false) }
-        startDownload(variant)
-    }
-
-    // ==================== Gemma Model Update (re-download stale artifact) =========
-
-    /**
-     * Shows the "update available" confirmation dialog for a stale Gemma variant — its
-     * on-disk artifact predates [ModelDownloader.ModelVariant.modelVersion] (e.g. a
-     * pre-2026-05-05 copy lacking the MTP drafter). Surfacing the prompt is additionally
-     * gated on `BuildConfig.MTP_SPECULATIVE_DECODING_ENABLED` in the UI (ModelTab).
-     */
-    fun showUpdateDialog(variant: ModelDownloader.ModelVariant) {
-        _downloadUiState.update { it.copy(modelToUpdate = variant) }
-    }
-
-    fun dismissUpdateDialog() {
-        _downloadUiState.update { it.copy(modelToUpdate = null) }
-    }
-
-    /**
-     * Confirms the update: deletes the stale cached file (and its version marker) WITHOUT
-     * clearing the active-model preference, then re-downloads. The same `models/<fileName>`
-     * path is repopulated on completion, so an active selection survives the refresh.
-     *
-     * Accepted transient: between delete and re-download completion the active-model path
-     * briefly points at a missing file, so transcription fired in that window would fail to
-     * load. This is a brief, user-initiated window; the UI shows the normal download spinner.
-     */
-    fun confirmUpdateModel() {
-        val variant = _downloadUiState.value.modelToUpdate ?: return
-        _downloadUiState.update { it.copy(modelToUpdate = null) }
-        viewModelScope.launch {
-            ModelDownloader.deleteModel(ctx, variant)
-            refreshDownloadedModels()
-            startDownload(variant)
-        }
-    }
-
-    // ==================== Catalog Models (generic, catalog-driven) ====================
 
     /**
      * Starts a download for one catalog entry's variant via [ExtractionService].

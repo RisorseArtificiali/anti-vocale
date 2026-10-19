@@ -76,7 +76,6 @@ import com.antivocale.app.transcription.ModelFamilySupport
 import com.antivocale.app.transcription.AudioLimit
 import com.antivocale.app.transcription.ModelInfoProvider
 import com.antivocale.app.transcription.audioLimitForCatalogEntry
-import com.antivocale.app.transcription.audioLimitForVariants
 import com.antivocale.app.transcription.ModelVariant
 import com.antivocale.app.transcription.SherpaModelDownloader
 import androidx.compose.ui.text.style.TextOverflow
@@ -330,18 +329,8 @@ fun ModelTab(
     // it by writing the explicit-clear value (""), never the untouched one.
     val filterLanguageCode by viewModel.modelFilterLanguage.collectAsState()
 
-    val visibleGemmaVariants = remember(filterLanguageCode) {
-        filterVariants(ModelDownloader.ModelVariant.entries, filterLanguageCode) { it.supportedLanguageCodes }
-    }
-
     // Auto-scroll when download error occurs (license requirement, auth error, etc.)
     // This scrolls to the error area so user can see what went wrong
-    LaunchedEffect(downloadUiState.downloadError) {
-        if (downloadUiState.downloadError != null) {
-            delay(150) // Small delay to let the UI update first
-            scrollState.animateScrollTo(scrollState.maxValue)
-        }
-    }
 
     // TASK-373: a repo with exactly one .litertlm asset imports directly,
     // skipping the candidate picker.
@@ -379,53 +368,7 @@ fun ModelTab(
                     )
                 }
             }
-            viewModel.clearDownloadError()
         }
-    }
-
-    // Delete confirmation dialog
-    if (downloadUiState.modelToDelete != null) {
-        val deletingModelName = downloadUiState.modelToDelete?.displayName ?: ""
-        val isActiveModel = uiState.modelName == deletingModelName
-        DeleteConfirmationDialog(
-            modelName = deletingModelName,
-            isTranscribing = isTranscribing,
-            isActiveModel = isActiveModel,
-            onConfirm = { viewModel.confirmDeleteModel() },
-            onDismiss = { viewModel.dismissDeleteDialog() }
-        )
-    }
-
-    // Gemma download confirmation dialog. TASK-427: the same pre-download
-    // fit hint as the catalog, on the heaviest models in the app.
-    if (downloadUiState.showDownloadDialog) {
-        val variant = downloadUiState.selectedVariant
-        val (gemmaHintRes, gemmaHintColor) = variantFitHint(context, variant?.estimatedSizeMB ?: 0L)
-        DownloadConfirmationDialog(
-            title = stringResource(R.string.gemma_download_confirm_title, variant?.displayName ?: "Gemma"),
-            message = stringResource(R.string.gemma_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 0),
-            fitHintRes = gemmaHintRes,
-            fitHintColor = gemmaHintColor,
-            onConfirm = { viewModel.confirmDownload() },
-            onDismiss = { viewModel.dismissDownloadDialog() }
-        )
-    }
-
-    // Gemma "update available" confirmation dialog (re-download a stale artifact, e.g. a
-    // pre-2026-05-05 copy without the MTP drafter). Only reachable while the
-    // MTP_SPECULATIVE_DECODING_ENABLED build flag is on (see ModelDownloadSection).
-    if (downloadUiState.modelToUpdate != null) {
-        val variant = downloadUiState.modelToUpdate
-        val (updateHintRes, updateHintColor) = variantFitHint(context, variant?.estimatedSizeMB ?: 0L)
-        DownloadConfirmationDialog(
-            title = stringResource(R.string.gemma_update_confirm_title, variant?.displayName ?: "Gemma"),
-            message = stringResource(R.string.gemma_update_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 0),
-            confirmButtonText = stringResource(R.string.model_update_button),
-            fitHintRes = updateHintRes,
-            fitHintColor = updateHintColor,
-            onConfirm = { viewModel.confirmUpdateModel() },
-            onDismiss = { viewModel.dismissUpdateDialog() }
-        )
     }
 
     // External-model delete confirmation dialog
@@ -602,9 +545,7 @@ fun ModelTab(
     // unhandled config change while this screen's flows are in flight must
     // re-compose the screen so pending results land in place; the explicit
     // key keeps the slot stable across future flag insertions.
-    var showGemmaDownloads by rememberSaveable("showGemmaDownloads") { mutableStateOf(false) }
     // TASK-815: the programmatic scroll riding a models:gemma nav request.
-    var gemmaScroll by remember { mutableStateOf<AppNavigation.ScrollRequest?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -722,6 +663,68 @@ fun ModelTab(
                     hasToken = hasToken,
                     onNavigateToSettings = onNavigateToSettings,
                 )
+                // TASK-365 (2b): the .litertlm import card, relocated VERBATIM
+                // from the deleted Gemma sub-page (my placement call: directly
+                // under the entry it belongs to; the maintainer's eye pending).
+                if (entry.id == com.antivocale.app.transcription.LlmTranscriptionBackend.BACKEND_ID) {
+                Card(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+                ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // TASK-796 (approved mockup): title-only; the
+                // TASK-779 de-jargoned text stays.
+                Text(
+            text = stringResource(R.string.litert_card_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+                )
+                // TASK-796 trial round 2 (maintainer): the card
+                // states what it is for before the buttons.
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+            stringResource(R.string.litert_card_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+            onClick = { viewModel.openFilePicker() },
+            modifier = Modifier.fillMaxWidth()
+                ) {
+            ImportActionLabel(Icons.Default.FolderOpen, R.string.select_model_from_device)
+                }
+                OutlinedButton(
+            onClick = { showLitertLmUrlDialog = true },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            enabled = !uiState.litertLmImporting
+                ) {
+            ImportActionLabel(Icons.Default.CloudDownload, R.string.litertlm_import_from_url)
+                }
+                if (uiState.litertLmImporting) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+                // TASK-384: spinner alone is silent for talkback users
+                Text(
+                    stringResource(R.string.litertlm_importing),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+                }
+            }
+                }
+
+                }
             }
         }
 
@@ -765,9 +768,10 @@ fun ModelTab(
                 // models:import stays consumed one level down and expands
                 // Advanced because the catalog dialog only composes then.
                 if (request.destination.key == AppNavigation.MODEL_KEY_GEMMA) {
-                    gemmaScroll = request.scroll
+                    // TASK-365: the Gemma sub-page is gone (the catalog fold);
+                    // the entry renders in the main catalog list. The token
+                    // stays valid and consumed; there is no overlay to open.
                     onNavConsumed()
-                    showGemmaDownloads = true
                 } else {
                     advancedExpanded = true
                 }
@@ -778,12 +782,6 @@ fun ModelTab(
         // progress/cancel/error UI otherwise composes nowhere, and the
         // error auto-scroll above scrolls to a collapsed button. Fires on
         // the transition only; the user can collapse again freely.
-        val gemmaDownloadActive =
-            downloadUiState.variantDownloadStates.values.any { it.isDownloading } ||
-                downloadUiState.downloadError != null
-        LaunchedEffect(gemmaDownloadActive) {
-            if (gemmaDownloadActive) advancedExpanded = true
-        }
         Column(modifier = Modifier.fillMaxWidth()) {
             OutlinedButton(
                 onClick = { advancedExpanded = !advancedExpanded },
@@ -833,61 +831,6 @@ fun ModelTab(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
-
-                // TASK-775: the Gemma downloads live in a sub-page; the
-                // entry card is the compact pointer (maintainer direction).
-                if (visibleGemmaVariants.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        onClick = { showGemmaDownloads = true },
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            // TASK-796 (approved mockup): no leading icon; the
-                            // chevron (the opening affordance) stays.
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.gemma_entry_title),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold)
-                                // TASK-779: the entry says what it opens.
-                                Text(
-                                    text = stringResource(R.string.gemma_entry_subtitle),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                if (gemmaDownloadActive) {
-                                    Text(
-                                        text = stringResource(R.string.downloading),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary)
-                                }
-                                // TASK-796 review F2: the .litertlm import's
-                                // only progress UI moved into the sub-page;
-                                // a user closing it mid-import would see
-                                // nothing anywhere, so the entry card shows
-                                // it too.
-                                if (uiState.litertLmImporting) {
-                                    Text(
-                                        text = stringResource(R.string.litertlm_importing),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary)
-                                }
-                            }
-                            Icon(
-                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 // ONNX (sherpa): the section Card carries the header; no
                 // separate label needed here.
@@ -957,110 +900,6 @@ fun ModelTab(
 
         // Extra spacer to ensure downloading card can be fully scrolled into view
         Spacer(modifier = Modifier.height(200.dp))
-        }
-
-        // TASK-775: the Gemma downloads sub-page. A sibling of the
-        // scrollable Column inside this Box: stacked on top (Box z-order),
-        // bounded constraints (no nested-scroll crash). The pass-through
-        // switch is a compromise: the guard stays on the main tab.
-        if (showGemmaDownloads) {
-            androidx.activity.compose.BackHandler { showGemmaDownloads = false }
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background,
-            ) {
-                // TASK-815: the scroll scaffold (nav-bar inset, pinned
-                // header, body wrapper, programmatic scroll); this header
-                // used to scroll away with the content before the 752 fold.
-                SubPageScrollScaffold(
-                    // TASK-796: matches the entry card that opens this
-                    // page (gemma_entry_title, now "Gemma AI models");
-                    // the inner downloads section carries its own
-                    // download_models title.
-                    titleRes = R.string.gemma_entry_title,
-                    onBack = { showGemmaDownloads = false },
-                    scrollRequest = gemmaScroll,
-                    onScrollConsumed = { gemmaScroll = null },
-                    // The old body had no Arrangement; the downloads
-                    // section owns its internal spacing.
-                    bodySpacing = androidx.compose.foundation.layout.Arrangement.Top,
-                ) { _ ->
-                        if (visibleGemmaVariants.isNotEmpty()) {
-                            ModelDownloadSection(
-                                viewModel = viewModel,
-                                context = context,
-                                onNavigateToSettings = onNavigateToSettings,
-                                activeModelName = uiState.modelName,
-                                visibleVariants = visibleGemmaVariants,
-                                guardedModelSwitch = { it() },
-                                onInfoClick = { modelInfoVariant = it },
-                            )
-                        }
-                        // SAF (OpenDocument) grants its own URI access, no storage permission
-                        // needed (TASK-301). TASK-746: the downloads live with this card.
-                        // TASK-796 (maintainer design review): moved INTO the Gemma
-                        // sub-page, so the Advanced surface shows one Gemma entry and
-                        // this page owns the whole Gemma world.
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                // TASK-796 (approved mockup): title-only; the
-                                // TASK-779 de-jargoned text stays.
-                                Text(
-                                    text = stringResource(R.string.litert_card_title),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                // TASK-796 trial round 2 (maintainer): the card
-                                // states what it is for before the buttons.
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    stringResource(R.string.litert_card_description),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-                                OutlinedButton(
-                                    onClick = { viewModel.openFilePicker() },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    ImportActionLabel(Icons.Default.FolderOpen, R.string.select_model_from_device)
-                                }
-                                OutlinedButton(
-                                    onClick = { showLitertLmUrlDialog = true },
-                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                    enabled = !uiState.litertLmImporting
-                                ) {
-                                    ImportActionLabel(Icons.Default.CloudDownload, R.string.litertlm_import_from_url)
-                                }
-                                if (uiState.litertLmImporting) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(20.dp),
-                                            strokeWidth = 2.dp
-                                        )
-                                        // TASK-384: spinner alone is silent for talkback users
-                                        Text(
-                                            stringResource(R.string.litertlm_importing),
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(200.dp))
-                }
-            }
         }
 
         SnackbarHost(
@@ -1397,134 +1236,6 @@ private fun RemoteOmnivoiceServiceCard(
                     modifier = Modifier.align(Alignment.End),
                 ) {
                     Text(stringResource(R.string.use_model))
-                }
-            }
-        }
-    }
-}
-
-/**
- * Gemma LiteRT-LM download section using the shared [ModelVariantCard].
- */
-@Composable
-private fun ModelDownloadSection(
-    viewModel: ModelViewModel,
-    context: android.content.Context,
-    onNavigateToSettings: () -> Unit,
-    activeModelName: String,
-    visibleVariants: List<ModelDownloader.ModelVariant> = ModelDownloader.ModelVariant.entries,
-    guardedModelSwitch: (() -> Unit) -> Unit = {},
-    onInfoClick: (ModelVariant) -> Unit = {}
-) {
-    val downloadState by viewModel.downloadUiState.collectAsState()
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.CloudDownload,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = stringResource(R.string.download_models),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = stringResource(R.string.gemma_advanced_features_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        // GH #49: audio-length capability. TASK-371: use the runtime
-                        // chunk size (the llm backend chunks + concatenates), so the
-                        // label says Any length like the other chunked models.
-                        val gemmaLimit = remember(visibleVariants) {
-                            audioLimitForVariants(
-                                visibleVariants,
-                                chunkDurationSeconds = LlmTranscriptionBackend.AUDIO_CHUNK_SECONDS)
-                        }
-                        AudioLimitLabel(gemmaLimit)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Model variant cards
-            visibleVariants.forEachIndexed { index, variant ->
-                val variantState = downloadState.variantDownloadStates[variant]
-                ModelVariantCard(
-                    state = ModelVariantCardState(
-                        variant = variant,
-                        isActive = activeModelName == stringResource(variant.titleResId),
-                        downloadProgress = variantState?.downloadProgress ?: 0f,
-                        downloadState = variantState?.downloadState ?: DownloadState.Idle,
-                        errorMessage = variantState?.errorMessage,
-                        partialDownload = variantState?.partialDownload,
-                        buttonState = when {
-                            variantState?.isDownloading == true -> DownloadButtonState.Downloading
-                            downloadState.staleModels.contains(variant) -> DownloadButtonState.UpdateAvailable
-                            downloadState.downloadedModels.contains(variant) -> DownloadButtonState.Downloaded
-                            variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
-                            else -> DownloadButtonState.Idle
-                        }
-                    ),
-                    downloadButtonTextResId = R.string.download,
-                    onDownloadClick = { viewModel.showDownloadDialog(variant) },
-                    onCancelClick = { viewModel.cancelDownload(variant) },
-                    onResumeClick = { viewModel.resumeDownload(variant) },
-                    onClearPartialClick = { viewModel.clearPartialDownload(variant) },
-                    onUseClick = { guardedModelSwitch { viewModel.useDownloadedModel(variant) } },
-                    onUpdateClick = { viewModel.showUpdateDialog(variant) },
-                    onDeleteClick = { viewModel.showDeleteDialog(variant) },
-                    onInfoClick = { onInfoClick(variant) }
-                )
-
-                // Auth warning for gated models when no token is configured
-                if (variant.requiresAuth && !downloadState.hasToken) {
-                    val tokenWarning = stringResource(R.string.requires_huggingface_token)
-                    val addSettings = stringResource(R.string.add_in_settings)
-                    val errorColor = MaterialTheme.colorScheme.error
-                    val primaryColor = MaterialTheme.colorScheme.primary
-                    val authWarningText = remember(tokenWarning, addSettings, errorColor, primaryColor) {
-                        buildAnnotatedString {
-                            withStyle(SpanStyle(color = errorColor)) {
-                                append(tokenWarning + " ")
-                            }
-                            withStyle(SpanStyle(
-                                color = primaryColor,
-                                textDecoration = TextDecoration.Underline
-                            )) {
-                                append(addSettings)
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    // TASK-384: Text+clickable with Button role; ClickableText has no role for talkback
-                    Text(
-                        text = authWarningText,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.clickable(role = Role.Button) { onNavigateToSettings() }
-                    )
-                }
-
-                if (index < visibleVariants.lastIndex) {
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
