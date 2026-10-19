@@ -137,6 +137,18 @@ conflating; a second token before the UI consumed the first is lost). The
 foregrounded: without it Android may silently block the activity start while
 the ack still says success.
 
+Field notes (2026-10-19, device session): the flag covers `nav` but NOT
+`voice_note_grant_open` end to end: the grant flow starts a second activity
+(the debug grant activity) which then starts the DocumentsUI picker, and that
+second hop falls outside the broadcast's temporary allowlist when the app is
+backgrounded. Foreground the app first (`adb shell am start
+com.antivocale.app.debug/com.antivocale.app.MainActivity`), then send the op.
+The same field session hit two adjacent traps: a stale foregrounded window
+from a previous test (the DocumentsUI picker left open) hides the navigated
+subpage without any error (force-stop `com.google.android.documentsui` and
+re-nav), and a locked screen turns every dump into keyguard noise (raise
+`screen_off_timeout` via adb for the session, restore 30000 at the end).
+
 ## Reading responses
 
 Every response is a single line of JSON, delivered on two channels:
