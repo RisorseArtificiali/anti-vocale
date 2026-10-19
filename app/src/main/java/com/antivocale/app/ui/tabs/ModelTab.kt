@@ -11,6 +11,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.AnimatedVisibility
@@ -319,6 +322,21 @@ fun ModelTab(
     }
 
     val scrollState = rememberScrollState()
+
+    // TASK-365: set by the models:gemma nav token; the llm entry's positioned
+    // callback fills the Ref (a PLAIN holder: writes cause no recomposition,
+    // so the per-scroll-frame callbacks stay free) and the effect scrolls on
+    // the flag alone. positionInParent is the exact content offset (the
+    // card is a direct child of the scrolled Column), so no container math.
+    var pendingGemmaReveal by remember { mutableStateOf(false) }
+    val gemmaRevealCoords = remember { arrayOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
+    LaunchedEffect(pendingGemmaReveal) {
+        val coords = gemmaRevealCoords[0]
+        if (pendingGemmaReveal && coords != null) {
+            pendingGemmaReveal = false
+            scrollState.scrollTo(coords.positionInParent().y.toInt())
+        }
+    }
     val coroutineScope = rememberCoroutineScope()
 
     // Language filter state. TASK-685 (GH #112): the selection is persisted
@@ -652,6 +670,14 @@ fun ModelTab(
                     benchmarkViewModel = benchmarkViewModel,
                     entry = entry,
                     onExportBundle = ::launchBundleExport,
+                    // TASK-365: the models:gemma reveal scrolls here. The
+                    // positioned callback may fire BEFORE the nav flag lands
+                    // (first layout precedes the broadcast's effect), so the
+                    // coordinates are HELD and a LaunchedEffect on the flag
+                    // performs the scroll when both exist.
+                    modifier = if (com.antivocale.app.transcription.BuiltInBackendIds.isLlm(entry.id)) {
+                        Modifier.onGloballyPositioned { coords -> gemmaRevealCoords[0] = coords }
+                    } else Modifier,
                     state = catalogStates[entry.id] ?: ModelViewModel.ModelEntryUiState(),
                     activeBackendId = activeBackendId,
                     isTranscribing = isTranscribing,
@@ -766,9 +792,16 @@ fun ModelTab(
                 // models:import stays consumed one level down and expands
                 // Advanced because the catalog dialog only composes then.
                 if (request.destination.key == AppNavigation.MODEL_KEY_GEMMA) {
-                    // TASK-365: the Gemma sub-page is gone (the catalog fold);
-                    // the entry renders in the main catalog list. The token
-                    // stays valid and consumed; there is no overlay to open.
+                    // TASK-365 (maintainer nudge): the sub-page is gone; the
+                    // token now SCROLLS the main list to the folded entry
+                    // (the reveal flag is consumed by the entry's positioned
+                    // callback below) instead of swallowing silently.
+                    pendingGemmaReveal = true
+                    // The curated view hides the catalog list (and with it the
+                    // llm entry): the token means SHOW me the entry, so leave
+                    // the curated mode too (and the reveal can never stay
+                    // armed: the entry composes immediately after).
+                    browseAllModels = true
                     onNavConsumed()
                 } else {
                     advancedExpanded = true
@@ -1253,6 +1286,8 @@ private fun CatalogModelSection(
     viewModel: ModelViewModel,
     benchmarkViewModel: BenchmarkViewModel,
     entry: CatalogEntry,
+    /** TASK-365: the models:gemma reveal scrolls to the entry via this. */
+    modifier: Modifier = Modifier,
     /** TASK-742: the bundle-export hook (launcher arm + remembered target). */
     onExportBundle: ((java.io.File, CatalogEntry, CatalogVariantUi) -> Unit)? = null,
     state: ModelViewModel.ModelEntryUiState,
@@ -1292,7 +1327,7 @@ private fun CatalogModelSection(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = when {
                 state.isAnyDownloading -> MaterialTheme.colorScheme.secondaryContainer

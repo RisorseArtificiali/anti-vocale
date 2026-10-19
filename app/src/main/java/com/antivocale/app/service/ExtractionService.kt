@@ -65,6 +65,17 @@ class ExtractionService : Service() {
         /** Model key: a bundled catalog entry id, or [LlmTranscriptionBackend.BACKEND_ID]. */
         const val EXTRA_MODEL_KEY = "model_key"
         const val EXTRA_VARIANT = "variant"
+
+        /**
+         * TASK-365: the ONE download-dispatch intent (the UI confirm dialog
+         * and the model_download SPI op share it; the extras contract lives
+         * here, not in two hand-built sites).
+         */
+        fun downloadIntent(context: android.content.Context, entryId: String, variantName: String): Intent =
+            Intent(context, ExtractionService::class.java).apply {
+                putExtra(EXTRA_MODEL_KEY, entryId)
+                putExtra(EXTRA_VARIANT, variantName)
+            }
         const val EXTRA_CANCEL_VARIANT = "cancel_variant"
 
         /**

@@ -1082,10 +1082,7 @@ class ModelViewModel @Inject constructor(
         ) }
 
         val context = ctx
-        val intent = Intent(context, ExtractionService::class.java).apply {
-            putExtra(ExtractionService.EXTRA_MODEL_KEY, entryId)
-            putExtra(ExtractionService.EXTRA_VARIANT, variantName)
-        }
+        val intent = ExtractionService.downloadIntent(context, entryId, variantName)
         ContextCompat.startForegroundService(context, intent)
     }
 

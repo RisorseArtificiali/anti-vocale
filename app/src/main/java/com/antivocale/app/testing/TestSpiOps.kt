@@ -82,6 +82,7 @@ internal class TestSpiOps(
             OP_NOTIFICATIONS -> notifications()
             OP_UNLOAD -> unload()
             OP_VOICE_NOTE_STATE -> voiceNoteState()
+            OP_MODEL_DOWNLOAD -> modelDownload(entry, value)
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -581,6 +582,47 @@ internal class TestSpiOps(
     }
 
     /**
+     * TASK-365: dispatches a catalog model download through the SAME
+     * ExtractionService intent the UI confirm dialog builds (modelKey +
+     * variant), so download trials are one broadcast instead of scroll-tap-
+     * confirm. The service's own progress flows through its notification and
+     * the Models-tab state as usual. Requires the app context (the shared
+     * unit fakes answer the standard null-context error).
+     */
+    private fun modelDownload(entry: String?, variant: String?): String {
+        val context = requireContext(OP_MODEL_DOWNLOAD)
+        if (entry.isNullOrBlank() || variant.isNullOrBlank()) {
+            return JSONObject().put("op", OP_MODEL_DOWNLOAD)
+                .put("error", "usage: op=model_download entry=<catalog id> value=<variant name>").toString()
+        }
+        val catalogEntry = com.antivocale.app.data.catalog.BundledCatalog.byId(entry)
+            ?: return JSONObject().put("op", OP_MODEL_DOWNLOAD)
+                .put("error", "unknown catalog entry '$entry'").toString()
+        if (catalogEntry.variant(variant) == null) {
+            return JSONObject().put("op", OP_MODEL_DOWNLOAD)
+                .put("error", "entry '$entry' has no variant '$variant'").toString()
+        }
+        // API 31+ rejects a foreground-service start from a backgrounded app
+        // with a typed exception; the deliberate arm names the remedy instead
+        // of leaking the platform message (the op=nav dest=models step is the
+        // documented foregrounding move).
+        return try {
+            androidx.core.content.ContextCompat.startForegroundService(
+                context,
+                com.antivocale.app.service.ExtractionService.downloadIntent(context, entry, variant))
+            JSONObject().put("op", OP_MODEL_DOWNLOAD)
+                .put("dispatched", "$entry/$variant")
+                .put("note", "progress rides the service notification and the Models-tab state")
+                .toString()
+        } catch (e: Exception) {
+            JSONObject().put("op", OP_MODEL_DOWNLOAD)
+                .put("error", "foreground-service start rejected; open the app first (op=nav dest=models)")
+                .toString()
+        }
+    }
+
+
+    /**
      * TASK-625 trial tool: posts the production memory-failure error
      * notification (the exact ResultNotificationFactory builder both error
      * surfaces use) so the Open-setting action can be exercised on device
@@ -773,6 +815,9 @@ internal class TestSpiOps(
         const val OP_CLIPBOARD = "clipboard"
         const val OP_NOTIFICATIONS = "notifications"
         const val OP_UNLOAD = "unload"
+        /** TASK-365: dispatch a catalog model download (the UI confirm dialog's
+         *  action, scriptable: entry=<catalog id> value=<variant name>). */
+        const val OP_MODEL_DOWNLOAD = "model_download"
         const val OP_VOICE_NOTE_STATE = "voice_note_state"
         const val OP_HELP = "help"
 
@@ -783,7 +828,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024

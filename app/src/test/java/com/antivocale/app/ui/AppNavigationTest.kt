@@ -51,7 +51,7 @@ class AppNavigationTest {
     }
 
     @Test
-    fun `scrollable destinations are the scroll sub-pages plus the gemma page`() {
+    fun `scrollable destinations are the scroll sub-pages`() {
         // per_app is deliberately out of v1: its body is a LazyColumn.
         assertEquals(
             setOf("automation", "performance", "speaker", "prompt", "icon_picker", "export", "voice_notes", "backup"),
@@ -59,7 +59,7 @@ class AppNavigationTest {
                 AppNavigation.isScrollableDest(AppNavigation.parse("settings:$key")!!)
             }.toSet(),
         )
-        assertTrue(AppNavigation.isScrollableDest(AppNavigation.parse("models:gemma")!!))
+        assertFalse(AppNavigation.isScrollableDest(AppNavigation.parse("models:gemma")!!))
         assertFalse(AppNavigation.isScrollableDest(AppNavigation.parse("models:import")!!))
         assertFalse(AppNavigation.isScrollableDest(AppNavigation.parse("tab:history")!!))
         // The SPI error message derives from the same helper: pin that the
@@ -67,7 +67,7 @@ class AppNavigationTest {
         assertEquals(
             setOf("settings:automation", "settings:performance", "settings:speaker",
                 "settings:prompt", "settings:icon_picker", "settings:export",
-                "settings:voice_notes", "settings:backup", "models:gemma"),
+                "settings:voice_notes", "settings:backup"),
             AppNavigation.scrollableDestTokens().toSet())
     }
 

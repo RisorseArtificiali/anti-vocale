@@ -75,7 +75,9 @@ object AppNavigation {
      */
     fun isScrollableDest(destination: Destination): Boolean = when (destination) {
         is Destination.SettingsSubPage -> destination.key != SUBPAGE_KEY_PER_APP
-        is Destination.ModelTarget -> destination.key == MODEL_KEY_GEMMA
+        // TASK-365: models:gemma's scroll target died with the sub-page; the
+        // token's behavior is the reveal (no scroll extra), so a scroll extra
+        // now answers the error contract instead of a silent no-op.
         else -> false
     }
 
@@ -85,8 +87,7 @@ object AppNavigation {
      * the validation.
      */
     fun scrollableDestTokens(): List<String> =
-        SUBPAGE_KEYS.filter { it != SUBPAGE_KEY_PER_APP }.map { "settings:$it" } +
-            "models:$MODEL_KEY_GEMMA"
+        SUBPAGE_KEYS.filter { it != SUBPAGE_KEY_PER_APP }.map { "settings:$it" }
 
     /** The one non-scrollable sub-page key: its body is a LazyColumn. */
     const val SUBPAGE_KEY_PER_APP = "per_app"
