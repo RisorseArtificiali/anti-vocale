@@ -50,10 +50,11 @@ class WhistleBackend @Inject constructor(
     private var autoUnloadCallback: (() -> Unit)? = null
 
     /**
-     * Bumped by every successful load; a drain-release captured at an older
-     * epoch is retired instead of resetting the engine under a fresh load
-     * (unload -> immediate re-initialize is the orchestrator's standard
-     * reload sequence, and the engine is process-global and SINGLE).
+     * Bumped at every load ATTEMPT (see initialize); a drain-release
+     * captured at an older epoch is retired instead of resetting the engine
+     * under a fresh load (unload -> immediate re-initialize is the
+     * orchestrator's standard reload sequence, and the engine is
+     * process-global and SINGLE).
      */
     private val loadEpoch = AtomicLong(0)
 
@@ -123,9 +124,7 @@ class WhistleBackend @Inject constructor(
                     // must not also leak the engine: re-arm the reset at
                     // THIS epoch (guarded against a later successful load),
                     // firing once this load bracket drains.
-                    keepAlive.requestDrainRelease {
-                        if (loadEpoch.get() == epochAtLoad) WhistleNative.reset()
-                    }
+                    requestGuardedResetAtDrain(epochAtLoad)
                     throw t
                 }
             }
@@ -196,10 +195,7 @@ class WhistleBackend @Inject constructor(
         // previous life must never destroy a FRESH load (unload -> immediate
         // re-initialize is the orchestrator's standard reload sequence). The
         // epoch guard retires the release the moment a new load begins.
-        val epochAtUnload = loadEpoch.get()
-        keepAlive.requestDrainRelease {
-            if (loadEpoch.get() == epochAtUnload) WhistleNative.reset()
-        }
+        requestGuardedResetAtDrain(loadEpoch.get())
         autoUnloadCallback?.invoke()
         Log.i(TAG, "unloaded")
     }
@@ -236,6 +232,19 @@ class WhistleBackend @Inject constructor(
         com.antivocale.app.data.catalog.BundledCatalog
             .byId(BuiltInBackendIds.WHISTLE)?.languages?.toSet()
             ?: emptySet()
+
+    /**
+     * The ONE guarded deferred reset: a release captured at epoch X queues a
+     * reset that runs only while X is still the current load generation, so
+     * a fresh engine can never be destroyed by a straggler from a previous
+     * life. Both the unload arm and the failed/cancelled-load re-arm ride
+     * this single definition.
+     */
+    private fun requestGuardedResetAtDrain(capturedEpoch: Long) {
+        keepAlive.requestDrainRelease {
+            if (loadEpoch.get() == capturedEpoch) WhistleNative.reset()
+        }
+    }
 
     private companion object {
         const val TAG = "WhistleBackend"

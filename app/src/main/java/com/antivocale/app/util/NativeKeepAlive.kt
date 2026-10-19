@@ -165,8 +165,8 @@ class NativeKeepAlive(
     /**
      * TASK-794: the identity of one native-call bracket, returned by
      * [beginWork] and consumed by [endWork] (only by the NativeKeepAlive
-     * instance that issued it; a foreign bracket is an inert no-op there).
-     * The drain release must wait for the brackets OPEN AT REQUEST TIME
+     * instance that issued it: a foreign bracket, or a bracket closed
+     * twice, is an inert no-op there). The drain release must wait for the brackets OPEN AT REQUEST TIME
      * and for no others: an anonymous counter cannot tell a pre-request
      * bracket (it captured the engine being released into a local) from a
      * post-request one (it runs on the freshly loaded engine), so under
