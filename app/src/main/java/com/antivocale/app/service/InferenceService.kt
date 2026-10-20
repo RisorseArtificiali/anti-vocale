@@ -99,6 +99,19 @@ class InferenceService : Service(), TranscriptionListener {
         /** TASK-271: the detected voice-note offer's Transcribe action; not a share request. */
         const val SOURCE_VOICE_NOTE = "voice_note"
 
+        /**
+         * Which completed requests post the result notification: shares
+         * (TASK-688's design) and automatic voice notes. A voice note is
+         * transcribed with zero taps, so without the notification the
+         * result is only discoverable by opening History; the README and
+         * FAQ promise it, and the automatic route is the one origin where
+         * the user is not already looking at the app. Everything else
+         * share-gated (auto-copy, partial saves, the filter seed) stays
+         * share-only.
+         */
+        internal fun postsResultNotification(isShareRequest: Boolean, source: String?): Boolean =
+            isShareRequest || source == SOURCE_VOICE_NOTE
+
         /** Sources that never get a Tasker-style reply broadcast: every
          *  in-app origin has no legitimate listener, so the reply would be
          *  a world-visible broadcast carrying the full transcript (the
@@ -671,6 +684,8 @@ class InferenceService : Service(), TranscriptionListener {
         // DRAFT-12 (TASK-598 boundary): the Tasker reply carries the same
         // annotated form every other surface delivers on diarized runs.
         val annotatedResult = SubtitleFormatter.annotatedOrStored(resultText, segments)
+        // Read before forgetRequester drops the request's source.
+        val postsResult = postsResultNotification(isShareRequest, requesterByTask[taskId]?.source)
         sendSuccessReply(taskId, annotatedResult)
         forgetRequester(taskId)
         // Every completed task moves the model-recency source: re-derive the
@@ -712,15 +727,18 @@ class InferenceService : Service(), TranscriptionListener {
                     // A non-share failure has no result notification to ride
                     // the subtext of: a dedicated one names the reason.
                     val failureReason = saveResult.failureOrNull()
-                    if (!isShareRequest && failureReason != null) {
+                    if (!postsResult && failureReason != null) {
                         resultNotificationFactory.postSaveFailure(failureReason)
                     }
                 }
-                if (isShareRequest) {
+                if (postsResult) {
                     // TASK-598 review F3: auto-copy must deliver the same text
                     // the notification's Copy action delivers (the annotated
                     // form derived once above, reused by the Tasker reply).
-                    val copied = autoCopyIfEnabled(annotatedResult, sourcePackage)
+                    // Auto-copy stays share-only: an automatic voice note
+                    // arriving in the background must not overwrite the
+                    // clipboard unasked.
+                    val copied = isShareRequest && autoCopyIfEnabled(annotatedResult, sourcePackage)
                     val refinedFrom = refinementOutcome?.takeIf { it != DualRefinementPolicy.NOT_REFINED }
                     resultNotificationFactory.postResult(
                         preferencesManager, perAppPreferencesManager,
