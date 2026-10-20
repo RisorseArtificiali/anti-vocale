@@ -402,10 +402,15 @@ class ResultNotificationFactory(private val context: Context) {
         val paged = !oversized && pages.size >= 2
         val pageIndex = spec.pageIndex.coerceIn(0, pages.size - 1)
 
-        val title = if (spec.isPartial) {
-            context.resources.getQuantityString(R.plurals.transcription_partial, spec.failedChunkCount, spec.failedChunkCount)
-        } else {
-            context.getString(R.string.transcription_complete)
+        val voiceNoteSender = spec.senderName?.takeIf { spec.fromVoiceNote && it.isNotBlank() }
+        val title = when {
+            spec.isPartial ->
+                context.resources.getQuantityString(R.plurals.transcription_partial, spec.failedChunkCount, spec.failedChunkCount)
+            // A labeled automatic voice note reads like the message it
+            // transcribes: the sender as title (the OEM header truncates a
+            // long subText, device report on One UI), the app in the subText.
+            voiceNoteSender != null -> voiceNoteSender
+            else -> context.getString(R.string.transcription_complete)
         }
 
         // Body text: the current page when paged, the whole text otherwise.
@@ -507,13 +512,15 @@ class ResultNotificationFactory(private val context: Context) {
         return builder.build()
     }
 
-    /** "WhatsApp Business · Anna": brand and sender are proper nouns, so
-     *  the line needs no string resource. Null for non-voice-note results. */
+    /** The client's name ("WhatsApp Business"), a proper noun, so no
+     *  string resource. The sender rides the title (or, on a partial run
+     *  whose title is the partial warning, follows the app here). Null for
+     *  non-voice-note results. */
     private fun voiceNoteOriginLine(spec: ResultNotificationSpec): String? {
         if (!spec.fromVoiceNote) return null
         return listOfNotNull(
             com.antivocale.app.util.AppInfoUtils.knownAppName(spec.sourcePackage),
-            spec.senderName?.takeIf { it.isNotBlank() },
+            spec.senderName?.takeIf { it.isNotBlank() && spec.isPartial },
         ).takeIf { it.isNotEmpty() }?.joinToString(" · ")
     }
 
