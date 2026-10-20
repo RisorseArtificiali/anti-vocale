@@ -21,13 +21,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -64,13 +68,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -107,13 +115,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -150,13 +162,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -193,13 +209,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -236,13 +256,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -279,13 +303,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -322,13 +350,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -365,13 +397,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -408,13 +444,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -424,7 +464,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -438,7 +478,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -452,13 +492,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -468,7 +512,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -482,7 +526,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -496,13 +540,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -512,7 +560,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -526,7 +574,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -540,13 +588,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -556,7 +608,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -570,7 +622,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -584,13 +636,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -600,7 +656,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -614,7 +670,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -628,13 +684,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -644,7 +704,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -658,7 +718,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -672,13 +732,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -688,7 +752,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -702,7 +766,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -716,13 +780,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -732,7 +800,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -746,7 +814,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -760,13 +828,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -776,7 +848,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -790,7 +862,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -804,13 +876,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -820,7 +896,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -834,7 +910,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -848,13 +924,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -864,7 +944,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -878,7 +958,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -892,13 +972,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -908,7 +992,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -922,7 +1006,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -936,13 +1020,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -952,7 +1040,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -966,7 +1054,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -980,13 +1068,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -996,7 +1088,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -1010,7 +1102,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -1024,13 +1116,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -1040,7 +1136,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -1054,7 +1150,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -1068,13 +1164,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -1084,7 +1184,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -1098,7 +1198,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -1112,13 +1212,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -1128,7 +1232,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -1142,7 +1246,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -1156,13 +1260,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ zip unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -1172,7 +1280,7 @@ Builds:
     prebuild:
       - sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
         ../build.gradle.kts
-      - sdkmanager 'ndk;r27c'
+      - sdkmanager 'ndk;27.0.12077973'
       - mkdir -p libs
     build:
       - pushd $$sherpa_onnx$$
@@ -1186,7 +1294,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -1200,13 +1308,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-armeabi-v7a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-armeabi-v7a-release.apk
@@ -1229,7 +1341,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -1243,13 +1355,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-arm64-v8a-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-arm64-v8a-release.apk
@@ -1272,7 +1388,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
@@ -1286,13 +1402,17 @@ Builds:
       - apt-get update
       - apt-get install -y wget build-essential cmake g++ unzip
     gradle:
+      - fdroid
+    gradleprops:
       # TASK-854: whistleEngineDisabled - the fdroid build carries the
       # whistle JNI stub (the needle engine ships only as a prebuilt .a,
       # no buildable source upstream; F-Droid's native-binary policy
       # rejects it). Whistle answers unavailable on fdroid builds; drop
-      # the property when upstream opens the engine source.
-      - fdroid
-      - -PwhistleEngineDisabled
+      # the property when upstream opens the engine source. SCRATCH
+      # PROVEN 2026-10-20 (local fdroidserver 2.4.5, full chain green):
+      # the property MUST live in gradleprops - fdroidserver treats the
+      # gradle list as flavors only and mangles the task name otherwise.
+      - whistleEngineDisabled
     output: build/outputs/apk/fdroid/release/app-fdroid-x86_64-release-unsigned.apk
     binary: 
       https://github.com/RisorseArtificiali/anti-vocale/releases/download/v%v/app-fdroid-x86_64-release.apk
@@ -1315,7 +1435,7 @@ Builds:
       - cp 
         $$sherpa_onnx$$/android/SherpaOnnxAar/sherpa_onnx/build/outputs/aar/sherpa_onnx-release.aar
         libs/sherpa-onnx.aar
-    ndk: r28c
+    ndk: 27.0.12077973
     postbuild:
       - mv $$OUT$$ unaligned.apk
       - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
