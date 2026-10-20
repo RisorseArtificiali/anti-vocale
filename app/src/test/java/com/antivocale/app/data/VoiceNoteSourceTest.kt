@@ -96,6 +96,28 @@ class VoiceNoteSourceTest {
     }
 
     @Test
+    fun `a stale folder inside the source's own media dir is rejected`() {
+        // Device evidence (Galaxy S23): a Business install migrated from
+        // WhatsApp keeps "WhatsApp Voice Notes" with counter folders under
+        // its own Media dir; only the exact voice-notes root is valid there.
+        val stale = tree("Android/media/com.whatsapp.w4b/WhatsApp Business/Media/WhatsApp Voice Notes")
+        assertTrue(VoiceNoteTreeGrant.isOtherFolderOfSource(stale, VoiceNoteSource.WHATSAPP_BUSINESS))
+        assertTrue("and it belongs to Business, so the WhatsApp slot refuses it too",
+            VoiceNoteTreeGrant.belongsToOtherSource(stale, VoiceNoteSource.WHATSAPP))
+        val counter = tree("${VoiceNoteSource.WHATSAPP_BUSINESS.relativeRootPath}/202643")
+        assertTrue(VoiceNoteTreeGrant.isOtherFolderOfSource(counter, VoiceNoteSource.WHATSAPP_BUSINESS))
+        VoiceNoteSource.entries.forEach { source ->
+            assertFalse(VoiceNoteTreeGrant.isOtherFolderOfSource(tree(source.relativeRootPath), source))
+        }
+        // Outside the scoped dir (legacy layout, renamed copy) the rule
+        // does not apply; the name/child arms decide as before.
+        assertFalse(VoiceNoteTreeGrant.isOtherFolderOfSource(
+            tree("WhatsApp Business/Media/WhatsApp Business Voice Notes"), VoiceNoteSource.WHATSAPP_BUSINESS))
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        assertFalse(VoiceNoteTreeGrant.looksLikeVoiceNotesTree(context, stale, VoiceNoteSource.WHATSAPP_BUSINESS))
+    }
+
+    @Test
     fun `the preference accessors route each source to its own keys`() = runBlocking {
         val prefs = FakePreferencesManager()
         prefs.saveVoiceNoteDetectionEnabled(VoiceNoteSource.WHATSAPP_BUSINESS, true)

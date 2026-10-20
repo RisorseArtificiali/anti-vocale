@@ -183,7 +183,7 @@ class VoiceNoteTreeGrant @Inject constructor(
             treeUri: Uri,
             source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
         ): Boolean = try {
-            if (belongsToOtherSource(treeUri, source)) return false
+            if (belongsToOtherSource(treeUri, source) || isOtherFolderOfSource(treeUri, source)) return false
             val root = DocumentFile.fromTreeUri(context, treeUri) ?: return false
             root.name == source.folderName ||
                 root.listFiles().any { it.name?.toIntOrNull() != null }
@@ -205,12 +205,31 @@ class VoiceNoteTreeGrant @Inject constructor(
          * non-ExternalStorage tree (no colon) belongs to no source.
          */
         internal fun belongsToOtherSource(treeUri: Uri, source: VoiceNoteSource): Boolean {
-            val docPath = runCatching {
-                android.provider.DocumentsContract.getTreeDocumentId(treeUri)
-            }.getOrNull()?.substringAfter(':', missingDelimiterValue = "") ?: return false
+            val docPath = treeDocumentPath(treeUri) ?: return false
             if (docPath.isEmpty() || source.ownsDocumentPath(docPath)) return false
             return VoiceNoteSource.entries.any { it != source && it.ownsDocumentPath(docPath) }
         }
+
+        /**
+         * A tree inside the source's OWN scoped media dir that is not its
+         * voice-notes root. Device evidence (Galaxy S23, 2026-10-20): a
+         * WhatsApp Business install migrated from WhatsApp carries a stale
+         * "WhatsApp Voice Notes" folder with numeric counter children
+         * inside its own Media dir; the child arm would accept it, and the
+         * detector (which watches the real root) would never see a note
+         * resolve. Inside the scoped dir the root's path is known exactly,
+         * so anything else is the wrong folder.
+         */
+        internal fun isOtherFolderOfSource(treeUri: Uri, source: VoiceNoteSource): Boolean {
+            val docPath = treeDocumentPath(treeUri) ?: return false
+            return docPath.startsWith("Android/media/${source.packageName}/") &&
+                docPath.trimEnd('/') != source.relativeRootPath
+        }
+
+        /** The tree's document path after the volume colon, or null. */
+        private fun treeDocumentPath(treeUri: Uri): String? = runCatching {
+            android.provider.DocumentsContract.getTreeDocumentId(treeUri)
+        }.getOrNull()?.substringAfter(':', missingDelimiterValue = "")
 
         fun pickerInitialUri(source: VoiceNoteSource = VoiceNoteSource.WHATSAPP): Uri? = try {
             val storageRoot = Environment.getExternalStorageDirectory().absolutePath
