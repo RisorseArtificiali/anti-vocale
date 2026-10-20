@@ -98,7 +98,8 @@ class SettingsViewModel @Inject constructor(
     private val shareTargetManager: ShareTargetManager,
     // TASK-271: permission grants have no observable state, so the grant
     // paths poke the coordinator for a re-evaluation.
-    private val voiceNoteDetectionCoordinator: com.antivocale.app.data.VoiceNoteDetectionCoordinator,
+    // WhatsApp Business support: one coordinator per voice-note source.
+    private val voiceNoteDetectionCoordinators: com.antivocale.app.data.VoiceNoteDetectionCoordinators,
     // TASK-826: the grant-acceptance policy's owner (see acceptVoiceNoteGrant).
     private val voiceNoteTreeGrant: com.antivocale.app.data.VoiceNoteTreeGrant,
     private val shareShortcutManager: ShareShortcutManager,
@@ -698,7 +699,9 @@ class SettingsViewModel @Inject constructor(
      *  re-evaluates its conjunction against the CURRENT preference value,
      *  which re-arms detection when the value itself did not change. */
     fun refreshVoiceNoteDetectionGate() {
-        voiceNoteDetectionCoordinator.pokePermissionState()
+        // Every source: the runtime permission is shared, and each
+        // coordinator re-probes its own tree grant on the poke.
+        voiceNoteDetectionCoordinators.pokePermissionState()
     }
 
     /**
@@ -707,7 +710,7 @@ class SettingsViewModel @Inject constructor(
      * conjunction).
      */
     val voiceNoteGateState: StateFlow<com.antivocale.app.data.VoiceNoteGateState> =
-        voiceNoteDetectionCoordinator.gateState
+        voiceNoteDetectionCoordinators.forSource(com.antivocale.app.data.VoiceNoteSource.WHATSAPP).gateState
 
     // ---- TASK-681: LAN offload (OmniVoice) ----
 

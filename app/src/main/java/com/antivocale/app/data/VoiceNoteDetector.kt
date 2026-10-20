@@ -1,13 +1,10 @@
 package com.antivocale.app.data
 
-import android.os.Environment
 import android.os.FileObserver
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.antivocale.app.di.ApplicationScope
 import java.io.File
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -56,13 +53,19 @@ data class VoiceNoteEntry(
  * WhatsApp is still writing it, and the dedup would then swallow the
  * CLOSE_WRITE that proves the write complete); CREATE stays in the mask
  * for new counter FOLDERS.
+ *
+ * One instance per [VoiceNoteSource] (WhatsApp Business support): each
+ * watches its own client's tree, with its own seen filter and catch-up
+ * bookkeeping, so arming or disposing one never touches the other. Not
+ * injected directly: AppModule builds one per source next to its
+ * coordinator.
  */
-@Singleton
-class VoiceNoteDetector @Inject constructor(
+class VoiceNoteDetector(
     // The process-lifetime scope (carries the CrashReporter handler; never
     // cancelled): the catch-up delay rides it instead of a private executor,
     // per the TASK-438 rule against hand-built concurrency owners.
     @ApplicationScope private val scope: CoroutineScope,
+    val source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
 ) {
 
     private val _detections = Channel<VoiceNoteEntry>(Channel.UNLIMITED)
@@ -97,7 +100,7 @@ class VoiceNoteDetector @Inject constructor(
     private val pendingCatchUps = mutableSetOf<String>()
 
     val root: File
-        get() = voiceNotesRoot()
+        get() = voiceNotesRoot(source)
 
     @Synchronized
     fun subscribe() {
@@ -109,7 +112,7 @@ class VoiceNoteDetector @Inject constructor(
         // note forever. A doubled launch in the armed-but-root-missing
         // corner is a seen-filter no-op.
         pendingCatchUps.toList().forEach { launchCatchUp(File(it)) }
-        Log.i(TAG, "subscribed: ${observers.size} watchers under ${root.absolutePath}")
+        Log.i(TAG, "subscribed ${source.name}: ${observers.size} watchers under ${root.absolutePath}")
     }
 
     /** The watcher enumeration both subscribe() and refresh() ride. */
@@ -127,7 +130,7 @@ class VoiceNoteDetector @Inject constructor(
         observers.forEach { it.stopWatching() }
         observers.clear()
         watchedDirs.clear()
-        Log.i(TAG, "disposed")
+        Log.i(TAG, "disposed ${source.name}")
     }
 
     /**
@@ -159,7 +162,7 @@ class VoiceNoteDetector @Inject constructor(
         } finally {
             oldObservers.forEach { it.stopWatching() }
         }
-        Log.i(TAG, "refreshed: ${observers.size} watchers (gap-free)")
+        Log.i(TAG, "refreshed ${source.name}: ${observers.size} watchers (gap-free)")
     }
 
     @Synchronized
@@ -324,10 +327,10 @@ class VoiceNoteDetector @Inject constructor(
     }
 }
 
-/** The canonical WhatsApp Voice Notes folder (the detector's watch root and
- *  the Settings picker's initial location: one owner of the path). */
-fun voiceNotesRoot(): File =
-    File(Environment.getExternalStorageDirectory(), "Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes")
+/** The canonical voice-notes folder of [source] (the detector's watch root
+ *  and the Settings picker's initial location: one owner of the path, the
+ *  source descriptor). */
+fun voiceNotesRoot(source: VoiceNoteSource = VoiceNoteSource.WHATSAPP): File = source.root()
 
 /**
  * The pure decision rules for voice-note detection, split out of
