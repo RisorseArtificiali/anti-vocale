@@ -1459,7 +1459,7 @@ private fun CatalogModelSection(
                     // whistle would unload the warm engine and then fail the
                     // config-type check. TASK-365: the LLM entry joins the
                     // same gate (no benchmark config builder for it either).
-                    onBenchmarkClick = if (entry.id == BuiltInBackendIds.WHISTLE
+                    onBenchmarkClick = if (BuiltInBackendIds.isWhistle(entry.id)
                         || entry.id == com.antivocale.app.transcription.LlmTranscriptionBackend.BACKEND_ID) null else {
                         {
                         val path = SherpaModelDownloader.of(entry.id).getModelPath(context, variant.variantName)

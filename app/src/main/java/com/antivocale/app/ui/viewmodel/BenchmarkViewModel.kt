@@ -69,7 +69,7 @@ class BenchmarkViewModel @Inject constructor(
         // TASK-853: the harness builds a SHERPA config; whistle (its own
         // engine) is rejected HERE, at the root, so any future entry
         // point cannot re-open the unload-then-fail trap.
-        if (backendId == BuiltInBackendIds.WHISTLE) {
+        if (BuiltInBackendIds.isWhistle(backendId)) {
             _benchmarkState.value = BenchmarkState.Error(
                 appContext.getString(com.antivocale.app.R.string.benchmark_unsupported_engine))
             return

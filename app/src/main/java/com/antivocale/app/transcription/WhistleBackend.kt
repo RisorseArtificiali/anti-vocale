@@ -163,10 +163,12 @@ class WhistleBackend @Inject constructor(
             // TASK-858: keyword biasing is REQUEST-time, not residency
             // identity (an edit applies to the next decode with no reload):
             // the orchestrator's .first() pattern on the cache-seeded flow.
-            // Newline-only, matching the settings copy; the engine's native
-            // boundary is newline-joined, so a comma inside a term survives.
+            // Newline OR comma separators (lenient parse: a pasted
+            // comma-separated list must not reach the engine as one giant
+            // hotword; commas INSIDE a term are meaningless anyway, the
+            // native boundary joins with \n).
             val keywords = preferences.keywordBiasing.first()
-                .split('\n')
+                .split('\n', ',')
                 .map(String::trim)
                 .filter(String::isNotEmpty)
             val result = withContext(Dispatchers.IO) {
