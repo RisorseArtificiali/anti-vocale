@@ -213,15 +213,31 @@ jobs:
       # Review F3 (TASK-838): this workflow was the ONLY one assembling the
       # playStore RELEASE variant; leaving it nightly-only would turn a
       # release-only regression (signing, split packaging, the R8 path) into
-      # a release-day failure. One invocation builds both (review 2026-10-15:
-      # a single gradlew call shares configuration and the daemon; two calls
-      # doubled the workflow's time for nothing).
-      - name: Build playStore NIGHTLY APKs + the release smoke (per-ABI splits, the .nightly id)
-        run: ./gradlew :app:assemblePlayStoreNightly :app:assemblePlayStoreRelease --console=plain
+      # a release-day failure. The first real dispatch (2026-10-20, run
+      # 39395339138) failed at :app:packagePlayStoreNightly on the
+      # IncrementalSplitterRunnable race the TASK-838 local battery already
+      # knew (once in three local runs): AGP submits split packaging as
+      # unawaited Worker-API items, so ONE invocation packaging two variants
+      # overlaps them even though the tasks run serially. Sequential
+      # invocations rely on the daemon joining async work at build end
+      # (Gradle's documented model); if the split form ever flakes again,
+      # the cheap hardening is --no-daemon on the second step, not another
+      # workaround layer. Cost: the second call re-pays configuration and
+      # loses the cross-variant overlap, roughly +3 min on source-change
+      # days (near-zero when only docs moved: the build-cache hits); the
+      # first green split run calibrates the COST only - with a 1-in-3
+      # race, one green run is not race-fix evidence.
+      - name: Build playStore NIGHTLY APKs (per-ABI splits, the .nightly id)
+        run: ./gradlew :app:assemblePlayStoreNightly --console=plain
+      - name: Build the release smoke (signing, split packaging, the R8 path)
+        run: ./gradlew :app:assemblePlayStoreRelease --console=plain
 
       # Review 2026-10-15: the nightly ships R8-minified with Crashlytics
       # enabled; without the mapping upload every nightly crash report
-      # arrives obfuscated and undiagnosable.
+      # arrives obfuscated and undiagnosable. Kept as its OWN invocation
+      # for upload-failure isolation; folding it into a build step is fine
+      # ONLY as a same-variant companion (never into a multi-VARIANT
+      # invocation: see the race note above).
       - name: Upload Crashlytics mapping for the nightly build
         run: ./gradlew :app:uploadCrashlyticsMappingFilePlayStoreNightly --console=plain
 
