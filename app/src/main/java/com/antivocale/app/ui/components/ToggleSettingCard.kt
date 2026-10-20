@@ -70,10 +70,16 @@ fun ToggleSettingCard(
                 // instead of none - through the ONE renderer (range
                 // review: this inline copy was the idiom's second site).
                 Spacer(modifier = Modifier.height(4.dp))
-                CardDescription(text = description, maxLinesCompact = descriptionMaxLinesCompact)
-                supportingText?.let {
-                    // Same compact height discipline as the description.
-                    CardDescription(text = it, maxLinesCompact = 2)
+                // B (maintainer, 2026-10-20, mockup align-mockup): the
+                // description joins the TITLE's text column instead of the
+                // icon's: one vertical grid across every card family. The
+                // indent is the CardTitleRow prefix (24dp icon + 8dp gap).
+                Column(modifier = Modifier.padding(start = 32.dp)) {
+                    CardDescription(text = description, maxLinesCompact = descriptionMaxLinesCompact)
+                    supportingText?.let {
+                        // Same compact height discipline as the description.
+                        CardDescription(text = it, maxLinesCompact = 2)
+                    }
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
