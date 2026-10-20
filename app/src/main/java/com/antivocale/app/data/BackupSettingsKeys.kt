@@ -8,7 +8,8 @@ package com.antivocale.app.data
  * notification ids).
  *
  * Classes deliberately EXCLUDED (evaluator classification, 2026-10-14):
- * - device-bound: output_folder_uri and voice_note_tree_uri (persisted SAF
+ * - device-bound: output_folder_uri, voice_note_tree_uri and
+ *   voice_note_business_tree_uri (persisted SAF
  *   grants are per-install and arrive dead), scheduled_folders_json (carries
  *   a device-derived file-snapshot dedup memory), external_models_json
  *   (references this device's sandbox dirs; models travel via the bundle),
@@ -54,6 +55,7 @@ object BackupSettingsKeys {
         "summarize_enabled",
         "vad_advisory_dismissed",
         "vad_enabled",
+        "voice_note_business_detection_enabled",
         "voice_note_detection_enabled",
         "voice_note_identity_enabled",
     )
