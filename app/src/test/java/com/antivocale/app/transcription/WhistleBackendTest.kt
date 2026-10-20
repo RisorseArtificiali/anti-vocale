@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.data.FakePreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.assertEquals
@@ -11,14 +12,15 @@ import org.junit.Test
  * TASK-853 slice 2: the WhistleBackend's JVM-reachable contract. The
  * engine itself is device territory (the bridge loads libneedle); these
  * pin the surface the orchestrator touches: whole-clip declaration, the
- * config-type guard, the audio-only arm, and the dormant-registration
- * invariant (the backend exists in the DI set BEFORE its catalog entry:
- * WHISTLE is defined but not yet in ALL, so selectability and the
- * catalog pin stay unchanged until slice 3's entry lands).
+ * config-type guard, and the audio-only arm (slice 3 shipped: WHISTLE is
+ * selectable and cataloged). The keyword-biasing parse runs behind the
+ * loaded engine, so it is device territory, not JVM-pinned.
  */
 class WhistleBackendTest {
 
-    private val backend = WhistleBackend(CoroutineScope(Dispatchers.Unconfined))
+    private val backend = WhistleBackend(
+        CoroutineScope(Dispatchers.Unconfined),
+        FakePreferencesManager())
 
     @Test
     fun `the backend declares whole-clip audio with no special chunking`() {

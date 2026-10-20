@@ -1292,4 +1292,7 @@
     <string name="backup_import_history_failed">Einstellungen importiert, aber der Verlauf konnte nicht hinzugefügt werden. Ein erneuter Versuch ist sicher.</string>
     <string name="backup_disclosure_title">Vor dem Export</string>
     <string name="backup_disclosure_body">Das Backup enthält jedes Transkript, jeden Absendernamen und jede Sprecherkennzeichnung als lesbaren Text. Teile es nur mit Stellen, denen du vertraust.</string>
+    <string name="keyword_biasing_title">Stichwort-Bevorzugung (Whistle)</string>
+    <string name="keyword_biasing_description">Namen, Orte oder Fachbegriffe, die das Whistle-Modell begünstigen soll, einer pro Zeile. Gilt ab der nächsten Transkription, ohne Neuladen.</string>
+    <string name="keyword_biasing_placeholder">Ein Begriff pro Zeile</string>
 </resources>

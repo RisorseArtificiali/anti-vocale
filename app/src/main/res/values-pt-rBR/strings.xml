@@ -1160,4 +1160,7 @@
     <string name="backup_import_history_failed">Configurações importadas, mas não foi possível adicionar o histórico. Repetir é seguro.</string>
     <string name="backup_disclosure_title">Antes de exportar</string>
     <string name="backup_disclosure_body">O backup contém cada transcrição, nome de remetente e etiqueta de falante em texto legível. Compartilhe apenas com destinatários de confiança.</string>
+    <string name="keyword_biasing_title">Viés de palavras-chave (Whistle)</string>
+    <string name="keyword_biasing_description">Nomes, lugares ou jargão que o modelo Whistle deve favorecer, um por linha. Vale na próxima transcrição, sem recarregar.</string>
+    <string name="keyword_biasing_placeholder">Um termo por linha</string>
 </resources>

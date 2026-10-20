@@ -81,6 +81,7 @@ class PreferencesManagerImpl(
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
         private val PUNCTUATION_MODE = stringPreferencesKey("punctuation_mode")
         private val PUNCTUATION_PROMPT = stringPreferencesKey("punctuation_prompt")
+        private val KEYWORD_BIASING = stringPreferencesKey("keyword_biasing")
         private val SUMMARIZE_ENABLED = booleanPreferencesKey("summarize_enabled")
         private val SUMMARY_PROMPT = stringPreferencesKey("summary_prompt")
         private val THREAD_COUNT = intPreferencesKey("thread_count")
@@ -156,6 +157,7 @@ class PreferencesManagerImpl(
         val defaultPrompt: String = PreferencesManager.DEFAULT_PROMPT_VALUE,
         val punctuationMode: String = PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         val punctuationPrompt: String = "",
+        val keywordBiasing: String = "",
         val summaryPrompt: String = "",
         val summarizeEnabled: Boolean = PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
         val threadCount: Int = PreferencesManager.DEFAULT_THREAD_COUNT,
@@ -226,6 +228,7 @@ class PreferencesManagerImpl(
         defaultPrompt = this[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE,
         punctuationMode = this[PUNCTUATION_MODE] ?: PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         punctuationPrompt = this[PUNCTUATION_PROMPT] ?: "",
+        keywordBiasing = this[KEYWORD_BIASING] ?: "",
         summaryPrompt = this[SUMMARY_PROMPT] ?: "",
         summarizeEnabled = this[SUMMARIZE_ENABLED] ?: PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
         threadCount = this[THREAD_COUNT] ?: PreferencesManager.DEFAULT_THREAD_COUNT,
@@ -633,6 +636,17 @@ class PreferencesManagerImpl(
             preferences[PUNCTUATION_PROMPT] = truncated
         }
         cache.updateAndGet { it.copy(punctuationPrompt = truncated) }
+    }
+
+    override val keywordBiasing: Flow<String> = dataStore.data.map { it[KEYWORD_BIASING] ?: "" }
+        .onStart { emit(cache.get().keywordBiasing) }
+
+    override suspend fun saveKeywordBiasing(terms: String) {
+        val truncated = terms.take(PreferencesManager.PROMPT_CAP)
+        dataStore.edit { preferences ->
+            preferences[KEYWORD_BIASING] = truncated
+        }
+        cache.updateAndGet { it.copy(keywordBiasing = truncated) }
     }
 
     override val summarizeEnabled: Flow<Boolean> = dataStore.data.map { it[SUMMARIZE_ENABLED] ?: PreferencesManager.DEFAULT_SUMMARIZE_ENABLED }

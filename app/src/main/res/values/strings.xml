@@ -580,6 +580,9 @@
     <string name="summary_prompt_title">Summary prompt</string>
     <string name="signature_setting_title">Transcription signature (AI disclaimer)</string>
     <string name="signature_setting_description">Adds a signature line to every transcript that leaves the app: copies, shares and exported files. The app\'s own screens keep the plain text.</string>
+    <string name="keyword_biasing_title">Keyword biasing (Whistle)</string>
+    <string name="keyword_biasing_description">Names, places or jargon the Whistle model should favour, one per line. Applies to the next transcription, no reload needed.</string>
+    <string name="keyword_biasing_placeholder">One term per line</string>
     <string name="signature_text_title">Signature text</string>
     <string name="signature_text_description">Leave empty to use the standard disclaimer.</string>
     <string name="signature_position_title">Position</string>

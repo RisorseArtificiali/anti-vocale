@@ -126,6 +126,8 @@ interface PreferencesManager {
     val punctuationMode: Flow<String>
     /** TASK-276 user override of the punctuation prompt; blank = the localized curated default. */
     val punctuationPrompt: Flow<String>
+    /** TASK-858: whistle keyword biasing (newline-separated terms; "" = off). */
+    val keywordBiasing: Flow<String>
     /** TASK-121.4 smart-summary pass toggle: attach a Gemma summary to long transcripts. Default off. */
     val summarizeEnabled: Flow<Boolean>
 
@@ -282,6 +284,9 @@ interface PreferencesManager {
     suspend fun saveDefaultPrompt(prompt: String)
     suspend fun savePunctuationMode(mode: String)
     suspend fun savePunctuationPrompt(prompt: String)
+
+    /** TASK-858: persists the whistle keyword-biasing terms (capped). */
+    suspend fun saveKeywordBiasing(terms: String)
     suspend fun saveSummarizeEnabled(enabled: Boolean)
     suspend fun saveSummaryPrompt(prompt: String)
     suspend fun saveThreadCount(threads: Int)

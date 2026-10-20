@@ -1320,4 +1320,7 @@
     <string name="backup_import_history_failed">Налаштування імпортовано, але не вдалося додати історію. Повторити безпечно.</string>
     <string name="backup_disclosure_title">Перед експортом</string>
     <string name="backup_disclosure_body">Копія містить кожне розшифрування, ім\'я відправника та мітку мовця у читабельному вигляді. Передавайте її лише тим, кому довіряєте.</string>
+    <string name="keyword_biasing_title">Пріоритет ключових слів (Whistle)</string>
+    <string name="keyword_biasing_description">Імена, місця або терміни, які модель Whistle має віддавати перевагу, по одному на рядок. Діє з наступної розшифровки, без перезавантаження.</string>
+    <string name="keyword_biasing_placeholder">Один термін на рядок</string>
 </resources>

@@ -1303,4 +1303,7 @@
     <string name="backup_import_history_failed">ההגדרות יובאו, אך לא ניתן היה להוסיף את ההיסטוריה. ניתן לנסות שוב בבטחה.</string>
     <string name="backup_disclosure_title">לפני הייצוא</string>
     <string name="backup_disclosure_body">הגיבוי מכיל כל תמליל, שם שולח ותווית דובר בטקסט קריא. שתפו אותו רק עם יעדים מהימנים.</string>
+    <string name="keyword_biasing_title">הטיית מילות מפתח (Whistle)</string>
+    <string name="keyword_biasing_description">שמות, מקומות או מונחים שהמודל Whistle צריך להעדיף, אחד בכל שורה. חל מהתמלול הבא, בלי טעינה מחדש.</string>
+    <string name="keyword_biasing_placeholder">מונח אחד בכל שורה</string>
 </resources>

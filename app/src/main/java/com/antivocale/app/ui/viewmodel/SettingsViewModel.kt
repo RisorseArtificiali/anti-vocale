@@ -141,6 +141,7 @@ class SettingsViewModel @Inject constructor(
             WarmedPrefs(
                 modelConfigured = !preferencesManager.modelPath.first().isNullOrBlank(),
                 punctuationPrompt = preferencesManager.punctuationPrompt.first(),
+                keywordBiasing = preferencesManager.keywordBiasing.first(),
                 summaryPrompt = preferencesManager.summaryPrompt.first(),
                 transcriptionAdvancedExpanded =
                     preferencesManager.settingsTranscriptionAdvancedExpanded.first(),
@@ -150,6 +151,7 @@ class SettingsViewModel @Inject constructor(
     private data class WarmedPrefs(
         val modelConfigured: Boolean,
         val punctuationPrompt: String,
+        val keywordBiasing: String = "",
         val summaryPrompt: String,
         /** TASK-588.1: seeds the advanced-reveal state (no first-frame flash). */
         val transcriptionAdvancedExpanded: Boolean,
@@ -364,6 +366,14 @@ class SettingsViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = warmedPrefs.summaryPrompt
+        )
+
+    /** TASK-858: whistle keyword-biasing terms; blank = off. */
+    val currentKeywordBiasing: StateFlow<String> = preferencesManager.keywordBiasing
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = warmedPrefs.keywordBiasing
         )
 
     // TASK-491: welcome-tour state; NOT version-keyed (an update never
@@ -1322,6 +1332,10 @@ class SettingsViewModel @Inject constructor(
 
     fun saveSignatureEnabled(enabled: Boolean) {
         viewModelScope.launch { preferencesManager.saveSignatureEnabled(enabled) }
+    }
+
+    fun saveKeywordBiasing(terms: String) {
+        viewModelScope.launch { preferencesManager.saveKeywordBiasing(terms) }
     }
 
     fun saveSignatureText(text: String) {

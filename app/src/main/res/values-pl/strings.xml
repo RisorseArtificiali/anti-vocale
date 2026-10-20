@@ -1318,4 +1318,7 @@
     <string name="backup_import_history_failed">Zaimportowano ustawienia, ale nie udało się dodać historii. Ponowna próba jest bezpieczna.</string>
     <string name="backup_disclosure_title">Zanim wyeksportujesz</string>
     <string name="backup_disclosure_body">Kopia zawiera każdą transkrypcję, nazwę nadawcy i etykietę mówcy jako czytelny tekst. Udostępniaj ją tylko zaufanym odbiorcom.</string>
+    <string name="keyword_biasing_title">Wzmacnianie słów kluczowych (Whistle)</string>
+    <string name="keyword_biasing_description">Nazwy, miejsca lub żargon, które model Whistle powinien preferować, po jednym w wierszu. Zastosowane od następnej transkrypcji, bez przeładowania.</string>
+    <string name="keyword_biasing_placeholder">Jeden termin na wiersz</string>
 </resources>

@@ -1297,4 +1297,7 @@
     <string name="backup_import_history_failed">تنظیمات درون‌ریزی شد، اما افزودن تاریخچه ممکن نشد. تلاش دوباره بی‌خطر است.</string>
     <string name="backup_disclosure_title">پیش از برون‌بری</string>
     <string name="backup_disclosure_body">پشتیبان شامل هر رونوشت، نام فرستنده و برچسب گوینده به صورت متن خوانا است. آن را فقط با مقصدهای مطمئن به اشتراک بگذارید.</string>
+    <string name="keyword_biasing_title">گرایش کلیدواژه‌ای (Whistle)</string>
+    <string name="keyword_biasing_description">نام‌ها، مکان‌ها یا اصطلاحاتی که مدل Whistle باید ترجیح دهد، در هر خط یک مورد. از رونویسی بعدی اعمال می‌شود، بدون بارگذاری مجدد.</string>
+    <string name="keyword_biasing_placeholder">در هر خط یک عبارت</string>
 </resources>

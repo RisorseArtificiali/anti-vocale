@@ -1125,4 +1125,7 @@
     <string name="backup_import_history_failed">设置已导入，但无法添加历史记录。重试是安全的。</string>
     <string name="backup_disclosure_title">导出之前</string>
     <string name="backup_disclosure_body">备份以可读文本形式包含每条转写、发件人姓名和说话者标签。只与你信任的对象分享。</string>
+    <string name="keyword_biasing_title">关键词偏置（Whistle）</string>
+    <string name="keyword_biasing_description">Whistle 模型应优先考虑的名称、地点或术语，每行一个。下次转录即生效，无需重新加载。</string>
+    <string name="keyword_biasing_placeholder">每行一个词</string>
 </resources>

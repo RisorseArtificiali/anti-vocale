@@ -1308,4 +1308,7 @@
     <string name="backup_import_history_failed">Instellingen geïmporteerd, maar de geschiedenis kon niet worden toegevoegd. Opnieuw proberen is veilig.</string>
     <string name="backup_disclosure_title">Voordat je exporteert</string>
     <string name="backup_disclosure_body">De back-up bevat elke transcriptie, afzendernaam en sprekerlabels in leesbare tekst. Deel hem alleen met ontvangers die je vertrouwt.</string>
+    <string name="keyword_biasing_title">Sleutelwoord-voorkeur (Whistle)</string>
+    <string name="keyword_biasing_description">Namen, plaatsen of jargon die het Whistle-model moet bevoordelen, een per regel. Geldt vanaf de volgende transcriptie, zonder herladen.</string>
+    <string name="keyword_biasing_placeholder">Eén term per regel</string>
 </resources>

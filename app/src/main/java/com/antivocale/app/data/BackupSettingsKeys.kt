@@ -63,6 +63,7 @@ object BackupSettingsKeys {
         "language_preference",
         "model_filter_language",
         "punctuation_mode",
+        "keyword_biasing",
         "punctuation_prompt",
         "signature_position",
         "signature_text",

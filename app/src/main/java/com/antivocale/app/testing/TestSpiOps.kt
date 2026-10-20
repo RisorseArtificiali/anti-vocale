@@ -123,6 +123,7 @@ internal class TestSpiOps(
             .put("activeModelPath", activeModelPath(backend) ?: JSONObject.NULL)
             .put("paths", paths)
             .put("summarizeEnabled", preferences.summarizeEnabled.first())
+            .put("keywordBiasing", preferences.keywordBiasing.first())
             .put("autoCopyEnabled", preferences.autoCopyEnabled.first())
             .put("signatureEnabled", preferences.signatureEnabled.first())
             .put("signatureText", preferences.signatureText.first())
@@ -270,6 +271,8 @@ internal class TestSpiOps(
     /** Free-text preferences: written as given, no parse. */
     private val textKeys: Map<String, suspend (String) -> Unit> = mapOf(
         "punctuation_prompt" to preferences::savePunctuationPrompt,
+        // TASK-858: the whistle keyword-biasing terms (newline-separated).
+        "keyword_biasing" to preferences::saveKeywordBiasing,
         "default_prompt" to preferences::saveDefaultPrompt,
         "summary_prompt" to preferences::saveSummaryPrompt,
         "signature_text" to preferences::saveSignatureText,
@@ -408,6 +411,8 @@ internal class TestSpiOps(
     private val blankClearingKeys = setOf(
         "external_catalog_url", "output_folder", "signature_text",
         "punctuation_prompt", "default_prompt", "summary_prompt",
+        // TASK-858: blank is the biasing's off (no terms).
+        "keyword_biasing",
         // TASK-740: blank is the pin's documented clear (inherit active).
         "refinement_model",
     )
@@ -432,7 +437,7 @@ internal class TestSpiOps(
      * echoing a truncated value for a verbatim key would recreate the exact
      * ack-vs-readback divergence this exists to close (TASK-485).
      */
-    private val promptCappedKeys = setOf("summary_prompt", "punctuation_prompt", "default_prompt")
+    private val promptCappedKeys = setOf("summary_prompt", "punctuation_prompt", "default_prompt", "keyword_biasing")
     private fun setAck(key: String, value: String, entry: String?): String = JSONObject()
         .put("op", OP_SET)
         .put("key", key)
