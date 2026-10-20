@@ -12,7 +12,7 @@ posted without an explicit go.
 
 I maintain an Android app that transcribes WhatsApp/Telegram/Signal voice messages entirely on-device: no cloud, no account, the audio never leaves the phone. Kotlin, Jetpack Compose, Apache 2.0: https://github.com/RisorseArtificiali/anti-vocale
 
-It ships five ASR backends through sherpa-onnx (Parakeet TDT, Whisper, Qwen3-ASR, Nemotron streaming, Gemma multimodal for post-processing), all int8-quantized, plus user-imported community models. 25 European languages built in, 99 with Whisper, any sherpa-onnx model importable by URL.
+It ships seven ASR backends (Parakeet TDT, Whisper, Qwen3-ASR, Nemotron streaming, Gemma for post-processing, GigaAM for Russian, and Whistle: 17MB, keyword-biasable, a 40x-smaller entry tier), all int8-quantized, plus user-imported community models and a vendor-neutral transcription-provider API other apps can call (Forkgram lists us as its offline transcriber). WhatsApp voice notes can transcribe themselves: an opt-in folder watch runs the pipeline with zero taps and labels each result with the sender. 25 European languages built in, 99 with Whisper, any sherpa-onnx model importable by URL.
 
 Some numbers from our own measurements (desktop harness, public test sets, greedy decoding):
 
@@ -33,7 +33,7 @@ Happy to answer questions on the model choices, the ONNX runtime setup, or why t
 
 **Body:**
 
-Anti-Vocale transcribes voice messages locally with quantized ASR models (Parakeet, Whisper, Qwen3, streaming Nemotron): share the audio, get text back, nothing leaves the phone. Five backends, 25+ languages, community model imports, Apache 2.0.
+Anti-Vocale transcribes voice messages locally with quantized ASR models (Parakeet, Whisper, Qwen3, streaming Nemotron, 17MB Whistle): share the audio or let the opt-in WhatsApp watch do it with zero taps. Nothing leaves the phone. Seven backends, 25+ languages, community model imports, Apache 2.0.
 
 The interesting engineering is in docs/research/ in the repo: per-model chunk caps after we measured a 6x WER collapse on long single passes, memory-derived VAD ceilings, reproducible F-Droid builds with sherpa-onnx compiled from source.
 
