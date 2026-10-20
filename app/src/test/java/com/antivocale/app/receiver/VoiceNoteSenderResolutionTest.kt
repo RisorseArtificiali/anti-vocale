@@ -194,4 +194,58 @@ class VoiceNoteSenderResolutionTest {
         verify(exactly = 0) { ap.getAudioDuration(any()) }
         assertEquals(2_000L, currentTime)
     }
+    // ---- one notification, one note (device trace, Galaxy S23) ----
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun `a notification that labeled one note never labels the next one`() = runTest {
+        // Two same-length notes from one chat, one notification cached: the
+        // first note takes the label, the second stays unlabeled rather
+        // than inherit the first note's sender.
+        val now = System.currentTimeMillis()
+        val cache = cacheWith(note(durationSeconds = 5L, postedAtMs = now, sender = "Anna"))
+        val ap = preprocessor(returning = 5.4)
+        assertEquals("Anna",
+            VoiceNoteSenderResolution.matchForDetection(cache, ap, "com.whatsapp", "/a.opus", detectedAtMs = now))
+        assertNull(
+            VoiceNoteSenderResolution.matchForDetection(cache, ap, "com.whatsapp", "/b.opus", detectedAtMs = now + 50_000))
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun `the next note waits for its own notification instead of the consumed one`() = runTest {
+        // The S23 trace: note 1 (5s) labeled by its notification; note 2
+        // (6s, within the 1s tolerance of 5s) arrives 54s later, and its own
+        // notification posts DURING the race window. It must be labeled by
+        // its own notification (Bruno), never by note 1's (Anna).
+        val t0 = System.currentTimeMillis()
+        val cache = cacheWith(note(durationSeconds = 5L, postedAtMs = t0, sender = "Anna"))
+        assertEquals("Anna",
+            VoiceNoteSenderResolution.matchForDetection(cache, preprocessor(returning = 5.2), "com.whatsapp", "/1.opus", detectedAtMs = t0))
+        val t1 = t0 + 54_000
+        val late = launch {
+            delay(700)
+            cache.remember(note(durationSeconds = 6L, postedAtMs = t1 + 700, sender = "Bruno"))
+        }
+        assertEquals("Bruno",
+            VoiceNoteSenderResolution.matchForDetection(cache, preprocessor(returning = 6.1), "com.whatsapp", "/2.opus", detectedAtMs = t1))
+        late.join()
+    }
+
+    @Test
+    fun `consumed marks survive a re-post and reset with the cache`() {
+        val now = System.currentTimeMillis()
+        val n = note(durationSeconds = 5L, postedAtMs = now)
+        val cache = cacheWith(n)
+        cache.markConsumed(n)
+        assertEquals(emptyList<VoiceNoteIdentityExtractor.VoiceNote>(), cache.unconsumedForPackage("com.whatsapp"))
+        // WhatsApp re-posts the same notification (same post time): still consumed.
+        cache.remember(n)
+        assertEquals(emptyList<VoiceNoteIdentityExtractor.VoiceNote>(), cache.unconsumedForPackage("com.whatsapp"))
+        // The share route still sees it (a manual share of that note keeps its label).
+        assertEquals(listOf(n), cache.forPackage("com.whatsapp"))
+        cache.clear()
+        cache.remember(n)
+        assertEquals(listOf(n), cache.unconsumedForPackage("com.whatsapp"))
+    }
 }
