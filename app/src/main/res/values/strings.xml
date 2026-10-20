@@ -1086,6 +1086,12 @@
     <string name="voice_note_folder_sheet_step2">Scroll down the path to the voice-notes folder:</string>
     <string name="voice_note_folder_sheet_step3">With the WhatsApp Voice Notes folder selected (don\'t open it), tap USE THIS FOLDER, then ALLOW.</string>
     <string name="voice_note_folder_sheet_open">Open the picker</string>
+    <string name="voice_note_source_whatsapp" translatable="false">WhatsApp</string>
+    <string name="voice_note_source_whatsapp_business" translatable="false">WhatsApp Business</string>
+    <string name="voice_note_business_detection_description">Transcribes new WhatsApp Business voice notes as they arrive, while the app is running. If Android blocks a background start, a one-tap notification starts it. A note is read only to transcribe it, on this device; while off, nothing is read. Requires audio access.</string>
+    <string name="voice_note_business_folder_grant_rejected">That is not the WhatsApp Business Voice Notes folder. Pick the folder named WhatsApp Business Voice Notes and try again.</string>
+    <string name="voice_note_business_folder_card_desc">To read the notes, grant access once to the folder where WhatsApp Business saves them:</string>
+    <string name="voice_note_business_folder_sheet_step3">With the WhatsApp Business Voice Notes folder selected (don\'t open it), tap USE THIS FOLDER, then ALLOW.</string>
     <string name="share_targets_description">Each downloaded model appears as a separate option in the system menu. Audio is processed by the selected model.</string>
     <string name="advanced_sharing_toggle">Show downloaded models</string>
     <string name="share_targets_models_info">Each downloaded model will appear as an item in the share menu. Deleting a model removes it from the menu.</string>

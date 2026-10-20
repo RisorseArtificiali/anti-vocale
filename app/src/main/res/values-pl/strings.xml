@@ -1071,6 +1071,10 @@
     <string name="voice_note_folder_sheet_step2">Przejdź ścieżką w dół do folderu notatek głosowych:</string>
     <string name="voice_note_folder_sheet_step3">Z zaznaczonym folderem WhatsApp Voice Notes (bez otwierania) dotknij UŻYJ TEGO FOLDERU, a potem ZEZWÓL.</string>
     <string name="voice_note_folder_sheet_open">Otwórz selektor</string>
+    <string name="voice_note_business_detection_description">Transkrybuje nowe notatki głosowe WhatsApp Business po nadejściu, gdy aplikacja działa. Jeśli Android zablokuje uruchomienie w tle, jedno dotknięcie powiadomienia je wznowi. Notatka jest czytana tylko do transkrypcji, na tym urządzeniu; wyłączone, nic nie jest czytane. Wymaga dostępu do audio.</string>
+    <string name="voice_note_business_folder_grant_rejected">To nie jest folder notatek głosowych WhatsApp Business. Wybierz folder o nazwie WhatsApp Business Voice Notes i spróbuj ponownie.</string>
+    <string name="voice_note_business_folder_card_desc">Aby czytać notatki, przyznaj raz dostęp do folderu, w którym WhatsApp Business je zapisuje:</string>
+    <string name="voice_note_business_folder_sheet_step3">Z zaznaczonym folderem WhatsApp Business Voice Notes (bez otwierania) dotknij UŻYJ TEGO FOLDERU, a potem ZEZWÓL.</string>
     <string name="share_targets_description">Każdy pobrany model pojawia się jako osobna pozycja w menu systemowym. Audio przetwarza wybrany model.</string>
     <string name="advanced_sharing_toggle">Pokazuj pobrane modele</string>
     <string name="share_targets_models_info">Każdy pobrany model pojawi się jako pozycja w menu udostępniania. Usunięcie modelu usuwa go z menu.</string>

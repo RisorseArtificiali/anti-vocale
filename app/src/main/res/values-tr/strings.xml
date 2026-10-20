@@ -1053,6 +1053,10 @@
     <string name="voice_note_folder_sheet_step2">Sesli notlar klasörüne ulaşana kadar yolu izleyin:</string>
     <string name="voice_note_folder_sheet_step3">WhatsApp Voice Notes klasörü seçiliyken (açmadan) BU KLASÖRÜ KULLAN\'a, ardından İZİN VER\'e dokunun.</string>
     <string name="voice_note_folder_sheet_open">Seçiciyi aç</string>
+    <string name="voice_note_business_detection_description">Yeni WhatsApp Business sesli mesajlarını uygulama çalışırken geldikçe yazıya çevirir. Android arka plan başlatmayı engellerse tek dokunuşlu bir bildirimle başlar. Bir mesaj yalnızca yazıya çevirmek için okunur, bu cihazda; kapalıyken hiçbir şey okunmaz. Ses erişimi gerekir.</string>
+    <string name="voice_note_business_folder_grant_rejected">Bu, WhatsApp Business sesli notları klasörü değil. WhatsApp Business Voice Notes adlı klasörü seçin ve tekrar deneyin.</string>
+    <string name="voice_note_business_folder_card_desc">Notları okumak için WhatsApp Business\'ın kaydettiği klasöre bir kez erişim verin:</string>
+    <string name="voice_note_business_folder_sheet_step3">WhatsApp Business Voice Notes klasörü seçiliyken (açmadan) BU KLASÖRÜ KULLAN\'a, ardından İZİN VER\'e dokunun.</string>
     <string name="share_targets_description">İndirilen her model sistem menüsünde ayrı bir seçenek olarak görünür. Sesi seçilen model işler.</string>
     <string name="advanced_sharing_toggle">İndirilen modelleri göster</string>
     <string name="share_targets_models_info">İndirilen her model paylaşım menüsünde ayrı bir öğe olarak görünür. Model silindiğinde menüden kalkar.</string>

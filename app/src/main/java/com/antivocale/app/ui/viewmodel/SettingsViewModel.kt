@@ -28,6 +28,10 @@ import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.ShortcutIconStore
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.saveVoiceNoteDetectionEnabled
+import com.antivocale.app.data.saveVoiceNoteTreeUri
+import com.antivocale.app.data.voiceNoteDetectionEnabled
+import com.antivocale.app.data.voiceNoteTreeUri
 import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
@@ -617,29 +621,41 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_VOICE_NOTE_IDENTITY_ENABLED
         )
 
-    /** TASK-271: the voice-note detection gate (offer notifications). */
-    val voiceNoteDetectionEnabled: StateFlow<Boolean> = preferencesManager.voiceNoteDetectionEnabled
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED
-        )
+    /** TASK-271: the voice-note detection gate, one per source (WhatsApp Business support). */
+    private val voiceNoteDetectionEnabledBySource: Map<com.antivocale.app.data.VoiceNoteSource, StateFlow<Boolean>> =
+        com.antivocale.app.data.VoiceNoteSource.entries.associateWith { source ->
+            preferencesManager.voiceNoteDetectionEnabled(source)
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5000),
+                    initialValue = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED
+                )
+        }
+
+    fun voiceNoteDetectionEnabled(source: com.antivocale.app.data.VoiceNoteSource): StateFlow<Boolean> =
+        voiceNoteDetectionEnabledBySource.getValue(source)
 
     /**
-     * TASK-271: the persisted SAF tree grant on the WhatsApp Voice Notes
+     * TASK-271: the persisted SAF tree grant on the source's voice-notes
      * folder (the one read route; the coordinator gates detection on it).
      */
-    val voiceNoteTreeUri: StateFlow<String?> = preferencesManager.voiceNoteTreeUri
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
+    private val voiceNoteTreeUriBySource: Map<com.antivocale.app.data.VoiceNoteSource, StateFlow<String?>> =
+        com.antivocale.app.data.VoiceNoteSource.entries.associateWith { source ->
+            preferencesManager.voiceNoteTreeUri(source)
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5000),
+                    initialValue = null
+                )
+        }
 
-    /** TASK-271: a null clears the grant; the coordinator disarms on it. */
-    fun saveVoiceNoteTreeUri(uri: String?) {
+    fun voiceNoteTreeUri(source: com.antivocale.app.data.VoiceNoteSource): StateFlow<String?> =
+        voiceNoteTreeUriBySource.getValue(source)
+
+    /** TASK-271: a null clears the grant; the source's coordinator disarms on it. */
+    fun saveVoiceNoteTreeUri(source: com.antivocale.app.data.VoiceNoteSource, uri: String?) {
         viewModelScope.launch {
-            preferencesManager.saveVoiceNoteTreeUri(uri)
+            preferencesManager.saveVoiceNoteTreeUri(source, uri)
         }
     }
 
@@ -649,8 +665,11 @@ class SettingsViewModel @Inject constructor(
      * Settings callback and the debug SPI grant activity run the same
      * policy; the caller maps outcomes to UI.
      */
-    suspend fun acceptVoiceNoteGrant(uri: android.net.Uri): com.antivocale.app.data.VoiceNoteTreeGrant.GrantOutcome =
-        voiceNoteTreeGrant.acceptGrant(uri)
+    suspend fun acceptVoiceNoteGrant(
+        source: com.antivocale.app.data.VoiceNoteSource,
+        uri: android.net.Uri,
+    ): com.antivocale.app.data.VoiceNoteTreeGrant.GrantOutcome =
+        voiceNoteTreeGrant.acceptGrant(uri, source)
 
     /**
      * The persisted tree URI read once from the store. Callers that must
@@ -660,8 +679,8 @@ class SettingsViewModel @Inject constructor(
      * first emission lands, and acting on that would strand the old
      * grant slot (review F9, 2026-10-13).
      */
-    suspend fun currentVoiceNoteTreeUri(): String? =
-        preferencesManager.voiceNoteTreeUri.firstOrNull()
+    suspend fun currentVoiceNoteTreeUri(source: com.antivocale.app.data.VoiceNoteSource): String? =
+        preferencesManager.voiceNoteTreeUri(source).firstOrNull()
 
     fun saveExternalAutomationEnabled(enabled: Boolean) {
         viewModelScope.launch {
@@ -688,9 +707,9 @@ class SettingsViewModel @Inject constructor(
     }
 
     /** TASK-271: see [voiceNoteDetectionEnabled]. */
-    fun saveVoiceNoteDetectionEnabled(enabled: Boolean) {
+    fun saveVoiceNoteDetectionEnabled(source: com.antivocale.app.data.VoiceNoteSource, enabled: Boolean) {
         viewModelScope.launch {
-            preferencesManager.saveVoiceNoteDetectionEnabled(enabled)
+            preferencesManager.saveVoiceNoteDetectionEnabled(source, enabled)
         }
     }
 
@@ -709,8 +728,8 @@ class SettingsViewModel @Inject constructor(
      * Settings grant card renders this instead of re-deriving the
      * conjunction).
      */
-    val voiceNoteGateState: StateFlow<com.antivocale.app.data.VoiceNoteGateState> =
-        voiceNoteDetectionCoordinators.forSource(com.antivocale.app.data.VoiceNoteSource.WHATSAPP).gateState
+    fun voiceNoteGateState(source: com.antivocale.app.data.VoiceNoteSource): StateFlow<com.antivocale.app.data.VoiceNoteGateState> =
+        voiceNoteDetectionCoordinators.forSource(source).gateState
 
     // ---- TASK-681: LAN offload (OmniVoice) ----
 
