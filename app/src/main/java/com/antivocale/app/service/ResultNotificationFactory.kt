@@ -65,7 +65,14 @@ data class ResultNotificationSpec(
     val savedFileName: String? = null,
     val firstPostedAt: Long = System.currentTimeMillis(),
     /** True when rebuilding after a prev/next tap: suppresses re-alerting. */
-    val repost: Boolean = false
+    val repost: Boolean = false,
+    /** An automatic voice note: nobody shared it, so the subText leads with
+     *  where it came from (the client's name, plus the sender when the
+     *  identity match labeled it). Shares already name the app on their
+     *  Send-to action. */
+    val fromVoiceNote: Boolean = false,
+    /** The matched sender (TASK-736/821); null when unlabeled (no guess). */
+    val senderName: String? = null,
 )
 
 /**
@@ -318,6 +325,8 @@ class ResultNotificationFactory(private val context: Context) {
         notRefined: Boolean,
         repetitionSuspected: Boolean,
         originTag: String,
+        fromVoiceNote: Boolean = false,
+        senderName: String? = null,
     ) {
         // TASK-598 F5 + TASK-757 review: the caller passes the ALREADY
         // annotated form (it derives it for the auto-copy arm); re-running
@@ -348,7 +357,9 @@ class ResultNotificationFactory(private val context: Context) {
             saveFailureReason = saveResult.failureOrNull(),
             savedFolderName = saveResult.savedFolderOrNull(),
             savedFileName = saveResult.savedFileNameOrNull(),
-            firstPostedAt = System.currentTimeMillis()
+            firstPostedAt = System.currentTimeMillis(),
+            fromVoiceNote = fromVoiceNote,
+            senderName = senderName,
         )
         postIfPermitted(id, build(spec, prefs))
         Log.i(originTag, "Showed result notification (${text.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction} (id=$id)")
@@ -448,6 +459,7 @@ class ResultNotificationFactory(private val context: Context) {
         }
 
         val subTextParts = mutableListOf<String>()
+        voiceNoteOriginLine(spec)?.let { subTextParts.add(it) }
         when {
             paged -> subTextParts.add(
                 context.getString(R.string.page_counter, pageIndex + 1, pages.size)
@@ -493,6 +505,16 @@ class ResultNotificationFactory(private val context: Context) {
         }
 
         return builder.build()
+    }
+
+    /** "WhatsApp Business · Anna": brand and sender are proper nouns, so
+     *  the line needs no string resource. Null for non-voice-note results. */
+    private fun voiceNoteOriginLine(spec: ResultNotificationSpec): String? {
+        if (!spec.fromVoiceNote) return null
+        return listOfNotNull(
+            com.antivocale.app.util.AppInfoUtils.knownAppName(spec.sourcePackage),
+            spec.senderName?.takeIf { it.isNotBlank() },
+        ).takeIf { it.isNotEmpty() }?.joinToString(" · ")
     }
 
     private fun addShareAction(

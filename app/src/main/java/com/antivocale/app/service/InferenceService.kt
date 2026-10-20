@@ -684,8 +684,10 @@ class InferenceService : Service(), TranscriptionListener {
         // DRAFT-12 (TASK-598 boundary): the Tasker reply carries the same
         // annotated form every other surface delivers on diarized runs.
         val annotatedResult = SubtitleFormatter.annotatedOrStored(resultText, segments)
-        // Read before forgetRequester drops the request's source.
-        val postsResult = postsResultNotification(isShareRequest, requesterByTask[taskId]?.source)
+        // Read before forgetRequester drops the request.
+        val request = requesterByTask[taskId]
+        val postsResult = postsResultNotification(isShareRequest, request?.source)
+        val fromVoiceNote = request?.source == SOURCE_VOICE_NOTE
         sendSuccessReply(taskId, annotatedResult)
         forgetRequester(taskId)
         // Every completed task moves the model-recency source: re-derive the
@@ -751,6 +753,8 @@ class InferenceService : Service(), TranscriptionListener {
                         notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED,
                         repetitionSuspected = repetitionSuspected,
                         originTag = "InferenceService",
+                        fromVoiceNote = fromVoiceNote,
+                        senderName = request?.senderName.takeIf { fromVoiceNote },
                     )
                 }
             } finally {

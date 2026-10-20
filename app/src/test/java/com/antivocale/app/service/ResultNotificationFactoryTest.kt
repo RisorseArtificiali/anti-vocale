@@ -357,4 +357,17 @@ class ResultNotificationFactoryTest {
         assertTrue(oomText.contains("2"))
         assertTrue(oomText.contains("out of memory"))
     }
+
+    @Test
+    fun `an automatic voice note names its app and sender in the subText`() {
+        val labeled = factory.build(
+            spec("ciao", sourcePackage = "com.whatsapp.w4b").copy(fromVoiceNote = true, senderName = "Anna"), prefs)
+        assertEquals("WhatsApp Business · Anna", labeled.subTextCompat())
+        // Unlabeled (no confident sender match): the app alone, never a guess.
+        val unlabeled = factory.build(
+            spec("ciao", sourcePackage = "com.whatsapp").copy(fromVoiceNote = true), prefs)
+        assertEquals("WhatsApp", unlabeled.subTextCompat())
+        // Shares keep their layout: the app is on the Send-to action.
+        assertNull(factory.build(spec("ciao", sourcePackage = "com.whatsapp.w4b"), prefs).subTextCompat())
+    }
 }

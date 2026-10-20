@@ -14,7 +14,8 @@ import com.antivocale.app.receiver.NotificationActionReceiver
  * value change strands them (a pre-field intent reposts with that field
  * at its default). Keys shared with other intents (transcription text,
  * source package, task id) keep their [NotificationActionReceiver]
- * constants; the other seventeen are private here.
+ * constants (the sender name keeps InferenceService.EXTRA_SENDER_NAME);
+ * the other eighteen are private here.
  */
 object ResultNotificationSpecNav {
 
@@ -35,6 +36,7 @@ object ResultNotificationSpecNav {
     private const val EXTRA_SAVE_FAILURE = "save_failure"
     private const val EXTRA_SAVED_FOLDER = "saved_folder"
     private const val EXTRA_SAVED_FILE = "saved_file"
+    private const val EXTRA_FROM_VOICE_NOTE = "from_voice_note"
 
     /**
      * Writes every round-tripping field of [spec] into [intent].
@@ -65,6 +67,8 @@ object ResultNotificationSpecNav {
             spec.sourcePackage?.let { putExtra(NotificationActionReceiver.EXTRA_SOURCE_PACKAGE, it) }
             spec.confidence?.let { putExtra(EXTRA_CONFIDENCE, it) }
             spec.detectedLanguage?.let { putExtra(EXTRA_DETECTED_LANGUAGE, it) }
+            putExtra(EXTRA_FROM_VOICE_NOTE, spec.fromVoiceNote)
+            spec.senderName?.let { putExtra(InferenceService.EXTRA_SENDER_NAME, it) }
         }
     }
 
@@ -102,6 +106,8 @@ object ResultNotificationSpecNav {
             pageIndex = intent.getIntExtra(EXTRA_PAGE_INDEX, 0),
             notificationId = notificationId,
             firstPostedAt = intent.getLongExtra(EXTRA_FIRST_POSTED_AT, System.currentTimeMillis()),
+            fromVoiceNote = intent.getBooleanExtra(EXTRA_FROM_VOICE_NOTE, false),
+            senderName = intent.getStringExtra(InferenceService.EXTRA_SENDER_NAME),
         )
     }
 }
