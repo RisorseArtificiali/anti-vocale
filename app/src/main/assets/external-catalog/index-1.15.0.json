@@ -281,14 +281,6 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/swiss-german.json"
     },
     {
-      "name": "Zipformer Korean",
-      "languages": [
-        "ko"
-      ],
-      "family": "TRANSDUCER",
-      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/zipformer-korean.json"
-    },
-    {
       "name": "Zipformer Russian int8 (Vosk-based, sherpa)",
       "languages": [
         "ru"
