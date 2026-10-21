@@ -167,7 +167,10 @@ class ExternalCatalogTest {
         // NC-licensed tier accepted for the external catalog; pins hashed
         // from the downloaded artifacts)
         // + arabic small v2 dialectal light option (TASK-770)
-        assertEquals(30, entries.size)
+        // + whisper small turkish fine-tune (TASK-863: beats the whisper-small
+        // baseline on FLEURS tr, WER 11.0% vs 15.5%; Tinlera's shipped sherpa
+        // int8 files, pins hashed from the downloaded artifacts)
+        assertEquals(31, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy

@@ -232,6 +232,14 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/arabic-small.json"
     },
     {
+      "name": "Whisper Small Turkish (sherpa int8, fine-tune)",
+      "languages": [
+        "tr"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/turkish.json"
+    },
+    {
       "name": "Whisper Tiny multilingual (sherpa int8, low-RAM)",
       "languages": [
         "multilingual"
