@@ -33,6 +33,14 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-spanish.json"
     },
     {
+      "name": "Distil Whisper Large v3 Brazilian Portuguese (sherpa int8)",
+      "languages": [
+        "pt"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/portuguese.json"
+    },
+    {
       "name": "Dolphin Small (19 Asian languages)",
       "languages": [
         "zh",

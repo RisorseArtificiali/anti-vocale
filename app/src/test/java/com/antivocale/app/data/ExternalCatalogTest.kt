@@ -170,7 +170,10 @@ class ExternalCatalogTest {
         // + whisper small turkish fine-tune (TASK-863: beats the whisper-small
         // baseline on FLEURS tr, WER 11.0% vs 15.5%; Tinlera's shipped sherpa
         // int8 files, pins hashed from the downloaded artifacts)
-        assertEquals(31, entries.size)
+        // + distil whisper large v3 ptbr (TASK-862: our conversion of
+        // freds0's fine-tune, WER 6.35% on FLEURS pt_br, hosted at
+        // pantinor/distil-whisper-large-v3-ptbr-sherpa)
+        assertEquals(32, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
