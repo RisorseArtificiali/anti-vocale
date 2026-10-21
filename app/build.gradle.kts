@@ -52,11 +52,18 @@ android {
         }
     }
 
+    // ONE read of the property feeds both consumers (the CMake stub
+    // switch below and the BuildConfig mirror in defaultConfig): the
+    // name literal exists exactly once, the catalogIndexVersion pattern.
+    // PRESENCE-keyed by design (the F-Droid recipe passes it bare):
+    // -PwhistleEngineDisabled=false does NOT re-enable the engine.
+    val whistleEngineDisabled = project.hasProperty("whistleEngineDisabled")
+
     // TASK-854: -PwhistleEngineDisabled (the F-Droid recipe sets it) makes
     // every ABI build the stub bridge: the needle engine ships only as a
     // prebuilt .a with no buildable source upstream, which F-Droid's
     // native-binary policy rejects. Play/nightly builds leave it unset.
-    if (project.hasProperty("whistleEngineDisabled")) {
+    if (whistleEngineDisabled) {
         defaultConfig {
             externalNativeBuild {
                 cmake {
@@ -101,6 +108,18 @@ android {
             "String",
             "CATALOG_INDEX_ASSET",
             "\"external-catalog/index-$catalogIndexVersion.json\""
+        )
+
+        // TASK-865/C (the F-Droid UX gate): mirrors the SAME
+        // whistleEngineDisabled property that stubs the native bridge, so a
+        // stub build also hides the Whistle catalog card instead of letting
+        // users download 17 MB of weights for an engine that cannot load.
+        // One gradle property, two consumers (CMake + BuildConfig): they
+        // cannot drift apart because both read this exact name.
+        buildConfigField(
+            "boolean",
+            "WHISTLE_ENGINE_DISABLED",
+            if (whistleEngineDisabled) "true" else "false"
         )
 
         // Speculative-decoding (MTP) "model update available" prompt gate.

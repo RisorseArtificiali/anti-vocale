@@ -50,6 +50,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextDecoration
+import com.antivocale.app.BuildConfig
 import com.antivocale.app.R
 import com.antivocale.app.ui.AppNavigation
 import androidx.compose.ui.unit.dp
@@ -661,6 +662,14 @@ fun ModelTab(
         // One generic section per catalog entry — all model-specific behavior lives in the
         // catalog, never in hard-coded per-model UI.
         catalogEntriesVisible.forEach { entry ->
+            // TASK-865/C: stub builds hide the Whistle card, EXCEPT when
+            // a download is already present: the variant card is the only
+            // delete path (a same-keystore flavor switch can carry the
+            // weights over), and hiding it would strand 17 MB with no
+            // removal surface. In the present state the buttons are
+            // delete/clear, never a fresh download.
+            if (BuiltInBackendIds.hiddenOnStubBuild(entry.id)
+                && catalogStates[entry.id]?.downloadedVariants.isNullOrEmpty()) return@forEach
             val visibleVariants = remember(entry.id, filterLanguageCode) {
                 filterVariants(CatalogVariantUi.forEntry(entry.id), filterLanguageCode) { it.supportedLanguageCodes }
             }
@@ -1041,6 +1050,11 @@ private fun CuratedLanguageSection(
                 is CuratedProfiles.Recommendation.Bundled -> {
                     // TASK-675: skip demoted entries (see demotedBackendIds above).
                     if (recommendation.entryId in demotedBackendIds) return@forEach
+                    // No profile recommends whistle today; a future one
+                    // inherits the hide (a curated card would offer the
+                    // download, which the present-state exception above
+                    // deliberately does not extend here).
+                    if (BuiltInBackendIds.hiddenOnStubBuild(recommendation.entryId)) return@forEach
                     val entry = BundledCatalog.byId(recommendation.entryId)
                     val variants = entry?.let {
                         CatalogVariantUi.forEntry(it.id).filter { variant ->
