@@ -908,6 +908,10 @@
     <string name="voice_note_folder_sheet_step2">Desça pelo caminho até a pasta de notas de voz:</string>
     <string name="voice_note_folder_sheet_step3">Com a pasta WhatsApp Voice Notes selecionada (sem abri-la), toque em USAR ESTA PASTA e depois em PERMITIR.</string>
     <string name="voice_note_folder_sheet_open">Abrir o seletor</string>
+    <string name="voice_note_business_detection_description">Transcreve as mensagens de voz do WhatsApp Business assim que chegam, com o app em execução. Se o Android bloquear o início em segundo plano, uma notificação inicia com um toque. Uma mensagem só é lida para transcrever, neste dispositivo; desligado nada é lido. Requer acesso ao áudio.</string>
+    <string name="voice_note_business_folder_grant_rejected">Esta não é a pasta de notas de voz do WhatsApp Business. Escolha a pasta chamada WhatsApp Business Voice Notes e tente novamente.</string>
+    <string name="voice_note_business_folder_card_desc">Para ler as notas, conceda uma vez o acesso à pasta onde o WhatsApp Business as salva:</string>
+    <string name="voice_note_business_folder_sheet_step3">Com a pasta WhatsApp Business Voice Notes selecionada (sem abri-la), toque em USAR ESTA PASTA e depois em PERMITIR.</string>
     <string name="share_targets_description">Cada modelo baixado aparece como item separado no menu do sistema. O áudio é processado pelo modelo selecionado.</string>
     <string name="advanced_sharing_toggle">Mostrar modelos baixados</string>
     <string name="share_targets_models_info">Cada modelo baixado aparecerá como item no menu Compartilhar. Excluir um modelo remove-o do menu.</string>

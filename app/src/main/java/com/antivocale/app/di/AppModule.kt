@@ -77,6 +77,34 @@ object AppModule {
                 com.antivocale.app.data.VoiceNoteDetectionPermission.granted(context)
         }
 
+    /**
+     * WhatsApp Business support: one detector + coordinator per voice-note
+     * source. Built here rather than injected because both classes take
+     * their [com.antivocale.app.data.VoiceNoteSource] as a plain constructor
+     * value; the shared collaborators stay the usual singletons.
+     */
+    @Provides
+    @Singleton
+    fun provideVoiceNoteDetectionCoordinators(
+        preferencesManager: PreferencesManager,
+        treeGrant: com.antivocale.app.data.VoiceNoteTreeGrant,
+        autoTranscriber: com.antivocale.app.data.VoiceNoteAutoTranscriber,
+        permissionChecker: com.antivocale.app.data.VoiceNotePermissionChecker,
+        @ApplicationScope applicationScope: CoroutineScope,
+    ): com.antivocale.app.data.VoiceNoteDetectionCoordinators =
+        com.antivocale.app.data.VoiceNoteDetectionCoordinators(
+            com.antivocale.app.data.VoiceNoteSource.entries.associateWith { source ->
+                com.antivocale.app.data.VoiceNoteDetectionCoordinator(
+                    com.antivocale.app.data.VoiceNoteDetector(applicationScope, source),
+                    preferencesManager,
+                    treeGrant,
+                    autoTranscriber,
+                    permissionChecker,
+                    applicationScope,
+                    source,
+                )
+            })
+
     @Provides
     @Singleton
     fun providePerAppPreferencesManager(@ApplicationContext context: Context): PerAppPreferencesManager {

@@ -2,8 +2,6 @@ package com.antivocale.app.data
 
 import android.util.Log
 import com.antivocale.app.di.ApplicationScope
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -82,15 +80,22 @@ sealed interface VoiceNoteGateState {
  * Idempotent across rapid toggling: transitions serialize on one mutex and
  * short-circuit when the desired state already holds; dispose is the
  * detector's reversible teardown, so off/on cycles re-arm detection.
+ *
+ * One coordinator per [VoiceNoteSource] (WhatsApp Business support), each
+ * with its own detector, preference pair, gate state and rearm cadence:
+ * the two clients arm and disarm independently, and turning one off
+ * stops only its own observers. The shared parts (tree-grant resolve,
+ * auto-transcriber, permission probe, enqueue) are the same singletons.
+ * [VoiceNoteDetectionCoordinators] owns the instances.
  */
-@Singleton
-class VoiceNoteDetectionCoordinator @Inject constructor(
+class VoiceNoteDetectionCoordinator(
     private val detector: VoiceNoteDetector,
     private val preferencesManager: PreferencesManager,
     private val voiceNoteTreeGrant: VoiceNoteTreeGrant,
     private val autoTranscriber: VoiceNoteAutoTranscriber,
     private val permissionChecker: VoiceNotePermissionChecker,
     @ApplicationScope private val scope: CoroutineScope,
+    val source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
 ) {
     private val lifecycleMutex = Mutex()
     private var started = false
@@ -176,15 +181,15 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
             // preference value is unchanged; reconcile short-circuits when
             // the desired state already holds.
             combine(
-                preferencesManager.voiceNoteDetectionEnabled,
+                preferencesManager.voiceNoteDetectionEnabled(source),
                 permissionPokes.onStart { emit(Unit) },
-                preferencesManager.voiceNoteTreeUri,
+                preferencesManager.voiceNoteTreeUri(source),
             ) { enabled, _, uri -> enabled to uri }.collect { (enabled, uri) ->
                 // Contained per emission: a failed (un)subscribe must
                 // not kill the collector, or a later toggle would
                 // silently stop reaching the detector.
                 runCatching { reconcile(enabled, uri) }
-                    .onFailure { Log.e(TAG, "detection reconcile failed for enabled=$enabled", it) }
+                    .onFailure { Log.e(TAG, "detection reconcile failed for ${source.name} enabled=$enabled", it) }
             }
         }
     }
@@ -251,11 +256,11 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
                         } catch (e: kotlinx.coroutines.CancellationException) {
                             throw e
                         } catch (e: Exception) {
-                            Log.e(TAG, "detection rearm failed", e)
+                            Log.e(TAG, "detection rearm failed for ${source.name}", e)
                         }
                     }
                 }
-                Log.i(TAG, "detection active")
+                Log.i(TAG, "detection active: ${source.name}")
             } else {
                 active = false
                 val job = collectJob
@@ -268,7 +273,7 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
                 // merely unregisters the observer (no more FilesChanged
                 // emissions follow it).
                 job?.cancel()
-                Log.i(TAG, "detection inactive")
+                Log.i(TAG, "detection inactive: ${source.name}")
             }
         }
     }
@@ -282,7 +287,7 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
                 // log as a failure or keep draining the queue (review F3).
                 throw e
             } catch (e: Exception) {
-                Log.w(TAG, "voice-note auto transcription failed", e)
+                Log.w(TAG, "voice-note auto transcription failed for ${source.name}", e)
             }
         }
     }
@@ -297,7 +302,7 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
      */
     private suspend fun transcribe(entry: VoiceNoteEntry) {
         val path = entry.path ?: return
-        autoTranscriber.enqueue(path, entry.detectedAtMs, liveTreeUri)
+        autoTranscriber.enqueue(path, entry.detectedAtMs, liveTreeUri, source)
     }
 
     private companion object {
@@ -312,4 +317,29 @@ class VoiceNoteDetectionCoordinator @Inject constructor(
          */
         const val DEFAULT_REARM_INTERVAL_MS = 20 * 60 * 1000L
     }
+}
+
+/**
+ * WhatsApp Business support: the one owner of the per-source coordinators
+ * (built in AppModule, one per [VoiceNoteSource]). Consumers that act on
+ * every source (the BridgeApplication start, the permission pokes) go
+ * through [all]; per-source surfaces (the Settings sections, the SPI)
+ * through [forSource].
+ */
+class VoiceNoteDetectionCoordinators(
+    private val bySource: Map<VoiceNoteSource, VoiceNoteDetectionCoordinator>,
+) {
+    init {
+        require(bySource.keys == VoiceNoteSource.entries.toSet()) {
+            "one coordinator per source, got ${bySource.keys}"
+        }
+    }
+
+    val all: Collection<VoiceNoteDetectionCoordinator> get() = bySource.values
+
+    fun forSource(source: VoiceNoteSource): VoiceNoteDetectionCoordinator = bySource.getValue(source)
+
+    fun start() = all.forEach { it.start() }
+
+    fun pokePermissionState() = all.forEach { it.pokePermissionState() }
 }

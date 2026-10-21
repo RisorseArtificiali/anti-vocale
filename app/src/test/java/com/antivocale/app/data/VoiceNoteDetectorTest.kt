@@ -55,4 +55,25 @@ class VoiceNoteDetectorTest {
         val other = entry.copy(id = 43L)
         assertTrue("a different note is new", filter.observe(other))
     }
+
+    @Test
+    fun `temporary and in-flight names never match`() {
+        // The MOVED_TO arm fires for the rename INTO the final name; the
+        // temp side of a temp+rename download (or a partial copy) must not
+        // emit on its own. Same naming for both WhatsApp clients.
+        assertFalse(VoiceNoteFilter.isWhatsAppVoiceNoteName("PTT-20261020-WA0001.opus.tmp"))
+        assertFalse(VoiceNoteFilter.isWhatsAppVoiceNoteName(".PTT-20261020-WA0001.opus.part"))
+        assertFalse(VoiceNoteFilter.isWhatsAppVoiceNoteName(".trashed-1730000000-PTT-20261020-WA0001.opus"))
+        assertFalse(VoiceNoteFilter.isCounterFolderName("WhatsApp Business Voice Notes"))
+    }
+
+    @Test
+    fun `each source's detector watches its own root`() {
+        val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
+        val wa = VoiceNoteDetector(scope)
+        val w4b = VoiceNoteDetector(scope, VoiceNoteSource.WHATSAPP_BUSINESS)
+        assertTrue(wa.root.path.endsWith("/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes"))
+        assertTrue(w4b.root.path.endsWith(
+            "/com.whatsapp.w4b/WhatsApp Business/Media/WhatsApp Business Voice Notes"))
+    }
 }

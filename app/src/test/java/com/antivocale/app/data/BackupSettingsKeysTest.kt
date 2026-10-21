@@ -19,6 +19,7 @@ class BackupSettingsKeysTest {
     private val excluded = mapOf(
         "output_folder_uri" to "device-bound (per-install SAF grant)",
         "voice_note_tree_uri" to "device-bound (per-install SAF grant)",
+        "voice_note_business_tree_uri" to "device-bound (per-install SAF grant)",
         "scheduled_folders_json" to "device-bound (paths + snapshot dedup memory)",
         "external_models_json" to "device-bound (sandbox dirs; models travel via the bundle)",
         "model_path" to "device-bound (sandbox dir)",

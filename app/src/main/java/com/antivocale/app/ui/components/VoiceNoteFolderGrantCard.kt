@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
+import com.antivocale.app.data.VoiceNoteSource
 import com.antivocale.app.data.voiceNotesRoot
 import com.antivocale.app.util.TreeUris
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +59,9 @@ import kotlinx.coroutines.withContext
  * the directory names are derived in code from [voiceNotesRoot] (the one
  * owner of the path), so a translation can never corrupt the segments.
  * The tile header is the app's first state-header of this shape; a second
- * one should extract it instead of copying.
+ * one should extract it instead of copying. One card per
+ * [VoiceNoteSource] (WhatsApp Business support): the source picks the
+ * expected path and the client-specific description.
  */
 @Composable
 fun VoiceNoteFolderGrantCard(
@@ -66,8 +69,9 @@ fun VoiceNoteFolderGrantCard(
     uriString: String?,
     onChoose: () -> Unit,
     onRemove: () -> Unit,
+    source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
 ) {
-    val segments = voiceNotePathSegments(granted, uriString)
+    val segments = voiceNotePathSegments(granted, uriString, source)
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Row(
@@ -103,7 +107,11 @@ fun VoiceNoteFolderGrantCard(
             }
             if (!granted) {
                 Spacer(Modifier.height(10.dp))
-                CardDescription(text = stringResource(R.string.voice_note_folder_card_desc))
+                CardDescription(text = stringResource(
+                    when (source) {
+                        VoiceNoteSource.WHATSAPP -> R.string.voice_note_folder_card_desc
+                        VoiceNoteSource.WHATSAPP_BUSINESS -> R.string.voice_note_business_folder_card_desc
+                    }))
             }
             Spacer(Modifier.height(12.dp))
             MonospacePathChip(breadcrumbAnnotated(segments, boldFrom = if (granted) segments.size - 1 else 1))
@@ -143,6 +151,7 @@ fun VoiceNoteFolderGrantCard(
 fun VoiceNoteFolderGrantSheet(
     onDismiss: () -> Unit,
     onOpenPicker: () -> Unit,
+    source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp)) {
@@ -155,10 +164,14 @@ fun VoiceNoteFolderGrantSheet(
             GrantSheetStep(2, stringResource(R.string.voice_note_folder_sheet_step2)) {
                 MonospacePathChip(
                     AnnotatedString(
-                        voiceNotePathSegments(granted = false, uriString = null)
+                        voiceNotePathSegments(granted = false, uriString = null, source = source)
                             .joinToString(" › ")))
             }
-            GrantSheetStep(3, stringResource(R.string.voice_note_folder_sheet_step3))
+            GrantSheetStep(3, stringResource(
+                when (source) {
+                    VoiceNoteSource.WHATSAPP -> R.string.voice_note_folder_sheet_step3
+                    VoiceNoteSource.WHATSAPP_BUSINESS -> R.string.voice_note_business_folder_sheet_step3
+                }))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
@@ -244,11 +257,15 @@ private fun breadcrumbAnnotated(segments: List<String>, boldFrom: Int): Annotate
  * the composition thread).
  */
 @Composable
-private fun voiceNotePathSegments(granted: Boolean, uriString: String?): List<String> {
+private fun voiceNotePathSegments(
+    granted: Boolean,
+    uriString: String?,
+    source: VoiceNoteSource,
+): List<String> {
     val context = LocalContext.current
     val storageRootLabel = stringResource(R.string.voice_note_folder_storage_root)
     return produceState(
-        initialValue = segmentsUnderLabel(storageRootLabel, voiceNotesRoot().absolutePath),
+        initialValue = segmentsUnderLabel(storageRootLabel, voiceNotesRoot(source).absolutePath),
         granted,
         uriString,
         // The label is an input too: a locale change with a live grant

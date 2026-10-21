@@ -1010,6 +1010,10 @@
     <string name="voice_note_folder_sheet_step2">Scrolle im Pfad nach unten bis zum Ordner der Sprachnachrichten:</string>
     <string name="voice_note_folder_sheet_step3">Wähle den Ordner WhatsApp Voice Notes aus (nicht öffnen) und tippe auf DIESEN ORDNER VERWENDEN und dann auf ZULASSEN.</string>
     <string name="voice_note_folder_sheet_open">Auswahl öffnen</string>
+    <string name="voice_note_business_detection_description">Transkribiert neue WhatsApp Business-Sprachnachrichten, sobald sie ankommen, während die App läuft. Blockiert Android den Start im Hintergrund, startet eine Benachrichtigung mit einem Tipp. Eine Nachricht wird nur zum Transkribieren gelesen, auf diesem Gerät; ausgeschaltet wird nichts gelesen. Benötigt Audiozugriff.</string>
+    <string name="voice_note_business_folder_grant_rejected">Das ist nicht der Ordner für WhatsApp Business-Sprachnachrichten. Wähle den Ordner mit dem Namen WhatsApp Business Voice Notes und versuche es erneut.</string>
+    <string name="voice_note_business_folder_card_desc">Um die Nachrichten zu lesen, erteile einmalig Zugriff auf den Ordner, in dem WhatsApp Business sie speichert:</string>
+    <string name="voice_note_business_folder_sheet_step3">Wähle den Ordner WhatsApp Business Voice Notes aus (nicht öffnen) und tippe auf DIESEN ORDNER VERWENDEN und dann auf ZULASSEN.</string>
     <string name="share_targets_description">Jedes heruntergeladene Modell erscheint als eigener Eintrag im Systemmenü. Das Audio verarbeitet das ausgewählte Modell.</string>
     <string name="advanced_sharing_toggle">Heruntergeladene Modelle anzeigen</string>
     <string name="share_targets_models_info">Jedes heruntergeladene Modell erscheint als Eintrag im Teilen-Menü. Beim Löschen wird das Modell aus dem Menü entfernt.</string>
