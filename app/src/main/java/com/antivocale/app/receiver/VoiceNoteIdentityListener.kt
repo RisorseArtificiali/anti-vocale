@@ -125,6 +125,17 @@ class VoiceNoteIdentityCache @Inject constructor() {
 
     private val entries = ArrayDeque<VoiceNoteIdentityExtractor.VoiceNote>()
 
+    /**
+     * Entries that already labeled an automatic detection, keyed like the
+     * re-post dedup (package + post time). One notification announces ONE
+     * note: without this, the next same-length note from the same chat
+     * inside the candidate window could be labeled by the PREVIOUS note's
+     * notification before its own arrived (device trace, Galaxy S23: a
+     * 6s note matched the 5s note's notification from 54s earlier; same
+     * sender by luck). Pruned with the entries; RAM only, like them.
+     */
+    private val consumed = mutableSetOf<Pair<String, Long>>()
+
     @Volatile internal var accepting = false
 
     /**
@@ -161,12 +172,30 @@ class VoiceNoteIdentityCache @Inject constructor() {
         return entries.filter { it.packageName == packageName }.sortedByDescending { it.postedAtMs }
     }
 
+    /** The automatic route's candidates: [forPackage] minus the entries
+     *  that already labeled a note. */
     @Synchronized
-    fun clear() = entries.clear()
+    fun unconsumedForPackage(packageName: String): List<VoiceNoteIdentityExtractor.VoiceNote> =
+        forPackage(packageName).filterNot { keyOf(it) in consumed }
+
+    /** Marks [note] as having labeled an automatic detection. */
+    @Synchronized
+    fun markConsumed(note: VoiceNoteIdentityExtractor.VoiceNote) {
+        if (entries.any { keyOf(it) == keyOf(note) }) consumed += keyOf(note)
+    }
+
+    @Synchronized
+    fun clear() {
+        entries.clear()
+        consumed.clear()
+    }
+
+    private fun keyOf(note: VoiceNoteIdentityExtractor.VoiceNote) = note.packageName to note.postedAtMs
 
     private fun prune(nowMs: Long) {
         while (entries.size > MAX_ENTRIES) entries.removeFirst()
         entries.removeAll { nowMs - it.postedAtMs > TTL_MS }
+        consumed.retainAll(entries.mapTo(HashSet()) { keyOf(it) })
     }
 
     private companion object {

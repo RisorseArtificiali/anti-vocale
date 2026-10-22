@@ -104,7 +104,12 @@ object VoiceNoteSenderResolution {
                 "(${sourcePackage.orEmpty()}, detected $detectedAtMs)")
             return null
         }
-        return selectAndLog(candidates, probeDurationSeconds(audioPreprocessor, localPath))?.sender
+        // One notification, one note: the entry that labels this detection
+        // can never label a later one (the race-window re-check then waits
+        // for the later note's OWN notification instead).
+        return selectAndLog(candidates, probeDurationSeconds(audioPreprocessor, localPath))
+            ?.also { cache.markConsumed(it) }
+            ?.sender
     }
 
     private fun inWindow(
@@ -112,7 +117,7 @@ object VoiceNoteSenderResolution {
         sourcePackage: String?,
         detectedAtMs: Long,
     ): List<VoiceNoteIdentityExtractor.VoiceNote> =
-        cache.forPackage(sourcePackage.orEmpty()).filter {
+        cache.unconsumedForPackage(sourcePackage.orEmpty()).filter {
             kotlin.math.abs(it.postedAtMs - detectedAtMs) <= CANDIDATE_WINDOW_MS
         }
 
