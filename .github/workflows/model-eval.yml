@@ -25,7 +25,7 @@ on:
   workflow_dispatch:
     inputs:
       entry:
-        description: 'Catalog entry JSON URL (raw-files mode is local-only: eval/fleurs_bench.py --kind)')
+        description: 'Catalog entry JSON URL (raw-files mode is local-only, see eval/fleurs_bench.py)'
         required: true
       langs:
         description: 'FLEURS configs (tr_tr,ko_kr,pt_br)'
