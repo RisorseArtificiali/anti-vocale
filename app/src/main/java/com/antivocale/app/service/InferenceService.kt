@@ -171,6 +171,21 @@ class InferenceService : Service(), TranscriptionListener {
     @Volatile private var currentTaskJob: Job? = null
     @Volatile private var transcriptionStartTime: Long = 0
     private val pendingCount = AtomicInteger(0)
+
+    // GH #67 core mechanism (scoped extraction): held while a batch runs,
+    // released when the queue drains; see the class KDoc for why a silent
+    // track is what an OEM freezer respects.
+    private val silentKeepalive = SilentAudioKeepalive(TAG)
+
+    /**
+     * The ONE 'no batch remains' predicate (review: the invariant had
+     * four call sites and no owner). Both teardown paths (the drain's
+     * post-join stop and the cancel path's) route through it, so a
+     * batch enqueued during a join window keeps its service, its
+     * notification, and its keepalive.
+     */
+    private fun batchIdle(): Boolean =
+        requestQueue.isEmpty() && pendingCount.get() == 0 && !_isTranscribing.value
     private val resultNotificationFactory: ResultNotificationFactory by lazy { ResultNotificationFactory(this) }
 
 
@@ -244,6 +259,7 @@ class InferenceService : Service(), TranscriptionListener {
         }
 
         startForeground(NOTIFICATION_ID, createNotification(getString(R.string.processing_audio)))
+        silentKeepalive.start()
 
         val filePath = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)
 
@@ -305,6 +321,7 @@ class InferenceService : Service(), TranscriptionListener {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        silentKeepalive.stop()
         super.onDestroy()
         serviceScope.cancel()
         Log.i(TAG, "Service destroyed")
@@ -409,12 +426,25 @@ class InferenceService : Service(), TranscriptionListener {
                 // never reach here anymore, they only cancel the child task job.
                 Log.i(TAG, "Processing cancelled by user")
                 failQueuedLogs("Cancelled")
+                // The queued ids leave with the queue (review: without this
+                // sweep they stay in inFlightTaskIds forever and a Tasker
+                // request reusing one is dropped as a duplicate until the
+                // process dies).
+                requestQueue.forEach { inFlightTaskIds.remove(it.taskId) }
                 requestQueue.clear()
                 pendingCount.set(0)
             } finally {
                 currentTaskId = null
                 currentTaskJob = null
                 _isTranscribing.value = false
+                // The finally (not the post-join path) owns the keepalive
+                // stop: an escaped Error from native code skips everything
+                // after the try, and a looping track must never outlive
+                // its batch. Guarded: a batch enqueued while this drain
+                // looped its last iteration already called start() on the
+                // main thread, and stopping here would strip that batch's
+                // freezer protection for its whole run.
+                if (batchIdle()) silentKeepalive.stop()
             }
 
             // Wait for any pending result-notification jobs before teardown:
@@ -423,8 +453,13 @@ class InferenceService : Service(), TranscriptionListener {
             val pending = synchronized(pendingResultNotifications) { pendingResultNotifications.toList() }
             pending.forEach { it.join() }
 
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            // The SAME idle guard as the cancel path: a batch enqueued
+            // during the join window is live work; tearing down here
+            // would kill it via onDestroy's scope cancel.
+            if (batchIdle()) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            }
         }
     }
 
@@ -443,8 +478,14 @@ class InferenceService : Service(), TranscriptionListener {
         serviceScope.launch {
             val pending = synchronized(pendingResultNotifications) { pendingResultNotifications.toList() }
             pending.forEach { it.join() }
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            // A batch enqueued during the join window owns the keepalive
+            // now: stopping it here would strip the freezer protection
+            // from a live batch (the burst-share race).
+            if (batchIdle()) {
+                silentKeepalive.stop()
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            }
         }
     }
 
