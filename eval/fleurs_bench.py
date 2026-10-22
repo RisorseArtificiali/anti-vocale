@@ -109,18 +109,28 @@ def load_entry(entry: str) -> dict:
     namespaced cache dir, sha-verified; the entry itself is cached under
     its URL hash so a later entry can never re-measure an earlier one."""
     if entry.startswith("http"):
-        ep = http_get(entry, CACHE_DIR / f"{_entry_cache_stem(entry)}.json")
+        # The entry is 2KB and is the manifest of truth: fetched EVERY
+        # run, never cached (a cached entry would silently re-measure the
+        # previous model after an upstream edit at the same URL).
+        import io
+        print(f"fetching entry {entry}")
+        with urllib.request.urlopen(entry) as r:
+            ep = io.TextIOWrapper(r, encoding="utf-8")
     else:
-        ep = Path(entry)
-    spec = json.loads(ep.read_text())
+        ep = Path(entry).open()
+    spec = json.load(ep)
+    ep.close()
     d = CACHE_DIR / "models" / _entry_cache_stem(entry)
     files = {}
     for f in spec["files"]:
         name = f["name"]
         if f["url"].startswith("http"):
             files[name] = str(http_get(f["url"], d / name, f.get("sha256")))
+        elif entry.startswith("http"):
+            raise SystemExit(f"entry {entry} has a relative file url ({f['url']}): "
+                             "entries fetched by URL must carry absolute file urls")
         else:
-            files[name] = str(Path(entry).parent / name)
+            files[name] = str(Path(entry).parent / f["url"])
     return {"family": spec["family"], "name": spec.get("name", entry), "files": files}
 
 
@@ -164,6 +174,37 @@ def build_recognizer(kind: str, files: dict, lang: str):
         return sherpa_onnx.OfflineRecognizer.from_sense_voice(
             model=resolve_file(files, "model"), tokens=resolve_file(files, "tokens"),
             language=lang, use_itn=True, num_threads=4)
+    if kind == "ctc":
+        # NeMo/zipformer CTC exports: blstmctc/zipformer-ctc ride from_crdnn,
+        # the NeMo conformer CTC line rides from_nemo_ctc. The catalog's CTC
+        # entries today are the IndicConformer (nemo) and parakeet-110m
+        # (nemo_ctc) and omnilingual (omnilingual_asr_ctc); modelType in the
+        # ENTRY disambiguates, so the caller passes model_type through files.
+        mt = None
+        for k in files:
+            if "nemo_ctc" in str(files[k]) or any("nemo_ctc" == v for v in [k]):
+                mt = "nemo_ctc"
+        return (sherpa_onnx.OfflineRecognizer.from_nemo_ctc(
+                    tokens=resolve_file(files, "tokens"), encoder=resolve_file(files, "encoder"),
+                    num_threads=4)
+                if mt else
+                sherpa_onnx.OfflineRecognizer.from_crdnn(
+                    tokens=resolve_file(files, "tokens"), encoder=resolve_file(files, "encoder"),
+                    num_threads=4))
+    if kind == "canary":
+        return sherpa_onnx.OfflineRecognizer.from_nemo_canary(
+            tokens=resolve_file(files, "tokens"), encoder=resolve_file(files, "encoder"),
+            decoder=resolve_file(files, "decoder"), decoding_method="greedy_search", num_threads=4)
+    if kind == "moonshine":
+        return sherpa_onnx.OfflineRecognizer.from_moonshine(
+            preprocessor=resolve_file(files, "preprocessor"),
+            encoder=resolve_file(files, "encoder"),
+            decoder=resolve_file(files, "decoder"),
+            tokens=resolve_file(files, "tokens"), num_threads=4)
+    if kind == "dolphin":
+        return sherpa_onnx.OfflineRecognizer.from_dolphin_ctc(
+            tokens=resolve_file(files, "tokens"), encoder=resolve_file(files, "encoder"),
+            num_threads=4)
     raise SystemExit(f"unsupported kind: {kind}")
 
 
@@ -181,8 +222,8 @@ def get_clips(config: str, n: int):
     """FLEURS test clips + refs via the parquet endpoint (the datasets-server
     rows API fails on FLEURS: no page index; the parquet route always works).
     The manifest is reused only when its wav files all still exist; the
-    parquet is read in batches so a 40-clip run never materializes the
-    whole 700-row audio column."""
+    parquet streams in batches (iter_batches) so a 40-clip run never
+    materializes the whole 700-row audio column."""
     import pyarrow.parquet as pq
     workdir = CACHE_DIR / "work" / config
     manifest_path = workdir / "manifest.json"
@@ -198,8 +239,8 @@ def get_clips(config: str, n: int):
     clips_dir = workdir / "clips"
     clips_dir.mkdir(parents=True, exist_ok=True)
     entries = []
-    table = pq.read_table(parquet, columns=["audio", "transcription"])
-    for batch in table.to_batches(max_chunksize=64):
+    pf = pq.ParquetFile(parquet)
+    for batch in pf.iter_batches(batch_size=64, columns=["audio", "transcription"]):
         for row in batch.to_pylist():
             if len(entries) >= n:
                 break
@@ -242,52 +283,61 @@ def segment(pcm, sr=16000):
     once >=6s of SPEECH accumulated (silence does not count toward the
     floor); the forced 30s cut lands at the chunk's quietest frame when it
     falls in the final second (else a hard cut at 30s); no-speech chunks
-    are discarded. Energy-based, no external VAD. Units: samples
-    throughout."""
+    are discarded. Energy-based, no external VAD. Evaluated per 30ms
+    FRAME (every decision input is frame-granular), units: frames unless
+    suffixed _smp."""
     import numpy as np
-    win = int(0.03 * sr)  # 30ms RMS frames
-    rms = np.convolve(pcm ** 2, np.ones(win) / win, mode="same") + 1e-12
-    rms = np.sqrt(rms)
+    hop = int(0.03 * sr)
+    n_frames = len(pcm) // hop
+    if n_frames == 0:
+        return []
+    framed = pcm[: n_frames * hop].reshape(n_frames, hop)
+    rms = np.sqrt((framed ** 2).mean(axis=1) + 1e-12)
     threshold = max(rms.mean() * 0.15, 1e-4)
-    min_speech = int(6 * sr)
-    max_len = int(30 * sr)
-    sil_close = int(0.5 * sr)
-    chunks, start, speech_samples, sil_run, in_speech = [], 0, 0, 0, False
-    quietest_i, quietest_v = 0, float("inf")
-    for i in range(len(pcm)):
+    min_speech_f = int(6 / 0.03)
+    max_len_f = int(30 / 0.03)
+    sil_close_f = int(0.5 / 0.03)
+    chunks_f, start_f, speech_f, sil_f, in_speech = [], 0, 0, 0, False
+    quietest_f, quietest_v = 0, float("inf")
+    for i in range(n_frames):
         v = rms[i]
         if v < threshold:
-            sil_run += 1
+            sil_f += 1
             if v < quietest_v:
-                quietest_v, quietest_i = v, i
+                quietest_v, quietest_f = v, i
         else:
-            sil_run = 0
-            speech_samples += 1
+            sil_f = 0
+            speech_f += 1
             in_speech = True
-        if (i - start) >= max_len:
-            cut = quietest_i if i - sr < quietest_i <= i else i
-            chunks.append((start, cut))
-            start, speech_samples, sil_run, in_speech = cut + 1, 0, 0, False
-            quietest_i, quietest_v = 0, float("inf")
-        elif in_speech and speech_samples >= min_speech and sil_run >= sil_close:
-            chunks.append((start, i - sil_run + int(0.1 * sr)))
-            start, speech_samples, sil_run, in_speech = i + 1, 0, 0, False
-            quietest_i, quietest_v = 0, float("inf")
-    if speech_samples > int(0.5 * sr):
-        chunks.append((start, len(pcm)))
-    return [(a, b) for a, b in chunks if b - a > int(0.2 * sr)]
+        if (i - start_f) >= max_len_f:
+            cut = quietest_f if i - int(1 / 0.03) < quietest_f <= i else i
+            chunks_f.append((start_f, cut))
+            start_f, speech_f, sil_f, in_speech = cut + 1, 0, 0, False
+            quietest_f, quietest_v = 0, float("inf")
+        elif in_speech and speech_f >= min_speech_f and sil_f >= sil_close_f:
+            chunks_f.append((start_f, i - sil_f + int(0.1 / 0.03)))
+            start_f, speech_f, sil_f, in_speech = i + 1, 0, 0, False
+            quietest_f, quietest_v = 0, float("inf")
+    if speech_f > int(0.5 / 0.03):
+        chunks_f.append((start_f, n_frames))
+    min_len_f = int(0.2 / 0.03)
+    return [((a) * hop, min((b + 1) * hop, len(pcm)))
+            for a, b in chunks_f if (b - a) > min_len_f]
 
 
 def run(name, rec, entries, mode, cjk):
     import jiwer, soundfile as sf, numpy as np
     refs, hyps = [], []
+    audio_s = 0.0
     t0 = time.time()
     if mode == "clip":
         for e in entries:
             hyps.append(decode(rec, e["wav"]))
             refs.append(e["ref"])
+            audio_s += sf.info(e["wav"]).duration
     else:  # segmented: one long stream, furiop's chunking
         pcm = np.concatenate([sf.read(e["wav"], dtype="float32")[0] for e in entries])
+        audio_s = len(pcm) / 16000
         hyp_parts = []
         for a, b in segment(pcm):
             s = rec.create_stream()
@@ -297,7 +347,10 @@ def run(name, rec, entries, mode, cjk):
         hyps = [" ".join(hyp_parts)]
         refs = [" ".join(e["ref"] for e in entries)]
     wall = time.time() - t0
-    out = {"model": name, "mode": mode, "clips": len(entries), "wall_s": round(wall, 1)}
+    out = {"model": name, "mode": mode, "clips": len(entries),
+           "audio_s": round(audio_s, 1), "wall_s": round(wall, 1)}
+    if audio_s > 0:
+        out["rtf"] = round(wall / audio_s, 3)
     if refs and hyps:
         out["wer"] = round(jiwer.wer([normalize(r) for r in refs],
                                      [normalize(h) for h in hyps]) * 100, 2)
@@ -311,7 +364,8 @@ def run(name, rec, entries, mode, cjk):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--entry", help="catalog entry JSON (URL or path)")
-    ap.add_argument("--kind", choices=["whisper", "transducer", "sensevoice"],
+    ap.add_argument("--kind", choices=["whisper", "transducer", "sensevoice", "ctc",
+                    "canary", "moonshine", "dolphin"],
                     help="model kind when passing raw files")
     for f in ("encoder", "decoder", "joiner", "tokens", "model"):
         ap.add_argument(f"--{f}", help=f"path or URL of the {f} file")
@@ -321,12 +375,16 @@ def main():
     ap.add_argument("--baseline", action="store_true", help="also run the whisper-small reference")
     ap.add_argument("--out", help="write results JSON here (also stdout)")
     args = ap.parse_args()
+    if args.clips <= 0:
+        ap.error("--clips must be positive")
 
     spec = None
     if args.entry:
         spec = load_entry(args.entry)
         kind = {"WHISPER": "whisper", "TRANSDUCER": "transducer",
-                "SENSE_VOICE": "sensevoice"}.get(spec["family"], spec["family"].lower())
+                "SENSE_VOICE": "sensevoice", "CTC": "ctc", "CANARY": "canary",
+                "MOONSHINE": "moonshine", "DOLPHIN": "dolphin",
+                }.get(spec["family"], spec["family"].lower())
         files = spec["files"]
         name = spec["name"]
     elif args.kind:
@@ -346,7 +404,12 @@ def main():
         cjk = lang.startswith(CJK_PREFIXES)
         entries = get_clips(config, args.clips)
         results.append(run(name, build_recognizer(kind, files, lang), entries, args.mode, cjk))
-        if args.baseline:
+        if args.baseline and lang == "yue":
+            # The pinned whisper-small predates Cantonese: no <|yue|> token.
+            # Skip the reference for yue rather than fail the run after the
+            # candidate already decoded.
+            print("note: no whisper-small baseline for yue (not in its vocab)")
+        elif args.baseline:
             results.append(run("whisper-small baseline", build_baseline(lang), entries, args.mode, cjk))
     print(json.dumps(results, ensure_ascii=False, indent=1))
     if args.out:

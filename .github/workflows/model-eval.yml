@@ -12,14 +12,14 @@ name: Model eval
 # replaces the other.
 #
 # Inputs:
-#   entry  - a community-catalog entry JSON URL (files + sha256 pins + family
+#   entry: a community-catalog entry JSON URL (files + sha256 pins + family
 #            ride the entry: the single source of truth), e.g.
 #            https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/turkish.json
-#   langs  - FLEURS configs, comma separated (tr_tr,ko_kr,pt_br)
-#   clips  - clips per language (default 40; the 2026-10-21 campaign's number)
-#   mode   - clip (per-clip, the default measurement) or segmented (one long
+#   langs: FLEURS configs, comma separated (tr_tr,ko_kr,pt_br)
+#   clips: clips per language (default 40; the 2026-10-21 campaign's number)
+#   mode: clip (per-clip, the default measurement) or segmented (one long
 #            stream chunked with the #162 reporter's field-tested rules)
-#   runner - ubuntu-latest (x86 quality) or ubuntu-24.04-arm (approx ARM RTF)
+#   runner: ubuntu-24.04 (x86 quality) or ubuntu-24.04-arm (approx ARM RTF)
 
 on:
   workflow_dispatch:
