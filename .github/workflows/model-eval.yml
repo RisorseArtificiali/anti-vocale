@@ -73,6 +73,9 @@ jobs:
           key: fleurs-${{ github.event.inputs.langs }}-${{ github.event.inputs.entry }}
           restore-keys: fleurs-${{ github.event.inputs.langs }}-
 
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
