@@ -111,27 +111,28 @@ def load_entry(entry: str) -> dict:
     if entry.startswith("http"):
         # The entry is 2KB and is the manifest of truth: fetched EVERY
         # run, never cached (a cached entry would silently re-measure the
-        # previous model after an upstream edit at the same URL).
-        import io
+        # previous model after an upstream edit at the same URL). The read
+        # stays INSIDE the with: the response closes when the block exits.
         print(f"fetching entry {entry}")
         with urllib.request.urlopen(entry) as r:
-            ep = io.TextIOWrapper(r, encoding="utf-8")
+            spec = json.load(r)
     else:
-        ep = Path(entry).open()
-    spec = json.load(ep)
-    ep.close()
+        with open(entry) as f:
+            spec = json.load(f)
     d = CACHE_DIR / "models" / _entry_cache_stem(entry)
     files = {}
-    for f in spec["files"]:
-        name = f["name"]
-        if f["url"].startswith("http"):
-            files[name] = str(http_get(f["url"], d / name, f.get("sha256")))
+    for fd in spec["files"]:
+        if fd["url"].startswith("http"):
+            files[fd["name"]] = str(http_get(fd["url"], d / fd["name"], fd.get("sha256")))
         elif entry.startswith("http"):
-            raise SystemExit(f"entry {entry} has a relative file url ({f['url']}): "
+            raise SystemExit(f"entry {entry} has a relative file url ({fd['url']}): "
                              "entries fetched by URL must carry absolute file urls")
         else:
-            files[name] = str(Path(entry).parent / f["url"])
-    return {"family": spec["family"], "name": spec.get("name", entry), "files": files}
+            files[fd["name"]] = str(Path(entry).parent / fd["url"])
+    # modelType and options are routing data the constructor arms need
+    # (the CTC subfamily; the canary language pins): carried, not dropped.
+    return {"family": spec["family"], "name": spec.get("name", entry), "files": files,
+            "model_type": spec.get("modelType") or "", "options": spec.get("options") or {}}
 
 
 def resolve_file(files: dict, role: str) -> str:
@@ -149,7 +150,13 @@ def resolve_file(files: dict, role: str) -> str:
     raise SystemExit(f"no {role} file in {keys}")
 
 
-def build_recognizer(kind: str, files: dict, lang: str):
+def build_recognizer(kind: str, files: dict, lang: str,
+                     model_type: str = "", options: dict | None = None):
+    """All signatures probed against the pinned sherpa-onnx 1.13.8 wheel
+    (inspect.signature, 2026-10-22): the CTC subfamily routes on the
+    entry's modelType, and canary reads its language from the entry's
+    options. The raw-file mode passes canonical keys."""
+    options = options or {}
     import sherpa_onnx
     if kind == "whisper":
         # tail_paddings mirrors the app's decode shape (run_baseline's
@@ -175,35 +182,41 @@ def build_recognizer(kind: str, files: dict, lang: str):
             model=resolve_file(files, "model"), tokens=resolve_file(files, "tokens"),
             language=lang, use_itn=True, num_threads=4)
     if kind == "ctc":
-        # NeMo/zipformer CTC exports: blstmctc/zipformer-ctc ride from_crdnn,
-        # the NeMo conformer CTC line rides from_nemo_ctc. The catalog's CTC
-        # entries today are the IndicConformer (nemo) and parakeet-110m
-        # (nemo_ctc) and omnilingual (omnilingual_asr_ctc); modelType in the
-        # ENTRY disambiguates, so the caller passes model_type through files.
-        mt = None
-        for k in files:
-            if "nemo_ctc" in str(files[k]) or any("nemo_ctc" == v for v in [k]):
-                mt = "nemo_ctc"
-        return (sherpa_onnx.OfflineRecognizer.from_nemo_ctc(
-                    tokens=resolve_file(files, "tokens"), encoder=resolve_file(files, "encoder"),
-                    num_threads=4)
-                if mt else
-                sherpa_onnx.OfflineRecognizer.from_crdnn(
-                    tokens=resolve_file(files, "tokens"), encoder=resolve_file(files, "encoder"),
-                    num_threads=4))
+        # The subfamily is ENTRY data (modelType), never a filename guess:
+        # nemo_ctc (IndicConformer, parakeet-110m), omnilingual_ctc, and
+        # the plain zipformer-ctc exports each have their own constructor.
+        if model_type == "nemo_ctc":
+            return sherpa_onnx.OfflineRecognizer.from_nemo_ctc(
+                model=resolve_file(files, "model"), tokens=resolve_file(files, "tokens"),
+                num_threads=4)
+        if model_type == "omnilingual_ctc":
+            return sherpa_onnx.OfflineRecognizer.from_omnilingual_asr_ctc(
+                model=resolve_file(files, "model"), tokens=resolve_file(files, "tokens"),
+                num_threads=4)
+        return sherpa_onnx.OfflineRecognizer.from_zipformer_ctc(
+            model=resolve_file(files, "model"), tokens=resolve_file(files, "tokens"),
+            num_threads=4)
     if kind == "canary":
+        # src/tgt default to "en" in 1.13.8: a non-English canary without
+        # its options pin silently measures in English (the wrong-number
+        # class this harness exists to prevent).
+        canary_lang = options.get("canary.language", "en")
         return sherpa_onnx.OfflineRecognizer.from_nemo_canary(
-            tokens=resolve_file(files, "tokens"), encoder=resolve_file(files, "encoder"),
-            decoder=resolve_file(files, "decoder"), decoding_method="greedy_search", num_threads=4)
+            encoder=resolve_file(files, "encoder"),
+            decoder=resolve_file(files, "decoder"),
+            tokens=resolve_file(files, "tokens"),
+            src_lang=canary_lang, tgt_lang=canary_lang, num_threads=4)
     if kind == "moonshine":
-        return sherpa_onnx.OfflineRecognizer.from_moonshine(
-            preprocessor=resolve_file(files, "preprocessor"),
+        # The catalog's moonshine exports are the 3-file v2 shape
+        # (encoder/decoder/tokens): from_moonshine_v2, not the v1
+        # 5-file constructor.
+        return sherpa_onnx.OfflineRecognizer.from_moonshine_v2(
             encoder=resolve_file(files, "encoder"),
             decoder=resolve_file(files, "decoder"),
             tokens=resolve_file(files, "tokens"), num_threads=4)
     if kind == "dolphin":
         return sherpa_onnx.OfflineRecognizer.from_dolphin_ctc(
-            tokens=resolve_file(files, "tokens"), encoder=resolve_file(files, "encoder"),
+            model=resolve_file(files, "model"), tokens=resolve_file(files, "tokens"),
             num_threads=4)
     raise SystemExit(f"unsupported kind: {kind}")
 
@@ -235,7 +248,9 @@ def get_clips(config: str, n: int):
     if not parquet.is_file():
         url = f"https://huggingface.co/api/datasets/google/fleurs/parquet/{config}/test/0.parquet"
         http_get(url, parquet)
-    import subprocess
+    import soundfile as sf
+    sys.path.insert(0, str(Path(__file__).parent))
+    from audio_loader import load_audio  # the ONE shared loader (TASK-461)
     clips_dir = workdir / "clips"
     clips_dir.mkdir(parents=True, exist_ok=True)
     entries = []
@@ -246,13 +261,18 @@ def get_clips(config: str, n: int):
                 break
             wav = clips_dir / f"{config}_{len(entries):02d}.wav"
             if not wav.is_file():
+                # decode through the shared ffmpeg-pipe loader, persist the
+                # 16k wav for manifest reuse; a decode failure skips the row
+                # (a later row pulls in with its own ref: pairing holds).
                 raw = wav.with_suffix(".raw")
                 raw.write_bytes(row["audio"]["bytes"])
-                if subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(raw),
-                                   "-ar", "16000", "-ac", "1", str(wav)]).returncode != 0:
-                    raw.unlink(missing_ok=True)
+                try:
+                    pcm = load_audio(str(raw), sample_rate=16000)
+                    sf.write(str(wav), pcm, 16000)
+                except Exception:
                     continue
-                raw.unlink(missing_ok=True)
+                finally:
+                    raw.unlink(missing_ok=True)
             entries.append({"wav": str(wav), "ref": (row.get("transcription") or "").strip()})
         if len(entries) >= n:
             break
@@ -403,7 +423,10 @@ def main():
         lang = config.split("_")[0]
         cjk = lang.startswith(CJK_PREFIXES)
         entries = get_clips(config, args.clips)
-        results.append(run(name, build_recognizer(kind, files, lang), entries, args.mode, cjk))
+        results.append(run(name, build_recognizer(kind, files, lang,
+                                                  spec.get("model_type", "") if spec else "",
+                                                  spec.get("options") if spec else None),
+                           entries, args.mode, cjk))
         if args.baseline and lang == "yue":
             # The pinned whisper-small predates Cantonese: no <|yue|> token.
             # Skip the reference for yue rather than fail the run after the
