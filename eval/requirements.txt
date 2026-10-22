@@ -11,5 +11,9 @@ sherpa-onnx==1.13.8
 # `sudo dnf install ffmpeg` / `brew install ffmpeg`.
 soundfile==0.14.0
 
-# WER/CER use the script's built-in unit-cost Levenshtein (no jiwer needed).
+# run_baseline/postprocess WER/CER use the built-in unit-cost Levenshtein;
+# fleurs_bench.py (the CI-able FLEURS bench, TASK-867) uses jiwer instead,
+# plus pyarrow for the FLEURS parquet extraction.
 numpy==2.5.1
+jiwer==4.0.0
+pyarrow==25.0.1
