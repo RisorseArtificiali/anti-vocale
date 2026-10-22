@@ -74,6 +74,7 @@ class PreferencesManagerImpl(
         private val OUTPUT_FOLDER_URI = stringPreferencesKey("output_folder_uri")
         private val TRANSCRIPT_EXPORT_FORMAT = stringPreferencesKey("transcript_export_format")
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
+    private val FREEZE_PROTECTION_ENABLED = booleanPreferencesKey("freeze_protection_enabled")
         private val PROGRESSIVE_TRANSCRIPTION = booleanPreferencesKey("progressive_transcription")
         // TASK-186: the early-preview gate on pipelined runs.
         private val EARLY_PREVIEW_ENABLED = booleanPreferencesKey("early_preview_enabled")
@@ -151,6 +152,7 @@ class PreferencesManagerImpl(
         val outputFolderUri: String? = null,
         val transcriptExportFormat: String = PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT,
         val vadEnabled: Boolean = PreferencesManager.DEFAULT_VAD_ENABLED,
+        val freezeProtectionEnabled: Boolean = PreferencesManager.DEFAULT_FREEZE_PROTECTION_ENABLED,
         val progressiveTranscription: Boolean = PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         val earlyPreviewEnabled: Boolean = PreferencesManager.DEFAULT_EARLY_PREVIEW,
         val interruptedRunNotifications: Boolean = PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS,
@@ -532,7 +534,16 @@ class PreferencesManagerImpl(
     }
 
     override val vadEnabled: Flow<Boolean> = dataStore.data.map { it[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED }
+
+    override val freezeProtectionEnabled: Flow<Boolean> =
+        dataStore.data.map { it[FREEZE_PROTECTION_ENABLED] ?: PreferencesManager.DEFAULT_FREEZE_PROTECTION_ENABLED }
+            .onStart { emit(cache.get().freezeProtectionEnabled) }
         .onStart { emit(cache.get().vadEnabled) }
+
+    override suspend fun saveFreezeProtectionEnabled(enabled: Boolean) {
+        preferences.edit { it[FREEZE_PROTECTION_ENABLED] = enabled }
+        cache.updateAndGet { c -> c.copy(freezeProtectionEnabled = enabled) }
+    }
 
     override suspend fun saveVadEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->

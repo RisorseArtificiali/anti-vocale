@@ -1301,4 +1301,6 @@
     <string name="keyword_biasing_title">Bias delle parole chiave (Whistle)</string>
     <string name="keyword_biasing_description">Nomi, luoghi o termini tecnici che il modello Whistle deve favorire, uno per riga. Vale dalla trascrizione successiva, senza ricaricare.</string>
     <string name="keyword_biasing_placeholder">Un termine per riga</string>
+    <string name="freeze_protection_title">Protezione trascrizione in background</string>
+    <string name="freeze_protection_description">Mantiene un flusso audio silenzioso attivo durante la trascrizione, così i risparmiatori di batteria aggressivi non possono sospendere l\'app. Attivala se la trascrizione si blocca a schermo spento (alcuni telefoni Oppo, Realme, OnePlus e Vivo).</string>
 </resources>

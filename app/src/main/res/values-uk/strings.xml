@@ -1323,4 +1323,6 @@
     <string name="keyword_biasing_title">Пріоритет ключових слів (Whistle)</string>
     <string name="keyword_biasing_description">Імена, місця або терміни, які модель Whistle має віддавати перевагу, по одному на рядок. Діє з наступної розшифровки, без перезавантаження.</string>
     <string name="keyword_biasing_placeholder">Один термін на рядок</string>
+    <string name="freeze_protection_title">Захист фонового розшифрування</string>
+    <string name="freeze_protection_description">Тримає беззвучний аудіопотік активним під час розшифрування, щоб агресивні заощаджувачі батареї не призупиняли застосунок. Увімкніть, якщо розшифрування зупиняється при вимкненому екрані (деякі Oppo, Realme, OnePlus та Vivo).</string>
 </resources>

@@ -1295,4 +1295,6 @@
     <string name="keyword_biasing_title">Stichwort-Bevorzugung (Whistle)</string>
     <string name="keyword_biasing_description">Namen, Orte oder Fachbegriffe, die das Whistle-Modell begünstigen soll, einer pro Zeile. Gilt ab der nächsten Transkription, ohne Neuladen.</string>
     <string name="keyword_biasing_placeholder">Ein Begriff pro Zeile</string>
+    <string name="freeze_protection_title">Schutz für Hintergrund-Transkription</string>
+    <string name="freeze_protection_description">Hält während der Transkription einen stummen Audiostream aktiv, damit aggressive Akkusparer die App nicht anhalten. Aktiviere dies, wenn die Transkription bei ausgeschaltetem Bildschirm stehen bleibt (einige Oppo-, Realme-, OnePlus- und Vivo-Telefone).</string>
 </resources>

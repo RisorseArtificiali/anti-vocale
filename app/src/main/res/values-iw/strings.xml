@@ -1306,4 +1306,6 @@
     <string name="keyword_biasing_title">הטיית מילות מפתח (Whistle)</string>
     <string name="keyword_biasing_description">שמות, מקומות או מונחים שהמודל Whistle צריך להעדיף, אחד בכל שורה. חל מהתמלול הבא, בלי טעינה מחדש.</string>
     <string name="keyword_biasing_placeholder">מונח אחד בכל שורה</string>
+    <string name="freeze_protection_title">הגנת תמלול ברקע</string>
+    <string name="freeze_protection_description">מחזיק זרימת שמע שקטה פעילה במהלך התמלול כדי שחוסכי סוללה אגרסיביים לא ישהו את האפליקציה. הפעל אם התמלול נעצר כשהמסך כבוי (חלק מטלפוני Oppo‏, Realme‏, OnePlus ו־Vivo).</string>
 </resources>

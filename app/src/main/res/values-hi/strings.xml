@@ -1294,4 +1294,6 @@
     <string name="keyword_biasing_title">कीवर्ड पक्षपात (Whistle)</string>
     <string name="keyword_biasing_description">नाम, स्थान या शब्दावली जिन्हें Whistle मॉडल को प्राथमिकता देनी चाहिए, प्रति पंक्ति एक। अगली ट्रांसक्रिप्शन से लागू, बिना पुनः लोड।</string>
     <string name="keyword_biasing_placeholder">प्रति पंक्ति एक शब्द</string>
+    <string name="freeze_protection_title">बैकग्राउंड ट्रांस्क्रिप्शन सुरक्षा</string>
+    <string name="freeze_protection_description">ट्रांस्क्रिप्शन के दौरान एक मौन ऑडियो स्ट्रीम सक्रिय रखता है ताकि आक्रामक बैटरी सेवर ऐप को निलंबित न कर सकें। यदि स्क्रीन बंद होने पर ट्रांस्क्रिप्शन रुकता है तो इसे चालू करें (कुछ Oppo, Realme, OnePlus और Vivo फ़ोन)।</string>
 </resources>

@@ -1163,4 +1163,6 @@
     <string name="keyword_biasing_title">Sesgo de palabras clave (Whistle)</string>
     <string name="keyword_biasing_description">Nombres, lugares o jerga que el modelo Whistle debe favorecer, uno por línea. Se aplica en la siguiente transcripción, sin recargar.</string>
     <string name="keyword_biasing_placeholder">Un término por línea</string>
+    <string name="freeze_protection_title">Protección de transcripción en segundo plano</string>
+    <string name="freeze_protection_description">Mantiene un flujo de audio silencioso activo durante la transcripción para que los ahorradores agresivos de batería no suspendan la app. Actívala si la transcripción se detiene con la pantalla apagada (algunos Oppo, Realme, OnePlus y Vivo).</string>
 </resources>

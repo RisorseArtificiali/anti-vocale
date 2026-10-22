@@ -259,7 +259,9 @@ class InferenceService : Service(), TranscriptionListener {
         }
 
         startForeground(NOTIFICATION_ID, createNotification(getString(R.string.processing_audio)))
-        silentKeepalive.start()
+        // GH #67 (scoped): opt-in via Settings (DEFAULT OFF); the toggle is
+        // the reliability setting for freezer-ROMs, not a default behavior.
+        if (preferencesManager.freezeProtectionEnabled.first()) silentKeepalive.start()
 
         val filePath = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)
 

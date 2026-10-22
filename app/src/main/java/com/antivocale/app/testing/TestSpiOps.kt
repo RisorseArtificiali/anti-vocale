@@ -104,6 +104,7 @@ internal class TestSpiOps(
         return JSONObject()
             .put("op", OP_GET)
             .put("vadEnabled", preferences.vadEnabled.first())
+            .put("freezeProtectionEnabled", preferences.freezeProtectionEnabled.first())
             .put("progressiveEnabled", preferences.progressiveTranscription.first())
             .put("earlyPreviewEnabled", preferences.earlyPreviewEnabled.first())
             .put("interruptedRunNotifications", preferences.interruptedRunNotifications.first())
@@ -207,6 +208,7 @@ internal class TestSpiOps(
      */
     private val booleanKeys: Map<String, suspend (Boolean) -> Unit> = mapOf(
         "vad" to preferences::saveVadEnabled,
+        "freeze_protection" to preferences::saveFreezeProtectionEnabled,
         "progressive" to preferences::saveProgressiveTranscription,
         // TASK-186: the early-preview gate (device trials flip it per clip).
         "early_preview" to preferences::saveEarlyPreviewEnabled,

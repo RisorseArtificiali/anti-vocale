@@ -53,7 +53,7 @@ object BackupSettingsKeys {
         "speaker_labels_enabled",
         "summarize_enabled",
         "vad_advisory_dismissed",
-        "vad_enabled",
+        "vad_enabled", "freeze_protection",
         "voice_note_detection_enabled",
         "voice_note_identity_enabled",
     )

@@ -1310,4 +1310,7 @@
     <string name="backup_import_history_failed">Settings imported, but the history could not be added. Retrying is safe.</string>
     <string name="backup_disclosure_title">Before you export</string>
     <string name="backup_disclosure_body">The backup contains every transcript, sender name, and speaker label in readable text. Share it only with places you trust.</string>
+    <!-- GH #67 (scoped): opt-in freezer protection for background transcription -->
+    <string name="freeze_protection_title">Background transcription protection</string>
+    <string name="freeze_protection_description">Keeps a silent audio stream active during transcription so aggressive battery managers cannot suspend the app. Turn this on if transcription stalls when the screen is off (some Oppo, Realme, OnePlus and Vivo phones).</string>
 </resources>

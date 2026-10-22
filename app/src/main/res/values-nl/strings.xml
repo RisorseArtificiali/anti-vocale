@@ -1311,4 +1311,6 @@
     <string name="keyword_biasing_title">Sleutelwoord-voorkeur (Whistle)</string>
     <string name="keyword_biasing_description">Namen, plaatsen of jargon die het Whistle-model moet bevoordelen, een per regel. Geldt vanaf de volgende transcriptie, zonder herladen.</string>
     <string name="keyword_biasing_placeholder">Eén term per regel</string>
+    <string name="freeze_protection_title">Bescherming van achtergrondtranscriptie</string>
+    <string name="freeze_protection_description">Houdt tijdens de transcriptie een stille audiostream actief zodat agressieve batterijbesparers de app niet pauzeren. Zet dit aan als de transcriptie stopt wanneer het scherm uit is (sommige Oppo-, Realme-, OnePlus- en Vivo-toestellen).</string>
 </resources>

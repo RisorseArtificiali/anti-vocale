@@ -131,6 +131,7 @@ fun SettingsTab(
     val outputFolderUri by viewModel.outputFolderUri.collectAsState()
     val transcriptExportFormat by viewModel.transcriptExportFormat.collectAsState()
     val vadEnabled by viewModel.vadEnabled.collectAsState()
+    val freezeProtection by viewModel.freezeProtectionEnabled.collectAsState()
     val progressiveEnabled by viewModel.progressiveTranscription.collectAsState()
     val earlyPreviewEnabled by viewModel.earlyPreviewEnabled.collectAsState()
     val interruptedRunNotifications by viewModel.interruptedRunNotifications.collectAsState()
@@ -819,6 +820,23 @@ fun SettingsTab(
                     checked = vadEnabled,
                     onCheckedChange = { enabled ->
                         viewModel.saveVadEnabled(enabled)
+                    }
+                )
+            }
+
+            // GH #67 (scoped): opt-in freezer protection. Ungated: any ROM
+            // can read the toggle; only freezer-ROM users need to turn it
+            // on (the description names which phones).
+            val freezeTitle = stringResource(R.string.freeze_protection_title)
+            val freezeDescription = stringResource(R.string.freeze_protection_description)
+            SearchFilterRow(searchQuery, SettingsSearchId.FREEZE_PROTECTION, searchState) {
+                ToggleSettingCard(
+                    icon = Icons.Default.GraphicEq,
+                    title = freezeTitle,
+                    description = freezeDescription,
+                    checked = freezeProtection,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveFreezeProtectionEnabled(enabled)
                     }
                 )
             }
@@ -3597,7 +3615,7 @@ internal enum class SettingsSearchId {
     REFINEMENT, REFINEMENT_MODEL, DIARIZATION_HUB, VAD, PROGRESSIVE, EARLY_PREVIEW,
     INTERRUPTED_RUN_NOTIFICATIONS,
     PUNCTUATION_MODE, PUNCTUATION_PROMPT, SUMMARIZE, SUMMARY_PROMPT, SIGNATURE,
-    DEFAULT_PROMPT, KEYWORD_BIASING, KEEP_ALIVE_TIMEOUT,
+    DEFAULT_PROMPT, KEYWORD_BIASING, KEEP_ALIVE_TIMEOUT, FREEZE_PROTECTION,
     // Appearance
     THEME, APP_ICON, APP_LANGUAGE, SWIPE_ACTION, CONVERSATION_GROUPING,
     COMPACT_RESULT_ACTIONS, TECHNICAL_DETAILS, LANGUAGE_CHIP, RETRANSCRIBE, ADVANCED_SHARE_FORMATS,
@@ -3744,6 +3762,11 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     SettingsSearchCard(
         SettingsSearchId.VAD, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.vad_title, R.string.vad_description),
+        group = SettingsSearchGroup.DECODING,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.FREEZE_PROTECTION, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.freeze_protection_title, R.string.freeze_protection_description),
         group = SettingsSearchGroup.DECODING,
     ),
     SettingsSearchCard(

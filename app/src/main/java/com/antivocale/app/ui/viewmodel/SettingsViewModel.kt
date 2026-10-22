@@ -262,6 +262,14 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_VAD_ENABLED
         )
 
+    // GH #67 (scoped): the silent-audio freezer protection, opt-in.
+    val freezeProtectionEnabled: StateFlow<Boolean> = preferencesManager.freezeProtectionEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_FREEZE_PROTECTION_ENABLED
+        )
+
     // Progressive transcription display preference
     val progressiveTranscription: StateFlow<Boolean> = preferencesManager.progressiveTranscription
         .stateIn(
@@ -1167,6 +1175,15 @@ class SettingsViewModel @Inject constructor(
     fun saveVadEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveVadEnabled(enabled)
+        }
+    }
+
+    /**
+     * Saves the freeze-protection preference (GH #67 scoped).
+     */
+    fun saveFreezeProtectionEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveFreezeProtectionEnabled(enabled)
         }
     }
 

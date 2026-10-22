@@ -40,6 +40,9 @@ internal class FakePreferencesManager : PreferencesManager {
     val _signaturePosition = MutableStateFlow("append")
     val _outputFolderUri = MutableStateFlow<String?>(null)
     val _vadEnabled = MutableStateFlow(false)
+    val _freezeProtection = MutableStateFlow(false)
+    override val freezeProtectionEnabled: Flow<Boolean> = _freezeProtection
+    override suspend fun saveFreezeProtectionEnabled(enabled: Boolean) { _freezeProtection.value = enabled }
     val _vadAdvisoryDismissed = MutableStateFlow(false)
     val _progressiveTranscription = MutableStateFlow(true)
     val _punctuationMode = MutableStateFlow(PreferencesManager.DEFAULT_PUNCTUATION_MODE)
