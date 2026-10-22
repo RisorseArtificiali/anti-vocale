@@ -8,6 +8,7 @@ import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.receiver.NotificationActionReceiver
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -356,5 +357,29 @@ class ResultNotificationFactoryTest {
         val oomText = oom.extras.getCharSequence(Notification.EXTRA_TEXT).toString()
         assertTrue(oomText.contains("2"))
         assertTrue(oomText.contains("out of memory"))
+    }
+
+    @Test
+    fun `an automatic voice note names its app and sender in the subText`() {
+        // The sender is the title (an OEM header truncates long subTexts),
+        // the app the subText.
+        val labeled = factory.build(
+            spec("ciao", sourcePackage = "com.whatsapp.w4b").copy(fromVoiceNote = true, senderName = "Anna"), prefs)
+        assertEquals("Anna", labeled.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString())
+        assertEquals("WhatsApp Business", labeled.subTextCompat())
+        // Unlabeled (no confident sender match): the generic title and the
+        // app alone, never a guess.
+        val unlabeled = factory.build(
+            spec("ciao", sourcePackage = "com.whatsapp").copy(fromVoiceNote = true), prefs)
+        assertEquals("Transcription complete", unlabeled.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString())
+        assertEquals("WhatsApp", unlabeled.subTextCompat())
+        // A partial run keeps its warning title; the sender moves next to the app.
+        val partial = factory.build(
+            spec("ciao", sourcePackage = "com.whatsapp.w4b")
+                .copy(fromVoiceNote = true, senderName = "Anna", isPartial = true, failedChunkCount = 1), prefs)
+        assertNotEquals("Anna", partial.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString())
+        assertTrue(partial.subTextCompat()!!.startsWith("WhatsApp Business · Anna"))
+        // Shares keep their layout: the app is on the Send-to action.
+        assertNull(factory.build(spec("ciao", sourcePackage = "com.whatsapp.w4b"), prefs).subTextCompat())
     }
 }
