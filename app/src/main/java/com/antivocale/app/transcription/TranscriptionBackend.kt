@@ -51,6 +51,15 @@ interface TranscriptionBackend {
         get() = false
 
     /**
+     * TASK-872: true when this backend's OWN output already carries speaker
+     * attribution, so the GH #83 post-pass must not run on top of it (it
+     * would double-label every cue). VibeVoice emits literal "Speaker N:"
+     * text; its transcript IS the diarization.
+     */
+    val emitsNativeSpeakerLabels: Boolean
+        get() = false
+
+    /**
      * TASK-681: whole-file transcription from the ORIGINAL container, no
      * phone-side decode. Backends that upload or hash the file as-is (the
      * LAN-offload OmniVoice backend) override this; every decode-based

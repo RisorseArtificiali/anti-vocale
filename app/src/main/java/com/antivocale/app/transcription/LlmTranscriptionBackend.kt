@@ -42,8 +42,17 @@ class LlmTranscriptionBackend @Inject constructor(
     // is forced regardless of the user toggle. TASK-872: VibeVoice models use
     // FIXED 3.47s windows, so VAD alignment would fight the model's own frame
     // boundaries; the multi-turn loop handles segmentation internally.
+    // Like ExternalSherpaBackend.configuredFamily, this reads the LOADED
+    // backend's state: pre-load queries (the Logs gate row) see the Gemma
+    // default, which is benign (the orchestrator only consumes it on the
+    // initialized backend).
     override val requiresVadAlignedChunking: Boolean
         get() = !isVibeVoiceModel(llmManager.getModelPath())
+
+    // TASK-872 gate-round: the model's own "Speaker N:" lines ARE the
+    // diarization; the GH #83 post-pass would double-label every cue.
+    override val emitsNativeSpeakerLabels: Boolean
+        get() = isVibeVoiceModel(llmManager.getModelPath())
 
     override val displayName: String = "Gemma (LiteRT-LM)"
     override val supportsAudio: Boolean = true
@@ -55,7 +64,7 @@ class LlmTranscriptionBackend @Inject constructor(
 
         val result = llmManager.initialize(context, llmConfig.modelPath)
         if (result.isSuccess && isVibeVoiceModel(llmConfig.modelPath)) {
-            Log.i(TAG, "VibeVoice model detected at ${llmConfig.modelPath}; multi-turn 3.47s-window path active")
+            Log.i(TAG, "VibeVoice model detected at ${llmConfig.modelPath}; transcription routed to the multi-turn 3.47s-window path")
         }
         return result
     }

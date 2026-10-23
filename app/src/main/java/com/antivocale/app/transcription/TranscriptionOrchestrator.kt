@@ -585,6 +585,17 @@ class TranscriptionOrchestrator @Inject constructor(
             ) {
                 Log.i(TAG, "Speaker labels skipped: no sample timeline reached this pass (streaming, VAD-segmented, TASK-681 remote-offloaded, or TASK-728 memory-budget abandonment; the W-line above names which)")
             }
+            // TASK-872 gate round: a backend whose output carries its own
+            // speaker attribution (VibeVoice's literal "Speaker N:" lines)
+            // must not get the app's labels ON TOP of them (double labeling
+            // on every cue). Checked here rather than at collectSpeakers so
+            // the loaded engine (post path-aware re-init) decides.
+            val backendEmitsNativeLabels =
+                backendManager.getActiveBackend()?.emitsNativeSpeakerLabels == true
+            if (backendEmitsNativeLabels && diarizationChunks != null) {
+                Log.i(TAG, "Speaker labels skipped: the active backend emits native speaker labels (TASK-872)")
+                diarizationChunks = null
+            }
             val speakerLabeled: Result<TranscriptionResult> =
                 if (delivered.isSuccess && diarizationChunks != null) {
                     // TASK-698: whole-clip diarization (plus the first-use

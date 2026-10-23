@@ -1,5 +1,7 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.util.WavUtils
+
 /**
  * TASK-872: the VibeVoice streaming models take ONE fixed audio window per
  * conversation turn (22 content frames + 4 look-ahead frames at the 7.5 Hz
@@ -37,7 +39,7 @@ object VibeVoiceWindowSlicer {
                     samples.copyOfRange(offset, end).copyInto(it)
                 }
             }
-            windows.add(com.antivocale.app.util.WavUtils.floatSamplesToWav(window, sampleRate))
+            windows.add(WavUtils.floatSamplesToWav(window, sampleRate))
             offset = end
         }
         return windows
