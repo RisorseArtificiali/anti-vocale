@@ -133,6 +133,7 @@ class LlmManagerLiteRTUpgradeTest {
     @Test
     fun `transcribeAudio delegates to llmManager generateFromAudio and maps result`() = runTest {
         val llmManager = mockk<LlmManager>()
+        every { llmManager.getModelPath() } returns "gemma-4-E2B-it.litertlm"
         coEvery { llmManager.generateFromAudio(any(), any()) } returns Result.success("Ciao mondo")
 
         val backend = LlmTranscriptionBackend(llmManager)
@@ -144,6 +145,7 @@ class LlmManagerLiteRTUpgradeTest {
     @Test
     fun `transcribeAudio maps failure from generateFromAudio`() = runTest {
         val llmManager = mockk<LlmManager>()
+        every { llmManager.getModelPath() } returns "gemma-4-E2B-it.litertlm"
         coEvery { llmManager.generateFromAudio(any(), any()) } returns
             Result.failure(IllegalStateException("Model not initialized"))
 

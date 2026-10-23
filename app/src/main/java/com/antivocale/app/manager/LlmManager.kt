@@ -800,6 +800,80 @@ open class LlmManager @Inject constructor(
     }
 
     /**
+     * TASK-872: VibeVoice streaming models take ONE fixed audio window per
+     * conversation turn. This method creates ONE persistent Conversation,
+     * sends each window as a sequential message, and concatenates the
+     * responses. Each turn is individually ceiling-bounded (a slow window
+     * fails the turn without poisoning the whole transcription).
+     *
+     * The model responds with native speaker attribution ("Speaker N: text"),
+     * so the concatenated output is a speaker-labeled transcript ready for
+     * the SubtitleFormatter pipeline.
+     */
+    suspend fun generateFromAudioWindows(prompt: String, windows: List<ByteArray>): Result<String> = audioMutex.withLock {
+        withContext(Dispatchers.IO) {
+            if (engineWedged) {
+                return@withContext Result.failure(wedgedFailure())
+            }
+            if (!isInitialized) {
+                return@withContext Result.failure(IllegalStateException("Model not initialized"))
+            }
+            if (windows.isEmpty()) {
+                return@withContext Result.failure(IllegalArgumentException("No audio windows"))
+            }
+            if (currentBackend != Backend.LITERT_LM) {
+                return@withContext Result.failure(IllegalStateException("VibeVoice multi-turn requires the LiteRT-LM backend"))
+            }
+            return@withContext keepAlive.withWork {
+                generateWindowsInPersistentConversation(prompt, windows)
+            }
+        }
+    }
+
+    /**
+     * The persistent-conversation multi-turn loop. Mirrors
+     * [generateInFreshConversation]'s error taxonomy (wedge latching,
+     * caller-abandonment leaking the conversation) but holds ONE
+     * conversation across all windows instead of one per call.
+     */
+    private suspend fun generateWindowsInPersistentConversation(
+        prompt: String,
+        windows: List<ByteArray>,
+    ): Result<String> = conversationMutex.withLock {
+        val engine = litertEngine
+            ?: return Result.failure(IllegalStateException("LiteRT engine not available"))
+        var conversation: Conversation? = null
+        val transcript = StringBuilder()
+        try {
+            conversation = engine.createConversation(AUDIO_CONVERSATION_CONFIG)
+            for ((index, wav) in windows.withIndex()) {
+                val turn = generateUnderCeiling(
+                    conversation,
+                    "audio-window-$index",
+                    Contents.of(Content.AudioBytes(wav), Content.Text(prompt)),
+                )
+                val text = turn.getOrNull() ?: return turn.toString().let { Result.failure(
+                    IllegalStateException("VibeVoice window $index failed: $it")) }
+                transcript.append(text)
+                if (index < windows.size - 1) transcript.append('\n')
+            }
+            Result.success(transcript.toString())
+        } catch (e: CancellationException) {
+            Log.w(TAG, "VibeVoice multi-turn abandoned by caller; conversation left to engine unload")
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "VibeVoice multi-turn failed", e)
+            Result.failure(e)
+        } catch (e: Error) {
+            engineWedged = true
+            Log.e(TAG, "VibeVoice native error; engine marked wedged", e)
+            Result.failure(IllegalStateException("Native error during VibeVoice multi-turn: ${e.message}", e))
+        } finally {
+            if (!engineWedged) closeConversationSafe(conversation)
+        }
+    }
+
+    /**
      * Closes a [Conversation] idempotently.
      *
      * LiteRT-LM's `Conversation.close()` is NOT idempotent upstream — calling it on an

@@ -23,6 +23,15 @@ class LlmTranscriptionBackend @Inject constructor(
          */
         const val AUDIO_CHUNK_SECONDS = 30
         private const val TAG = "LlmTranscriptionBackend"
+
+        /**
+         * TASK-872: VibeVoice streaming models are detected by the loaded
+         * model's file name (the litert-community artifacts all carry
+         * "vibevoice" in the name, case-insensitive). The multi-turn
+         * contract differs from Gemma's whole-chunk single-shot path.
+         */
+        internal fun isVibeVoiceModel(modelPath: String?): Boolean =
+            modelPath != null && modelPath.contains("vibevoice", ignoreCase = true)
     }
 
     override val id: String = BACKEND_ID
@@ -30,8 +39,11 @@ class LlmTranscriptionBackend @Inject constructor(
 
     // TASK-370: the audio encoder is far more boundary-sensitive than the ASR
     // decoders (mid-word 30s cuts garble Gemma chunks); VAD-aligned segmentation
-    // is forced regardless of the user toggle.
-    override val requiresVadAlignedChunking: Boolean = true
+    // is forced regardless of the user toggle. TASK-872: VibeVoice models use
+    // FIXED 3.47s windows, so VAD alignment would fight the model's own frame
+    // boundaries; the multi-turn loop handles segmentation internally.
+    override val requiresVadAlignedChunking: Boolean
+        get() = !isVibeVoiceModel(llmManager.getModelPath())
 
     override val displayName: String = "Gemma (LiteRT-LM)"
     override val supportsAudio: Boolean = true
@@ -41,10 +53,22 @@ class LlmTranscriptionBackend @Inject constructor(
         val llmConfig = config as? BackendConfig.LiteRTConfig
             ?: return Result.failure(IllegalArgumentException("Invalid config type for LlmTranscriptionBackend"))
 
-        return llmManager.initialize(context, llmConfig.modelPath)
+        val result = llmManager.initialize(context, llmConfig.modelPath)
+        if (result.isSuccess && isVibeVoiceModel(llmConfig.modelPath)) {
+            Log.i(TAG, "VibeVoice model detected at ${llmConfig.modelPath}; multi-turn 3.47s-window path active")
+        }
+        return result
     }
 
     override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<TranscriptionResult> {
+        if (isVibeVoiceModel(llmManager.getModelPath())) {
+            // TASK-872: the VibeVoice multi-turn path; each 3.47s window is one
+            // conversation turn, and the model emits "Speaker N: text" per turn.
+            val windows = VibeVoiceWindowSlicer.sliceToWavWindows(samples, sampleRate)
+            return llmManager.generateFromAudioWindows(prompt, windows).map { text ->
+                TranscriptionResult(text = text)
+            }
+        }
         val wavBytes = WavUtils.floatSamplesToWav(samples, sampleRate)
         return llmManager.generateFromAudio(prompt, wavBytes).map { text ->
             TranscriptionResult(text = text)
