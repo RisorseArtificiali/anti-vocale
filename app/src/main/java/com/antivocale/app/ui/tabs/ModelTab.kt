@@ -50,7 +50,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextDecoration
-import com.antivocale.app.BuildConfig
 import com.antivocale.app.R
 import com.antivocale.app.ui.AppNavigation
 import androidx.compose.ui.unit.dp
@@ -663,13 +662,16 @@ fun ModelTab(
         // catalog, never in hard-coded per-model UI.
         catalogEntriesVisible.forEach { entry ->
             // TASK-865/C: stub builds hide the Whistle card, EXCEPT when
-            // a download is already present: the variant card is the only
-            // delete path (a same-keystore flavor switch can carry the
-            // weights over), and hiding it would strand 17 MB with no
-            // removal surface. In the present state the buttons are
-            // delete/clear, never a fresh download.
+            // on-disk cleanup work keeps the card on stub builds: the
+            // variant card is the only removal surface (the startup cleaner
+            // deliberately keeps current-named dirs), so hiding it would
+            // strand up to 17 MB after a same-keystore flavor switch.
+            // Caveat tracked as a follow-up: a corrupted dir detectPartial
+            // cannot classify renders the Idle (fresh download) button, so
+            // the download offer is not unconditionally absent (see the
+            // hasCleanupWork KDoc).
             if (BuiltInBackendIds.hiddenOnStubBuild(entry.id)
-                && catalogStates[entry.id]?.downloadedVariants.isNullOrEmpty()) return@forEach
+                && !catalogStates[entry.id].hasCleanupWork()) return@forEach
             val visibleVariants = remember(entry.id, filterLanguageCode) {
                 filterVariants(CatalogVariantUi.forEntry(entry.id), filterLanguageCode) { it.supportedLanguageCodes }
             }
@@ -1628,6 +1630,23 @@ private val FAMILY_OPTIONS = listOf(
 @Composable
 private fun familyLabel(family: ModelFamily): String = stringResource(
     FAMILY_OPTIONS.first { it.first == family }.second)
+
+/**
+ * TASK-866: true when the entry has on-disk work whose removal or repair
+ * runs through the variant card (downloaded weights, an orphaned dir the
+ * startup cleaner deliberately keeps, or a pending extraction). Such an
+ * entry must stay visible even on stub builds; a null state (refresh not
+ * landed) counts as no work, hiding as before. NOTE the corrupted-dir
+ * corner: a dir detectPartialDownload cannot classify renders the card's
+ * Idle (fresh download) button, not a cleanup affordance - tracked as a
+ * follow-up, not fixed by this exception.
+ */
+internal fun ModelViewModel.ModelEntryUiState?.hasCleanupWork(): Boolean =
+    this != null && (
+        downloadedVariants.isNotEmpty()
+            || orphanedVariants.isNotEmpty()
+            || variantsNeedingExtraction.isNotEmpty()
+        )
 
 /**
  * Family selection + conditional options for external-model imports. One immutable

@@ -1,6 +1,7 @@
 package com.antivocale.app.transcription
 
 import com.antivocale.app.data.PreferencesManager
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -54,5 +55,21 @@ class BuiltInBackendIdsTest {
         assertFalse(BuiltInBackendIds.isRemoteOmnivoice(LlmTranscriptionBackend.BACKEND_ID))
         assertFalse(BuiltInBackendIds.isRemoteOmnivoice("external:abc-123"))
         assertFalse(BuiltInBackendIds.isRemoteOmnivoice(""))
+    }
+
+    @Test
+    fun `hiddenOnStubBuild keys only on the flag and the whistle id`() {
+        // TASK-866's gate review: the predicate's only unguarded regression
+        // path is an inverted condition hiding the whistle card on EVERY
+        // build (a silent dropped feature on Play). Flag-aware, so the same
+        // assertions stay correct under a manual
+        // testFdroidDebugUnitTest -PwhistleEngineDisabled parity run (CI
+        // never combines the two today; the release legs that set the
+        // property run no tests).
+        val stub = com.antivocale.app.BuildConfig.WHISTLE_ENGINE_DISABLED
+        BuiltInBackendIds.ALL
+            .filter { it != BuiltInBackendIds.WHISTLE }
+            .forEach { assertFalse(BuiltInBackendIds.hiddenOnStubBuild(it)) }
+        assertEquals(stub, BuiltInBackendIds.hiddenOnStubBuild(BuiltInBackendIds.WHISTLE))
     }
 }
