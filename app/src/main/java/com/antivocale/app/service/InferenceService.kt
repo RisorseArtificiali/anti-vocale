@@ -259,9 +259,6 @@ class InferenceService : Service(), TranscriptionListener {
         }
 
         startForeground(NOTIFICATION_ID, createNotification(getString(R.string.processing_audio)))
-        // GH #67 (scoped): opt-in via Settings (DEFAULT OFF); the toggle is
-        // the reliability setting for freezer-ROMs, not a default behavior.
-        if (preferencesManager.freezeProtectionEnabled.first()) silentKeepalive.start()
 
         val filePath = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)
 
@@ -337,6 +334,13 @@ class InferenceService : Service(), TranscriptionListener {
                 Log.d(TAG, "Already processing, request will wait in queue")
                 return@launch
             }
+
+            // GH #67 (scoped): opt-in via Settings (DEFAULT OFF); the toggle is
+            // the reliability setting for freezer-ROMs, not a default behavior.
+            // Read here, on the batch-owning coroutine: the flow read is
+            // suspend, and this pass is the single one that starts a batch, so
+            // follow-up enqueues while a batch runs do not re-start it.
+            if (preferencesManager.freezeProtectionEnabled.first()) silentKeepalive.start()
 
             _isTranscribing.value = true
             val totalInBatch = pendingCount.get()

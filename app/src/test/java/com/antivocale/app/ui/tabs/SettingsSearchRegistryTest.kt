@@ -138,7 +138,8 @@ class SettingsSearchRegistryTest {
     fun `group membership matches the tree clusters`() {
         val members = mapOf(
             SettingsSearchGroup.DECODING to listOf(
-                SettingsSearchId.VAD, SettingsSearchId.PROGRESSIVE,
+                SettingsSearchId.VAD, SettingsSearchId.FREEZE_PROTECTION,
+                SettingsSearchId.PROGRESSIVE,
                 SettingsSearchId.EARLY_PREVIEW, SettingsSearchId.REFINEMENT,
                 SettingsSearchId.REFINEMENT_MODEL),
             SettingsSearchGroup.GEMMA_TEXT to listOf(
@@ -207,6 +208,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.ACTIVE_MODEL,
                 SettingsSearchId.TRANSCRIPTION_LANGUAGE,
                 SettingsSearchId.VAD,
+                SettingsSearchId.FREEZE_PROTECTION,
                 SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
                 SettingsSearchId.REFINEMENT,
                 SettingsSearchId.PUNCTUATION_MODE,
@@ -229,6 +231,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.ACTIVE_MODEL,
                 SettingsSearchId.TRANSCRIPTION_LANGUAGE,
                 SettingsSearchId.VAD,
+                SettingsSearchId.FREEZE_PROTECTION,
                 SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
                 SettingsSearchId.REFINEMENT,
                 SettingsSearchId.DIARIZATION_HUB,
@@ -253,6 +256,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.ACTIVE_MODEL,
                 SettingsSearchId.TRANSCRIPTION_LANGUAGE,
                 SettingsSearchId.VAD,
+                SettingsSearchId.FREEZE_PROTECTION,
                 SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
                 SettingsSearchId.REFINEMENT,
                 SettingsSearchId.SUMMARIZE,

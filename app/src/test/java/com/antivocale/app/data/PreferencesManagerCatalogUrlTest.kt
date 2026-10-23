@@ -72,4 +72,24 @@ class PreferencesManagerCatalogUrlTest {
         val manager = PreferencesManagerImpl(context, dataStore).apply { initialize() }
         assertEquals(false, manager.interruptedRunNotifications.first())
     }
+
+    @Test
+    fun `freeze protection persists through the cache and saves back`() = runTest {
+        // The a0776573 gate round caught the exact 684 class on this key:
+        // toCached did not map it (a persisted opt-in read as false after
+        // every restart) and the save used a wrong receiver. Pin both the
+        // cold-start surfacing and the edit round-trip.
+        dataStore.edit {
+            it[androidx.datastore.preferences.core.booleanPreferencesKey("freeze_protection_enabled")] = true
+        }
+        val manager = PreferencesManagerImpl(context, dataStore).apply { initialize() }
+        assertEquals(true, manager.freezeProtectionEnabled.first())
+
+        manager.saveFreezeProtectionEnabled(false)
+        assertEquals(false, manager.freezeProtectionEnabled.first())
+        assertEquals(
+            false,
+            dataStore.data.first()[androidx.datastore.preferences.core.booleanPreferencesKey("freeze_protection_enabled")],
+        )
+    }
 }

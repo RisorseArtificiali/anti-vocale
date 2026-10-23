@@ -74,7 +74,7 @@ class PreferencesManagerImpl(
         private val OUTPUT_FOLDER_URI = stringPreferencesKey("output_folder_uri")
         private val TRANSCRIPT_EXPORT_FORMAT = stringPreferencesKey("transcript_export_format")
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
-    private val FREEZE_PROTECTION_ENABLED = booleanPreferencesKey("freeze_protection_enabled")
+        private val FREEZE_PROTECTION_ENABLED = booleanPreferencesKey("freeze_protection_enabled")
         private val PROGRESSIVE_TRANSCRIPTION = booleanPreferencesKey("progressive_transcription")
         // TASK-186: the early-preview gate on pipelined runs.
         private val EARLY_PREVIEW_ENABLED = booleanPreferencesKey("early_preview_enabled")
@@ -220,6 +220,7 @@ class PreferencesManagerImpl(
         outputFolderUri = this[OUTPUT_FOLDER_URI],
         transcriptExportFormat = this[TRANSCRIPT_EXPORT_FORMAT] ?: PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT,
         vadEnabled = this[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED,
+        freezeProtectionEnabled = this[FREEZE_PROTECTION_ENABLED] ?: PreferencesManager.DEFAULT_FREEZE_PROTECTION_ENABLED,
         progressiveTranscription = this[PROGRESSIVE_TRANSCRIPTION] ?: PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         earlyPreviewEnabled = this[EARLY_PREVIEW_ENABLED] ?: PreferencesManager.DEFAULT_EARLY_PREVIEW,
         // TASK-684 follow-up (2026-09-30 review round): this key was MISSING
@@ -534,14 +535,14 @@ class PreferencesManagerImpl(
     }
 
     override val vadEnabled: Flow<Boolean> = dataStore.data.map { it[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED }
+        .onStart { emit(cache.get().vadEnabled) }
 
     override val freezeProtectionEnabled: Flow<Boolean> =
         dataStore.data.map { it[FREEZE_PROTECTION_ENABLED] ?: PreferencesManager.DEFAULT_FREEZE_PROTECTION_ENABLED }
             .onStart { emit(cache.get().freezeProtectionEnabled) }
-        .onStart { emit(cache.get().vadEnabled) }
 
     override suspend fun saveFreezeProtectionEnabled(enabled: Boolean) {
-        preferences.edit { it[FREEZE_PROTECTION_ENABLED] = enabled }
+        dataStore.edit { it[FREEZE_PROTECTION_ENABLED] = enabled }
         cache.updateAndGet { c -> c.copy(freezeProtectionEnabled = enabled) }
     }
 

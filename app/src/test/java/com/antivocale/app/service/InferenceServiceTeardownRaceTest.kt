@@ -184,6 +184,7 @@ class InferenceServiceTeardownRaceTest {
             releaseAutoCopy.await()
             emit(false) // auto-copy off: skip the clipboard/toast machinery
         }
+        every { preferences.freezeProtectionEnabled } returns flowOf(false) // keepalive gate off: this race never starts one
         every { preferences.outputFolderUri } returns flowOf(null) // auto-save disabled
         // saveAuto reads the format even when the folder is null (both are
         // call arguments); the strict mock must answer.
