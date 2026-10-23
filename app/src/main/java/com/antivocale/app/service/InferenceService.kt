@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
@@ -171,11 +172,16 @@ class InferenceService : Service(), TranscriptionListener {
     @Volatile private var currentTaskJob: Job? = null
     @Volatile private var transcriptionStartTime: Long = 0
     private val pendingCount = AtomicInteger(0)
+    // The drain's single-entry gate (see processQueue): compareAndSet, never a
+    // check-then-act on _isTranscribing, which a suspend read can interleave.
+    private val drainEntered = AtomicBoolean(false)
 
     // GH #67 core mechanism (scoped extraction): held while a batch runs,
     // released when the queue drains; see the class KDoc for why a silent
     // track is what an OEM freezer respects.
-    private val silentKeepalive = SilentAudioKeepalive(TAG)
+    // var for the service-level tests (reflection injection, the same seam
+    // the race tests use for preferencesManager/orchestrator).
+    private var silentKeepalive = SilentAudioKeepalive(TAG)
 
     /**
      * The ONE 'no batch remains' predicate (review: the invariant had
@@ -330,23 +336,29 @@ class InferenceService : Service(), TranscriptionListener {
 
     private fun processQueue() {
         currentProcessingJob = serviceScope.launch {
-            if (_isTranscribing.value) {
+            // The atomic gate, not a check-then-act on _isTranscribing: the
+            // suspend preference read inside the try used to sit between the
+            // flag read and write, so two concurrent drains could both pass
+            // the stale false flag and process tasks concurrently (double
+            // model load, clobbered currentTaskId: the OOM class).
+            if (!drainEntered.compareAndSet(false, true)) {
                 Log.d(TAG, "Already processing, request will wait in queue")
                 return@launch
             }
-
-            // GH #67 (scoped): opt-in via Settings (DEFAULT OFF); the toggle is
-            // the reliability setting for freezer-ROMs, not a default behavior.
-            // Read here, on the batch-owning coroutine: the flow read is
-            // suspend, and this pass is the single one that starts a batch, so
-            // follow-up enqueues while a batch runs do not re-start it.
-            if (preferencesManager.freezeProtectionEnabled.first()) silentKeepalive.start()
 
             _isTranscribing.value = true
             val totalInBatch = pendingCount.get()
             var currentIndex = 0
 
             try {
+                // GH #67 (scoped): opt-in via Settings (DEFAULT OFF); the toggle is
+                // the reliability setting for freezer-ROMs, not a default behavior.
+                // Read here, on the batch-owning coroutine and inside the try, so
+                // a cancellation during the read still clears the flag below.
+                // Idempotent start: this pass is the single one that owns the
+                // batch, so follow-up enqueues while it runs never re-start.
+                if (preferencesManager.freezeProtectionEnabled.first()) silentKeepalive.start()
+
                 while (requestQueue.isNotEmpty()) {
                     val request = requestQueue.poll() ?: continue
                     pendingCount.decrementAndGet()
@@ -435,21 +447,28 @@ class InferenceService : Service(), TranscriptionListener {
                 // The queued ids leave with the queue (review: without this
                 // sweep they stay in inFlightTaskIds forever and a Tasker
                 // request reusing one is dropped as a duplicate until the
-                // process dies).
-                requestQueue.forEach { inFlightTaskIds.remove(it.taskId) }
-                requestQueue.clear()
+                // process dies). Poll-drain, not forEach+clear: clearing the
+                // whole queue atomically can delete a retry that re-enqueued
+                // with the same id after its sweep, leaving that id poisoned
+                // for the process lifetime.
+                while (true) {
+                    val queued = requestQueue.poll() ?: break
+                    inFlightTaskIds.remove(queued.taskId)
+                }
                 pendingCount.set(0)
             } finally {
                 currentTaskId = null
                 currentTaskJob = null
                 _isTranscribing.value = false
+                drainEntered.set(false)
                 // The finally (not the post-join path) owns the keepalive
                 // stop: an escaped Error from native code skips everything
                 // after the try, and a looping track must never outlive
-                // its batch. Guarded: a batch enqueued while this drain
-                // looped its last iteration already called start() on the
-                // main thread, and stopping here would strip that batch's
-                // freezer protection for its whole run.
+                // its batch. The guard holds because a coroutine past
+                // start() either still has its request in the queue (queue
+                // clause) or set _isTranscribing before its first poll
+                // (flag clause); a batch holding a started keepalive can
+                // never see batchIdle() true here.
                 if (batchIdle()) silentKeepalive.stop()
             }
 
@@ -466,6 +485,13 @@ class InferenceService : Service(), TranscriptionListener {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }
+
+            // Re-kick: a request landing in the window between the while
+            // exit and the finally's gate release stranded before (its own
+            // processQueue early-returned at the gate, and teardown was
+            // skipped by the same non-idle queue); without this kick it
+            // waits forever for the next onStartCommand.
+            if (requestQueue.isNotEmpty()) processQueue()
         }
     }
 

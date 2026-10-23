@@ -145,10 +145,11 @@ Settings, "Backup and transfer": export a zip archive of your settings and full 
 
 On some phones (Realme, OnePlus, Vivo and other OEMs with aggressive battery managers) the system freezes the app a few seconds after you leave it, even while it is legitimately working on your audio in the background. The share succeeds, the transcription starts, and then everything pauses silently: no result notification arrives until you open the app again, at which point the pending result finishes and appears.
 
-This is the manufacturer's background restriction, not a bug in the transcription. Two things help:
+This is the manufacturer's background restriction, not a bug in the transcription. Three things help:
 
 1. Open the app once after sharing: the frozen work resumes and the result arrives within seconds.
-2. Make the app exempt from battery optimization (Settings, or the card the app shows on affected devices). On the most aggressive builds this is not always enough; option 1 always works.
+2. Make the app exempt from battery optimization (Settings, or the card the app shows on affected devices). On the most aggressive builds this is not always enough.
+3. Turn on Settings, "Background transcription protection" ([#67](https://github.com/RisorseArtificiali/anti-vocale/pull/67)): the app plays an inaudible stream while a transcription runs, which these systems treat as active playback and stop freezing mid-work. It is off by default because it keeps the audio path awake for the duration of each transcription.
 
 ## Nightly builds
 

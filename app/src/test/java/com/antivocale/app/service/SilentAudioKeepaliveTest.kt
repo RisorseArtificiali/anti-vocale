@@ -88,4 +88,17 @@ class SilentAudioKeepaliveTest {
         ka.stop()
         verify(exactly = 0) { track.release() }
     }
+
+    @Test
+    fun `a short write fails the start and releases the track`() {
+        // The silent contract: a partially filled static buffer would loop
+        // garbage. The start must fail, release the built track (native
+        // resources + audio-session entry), and never reach play/loop.
+        every { track.write(any<ShortArray>(), any(), any()) } returns 100
+        val ka = SilentAudioKeepalive("test")
+        ka.start() // must not throw
+        verify(exactly = 1) { track.release() }
+        verify(exactly = 0) { track.play() }
+        verify(exactly = 0) { track.setLoopPoints(any(), any(), any()) }
+    }
 }

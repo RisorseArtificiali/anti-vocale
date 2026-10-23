@@ -25,17 +25,18 @@ import android.util.Log
  * keeps the native engine resident while IDLE; this keeps the PROCESS
  * unfrozen while a batch runs.
  *
- * Scoped to a transcription batch: started when work begins, stopped
- * when the queue drains (the same lifecycle points that own the
- * foreground notification). Thread-confined contract: start() runs on
- * the main thread (onStartCommand) and every stop() path must either
- * run on main or hold no other lock; both methods are synchronized so a
- * stop can never interleave mid-start and orphan a playing track. Keep
- * start() SYNCHRONOUS relative to onDestroy's stop(): an async wrapper
- * could invert the order and leak the looping track. Failure to start
- * is logged and swallowed: on devices without the freezer the keepalive
- * is unnecessary, and a broken audio path (including a throwing
- * Builder.build) must never take transcription down with it.
+ * Scoped to a transcription batch: started when the batch-owning drain
+ * coroutine begins work, stopped when the queue drains (the same
+ * lifecycle points that own the foreground notification). Threading
+ * contract: start() runs on the serviceScope (Dispatchers.IO) drain
+ * coroutine, stop() runs on that scope (drain finally, cancel path) or
+ * the main thread (onDestroy); both methods are synchronized, so any
+ * interleaving is safe and a stop can never orphan a playing track.
+ * Keep start() SYNCHRONOUS relative to the drain's stop(): an async
+ * wrapper could invert the order and leak the looping track. Failure to
+ * start is logged and swallowed: on devices without the freezer the
+ * keepalive is unnecessary, and a broken audio path (including a
+ * throwing Builder.build) must never take transcription down with it.
  */
 class SilentAudioKeepalive(private val tag: String) {
 
@@ -69,7 +70,7 @@ class SilentAudioKeepalive(private val tag: String) {
             built = audioTrack
             // A short or failed write leaves the static buffer undefined:
             // the loop would emit garbage, not silence (review). Fail the
-            // start instead; the next command retries.
+            // start instead; the NEXT BATCH's start() retries (idempotent).
             val written = audioTrack.write(silentPcm, 0, silentPcm.size)
             check(written == silentPcm.size) { "short write: $written" }
             audioTrack.setLoopPoints(0, silentPcm.size, -1)
