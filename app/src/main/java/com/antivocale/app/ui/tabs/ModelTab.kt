@@ -666,10 +666,10 @@ fun ModelTab(
             // variant card is the only removal surface (the startup cleaner
             // deliberately keeps current-named dirs), so hiding it would
             // strand up to 17 MB after a same-keystore flavor switch.
-            // Caveat tracked as a follow-up: a corrupted dir detectPartial
-            // cannot classify renders the Idle (fresh download) button, so
-            // the download offer is not unconditionally absent (see the
-            // hasCleanupWork KDoc).
+            // TASK-870 closes the stub-build corner of this exception: an
+            // orphaned dir offers Clear, never a fresh download of an
+            // unloadable engine. (A corrupted dir on a FULL build still
+            // hits Idle; there the re-download is loadable, so benign.)
             if (BuiltInBackendIds.hiddenOnStubBuild(entry.id)
                 && !catalogStates[entry.id].hasCleanupWork()) return@forEach
             val visibleVariants = remember(entry.id, filterLanguageCode) {
@@ -1436,7 +1436,12 @@ private fun CatalogModelSection(
                         buttonState = when {
                             variantState?.isDownloading == true -> DownloadButtonState.Downloading
                             state.downloadedVariants.contains(variant.variantName) -> DownloadButtonState.Downloaded
-                            isOrphaned && needsExtraction -> DownloadButtonState.Orphaned
+                            // TASK-870: on stub builds an orphaned dir
+                            // must offer the clear affordance, never a
+                            // fresh download of an unloadable engine (the
+                            // 866 hide-exception's residual corner).
+                            isOrphaned && (needsExtraction
+                                || BuiltInBackendIds.hiddenOnStubBuild(entry.id)) -> DownloadButtonState.Orphaned
                             needsExtraction -> DownloadButtonState.NeedsExtraction
                             variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
                             else -> DownloadButtonState.Idle
@@ -1636,10 +1641,10 @@ private fun familyLabel(family: ModelFamily): String = stringResource(
  * runs through the variant card (downloaded weights, an orphaned dir the
  * startup cleaner deliberately keeps, or a pending extraction). Such an
  * entry must stay visible even on stub builds; a null state (refresh not
- * landed) counts as no work, hiding as before. NOTE the corrupted-dir
- * corner: a dir detectPartialDownload cannot classify renders the card's
- * Idle (fresh download) button, not a cleanup affordance - tracked as a
- * follow-up, not fixed by this exception.
+ * landed) counts as no work, hiding as before. On stub builds an
+ * orphaned dir renders the clear affordance (TASK-870), so the
+ * corrupted-dir corner only survives on FULL builds, where the Idle
+ * re-download is at least loadable and therefore benign.
  */
 internal fun ModelViewModel.ModelEntryUiState?.hasCleanupWork(): Boolean =
     this != null && (
