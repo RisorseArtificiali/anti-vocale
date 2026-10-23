@@ -83,6 +83,7 @@ internal class TestSpiOps(
             OP_UNLOAD -> unload()
             OP_VOICE_NOTE_STATE -> voiceNoteState()
             OP_MODEL_DOWNLOAD -> modelDownload(entry, value)
+            OP_CLEAR_ORPHANED -> clearOrphaned(entry, value)
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -628,6 +629,33 @@ internal class TestSpiOps(
         }
     }
 
+    /**
+     * TASK-870's lesson: the Orphaned/Clear path scriptable. Deletes the
+     * variant's directory directly (the same filesystem effect as the UI's
+     * clearOrphanedFiles; the Models tab re-derives its state on the next
+     * sweep). usage: op=clear_orphaned entry=<catalog id> value=<variant>.
+     */
+    private fun clearOrphaned(entry: String?, variant: String?): String {
+        val context = requireContext(OP_CLEAR_ORPHANED)
+        val usage = JSONObject().put("op", OP_CLEAR_ORPHANED)
+            .put("error", "usage: op=clear_orphaned entry=<catalog id> value=<variant name>").toString()
+        val entryId = entry?.trim()?.takeIf { it.isNotEmpty() } ?: return usage
+        val variantName = variant?.trim()?.takeIf { it.isNotEmpty() } ?: return usage
+        val catalogEntry = com.antivocale.app.data.catalog.BundledCatalog.byId(entryId)
+            ?: return JSONObject().put("op", OP_CLEAR_ORPHANED)
+                .put("error", "unknown catalog entry '$entryId'").toString()
+        if (catalogEntry.variant(variantName) == null) {
+            return JSONObject().put("op", OP_CLEAR_ORPHANED)
+                .put("error", "entry '$entryId' has no variant '$variantName'").toString()
+        }
+        val removed = com.antivocale.app.transcription.SherpaModelDownloader.of(entryId)
+            .deleteModel(context, variantName)
+        return JSONObject().put("op", OP_CLEAR_ORPHANED)
+            .put("deleted", removed)
+            .put("variant", "$entryId/$variantName")
+            .toString()
+    }
+
 
     /**
      * TASK-625 trial tool: posts the production memory-failure error
@@ -800,7 +828,7 @@ internal class TestSpiOps(
             "usage",
             "am broadcast -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver " +
                 "-a com.antivocale.app.TEST_SPI --es op=<${OPS.joinToString("|")}> " +
-                "[--es key=<setKey> --es value=<newValue>] [--es entry=<catalogId> (sherpa_path only)] " +
+                "[--es key=<setKey> --es value=<newValue>] [--es entry=<catalogId> (sherpa_path/model_download/clear_orphaned)] " +
                 "[--es url=<entry-or-repo url> (import only)] [--es family=<ModelFamily> (import only, optional override)] "
             + "[--es model_type=<subtype> (import only, CTC: nemo_ctc/zipformer_ctc/omnilingual_ctc/paraformer)]")
         .put(
@@ -825,6 +853,11 @@ internal class TestSpiOps(
         /** TASK-365: dispatch a catalog model download (the UI confirm dialog's
          *  action, scriptable: entry=<catalog id> value=<variant name>). */
         const val OP_MODEL_DOWNLOAD = "model_download"
+        /** TASK-870's lesson: the Orphaned/Clear affordance had no scriptable
+         *  path, so its device trial fell back to UI taps (which synthetic
+         *  input cannot reach on the Compose button). Mirrors model_download's
+         *  arg shape: entry=<catalog id> value=<variant name>. */
+        const val OP_CLEAR_ORPHANED = "clear_orphaned"
         const val OP_VOICE_NOTE_STATE = "voice_note_state"
         const val OP_HELP = "help"
 
@@ -835,7 +868,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024
