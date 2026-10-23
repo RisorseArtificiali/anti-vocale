@@ -465,6 +465,16 @@ class TestSpiOpsTest {
         assertTrue(json.getString("error").contains("Context"))
     }
 
+    @Test
+    fun `clear_orphaned answers the context-required error under the unit fakes`() = runTest {
+        // The happy path deletes files (device-trial concern); this pins
+        // the dispatch arm, the requireContext-BEFORE-validation order the
+        // shared-helper consolidation preserved, and loud failure.
+        val json = JSONObject(ops.handle(TestSpiOps.OP_CLEAR_ORPHANED, entry = "whistle", value = "v1"))
+        assertTrue(json.has("error"))
+        assertTrue(json.getString("error").contains("Context"))
+    }
+
 
     @Test
     fun `notifications op answers with the context-required error under the unit fakes`() = runTest {

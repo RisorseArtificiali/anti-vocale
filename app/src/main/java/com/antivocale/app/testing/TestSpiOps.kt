@@ -590,14 +590,6 @@ internal class TestSpiOps(
     }
 
     /**
-     * TASK-365: dispatches a catalog model download through the SAME
-     * ExtractionService intent the UI confirm dialog builds (modelKey +
-     * variant), so download trials are one broadcast instead of scroll-tap-
-     * confirm. The service's own progress flows through its notification and
-     * the Models-tab state as usual. Requires the app context (the shared
-     * unit fakes answer the standard null-context error).
-     */
-    /**
      * The catalog entry/variant validation trio model_download and
      * clear_orphaned share (TASK-668's gate round: the two copies had
      * already drifted - one trimmed, one raw; raw wins, preserving
@@ -619,6 +611,14 @@ internal class TestSpiOps(
         return null
     }
 
+    /**
+     * TASK-365: dispatches a catalog model download through the SAME
+     * ExtractionService intent the UI confirm dialog builds (modelKey +
+     * variant), so download trials are one broadcast instead of scroll-tap-
+     * confirm. The service's own progress flows through its notification and
+     * the Models-tab state as usual. Requires the app context (the shared
+     * unit fakes answer the standard null-context error).
+     */
     private fun modelDownload(entry: String?, variant: String?): String {
         val context = requireContext(OP_MODEL_DOWNLOAD)
         validateCatalogVariant(OP_MODEL_DOWNLOAD, entry, variant)?.let { return it }

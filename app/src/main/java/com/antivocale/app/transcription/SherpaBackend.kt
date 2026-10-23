@@ -89,7 +89,7 @@ class SherpaBackend(
             // GH #68 + TASK-667: every other loader (qwen3's vocab lives in the
             // tokenizer dir; plain zipformers of every k2-fsa release carry no
             // encoder metadata the plain-transducer loader would read;
-            // desktop-decoded clean on the pinned 1.13.8) demands nothing.
+            // desktop-decoded clean on the pinned sherpa version) demands nothing.
             // Demanding vocab_size for "" rejected the catalog's OWN
             // zipformer entries at import time. The wrong-family guard for
             // "" is the file-shape plan (encoder/decoder/joiner roles), not
@@ -124,7 +124,7 @@ class SherpaBackend(
          * the same buffer. Empty/missing file returns every key as missing.
          *
          * This prevents native crashes: sherpa-onnx calls exit(255) when required metadata
-         * (e.g. vocab_size) is missing, killing the process with no catchable exception.
+         * (e.g. vocab_size) is missing, killing the process with no catchable exception (1.13.x behavior; 2.0.0 converts these to catchable Java exceptions, #3988).
          */
         fun missingOnnxMetadata(
             file: File,
@@ -492,7 +492,7 @@ class SherpaBackend(
             // IO dispatcher (hashing is pure I/O and no caller convention
             // should decide that). The completeness check above catches
             // missing and truncated files; this catches corrupt CONTENT,
-            // which the native loader answers with a process abort
+            // which the native loader answers with a process abort (at the 1.13.x pin; since the 2.0.0 bump the constructor exception is catchable, #3988)
             // ("Protobuf parsing failed") and every retry re-aborts on the
             // same bytes. Structural checks run for every file; SHA-256 for
             // files the catalog pins. The failed files STAY ON DISK (the
