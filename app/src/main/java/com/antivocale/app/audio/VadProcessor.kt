@@ -88,8 +88,11 @@ data class VadResult(
 
             while (!vad.empty()) {
                 val segment: SpeechSegment = vad.front()
-                val start = segment.start.coerceIn(0, totalSamples)
-                val end = (segment.start + segment.samples.size).coerceIn(0, totalSamples)
+                // sherpa 2.0.0 (#4079): VAD positions widened to Long; our
+                // segment math stays Int (bounded by totalSamples).
+                val start = segment.start.coerceIn(0L, totalSamples.toLong()).toInt()
+                val end = (segment.start + segment.samples.size)
+                    .coerceIn(0L, totalSamples.toLong()).toInt()
                 val sampleCount = end - start
                 vad.pop()
 
@@ -103,8 +106,11 @@ data class VadResult(
 
             while (!vad.empty()) {
                 val segment: SpeechSegment = vad.front()
-                val start = segment.start.coerceIn(0, totalSamples)
-                val end = (segment.start + segment.samples.size).coerceIn(0, totalSamples)
+                // sherpa 2.0.0 (#4079): VAD positions widened to Long; our
+                // segment math stays Int (bounded by totalSamples).
+                val start = segment.start.coerceIn(0L, totalSamples.toLong()).toInt()
+                val end = (segment.start + segment.samples.size)
+                    .coerceIn(0L, totalSamples.toLong()).toInt()
                 val sampleCount = end - start
                 vad.pop()
 
