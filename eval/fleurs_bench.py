@@ -167,16 +167,23 @@ def build_recognizer(kind: str, files: dict, lang: str,
             tokens=resolve_file(files, "tokens"),
             language=lang, task="transcribe", tail_paddings=1000, num_threads=4)
     if kind == "transducer":
-        # NOTE (run_baseline's TASK lesson): NeMo TDT decoders need
-        # model_type="nemo_transducer" or the process exits 255; every
-        # catalog TRANSDUCER entry today is zipformer, which wants no
-        # model_type. Thread it here the day a TDT entry lands.
+        # NeMo fastconformer/TDT exports (the TranscribePsy class, TASK-855)
+        # need model_type="nemo_transducer": sherpa's nemo wrapper handles
+        # the (B, feat, time) input layout and the TDT duration heads.
+        # Without it sherpa exits 255 on decoder init (no vocab_size
+        # metadata: the zipformer path; same lesson as run_baseline). No
+        # feature_dim kwarg is needed: the nemo impl PostInit overrides the
+        # caller's value from the encoder's feat_dim metadata (verified
+        # against the pinned wheel, 2026-10-23 gate round).
+        kwargs = {}
+        if model_type == "nemo_transducer":
+            kwargs["model_type"] = model_type
         return sherpa_onnx.OfflineRecognizer.from_transducer(
             tokens=resolve_file(files, "tokens"),
             encoder=resolve_file(files, "encoder"),
             decoder=resolve_file(files, "decoder"),
             joiner=resolve_file(files, "joiner"),
-            num_threads=4)
+            num_threads=4, **kwargs)
     if kind == "sensevoice":
         return sherpa_onnx.OfflineRecognizer.from_sense_voice(
             model=resolve_file(files, "model"), tokens=resolve_file(files, "tokens"),
