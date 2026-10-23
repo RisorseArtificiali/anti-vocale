@@ -597,19 +597,33 @@ internal class TestSpiOps(
      * the Models-tab state as usual. Requires the app context (the shared
      * unit fakes answer the standard null-context error).
      */
-    private fun modelDownload(entry: String?, variant: String?): String {
-        val context = requireContext(OP_MODEL_DOWNLOAD)
+    /**
+     * The catalog entry/variant validation trio model_download and
+     * clear_orphaned share (TASK-668's gate round: the two copies had
+     * already drifted - one trimmed, one raw; raw wins, preserving
+     * model_download's shipped behavior). Returns the error payload, or
+     * null when the pair resolves.
+     */
+    private fun validateCatalogVariant(op: String, entry: String?, variant: String?): String? {
         if (entry.isNullOrBlank() || variant.isNullOrBlank()) {
-            return JSONObject().put("op", OP_MODEL_DOWNLOAD)
-                .put("error", "usage: op=model_download entry=<catalog id> value=<variant name>").toString()
+            return JSONObject().put("op", op)
+                .put("error", "usage: op=$op entry=<catalog id> value=<variant name>").toString()
         }
         val catalogEntry = com.antivocale.app.data.catalog.BundledCatalog.byId(entry)
-            ?: return JSONObject().put("op", OP_MODEL_DOWNLOAD)
+            ?: return JSONObject().put("op", op)
                 .put("error", "unknown catalog entry '$entry'").toString()
         if (catalogEntry.variant(variant) == null) {
-            return JSONObject().put("op", OP_MODEL_DOWNLOAD)
+            return JSONObject().put("op", op)
                 .put("error", "entry '$entry' has no variant '$variant'").toString()
         }
+        return null
+    }
+
+    private fun modelDownload(entry: String?, variant: String?): String {
+        val context = requireContext(OP_MODEL_DOWNLOAD)
+        validateCatalogVariant(OP_MODEL_DOWNLOAD, entry, variant)?.let { return it }
+        val entryId = entry ?: error("validated")
+        val variantName = variant ?: error("validated")
         // API 31+ rejects a foreground-service start from a backgrounded app
         // with a typed exception; the deliberate arm names the remedy instead
         // of leaking the platform message (the op=nav dest=models step is the
@@ -617,9 +631,9 @@ internal class TestSpiOps(
         return try {
             androidx.core.content.ContextCompat.startForegroundService(
                 context,
-                com.antivocale.app.service.ExtractionService.downloadIntent(context, entry, variant))
+                com.antivocale.app.service.ExtractionService.downloadIntent(context, entryId, variantName))
             JSONObject().put("op", OP_MODEL_DOWNLOAD)
-                .put("dispatched", "$entry/$variant")
+                .put("dispatched", "$entryId/$variantName")
                 .put("note", "progress rides the service notification and the Models-tab state")
                 .toString()
         } catch (e: Exception) {
@@ -633,21 +647,16 @@ internal class TestSpiOps(
      * TASK-870's lesson: the Orphaned/Clear path scriptable. Deletes the
      * variant's directory directly (the same filesystem effect as the UI's
      * clearOrphanedFiles; the Models tab re-derives its state on the next
-     * sweep). usage: op=clear_orphaned entry=<catalog id> value=<variant>.
+     * sweep). deleted=true is the dir-gone POSTCONDITION (also true when
+     * the dir did not exist; false is near-unreachable: only a missing
+     * dir-name mapping or a throwing delete). usage:
+     * op=clear_orphaned entry=<catalog id> value=<variant>.
      */
     private fun clearOrphaned(entry: String?, variant: String?): String {
         val context = requireContext(OP_CLEAR_ORPHANED)
-        val usage = JSONObject().put("op", OP_CLEAR_ORPHANED)
-            .put("error", "usage: op=clear_orphaned entry=<catalog id> value=<variant name>").toString()
-        val entryId = entry?.trim()?.takeIf { it.isNotEmpty() } ?: return usage
-        val variantName = variant?.trim()?.takeIf { it.isNotEmpty() } ?: return usage
-        val catalogEntry = com.antivocale.app.data.catalog.BundledCatalog.byId(entryId)
-            ?: return JSONObject().put("op", OP_CLEAR_ORPHANED)
-                .put("error", "unknown catalog entry '$entryId'").toString()
-        if (catalogEntry.variant(variantName) == null) {
-            return JSONObject().put("op", OP_CLEAR_ORPHANED)
-                .put("error", "entry '$entryId' has no variant '$variantName'").toString()
-        }
+        validateCatalogVariant(OP_CLEAR_ORPHANED, entry, variant)?.let { return it }
+        val entryId = entry ?: error("validated")
+        val variantName = variant ?: error("validated")
         val removed = com.antivocale.app.transcription.SherpaModelDownloader.of(entryId)
             .deleteModel(context, variantName)
         return JSONObject().put("op", OP_CLEAR_ORPHANED)
@@ -655,7 +664,6 @@ internal class TestSpiOps(
             .put("variant", "$entryId/$variantName")
             .toString()
     }
-
 
     /**
      * TASK-625 trial tool: posts the production memory-failure error
