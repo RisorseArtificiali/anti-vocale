@@ -160,7 +160,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (स्ट्रीमिंग)</string>
-    <string name="nemotron_description">~640MB • स्ट्रीमिंग ट्रांसड्यूसर</string>
+    <string name="nemotron_description">~640MB • स्ट्रीमिंग • गति से गुणवत्ता</string>
     <string name="nemotron_download_confirm_title">%1$s डाउनलोड करें?</string>
     <string name="nemotron_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा। Nemotron 3.5 एक स्ट्रीमिंग बहुभाषी ASR मॉडल है।</string>
     <string name="nemotron_download">Nemotron डाउनलोड करें</string>

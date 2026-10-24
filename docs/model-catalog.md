@@ -47,6 +47,7 @@ Encoder-decoder, int8 export. Per the model card its 52 entries are 30 languages
 The only streaming model: it shows partial results while audio is still being processed. Online decoder, 1120 ms chunking, int8. It lists 40 language-locales per NVIDIA's card, and the tiers matter: 19 transcription-ready, 13 broad-coverage, 8 adaptation-ready that need fine-tuning before they transcribe (32 work out of the box).
 
 - Size: 640 MB; no fixed audio cap (it streams)
+- Decoding: beam search, tuned for accuracy over speed (TASK-874/530, measured on device: about 1 point of WER better than the faster greedy path, at roughly 1.5x its processing time; both stay under real time)
 - Original model: [nvidia/nemotron-3.5-asr-streaming-0.6b](https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b)
 - Downloads from: [csukuangfj2/sherpa-onnx-nemotron-3.5-asr-streaming-0.6b-1120ms-int8-2026-06-11](https://huggingface.co/csukuangfj2/sherpa-onnx-nemotron-3.5-asr-streaming-0.6b-1120ms-int8-2026-06-11)
 

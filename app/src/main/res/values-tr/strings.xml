@@ -182,7 +182,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (akış)</string>
-    <string name="nemotron_description">~640MB • Akış transdüseri</string>
+    <string name="nemotron_description">~640MB • Akış • Hız yerine doğruluk</string>
     <string name="nemotron_download_confirm_title">%1$s indirilsin mi?</string>
     <string name="nemotron_download_confirm_message">Bu, yaklaşık %1$dMB indirir. Nemotron 3.5, çok dilli bir akış ASR modelidir.</string>
     <string name="nemotron_download">Nemotron indir</string>

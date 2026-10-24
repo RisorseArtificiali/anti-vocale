@@ -140,7 +140,7 @@
     <string name="qwen3_asr_deleted">%1$s excluído</string>
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (streaming)</string>
-    <string name="nemotron_description">~640 MB • Transductor em streaming</string>
+    <string name="nemotron_description">~640 MB • Streaming • Qualidade em vez de velocidade</string>
     <string name="nemotron_download_confirm_title">Baixar %1$s?</string>
     <string name="nemotron_download_confirm_message">Isso baixará ~%1$d MB. Nemotron 3.5 é um modelo ASR multilíngue em streaming.</string>
     <string name="nemotron_download">Baixar Nemotron</string>

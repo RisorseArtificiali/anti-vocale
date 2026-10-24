@@ -153,7 +153,7 @@
     <string name="qwen3_asr_deleted">%1$s 已删除</string>
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5（流式）</string>
-    <string name="nemotron_description">约 640MB · 流式转换器</string>
+    <string name="nemotron_description">约 640MB · 流式 · 质量优先于速度</string>
     <string name="nemotron_download_confirm_title">下载 %1$s？</string>
     <string name="nemotron_download_confirm_message">将下载约 %1$dMB。Nemotron 3.5 是流式多语言 ASR 模型。</string>
     <string name="nemotron_download">下载 Nemotron</string>

@@ -186,7 +186,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (streaming)</string>
-    <string name="nemotron_description">~640MB • Streaming transducer</string>
+    <string name="nemotron_description">~640MB • Streaming • Accuracy over speed</string>
     <string name="nemotron_download_confirm_title">Download %1$s?</string>
     <string name="nemotron_download_confirm_message">This will download ~%1$dMB. Nemotron 3.5 is a streaming multilingual ASR model.</string>
     <string name="nemotron_download">Download Nemotron</string>

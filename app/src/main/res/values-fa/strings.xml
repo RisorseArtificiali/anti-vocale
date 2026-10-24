@@ -179,7 +179,7 @@
     <!-- Nemotron 3.5 streaming -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (جریانی)</string>
-    <string name="nemotron_description">~640MB • ترنسدیوسر جریانی</string>
+    <string name="nemotron_description">~640MB • جریانی • کیفیت به جای سرعت</string>
     <string name="nemotron_download_confirm_title">%1$s دانلود شود؟</string>
     <string name="nemotron_download_confirm_message">حدود %1$dMB دانلود خواهد شد. Nemotron 3.5 یک مدل ASR چندزبانه جریانی است.</string>
     <string name="nemotron_download">دانلود Nemotron</string>

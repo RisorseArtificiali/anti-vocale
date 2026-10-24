@@ -168,7 +168,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (потоковая)</string>
-    <string name="nemotron_description">~640 МБ • Потоковый преобразователь</string>
+    <string name="nemotron_description">~640 МБ • Потоковая • Точность важнее скорости</string>
     <string name="nemotron_download_confirm_title">Скачать %1$s?</string>
     <string name="nemotron_download_confirm_message">Будет загружено ~%1$d МБ. Nemotron 3.5, многоязычная потоковая модель распознавания речи.</string>
     <string name="nemotron_download">Скачать Nemotron</string>

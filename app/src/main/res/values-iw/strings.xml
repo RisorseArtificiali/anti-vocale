@@ -180,7 +180,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (סטרימינג)</string>
-    <string name="nemotron_description">~640MB • טרנסדוסר בסטרימינג</string>
+    <string name="nemotron_description">~640MB • סטרימינג • איכות על פני מהירות</string>
     <string name="nemotron_download_confirm_title">להוריד את %1$s?</string>
     <string name="nemotron_download_confirm_message">פעולה זו תוריד כ-%1$dMB. Nemotron 3.5 הוא מודל ASR רב-לשוני בסטרימינג.</string>
     <string name="nemotron_download">הורדת Nemotron</string>

@@ -186,7 +186,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (потокова)</string>
-    <string name="nemotron_description">~640МБ • Потоковий трансдюсер</string>
+    <string name="nemotron_description">~640МБ • Потокова • Точність замість швидкості</string>
     <string name="nemotron_download_confirm_title">Завантажити %1$s?</string>
     <string name="nemotron_download_confirm_message">Буде завантажено ~%1$dМБ. Nemotron 3.5 - це потокова багатомовна модель ASR.</string>
     <string name="nemotron_download">Завантажити Nemotron</string>
