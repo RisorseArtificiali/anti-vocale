@@ -2081,6 +2081,10 @@ internal fun VoiceNoteSettingsScreen(
             // the tap path; TASK-777 tracks the content-URI arm that would
             // lift this).
             if (com.antivocale.app.data.VoiceNoteDetectionPermission.detectionAvailable()) {
+                // Review F4: ONE page-level poke on resume (the UNCONDITIONAL
+                // TASK-827 reconcile for every coordinator); each section's
+                // own RecheckOnResume keeps only its local permission state.
+                RecheckOnResume { viewModel.refreshVoiceNoteDetectionGate() }
                 // WhatsApp Business support: one independent detection block
                 // per client (own toggle, own folder grant, own gate state),
                 // under a brand header; the permission is shared.
@@ -2180,17 +2184,14 @@ private fun VoiceNoteDetectionSection(
     }
     val grantScope = rememberCoroutineScope()
     RecheckOnResume {
+        // Per-section state only (review F4): the all-coordinator poke is
+        // hoisted to ONE page-level RecheckOnResume so N sources cost N
+        // probes, not N pokes of every coordinator.
         val granted =
             com.antivocale.app.data.VoiceNoteDetectionPermission.granted(context)
         if (granted != voiceNoteAudioPermissionGranted) {
             voiceNoteAudioPermissionGranted = granted
         }
-        // UNCONDITIONAL poke (TASK-827): a grant or revoke made
-        // outside this screen changes no preference value, and the
-        // tree grant can die with the URI string unchanged (folder
-        // recreated, OEM cleanup); the coordinator's reconcile
-        // re-probes both and its gateState refreshes the card.
-        viewModel.refreshVoiceNoteDetectionGate()
     }
     val audioPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()

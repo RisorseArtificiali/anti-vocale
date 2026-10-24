@@ -37,7 +37,7 @@ class VoiceNoteGrantSpiActivity : ComponentActivity() {
         if (uri == null) {
             // The user backed out or DocumentsUI failed: nothing taken,
             // nothing saved; the trial script sees the unchanged state.
-            TestSpiReceiver.logSpi(OP, "canceled")
+            TestSpiReceiver.logSpi(OP, "canceled source=${source.name}")
             finish()
             return@registerForActivityResult
         }
@@ -60,9 +60,10 @@ class VoiceNoteGrantSpiActivity : ComponentActivity() {
             TestSpiReceiver.logSpi(
                 OP,
                 when (outcome) {
-                    is VoiceNoteTreeGrant.GrantOutcome.Saved -> "saved ${outcome.uriString}"
-                    VoiceNoteTreeGrant.GrantOutcome.TakeFailed -> "take_failed"
-                    VoiceNoteTreeGrant.GrantOutcome.WrongFolder -> "wrong_folder"
+                    // Review F5: every outcome names the slot.
+                    is VoiceNoteTreeGrant.GrantOutcome.Saved -> "saved ${outcome.uriString} source=${source.name}"
+                    VoiceNoteTreeGrant.GrantOutcome.TakeFailed -> "take_failed source=${source.name}"
+                    VoiceNoteTreeGrant.GrantOutcome.WrongFolder -> "wrong_folder source=${source.name}"
                     // Unreachable outside a caught throw: the script sees
                     // the error line and checks voice_note_state.
                     null -> "error"
@@ -85,7 +86,7 @@ class VoiceNoteGrantSpiActivity : ComponentActivity() {
             try {
                 picker.launch(VoiceNoteTreeGrant.pickerInitialUri(source))
             } catch (e: android.content.ActivityNotFoundException) {
-                TestSpiReceiver.logSpi(OP, "error")
+                TestSpiReceiver.logSpi(OP, "error source=${source.name}")
                 finish()
             }
         }

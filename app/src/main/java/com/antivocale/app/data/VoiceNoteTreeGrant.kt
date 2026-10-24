@@ -161,7 +161,9 @@ class VoiceNoteTreeGrant @Inject constructor(
         private const val TAG = "VoiceNoteTreeGrant"
 
         /** WhatsApp's folder name under Android/media (not localized there). */
-        val EXPECTED_FOLDER_NAME = VoiceNoteSource.WHATSAPP.folderName
+        // Review F6: EXPECTED_FOLDER_NAME deleted (its last production
+        // reader went with the multi-source rework); VoiceNoteSource's
+        // folderName is the live contract, pinned by VoiceNoteSourceTest.
 
         /**
          * The pick-time check the Settings card rejects a wrong folder

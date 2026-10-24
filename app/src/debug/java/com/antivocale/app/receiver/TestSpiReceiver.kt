@@ -118,6 +118,9 @@ class TestSpiReceiver : BroadcastReceiver() {
             )
             ack(OP_VOICE_NOTE_GRANT_OPEN) {
                 put("launched", true)
+                // Review F5: name the slot; dual-slot trials must tell the
+                // acks apart (absent token = the WhatsApp default).
+                put("source", sourceToken ?: "whatsapp")
                 put("note", "confirm USE THIS FOLDER in the DocumentsUI dialog; " +
                     "op=voice_note_state reports grantHeld/armed after")
             }

@@ -41,7 +41,11 @@ class VoiceNoteSourceTest {
             "${storage.absolutePath}/Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes",
             voiceNotesRoot().absolutePath)
         assertEquals(voiceNotesRoot(), VoiceNoteSource.WHATSAPP.root())
-        assertEquals("WhatsApp Voice Notes", VoiceNoteTreeGrant.EXPECTED_FOLDER_NAME)
+        // Review F6: pin the ENUM value directly (the constant alias is deleted);
+        // WhatsApp never localizes the folder name, so this string is the
+        // on-disk contract both clients' detectors key on.
+        assertEquals("WhatsApp Voice Notes", VoiceNoteSource.WHATSAPP.folderName)
+        assertEquals("WhatsApp Business Voice Notes", VoiceNoteSource.WHATSAPP_BUSINESS.folderName)
         assertEquals("", VoiceNoteSource.WHATSAPP.idNamespace)
     }
 

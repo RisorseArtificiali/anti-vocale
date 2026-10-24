@@ -1277,7 +1277,7 @@
     <string name="voice_note_folder_sheet_step2">Scroll omlaag langs het pad naar de map met spraakberichten:</string>
     <string name="voice_note_folder_sheet_step3">Tik met de map WhatsApp Voice Notes geselecteerd (niet openen) op DEZE MAP GEBRUIKEN en daarna op TOESTAAN.</string>
     <string name="voice_note_folder_sheet_open">Kiezer openen</string>
-    <string name="voice_note_business_detection_description">Transcribes new WhatsApp Business voice notes as they arrive, while the app is running. If Android blocks a background start, a one-tap notification starts it. A note is read only to transcribe it, on this device; while off, nothing is read. Requires audio access.</string>
+    <string name="voice_note_business_detection_description">Transcribeert nieuwe WhatsApp Business-spraakberichten zodra ze binnenkomen, terwijl de app draait. Als Android een achtergrondstart blokkeert, start een melding met één tik het alsnog. Een bericht wordt uitsluitend gelezen om het te transcriberen, op dit apparaat; uitgeschakeld wordt er niets gelezen. Audiotoegang vereist.</string>
     <string name="voice_note_business_folder_grant_rejected">Dit is niet de map met WhatsApp Business-spraakberichten. Kies de map met de naam WhatsApp Business Voice Notes en probeer het opnieuw.</string>
     <string name="voice_note_business_folder_card_desc">Om de berichten te lezen, verleen één keer toegang tot de map waar WhatsApp Business ze opslaat:</string>
     <string name="voice_note_business_folder_sheet_step3">Tik met de map WhatsApp Business Voice Notes geselecteerd (niet openen) op DEZE MAP GEBRUIKEN en daarna op TOESTAAN.</string>
