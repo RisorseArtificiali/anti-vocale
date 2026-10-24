@@ -17,24 +17,18 @@
 -dontwarn autovalue.shaded.**
 -dontwarn com.google.auto.value.**
 
-# sherpa-onnx: Keep classes that native code accesses via reflection
+# sherpa-onnx: Keep classes that native code accesses via reflection.
+# TASK-883: this rule's keepclassmembers twin was removed; the R8 config
+# analyzer proved it subsumed by this rule on both flavors.
 -keep class com.k2fsa.sherpa.onnx.** { *; }
--keepclassmembers class com.k2fsa.sherpa.onnx.** { *; }
 -dontwarn com.k2fsa.sherpa.onnx.**
 
-# LiteRT-LM: Keep classes that native code accesses via reflection/JNI
+# LiteRT-LM: Keep classes that native code accesses via reflection/JNI.
+# TASK-883: the package-wide keepclassmembers and the two per-class member
+# rules that lived here were removed; the R8 config analyzer proved all three
+# subsumed by this section's class rule on both flavors (a keepclassmembers on
+# the same pattern cannot keep anything the class rule does not already).
 -keep class com.google.ai.edge.litertlm.** { *; }
--keepclassmembers class com.google.ai.edge.litertlm.** { *; }
-# Explicitly keep SamplerConfig getters/setters (JNI access)
--keepclassmembers class com.google.ai.edge.litertlm.SamplerConfig {
-    public int getTopK();
-    public float getTemperature();
-    public int getTopP();
-}
-# Also keep all public methods in LiteRtLmJni
--keepclassmembers class com.google.ai.edge.litertlm.LiteRtLmJni {
-    public native <methods>;
-}
 -dontwarn com.google.ai.edge.litertlm.**
 
 # Preserve Kotlin metadata for JNI reflection (sherpa-onnx native bridge)
@@ -48,10 +42,12 @@
 # so R8's static tracer can't see them) — e.g. SubtitleChoiceTimeoutWorker (TASK-228.9)
 -keep class com.antivocale.app.work.** { *; }
 
-# Preserve @Keep annotations that native libraries rely on
+# Preserve @Keep annotations that native libraries rely on.
+# TASK-883: the keepclassmembers-on-@Keep-members companion rule was removed;
+# the R8 config analyzer showed it keeping zero items on both flavors, and the
+# androidx.annotation consumer rules (present in the merged R8 config) already
+# pin @Keep members, so the annotation's protection does not rest on this file.
 -keep @androidx.annotation.Keep class * { *; }
--keepclassmembers class * { @androidx.annotation.Keep *; }
-
 
 # TASK-785: the Open Transcribe contract surface. The framework (and the
 # client app across the binder) resolves each Parcelable's CREATOR
