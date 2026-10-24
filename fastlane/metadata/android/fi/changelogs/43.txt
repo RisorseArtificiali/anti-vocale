@@ -1,0 +1,6 @@
+Uutta versiossa 1.12.1:
+• Korjattu: puheluita nauhoittavien sovellusten jakama ääni tunnistetaan nyt
+• Uutta: tuodut mallikansiot tunnistetaan automaattisesti; valitsin näytetään vain epäselvissä tapauksissa
+• Uutta: tekstitysvalinnan kehotteen aikakatkaisu on nyt asetus (1-10 minuuttia)
+• Korjattu: hylätyt ylipitkät nauhoitukset näyttävät todellisen kestonsa
+• Korjattu: nopeampi ja turvallisempi jakaminen; laitteen kääntäminen jaon aikana ei enää monista työtä

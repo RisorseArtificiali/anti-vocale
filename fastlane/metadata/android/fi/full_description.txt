@@ -1,0 +1,46 @@
+Anti-Vocale transkriboi WhatsAppin, Telegramin ja muiden viestisovellusten ääniviestit suoraan Android-laitteellasi. Kaikki käsittely tapahtuu laitteella: äänesi ei koskaan lähde puhelimestasi. Toimii myös nauhoitettuihin puheluihin ja kokouksiin: mikä tahansa pituinen nauhoitus pilkotaan ja yhdistetään automaattisesti (enintään kaksi tuntia suoratoistopolulla), epäonnistunut ajo säilyttää tuottamansa transkriptin, ja pitkät transkriptit voi viedä tekstityksinä (SRT, VTT) tai aikaleimateltuna tekstinä, lausetason ajoituksella suoratoistomalleilla.
+
+SISÄÄNRAKENNETUT MALLIT
+
+- Parakeet TDT (suositeltu): nopea, 25 eurooppalaista kieltä. Kaksi versiota: korkealaatuinen (862MB) tai kevyt (464MB)
+- Whisper Turbo: 99 kieltä, tasapaino nopeuden ja laadun välillä
+- Whisper Distil Italian: paras italian laatu, viritetty ääniviesteille
+- Whisper Medium / Small: tarkempi tulos tai pienempi lataus
+- Nemotron 3.5 suoratoistona: teksti ilmestyy reaaliajassa dekoodauksen edetessä, 45 kieltä
+- Qwen3-ASR: kevyt, 59 kieltä
+- GigaAM v3: venäjän kieli, erittäin pieni ja nopea
+- Gemma 4 / 3n (LiteRT): multimodaalinen tekoäly muokattavilla kehotteilla
+
+OTA OMAT MALLISI KÄYTTÖÖN
+
+Tuo omia transkriptiomalleja puhelimen kansiosta tai linkistä: Whisper-hienosäätöjä, CTC-malleja, SenseVoice ja muita sherpa-onnx-arkkitehtuureja. Tiedostojen eheys tarkistetaan tuonnissa, useaan tiedostoon jaetut mallit ovat tuettuja, ja jokainen tuotu malli saa oman jakokohteen. Ihanteellinen kielille, joita sisäänrakennetut mallit eivät kata.
+
+OMINAISUUDET
+
+- Jaa ääniviestit mistä tahansa sovelluksesta Androidin jakovalikon kautta
+- Älykkäät ilmoitukset: kopioi yhdellä napautuksella, jaa takaisin ja selaile pitkiä transkriptejä sivuittain avaamatta sovellusta
+- Automaattinen kopiointi leikepöydälle ja transkriptien automaattinen tallennus valitsemaasi kansioon (Drive, Syncthing, …)
+- Videotiedostojen transkriptointi (ääniraita puretaan)
+- Reaaliaikainen, vähitellen täydentyvä teksti suoratoistomalleilla
+- Ilmoitusasetukset sovelluskohtaisesti
+- Transkriptioloki, jossa haku ja pyyhkäisytoiminnot
+- Hiljaisuuden poisto ja rinnakkainen paloittelu nopeuttavat työtä
+- Neurokiihdytys (NNAPI) tuetuilla laitteilla, tarvittaessa automaattinen siirtyminen CPU:lle
+- Tasker-integraatio automaatiota varten
+- Ajastettu kansioiden valvonta: valitsemiesi kansioiden uudet äänitiedostot transkriboituvat automaattisesti (Android 11+:ssa, jopa viestisovelluksen mediakansio)
+- Etäsuoritus (kokeellinen, oletuksena pois päältä): siirrä pitkät transkriptiot omalle OpenAI-yhteensopivalle palvelimellesi
+- Open Transcribe -palveluntarjoaja (kokeellinen): avoimen sopimuksen puhuvat sovellukset, kuten Forkgram, muuttavat Anti-Vocalen sisäänrakennetuksi äänitranskriboijakseen
+
+YKSITYISYYS
+
+Verkkoyhteyttä ei tarvita latauksen jälkeen, ei tilejä, ei tiedonkeruuta, ei mainoksia, ei seurantaa. Oletuksena ääni ei koskaan lähde puhelimestasi; ainoa poikkeus on valinnainen Etäsuoritus-ominaisuus, joka lähettää äänen ainoastaan itse määrittämääsi palvelinosoitteeseen ja pysyy pois päältä, kunnes otat sen käyttöön.
+
+AVOIN LÄHDEKOODI
+
+Apache 2.0. Lähdekoodi: https://github.com/RisorseArtificiali/anti-vocale
+
+VAATIMUKSET
+
+Android 8.0+ | Suositus: vähintään 4GB RAM | 326MB-1GB tallennustilaa per malli
+
+HUOM: Joillakin aggressiivista virransäästöä käyttävillä puhelimilla (Realme, OnePlus, Vivo) avaa sovellus kerran äänen jakamisen jälkeen, jotta transkriptio ehtii valmistua.

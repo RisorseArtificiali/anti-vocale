@@ -1,0 +1,5 @@
+Uutta: transkriptien tallennus kansioon; jokainen transkriptio tallentuu automaattisesti .txt-tiedostona valitsemaasi kansioon (Drive, Syncthing, Dropbox)
+Korjattu: yleinen automaattikopiointikytkin toimii nyt kaikissa sovelluksissa, ei vain WhatsAppissa
+Korjattu: virheellinen "transkriptio keskeytyi" -ikkuna ei enää näy tavanomaisen valmistumisen jälkeen
+Korjattu: Nemotron ei enää katkaise lyhyiden viestien loppua
+Päivitetty päättelymoottori (sherpa-onnx 1.13.4) puhtaammalla transkriptitulosteella

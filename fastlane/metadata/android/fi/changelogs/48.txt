@@ -1,0 +1,5 @@
+Uutta: valvotut kansiot transkriboivat uuden äänen automaattisesti; etäsuoritus (kokeellinen)
+Uutta: jakaminen aikaleimateltuna tekstinä, SRT:nä tai VTT:nä; mallien vienti offline-paketeiksi
+Uutta: automaattitallennus varmistaa kirjoituksen; ilmoitus kertoo tiedoston nimen
+Parannettu: Lisäasetukset-välilehti: sovelluksen sisäinen yhteisöluettelo ja tuonti yhdellä työnkululla; käyttöliittymä kiinaksi
+Korjattu: tekstityskehotteen aikakatkaisun aiheuttama kaatuminen; Qwen3 katkaisi pitkät syötteet

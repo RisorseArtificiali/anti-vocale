@@ -1,0 +1,8 @@
+Uutta versiossa 1.13.0:
+• Uutta: puhujamerkinnät transkripteissä (kaksi puhujaa tunnistetaan automaattisesti)
+• Uutta: kaksoismallitila: nopea ensimmäinen läpikäynti ja sitten hiottu transkriptio
+• Uutta: tekstin kokosäätö transkripteille
+• Uutta: toistoringaussuoja pitkillä suorituksilla
+• Parannettu: Gemma-moottori päivitetty (0.17.1); äänitranskriptio ei enää kaadu
+• Parannettu: Historia lataa pitkät transkriptit nopeammin
+• Korjattu: kielimerkki näkyy vain kielentunnistavilla malleilla

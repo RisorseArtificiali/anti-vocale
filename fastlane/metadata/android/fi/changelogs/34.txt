@@ -1,0 +1,1 @@
+Huoltoversio: paranneltu käännösten toistettavuus F-Droid-jakelua varten. Ei käyttäjälle näkyviä muutoksia.
