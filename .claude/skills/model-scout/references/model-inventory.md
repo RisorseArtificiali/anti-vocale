@@ -71,7 +71,7 @@ Detailed inventory of models currently used by Anti-Vocale. Built-ins below; the
 ## Frameworks
 
 ### sherpa-onnx
-- **Version:** v1.13.8 (the pin lives in `.sherpa-version` at the repo root: tag + srclib commit; the AAR is a local binary `libs/sherpa-onnx.aar`)
+- **Version:** v2.0.0 (the pin lives in `.sherpa-version` at the repo root: tag + srclib commit; the AAR is a local binary `libs/sherpa-onnx.aar`; bumped 2026-10-23, TASK-668)
 - **Format:** AAR bundled at `libs/sherpa-onnx.aar`
 - **Purpose:** ONNX-based ASR inference runtime
 

@@ -34,4 +34,11 @@ endif()
 
 add_library(whistle_jni SHARED ${BRIDGE_SOURCE})
 target_link_libraries(whistle_jni PRIVATE ${BRIDGE_LIBS})
+# 16 KB page-size support: NDK r27 (the pinned ndkVersion) still links
+# LOAD segments at 4 KB by default (r28+ defaults to 16 KB), so without
+# this the bridge was the one 4 KB-aligned library in the APK (llvm-readelf
+# on a 2026-10-20 arm64 build; every prebuilt .so is already 0x4000). A
+# 16 KB-page device cannot load such a library, and Play requires 16 KB
+# support for API 35+ targets. Harmless on 4 KB devices and 32-bit ABIs.
+target_link_options(whistle_jni PRIVATE "-Wl,-z,max-page-size=16384")
 target_include_directories(whistle_jni PRIVATE "${CMAKE_SOURCE_DIR}")

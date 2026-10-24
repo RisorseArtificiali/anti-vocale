@@ -167,7 +167,17 @@ class ExternalCatalogTest {
         // NC-licensed tier accepted for the external catalog; pins hashed
         // from the downloaded artifacts)
         // + arabic small v2 dialectal light option (TASK-770)
-        assertEquals(30, entries.size)
+        // + whisper small turkish fine-tune (TASK-863: beats the whisper-small
+        // baseline on FLEURS tr, WER 11.0% vs 15.5%; Tinlera's shipped sherpa
+        // int8 files, pins hashed from the downloaded artifacts)
+        // + distil whisper large v3 ptbr (TASK-862: our conversion of
+        // freds0's fine-tune, WER 6.35% on FLEURS pt_br, hosted at
+        // pantinor/distil-whisper-large-v3-ptbr-sherpa)
+        // - zipformer korean REMOVED (TASK-864: measured CER 48.41% on
+        // FLEURS ko vs SenseVoice 8.44% and whisper-small 21.19%; the
+        // entry promised quality it does not have on general speech.
+        // Still importable by URL; SenseVoice is the ko path)
+        assertEquals(31, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy

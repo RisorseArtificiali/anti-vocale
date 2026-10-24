@@ -131,6 +131,7 @@ fun SettingsTab(
     val outputFolderUri by viewModel.outputFolderUri.collectAsState()
     val transcriptExportFormat by viewModel.transcriptExportFormat.collectAsState()
     val vadEnabled by viewModel.vadEnabled.collectAsState()
+    val freezeProtection by viewModel.freezeProtectionEnabled.collectAsState()
     val progressiveEnabled by viewModel.progressiveTranscription.collectAsState()
     val earlyPreviewEnabled by viewModel.earlyPreviewEnabled.collectAsState()
     val interruptedRunNotifications by viewModel.interruptedRunNotifications.collectAsState()
@@ -316,6 +317,8 @@ fun SettingsTab(
     // for six weeks (found in the 2026-09-13 settings audit; the status card
     // was rendering for Parakeet users and hiding from Gemma users).
     val isLlmBackend = BuiltInBackendIds.isLlm(uiState.transcriptionBackend)
+    // TASK-858: the whistle-only keyword-biasing card's gate.
+    val isWhistleBackend = BuiltInBackendIds.isWhistle(uiState.transcriptionBackend)
     val isModelLoaded by viewModel.llmIsReadyFlow.collectAsState()
     // TASK-574: tick the countdown every second while a live deadline exists;
     // the getter is a plain read, so without the producer the banner would
@@ -474,6 +477,7 @@ fun SettingsTab(
         // vocabulary can never drift from the tree.
         val searchState = SettingsSearchState(
             isLlmBackend = isLlmBackend,
+            isWhistleBackend = isWhistleBackend,
             isModelLoaded = isModelLoaded,
             gemmaConfigured = gemmaConfigured,
             punctuationPromptForced = currentPunctuationMode == PunctuationPolicy.PREF_ALWAYS,
@@ -820,6 +824,23 @@ fun SettingsTab(
                 )
             }
 
+            // GH #67 (scoped): opt-in freezer protection. Ungated: any ROM
+            // can read the toggle; only freezer-ROM users need to turn it
+            // on (the description names which phones).
+            val freezeTitle = stringResource(R.string.freeze_protection_title)
+            val freezeDescription = stringResource(R.string.freeze_protection_description)
+            SearchFilterRow(searchQuery, SettingsSearchId.FREEZE_PROTECTION, searchState) {
+                ToggleSettingCard(
+                    icon = Icons.Default.GraphicEq,
+                    title = freezeTitle,
+                    description = freezeDescription,
+                    checked = freezeProtection,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveFreezeProtectionEnabled(enabled)
+                    }
+                )
+            }
+
             // GH #43: two-pass transcription (instant preview, then refine).
             val refinementTitle = stringResource(R.string.refinement_title)
             val refinementDescription = stringResource(R.string.refinement_description)
@@ -1084,6 +1105,20 @@ fun SettingsTab(
                             onOpen = { showPromptSettings = true },
                         )
                 }
+                }
+
+                // TASK-858: the whistle engine's keyword-biasing terms. The
+                // EditablePromptCard contract (commit on focus loss, the
+                // 500-char cap at the impl layer) fits: a term list is a
+                // short free-text preference. Request-time by design (the
+                // backend reads the flow per decode; no reload).
+                if (isWhistleBackend) {
+                    SearchFilterRow(searchQuery, SettingsSearchId.KEYWORD_BIASING, searchState) {
+                        KeywordBiasingCard(
+                            terms = viewModel.currentKeywordBiasing.collectAsState().value,
+                            onSave = { viewModel.saveKeywordBiasing(it) },
+                        )
+                    }
                 }
 
                 // Maintainer decision 2026-09-30: diarization settings moved
@@ -3548,6 +3583,19 @@ private fun SignatureTextCard(
     placeholderRes = R.string.signature_default_text,
 )
 
+/** TASK-858: the whistle keyword-biasing editor (the EditablePromptCard shape). */
+@Composable
+private fun KeywordBiasingCard(
+    terms: String,
+    onSave: (String) -> Unit,
+) = EditablePromptCard(
+    prompt = terms,
+    onSave = onSave,
+    titleRes = R.string.keyword_biasing_title,
+    descriptionRes = R.string.keyword_biasing_description,
+    placeholderRes = R.string.keyword_biasing_placeholder,
+)
+
 @Composable
 private fun signaturePositionLabel(value: String): String = when (value) {
     "prepend" -> stringResource(R.string.signature_position_prepend)
@@ -3616,7 +3664,7 @@ internal enum class SettingsSearchId {
     REFINEMENT, REFINEMENT_MODEL, DIARIZATION_HUB, VAD, PROGRESSIVE, EARLY_PREVIEW,
     INTERRUPTED_RUN_NOTIFICATIONS,
     PUNCTUATION_MODE, PUNCTUATION_PROMPT, SUMMARIZE, SUMMARY_PROMPT, SIGNATURE,
-    DEFAULT_PROMPT, KEEP_ALIVE_TIMEOUT,
+    DEFAULT_PROMPT, KEYWORD_BIASING, KEEP_ALIVE_TIMEOUT, FREEZE_PROTECTION,
     // Appearance
     THEME, APP_ICON, APP_LANGUAGE, SWIPE_ACTION, CONVERSATION_GROUPING,
     COMPACT_RESULT_ACTIONS, TECHNICAL_DETAILS, LANGUAGE_CHIP, RETRANSCRIBE, ADVANCED_SHARE_FORMATS,
@@ -3656,6 +3704,8 @@ internal enum class SettingsSearchGroup(val labelRes: Int) {
  */
 internal data class SettingsSearchState(
     val isLlmBackend: Boolean,
+    /** TASK-858: the keyword-biasing card exists only on the whistle backend. */
+    val isWhistleBackend: Boolean,
     val isModelLoaded: Boolean,
     val gemmaConfigured: Boolean,
     /**
@@ -3724,6 +3774,7 @@ internal fun SettingsSearchCard.outerSectionGate(state: SettingsSearchState): Bo
         state.gemmaConfigured && !state.isLlmBackend
     SettingsSearchId.SUMMARY_PROMPT -> state.gemmaConfigured
     SettingsSearchId.DEFAULT_PROMPT -> state.isLlmBackend
+    SettingsSearchId.KEYWORD_BIASING -> state.isWhistleBackend
     else -> true
 }
 
@@ -3760,6 +3811,11 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     SettingsSearchCard(
         SettingsSearchId.VAD, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.vad_title, R.string.vad_description),
+        group = SettingsSearchGroup.DECODING,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.FREEZE_PROTECTION, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.freeze_protection_title, R.string.freeze_protection_description),
         group = SettingsSearchGroup.DECODING,
     ),
     SettingsSearchCard(
@@ -3829,6 +3885,16 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         visible = { s -> s.isLlmBackend },
         group = SettingsSearchGroup.GEMMA_TEXT,
         advanced = true,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.KEYWORD_BIASING, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.keyword_biasing_title, R.string.keyword_biasing_description,
+            R.string.keyword_biasing_placeholder),
+        visible = { s -> s.isWhistleBackend },
+        // Deliberately ungrouped: the DECODING cluster lives inside the
+        // advanced reveal (a contiguous tree run the registry pins); this
+        // card renders in the basic block beside the model-specific
+        // default-prompt hub, and a one-card group header would be noise.
     ),
     // The GH #83 speaker-labels toggle.
     // Maintainer decision 2026-09-30: the diarization hub. Union

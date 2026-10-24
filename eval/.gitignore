@@ -24,3 +24,4 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.fleurs_cache/

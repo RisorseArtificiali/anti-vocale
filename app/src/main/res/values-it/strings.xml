@@ -1302,4 +1302,9 @@
     <string name="backup_import_history_failed">Impostazioni importate, ma non è stato possibile aggiungere la cronologia. Riprovare è sicuro.</string>
     <string name="backup_disclosure_title">Prima di esportare</string>
     <string name="backup_disclosure_body">Il backup contiene ogni trascrizione, nome mittente ed etichetta parlante in testo leggibile. Condividilo solo con destinazioni di cui ti fidi.</string>
+    <string name="keyword_biasing_title">Bias delle parole chiave (Whistle)</string>
+    <string name="keyword_biasing_description">Nomi, luoghi o termini tecnici che il modello Whistle deve favorire, uno per riga. Vale dalla trascrizione successiva, senza ricaricare.</string>
+    <string name="keyword_biasing_placeholder">Un termine per riga</string>
+    <string name="freeze_protection_title">Protezione trascrizione in background</string>
+    <string name="freeze_protection_description">Mantiene un flusso audio silenzioso attivo durante la trascrizione, così i risparmiatori di batteria aggressivi non possono sospendere l\'app. Attivala se la trascrizione si blocca a schermo spento (alcuni telefoni Oppo, Realme, OnePlus e Vivo).</string>
 </resources>

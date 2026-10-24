@@ -11,7 +11,11 @@ Periodic reconnaissance skill for discovering new ASR models, framework releases
 
 ## Purpose
 
-Identify new or updated models and frameworks that could improve transcription quality in any language our users transcribe (Italian is the maintainer's reference benchmark, not the only axis), reduce model size, speed up inference on Android ARM64 devices, or extend language coverage. Coverage extends through TWO channels: the built-in catalog (app release required) and the external-model platform (community catalog plus user imports for the Transducer/Whisper/CTC/SenseVoice/Canary/Moonshine/Dolphin families (ExternalModels.kt declares seven); a catalog entry reaches users TODAY with no app release).
+Identify new or updated models and frameworks that could improve transcription quality in any of our TRADITION languages (maintainer directive 2026-10-21: the interest is no longer Italian-only; the set is every language we have a history with, mirroring our users), reduce model size, speed up inference on Android ARM64 devices, or extend language coverage.
+
+**Tradition languages** (the scout's reference set; maintain this list when locales, catalog entries, or per-language sweeps add to it - derive from UI locales UNION catalog coverage UNION past sweeps):
+
+it (reference bench, our eval harness), en, de (+ Swiss German), es, fr, pt (pt-BR users), nl, pl, ru, tr, uk, hi, fa (Shenava catalog line), he (ivrit-ai line), el (our own fine-tune work), vi, ko, zh, ar (with the ar-EG dialectal axis), fi (requested 2026-10-06). Coverage extends through TWO channels: the built-in catalog (app release required) and the external-model platform (community catalog plus user imports for the Transducer/Whisper/CTC/SenseVoice/Canary/Moonshine/Dolphin families (ExternalModels.kt declares seven); a catalog entry reaches users TODAY with no app release).
 
 ## Current Baseline
 
@@ -53,7 +57,7 @@ Parse the user's request to determine scope. Default to `full` if unspecified:
 
 Score every finding 1-5 on each, then compute weighted composite:
 
-1. **Target-language quality impact** (weight: 3x): Will this improve WER/CER in a language our users transcribe? Name the languages the evidence covers and cite the benchmark or community report. Italian has our eval harness (eval/); for other languages rely on published WER, model cards, and community reports, and label the confidence honestly.
+1. **Tradition-language quality impact** (weight: 3x): Will this improve WER/CER in one of the TRADITION languages listed above? Name the languages the evidence covers and cite the benchmark or community report, and weigh a finding for a tradition language with NO current good option (a coverage gap) higher than a marginal gain where we are already strong. Italian has our eval harness (eval/); for every other language rely on published WER, model cards, and community reports, and label the confidence honestly (unverified quality is the norm for long-tail languages: say it).
 2. **Size efficiency** (weight: 2x): Under 1GB for ASR / 5GB for LLM with good quality-per-MB?
 3. **On-device feasibility** (weight: 2x): Runs on Android ARM64 via sherpa-onnx or LiteRT-LM?
 4. **Language coverage breadth** (weight: 1x): Which languages does the app serve today (built-in catalog sets, the streaming entry, and the community catalog) and which gaps does this fill? A model for a language with NO current good option scores high here.

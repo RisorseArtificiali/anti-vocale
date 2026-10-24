@@ -184,6 +184,7 @@ class InferenceServiceTeardownRaceTest {
             releaseAutoCopy.await()
             emit(false) // auto-copy off: skip the clipboard/toast machinery
         }
+        every { preferences.freezeProtectionEnabled } returns flowOf(false) // keepalive gate off: this race never starts one
         every { preferences.outputFolderUri } returns flowOf(null) // auto-save disabled
         // saveAuto reads the format even when the folder is null (both are
         // call arguments); the strict mock must answer.
@@ -289,4 +290,59 @@ class InferenceServiceTeardownRaceTest {
         Shadows.shadowOf(service.getSystemService(NotificationManager::class.java))
             .allNotifications
             .filter { it.channelId == InferenceService.RESULT_CHANNEL_ID }
+
+    /**
+     * GH #67 branch, review F3-6: pin the keepalive's batch-scoped lifecycle
+     * at the SERVICE level (the isolated class test cannot see the drain
+     * wiring). One batch = exactly one start and one stop, in order; a
+     * second batch starts it again. The silentKeepalive field is a var so
+     * the same reflection injection used for the other dependencies lands a
+     * recording mock here.
+     */
+    @Test
+    fun `the keepalive starts and stops with the batch, once per batch`() {
+        val controller = Robolectric.buildService(InferenceService::class.java)
+        val service = controller.create().get()
+
+        val preferences = mockk<PreferencesManager>()
+        every { preferences.freezeProtectionEnabled } returns flowOf(true) // the toggle ON
+        every { preferences.autoCopyEnabled } returns flowOf(false)
+        every { preferences.outputFolderUri } returns flowOf(null)
+        every { preferences.transcriptExportFormat } returns flowOf("TXT")
+
+        val keepalive = mockk<SilentAudioKeepalive>(relaxed = true)
+        val orchestrator = mockk<TranscriptionOrchestrator>(relaxed = true)
+
+        inject(service, "preferencesManager", preferences)
+        inject(service, "silentKeepalive", keepalive)
+        inject(service, "perAppPreferencesManager", mockk<PerAppPreferencesManager>(relaxed = true))
+        inject(service, "orchestrator", orchestrator)
+        inject(service, "logDao", mockk<LogDao>(relaxed = true))
+
+        fun enqueue(taskId: String) {
+            val intent = Intent().apply {
+                putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
+                putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
+                putExtra(TaskerRequestReceiver.EXTRA_PROMPT, "")
+                putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, "/nonexistent/$taskId.wav")
+            }
+            service.onStartCommand(intent, 0, 1)
+        }
+
+        enqueue("ka-1")
+        runBlocking { withTimeout(TIMEOUT_MS) { drainJobOf(service).join() } }
+        io.mockk.verifyOrder {
+            keepalive.start()
+            keepalive.stop()
+        }
+        io.mockk.verify(exactly = 1) { keepalive.start() }
+        io.mockk.verify(exactly = 1) { keepalive.stop() }
+
+        // A second batch starts it again: the toggle is per-batch, and the
+        // first stop must not have wedged the lifecycle.
+        enqueue("ka-2")
+        runBlocking { withTimeout(TIMEOUT_MS) { drainJobOf(service).join() } }
+        io.mockk.verify(exactly = 2) { keepalive.start() }
+        io.mockk.verify(exactly = 2) { keepalive.stop() }
+    }
 }

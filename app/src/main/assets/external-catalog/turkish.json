@@ -1,0 +1,29 @@
+{
+  "name": "Whisper Small Turkish (sherpa int8, fine-tune)",
+  "family": "WHISPER",
+  "modelType": "",
+  "languages": [
+    "tr"
+  ],
+  "options": {},
+  "files": [
+    {
+      "name": "small-encoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/whisper-small-turkish-sherpa/resolve/main/small-encoder.int8.onnx",
+      "sha256": "769f26951d324ff3fd9516f5a3db233ca9adf7f6c85ac5e515f832408de851d1",
+      "size": 112413411
+    },
+    {
+      "name": "small-decoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/whisper-small-turkish-sherpa/resolve/main/small-decoder.int8.onnx",
+      "sha256": "a23e7a9c50babff5efca67a80d493506c7859c8f095ab4df7098a4c30560444e",
+      "size": 262200764
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/pantinor/whisper-small-turkish-sherpa/resolve/main/tokens.txt",
+      "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+      "size": 816730
+    }
+  ]
+}

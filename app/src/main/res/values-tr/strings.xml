@@ -1296,4 +1296,9 @@
     <string name="backup_import_history_failed">Ayarlar içe aktarıldı ancak geçmiş eklenemedi. Yeniden denemek güvenlidir.</string>
     <string name="backup_disclosure_title">Dışa aktarmadan önce</string>
     <string name="backup_disclosure_body">Yedek, her transkripsiyonu, gönderen adını ve konuşmacı etiketini okunabilir metin olarak içerir. Yalnızca güvendiğiniz kişilerle paylaşın.</string>
+    <string name="keyword_biasing_title">Anahtar kelime eğilimi (Whistle)</string>
+    <string name="keyword_biasing_description">Whistle modelinin tercih etmesi gereken isimler, yerler veya terimler, her satıra bir tane. Yeniden yüklemeden bir sonraki transkripsiyonda geçerlidir.</string>
+    <string name="keyword_biasing_placeholder">Satır başına bir terim</string>
+    <string name="freeze_protection_title">Arka plan transkripsiyon koruması</string>
+    <string name="freeze_protection_description">Transkripsiyon sırasında sessiz bir ses akışını etkin tutar, böylece agresif pil tasarrufu araçları uygulamayı duraklatamaz. Ekran kapalıyken transkripsiyon duruyorsa açın (bazı Oppo, Realme, OnePlus ve Vivo telefonlar).</string>
 </resources>

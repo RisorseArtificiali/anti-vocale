@@ -71,4 +71,26 @@ object BuiltInBackendIds {
      */
     fun isRemoteOmnivoice(id: String): Boolean =
         id == RemoteOmnivoiceBackend.BACKEND_ID
+
+    /**
+     * TASK-858: the ONE is-Whistle predicate, the [isLlm] pattern: every UI
+     * and cross-layer check for the backend routes through here. Settings
+     * cards gate on it (the keyword-biasing card) so the raw id compare has
+     * one owner. Transcription-layer internals may compare the constant
+     * directly (same package).
+     */
+    fun isWhistle(id: String): Boolean =
+        id == WHISTLE
+
+    /**
+     * TASK-865/C: whether [id]'s card and switch affordances are hidden on
+     * THIS build because its engine is a stub (-PwhistleEngineDisabled: the
+     * F-Droid recipe). The ONE owner of the hide predicate: every surface
+     * (catalog card, curated recommendations, the switch shortcut) asks
+     * here, so a future stub axis extends one definition, not N copies.
+     * Presence-keyed like the gradle property itself: a bare flag or any
+     * value stubs; there is deliberately no per-build override.
+     */
+    fun hiddenOnStubBuild(id: String): Boolean =
+        com.antivocale.app.BuildConfig.WHISTLE_ENGINE_DISABLED && isWhistle(id)
 }

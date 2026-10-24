@@ -49,7 +49,7 @@ sealed interface DownloadButtonState {
     /** Whisper-specific: show Extract button. */
     data object NeedsExtraction : DownloadButtonState
 
-    /** Whisper-specific: show Clear (orphaned files) button. */
+    /** Orphaned files: show the Clear button (whistle on stub builds reaches this too). */
     data object Orphaned : DownloadButtonState
 
     /** Downloaded but a newer artifact version exists: show Use + Update + Delete. */

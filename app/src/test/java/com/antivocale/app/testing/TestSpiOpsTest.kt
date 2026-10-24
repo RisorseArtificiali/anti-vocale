@@ -452,7 +452,7 @@ class TestSpiOpsTest {
         // help is a known op: it must NOT carry the unknown-op error (device
         // verification 2026-09-03 caught the dispatch bug this pins).
         assertFalse(json.has("error"))
-        assertEquals(listOf("get", "set", "records", "identity_cache", "import", "notify_memory_error", "clipboard", "notifications", "unload", "voice_note_state", "model_download", "help"), json.getJSONArray("ops").optStringList())
+        assertEquals(listOf("get", "set", "records", "identity_cache", "import", "notify_memory_error", "clipboard", "notifications", "unload", "voice_note_state", "model_download", "clear_orphaned", "help"), json.getJSONArray("ops").optStringList())
         assertEquals(ops.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))
         assertTrue(json.getString("transcription").contains("com.antivocale.app.PROCESS_REQUEST"))
@@ -461,6 +461,16 @@ class TestSpiOpsTest {
     @Test
     fun `model_download answers the context-required error under the unit fakes`() = runTest {
         val json = JSONObject(ops.handle(TestSpiOps.OP_MODEL_DOWNLOAD, entry = "llm", value = "gemma-4-e2b"))
+        assertTrue(json.has("error"))
+        assertTrue(json.getString("error").contains("Context"))
+    }
+
+    @Test
+    fun `clear_orphaned answers the context-required error under the unit fakes`() = runTest {
+        // The happy path deletes files (device-trial concern); this pins
+        // the dispatch arm, the requireContext-BEFORE-validation order the
+        // shared-helper consolidation preserved, and loud failure.
+        val json = JSONObject(ops.handle(TestSpiOps.OP_CLEAR_ORPHANED, entry = "whistle", value = "v1"))
         assertTrue(json.has("error"))
         assertTrue(json.getString("error").contains("Context"))
     }

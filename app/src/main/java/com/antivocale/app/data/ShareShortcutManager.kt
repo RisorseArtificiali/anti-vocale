@@ -13,6 +13,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.Icon
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.R
 import com.antivocale.app.receiver.ModelShortcutActivity
 import com.antivocale.app.receiver.ShareReceiverActivity
@@ -185,7 +186,16 @@ class ShareShortcutManager(
                 // published share ids: a backend dropped from share candidacy
                 // (its dir vanished) is still offered as a switch entry,
                 // where the trampoline reports the failure loudly.
-                val modelCandidates = ranked.filter { it !in shareIds }
+                // TASK-865/C: stub builds never offer a Whistle switch
+                // shortcut. The carry path is a same-keystore FLAVOR switch
+                // (GitHub release APKs share one signing config across the
+                // playStore and fdroid flavors, so data survives in place);
+                // a cross-store switch cannot carry data (different keys).
+                // The tap would activate an engine that cannot load; the
+                // loud trampoline failure class is for models a user
+                // deliberately picked, not for a stale carry-over.
+                val modelCandidates = ranked
+                    .filter { it !in shareIds && !BuiltInBackendIds.hiddenOnStubBuild(it) }
                     .take(minOf(MAX_MODEL_SHORTCUTS, (dynamicBudget - shareCandidates.size).coerceAtLeast(0)))
                     .mapIndexedNotNull { i, backendId ->
                         resolveCandidate(backendId, shareCandidates.size + i, switchOnly = true)

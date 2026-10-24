@@ -86,32 +86,32 @@ data class VadResult(
             val rawSegments = mutableListOf<RawSegment>()
             val totalSamples = pcmSamples.size
 
-            while (!vad.empty()) {
-                val segment: SpeechSegment = vad.front()
-                val start = segment.start.coerceIn(0, totalSamples)
-                val end = (segment.start + segment.samples.size).coerceIn(0, totalSamples)
-                val sampleCount = end - start
-                vad.pop()
+            // Drains the VAD's emitted segments into rawSegments. Shared by
+            // the pre-flush and post-flush passes (the file's padStart/
+            // padEnd local-function idiom for segment math that both
+            // passes need; sherpa 2.0.0 #4079 widened SpeechSegment.start
+            // to Long, so the bounds coerce in Long and narrow back - our
+            // segment math stays Int, bounded by totalSamples).
+            fun drainSegments() {
+                while (!vad.empty()) {
+                    val segment: SpeechSegment = vad.front()
+                    val start = segment.start.coerceIn(0L, totalSamples.toLong()).toInt()
+                    val end = (segment.start + segment.samples.size)
+                        .coerceIn(0L, totalSamples.toLong()).toInt()
+                    val sampleCount = end - start
+                    vad.pop()
 
-                if (sampleCount >= SAMPLE_RATE / 4) {
-                    rawSegments.add(RawSegment(start, end))
+                    if (sampleCount >= SAMPLE_RATE / 4) {
+                        rawSegments.add(RawSegment(start, end))
+                    }
                 }
             }
+
+            drainSegments()
 
             // Flush to emit final pending segment
             vad.flush()
-
-            while (!vad.empty()) {
-                val segment: SpeechSegment = vad.front()
-                val start = segment.start.coerceIn(0, totalSamples)
-                val end = (segment.start + segment.samples.size).coerceIn(0, totalSamples)
-                val sampleCount = end - start
-                vad.pop()
-
-                if (sampleCount >= SAMPLE_RATE / 4) {
-                    rawSegments.add(RawSegment(start, end))
-                }
-            }
+            drainSegments()
 
             // Apply minimal padding and merge overlapping segments (for progressive display)
             val finalSegments: List<FloatArray>

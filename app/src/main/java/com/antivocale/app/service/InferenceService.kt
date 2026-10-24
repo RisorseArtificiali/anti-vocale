@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
@@ -99,6 +100,19 @@ class InferenceService : Service(), TranscriptionListener {
         /** TASK-271: the detected voice-note offer's Transcribe action; not a share request. */
         const val SOURCE_VOICE_NOTE = "voice_note"
 
+        /**
+         * Which completed requests post the result notification: shares
+         * (TASK-688's design) and automatic voice notes. A voice note is
+         * transcribed with zero taps, so without the notification the
+         * result is only discoverable by opening History; the README and
+         * FAQ promise it, and the automatic route is the one origin where
+         * the user is not already looking at the app. Everything else
+         * share-gated (auto-copy, partial saves, the filter seed) stays
+         * share-only.
+         */
+        internal fun postsResultNotification(isShareRequest: Boolean, source: String?): Boolean =
+            isShareRequest || source == SOURCE_VOICE_NOTE
+
         /** Sources that never get a Tasker-style reply broadcast: every
          *  in-app origin has no legitimate listener, so the reply would be
          *  a world-visible broadcast carrying the full transcript (the
@@ -158,6 +172,26 @@ class InferenceService : Service(), TranscriptionListener {
     @Volatile private var currentTaskJob: Job? = null
     @Volatile private var transcriptionStartTime: Long = 0
     private val pendingCount = AtomicInteger(0)
+    // The drain's single-entry gate (see processQueue): compareAndSet, never a
+    // check-then-act on _isTranscribing, which a suspend read can interleave.
+    private val drainEntered = AtomicBoolean(false)
+
+    // GH #67 core mechanism (scoped extraction): held while a batch runs,
+    // released when the queue drains; see the class KDoc for why a silent
+    // track is what an OEM freezer respects.
+    // var for the service-level tests (reflection injection, the same seam
+    // the race tests use for preferencesManager/orchestrator).
+    private var silentKeepalive = SilentAudioKeepalive(TAG)
+
+    /**
+     * The ONE 'no batch remains' predicate (review: the invariant had
+     * four call sites and no owner). Both teardown paths (the drain's
+     * post-join stop and the cancel path's) route through it, so a
+     * batch enqueued during a join window keeps its service, its
+     * notification, and its keepalive.
+     */
+    private fun batchIdle(): Boolean =
+        requestQueue.isEmpty() && pendingCount.get() == 0 && !_isTranscribing.value
     private val resultNotificationFactory: ResultNotificationFactory by lazy { ResultNotificationFactory(this) }
 
 
@@ -292,6 +326,7 @@ class InferenceService : Service(), TranscriptionListener {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        silentKeepalive.stop()
         super.onDestroy()
         serviceScope.cancel()
         Log.i(TAG, "Service destroyed")
@@ -301,7 +336,12 @@ class InferenceService : Service(), TranscriptionListener {
 
     private fun processQueue() {
         currentProcessingJob = serviceScope.launch {
-            if (_isTranscribing.value) {
+            // The atomic gate, not a check-then-act on _isTranscribing: the
+            // suspend preference read inside the try used to sit between the
+            // flag read and write, so two concurrent drains could both pass
+            // the stale false flag and process tasks concurrently (double
+            // model load, clobbered currentTaskId: the OOM class).
+            if (!drainEntered.compareAndSet(false, true)) {
                 Log.d(TAG, "Already processing, request will wait in queue")
                 return@launch
             }
@@ -311,6 +351,14 @@ class InferenceService : Service(), TranscriptionListener {
             var currentIndex = 0
 
             try {
+                // GH #67 (scoped): opt-in via Settings (DEFAULT OFF); the toggle is
+                // the reliability setting for freezer-ROMs, not a default behavior.
+                // Read here, on the batch-owning coroutine and inside the try, so
+                // a cancellation during the read still clears the flag below.
+                // Idempotent start: this pass is the single one that owns the
+                // batch, so follow-up enqueues while it runs never re-start.
+                if (preferencesManager.freezeProtectionEnabled.first()) silentKeepalive.start()
+
                 while (requestQueue.isNotEmpty()) {
                     val request = requestQueue.poll() ?: continue
                     pendingCount.decrementAndGet()
@@ -396,12 +444,32 @@ class InferenceService : Service(), TranscriptionListener {
                 // never reach here anymore, they only cancel the child task job.
                 Log.i(TAG, "Processing cancelled by user")
                 failQueuedLogs("Cancelled")
-                requestQueue.clear()
+                // The queued ids leave with the queue (review: without this
+                // sweep they stay in inFlightTaskIds forever and a Tasker
+                // request reusing one is dropped as a duplicate until the
+                // process dies). Poll-drain, not forEach+clear: clearing the
+                // whole queue atomically can delete a retry that re-enqueued
+                // with the same id after its sweep, leaving that id poisoned
+                // for the process lifetime.
+                while (true) {
+                    val queued = requestQueue.poll() ?: break
+                    inFlightTaskIds.remove(queued.taskId)
+                }
                 pendingCount.set(0)
             } finally {
                 currentTaskId = null
                 currentTaskJob = null
                 _isTranscribing.value = false
+                drainEntered.set(false)
+                // The finally (not the post-join path) owns the keepalive
+                // stop: an escaped Error from native code skips everything
+                // after the try, and a looping track must never outlive
+                // its batch. The guard holds because a coroutine past
+                // start() either still has its request in the queue (queue
+                // clause) or set _isTranscribing before its first poll
+                // (flag clause); a batch holding a started keepalive can
+                // never see batchIdle() true here.
+                if (batchIdle()) silentKeepalive.stop()
             }
 
             // Wait for any pending result-notification jobs before teardown:
@@ -410,8 +478,20 @@ class InferenceService : Service(), TranscriptionListener {
             val pending = synchronized(pendingResultNotifications) { pendingResultNotifications.toList() }
             pending.forEach { it.join() }
 
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            // The SAME idle guard as the cancel path: a batch enqueued
+            // during the join window is live work; tearing down here
+            // would kill it via onDestroy's scope cancel.
+            if (batchIdle()) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            }
+
+            // Re-kick: a request landing in the window between the while
+            // exit and the finally's gate release stranded before (its own
+            // processQueue early-returned at the gate, and teardown was
+            // skipped by the same non-idle queue); without this kick it
+            // waits forever for the next onStartCommand.
+            if (requestQueue.isNotEmpty()) processQueue()
         }
     }
 
@@ -430,8 +510,14 @@ class InferenceService : Service(), TranscriptionListener {
         serviceScope.launch {
             val pending = synchronized(pendingResultNotifications) { pendingResultNotifications.toList() }
             pending.forEach { it.join() }
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            // A batch enqueued during the join window owns the keepalive
+            // now: stopping it here would strip the freezer protection
+            // from a live batch (the burst-share race).
+            if (batchIdle()) {
+                silentKeepalive.stop()
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            }
         }
     }
 
@@ -671,6 +757,10 @@ class InferenceService : Service(), TranscriptionListener {
         // DRAFT-12 (TASK-598 boundary): the Tasker reply carries the same
         // annotated form every other surface delivers on diarized runs.
         val annotatedResult = SubtitleFormatter.annotatedOrStored(resultText, segments)
+        // Read before forgetRequester drops the request.
+        val request = requesterByTask[taskId]
+        val postsResult = postsResultNotification(isShareRequest, request?.source)
+        val fromVoiceNote = request?.source == SOURCE_VOICE_NOTE
         sendSuccessReply(taskId, annotatedResult)
         forgetRequester(taskId)
         // Every completed task moves the model-recency source: re-derive the
@@ -712,15 +802,18 @@ class InferenceService : Service(), TranscriptionListener {
                     // A non-share failure has no result notification to ride
                     // the subtext of: a dedicated one names the reason.
                     val failureReason = saveResult.failureOrNull()
-                    if (!isShareRequest && failureReason != null) {
+                    if (!postsResult && failureReason != null) {
                         resultNotificationFactory.postSaveFailure(failureReason)
                     }
                 }
-                if (isShareRequest) {
+                if (postsResult) {
                     // TASK-598 review F3: auto-copy must deliver the same text
                     // the notification's Copy action delivers (the annotated
                     // form derived once above, reused by the Tasker reply).
-                    val copied = autoCopyIfEnabled(annotatedResult, sourcePackage)
+                    // Auto-copy stays share-only: an automatic voice note
+                    // arriving in the background must not overwrite the
+                    // clipboard unasked.
+                    val copied = isShareRequest && autoCopyIfEnabled(annotatedResult, sourcePackage)
                     val refinedFrom = refinementOutcome?.takeIf { it != DualRefinementPolicy.NOT_REFINED }
                     resultNotificationFactory.postResult(
                         preferencesManager, perAppPreferencesManager,
@@ -733,6 +826,8 @@ class InferenceService : Service(), TranscriptionListener {
                         notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED,
                         repetitionSuspected = repetitionSuspected,
                         originTag = "InferenceService",
+                        fromVoiceNote = fromVoiceNote,
+                        senderName = request?.senderName.takeIf { fromVoiceNote },
                     )
                 }
             } finally {

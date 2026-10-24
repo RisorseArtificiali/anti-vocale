@@ -661,6 +661,17 @@ fun ModelTab(
         // One generic section per catalog entry — all model-specific behavior lives in the
         // catalog, never in hard-coded per-model UI.
         catalogEntriesVisible.forEach { entry ->
+            // TASK-865/C: stub builds hide the Whistle card, EXCEPT when
+            // on-disk cleanup work keeps the card on stub builds: the
+            // variant card is the only removal surface (the startup cleaner
+            // deliberately keeps current-named dirs), so hiding it would
+            // strand up to 17 MB after a same-keystore flavor switch.
+            // TASK-870 closes the stub-build corner of this exception: an
+            // orphaned dir offers Clear, never a fresh download of an
+            // unloadable engine. (A corrupted dir on a FULL build still
+            // hits Idle; there the re-download is loadable, so benign.)
+            if (BuiltInBackendIds.hiddenOnStubBuild(entry.id)
+                && !catalogStates[entry.id].hasCleanupWork()) return@forEach
             val visibleVariants = remember(entry.id, filterLanguageCode) {
                 filterVariants(CatalogVariantUi.forEntry(entry.id), filterLanguageCode) { it.supportedLanguageCodes }
             }
@@ -1041,6 +1052,11 @@ private fun CuratedLanguageSection(
                 is CuratedProfiles.Recommendation.Bundled -> {
                     // TASK-675: skip demoted entries (see demotedBackendIds above).
                     if (recommendation.entryId in demotedBackendIds) return@forEach
+                    // No profile recommends whistle today; a future one
+                    // inherits the hide (a curated card would offer the
+                    // download, which the present-state exception above
+                    // deliberately does not extend here).
+                    if (BuiltInBackendIds.hiddenOnStubBuild(recommendation.entryId)) return@forEach
                     val entry = BundledCatalog.byId(recommendation.entryId)
                     val variants = entry?.let {
                         CatalogVariantUi.forEntry(it.id).filter { variant ->
@@ -1420,7 +1436,12 @@ private fun CatalogModelSection(
                         buttonState = when {
                             variantState?.isDownloading == true -> DownloadButtonState.Downloading
                             state.downloadedVariants.contains(variant.variantName) -> DownloadButtonState.Downloaded
-                            isOrphaned && needsExtraction -> DownloadButtonState.Orphaned
+                            // TASK-870: on stub builds an orphaned dir
+                            // must offer the clear affordance, never a
+                            // fresh download of an unloadable engine (the
+                            // 866 hide-exception's residual corner).
+                            isOrphaned && (needsExtraction
+                                || BuiltInBackendIds.hiddenOnStubBuild(entry.id)) -> DownloadButtonState.Orphaned
                             needsExtraction -> DownloadButtonState.NeedsExtraction
                             variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
                             else -> DownloadButtonState.Idle
@@ -1459,7 +1480,7 @@ private fun CatalogModelSection(
                     // whistle would unload the warm engine and then fail the
                     // config-type check. TASK-365: the LLM entry joins the
                     // same gate (no benchmark config builder for it either).
-                    onBenchmarkClick = if (entry.id == BuiltInBackendIds.WHISTLE
+                    onBenchmarkClick = if (BuiltInBackendIds.isWhistle(entry.id)
                         || entry.id == com.antivocale.app.transcription.LlmTranscriptionBackend.BACKEND_ID) null else {
                         {
                         val path = SherpaModelDownloader.of(entry.id).getModelPath(context, variant.variantName)
@@ -1614,6 +1635,23 @@ private val FAMILY_OPTIONS = listOf(
 @Composable
 private fun familyLabel(family: ModelFamily): String = stringResource(
     FAMILY_OPTIONS.first { it.first == family }.second)
+
+/**
+ * TASK-866: true when the entry has on-disk work whose removal or repair
+ * runs through the variant card (downloaded weights, an orphaned dir the
+ * startup cleaner deliberately keeps, or a pending extraction). Such an
+ * entry must stay visible even on stub builds; a null state (refresh not
+ * landed) counts as no work, hiding as before. On stub builds an
+ * orphaned dir renders the clear affordance (TASK-870), so the
+ * corrupted-dir corner only survives on FULL builds, where the Idle
+ * re-download is at least loadable and therefore benign.
+ */
+internal fun ModelViewModel.ModelEntryUiState?.hasCleanupWork(): Boolean =
+    this != null && (
+        downloadedVariants.isNotEmpty()
+            || orphanedVariants.isNotEmpty()
+            || variantsNeedingExtraction.isNotEmpty()
+        )
 
 /**
  * Family selection + conditional options for external-model imports. One immutable

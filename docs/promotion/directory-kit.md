@@ -50,8 +50,10 @@ I built an Android app that transcribes WhatsApp/Telegram voice messages
 entirely on the phone. No cloud, no account: recognition runs on-device
 (sherpa-onnx + LiteRT-LM runtimes in the APK; the models download at
 runtime, your choice). Italian and 24+ European languages, automatic
-language detection, several models from fast to accurate, video-file
-audio extraction, auto-copy, auto-save to any folder.
+language detection, models from fast to accurate down to a 17MB entry
+tier with keyword biasing, automatic WhatsApp voice-note transcription
+(opt-in, sender-labelled), video-file audio extraction, auto-copy,
+auto-save to any folder, settings/history backup.
 
 Why: WhatsApp's native transcription does not cover Italian on Android,
 and the third-party alternatives upload your audio. If the audio never

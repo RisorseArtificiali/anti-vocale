@@ -1,6 +1,7 @@
 package com.antivocale.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -90,7 +91,11 @@ fun SectionCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             CardTitleRow(icon = icon, title = title, iconTint = iconTint)
-            description?.let { CardDescription(it) }
+            // B (2026-10-20): same title-column indent as ToggleSettingCard
+            // (24dp icon + 8dp gap), the one settings-screen text grid.
+            description?.let {
+                Box(modifier = Modifier.padding(start = 32.dp)) { CardDescription(it) }
+            }
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             content()
         }

@@ -11,6 +11,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 /**
@@ -35,6 +36,7 @@ import kotlinx.coroutines.withContext
 @Singleton
 class WhistleBackend @Inject constructor(
     @ApplicationScope private val appScope: CoroutineScope,
+    private val preferences: PreferencesManager,
 ) : TranscriptionBackend {
 
     private var configuredLanguage: String? = null
@@ -158,8 +160,19 @@ class WhistleBackend @Inject constructor(
             if (cactPath == null) {
                 return@withWork Result.failure(TranscriptionException.NotInitialized())
             }
+            // TASK-858: keyword biasing is REQUEST-time, not residency
+            // identity (an edit applies to the next decode with no reload):
+            // the orchestrator's .first() pattern on the cache-seeded flow.
+            // Newline OR comma separators (lenient parse: a pasted
+            // comma-separated list must not reach the engine as one giant
+            // hotword; commas INSIDE a term are meaningless anyway, the
+            // native boundary joins with \n).
+            val keywords = preferences.keywordBiasing.first()
+                .split('\n', ',')
+                .map(String::trim)
+                .filter(String::isNotEmpty)
             val result = withContext(Dispatchers.IO) {
-                WhistleNative.transcribe(samples, language)
+                WhistleNative.transcribe(samples, language, keywords)
             } ?: run {
                 Log.w(TAG, "transcribe failed: " + WhistleNative.lastError())
                 return@withWork Result.failure(TranscriptionException.NativeError(

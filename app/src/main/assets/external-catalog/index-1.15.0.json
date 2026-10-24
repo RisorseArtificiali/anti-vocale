@@ -33,6 +33,14 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-spanish.json"
     },
     {
+      "name": "Distil Whisper Large v3 Brazilian Portuguese (sherpa int8)",
+      "languages": [
+        "pt"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/portuguese.json"
+    },
+    {
       "name": "Dolphin Small (19 Asian languages)",
       "languages": [
         "zh",
@@ -232,6 +240,14 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/arabic-small.json"
     },
     {
+      "name": "Whisper Small Turkish (sherpa int8, fine-tune)",
+      "languages": [
+        "tr"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/turkish.json"
+    },
+    {
       "name": "Whisper Tiny multilingual (sherpa int8, low-RAM)",
       "languages": [
         "multilingual"
@@ -263,14 +279,6 @@
       ],
       "family": "WHISPER",
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/swiss-german.json"
-    },
-    {
-      "name": "Zipformer Korean",
-      "languages": [
-        "ko"
-      ],
-      "family": "TRANSDUCER",
-      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/zipformer-korean.json"
     },
     {
       "name": "Zipformer Russian int8 (Vosk-based, sherpa)",

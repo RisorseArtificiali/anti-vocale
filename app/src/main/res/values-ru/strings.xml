@@ -1323,4 +1323,9 @@
     <string name="backup_import_history_failed">Настройки импортированы, но не удалось добавить историю. Повторить безопасно.</string>
     <string name="backup_disclosure_title">Перед экспортом</string>
     <string name="backup_disclosure_body">Копия содержит каждую расшифровку, имя отправителя и метку говорящего в читаемом виде. Передавайте её только тем, кому доверяете.</string>
+    <string name="keyword_biasing_title">Приоритет ключевых слов (Whistle)</string>
+    <string name="keyword_biasing_description">Имена, места или термины, которые модель Whistle должна предпочитать, по одному в строке. Действует со следующей расшифровки, без перезагрузки.</string>
+    <string name="keyword_biasing_placeholder">Один термин на строку</string>
+    <string name="freeze_protection_title">Защита фоновой расшифровки</string>
+    <string name="freeze_protection_description">Держит беззвучный аудиопоток активным во время расшифровки, чтобы агрессивные экономии батареи не приостанавливали приложение. Включите, если расшифровка останавливается при выключенном экране (некоторые Oppo, Realme, OnePlus и Vivo).</string>
 </resources>

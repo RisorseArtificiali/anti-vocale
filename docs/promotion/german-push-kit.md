@@ -30,7 +30,7 @@ Issue at codeberg.org/IzzyOnDroid/repodata, title
 **App name:** Anti-Vocale
 **Package:** com.antivocale.app
 **Summary:** Offline transcription of voice messages (WhatsApp, Telegram) and audio/video files, fully on-device.
-**Description:** Anti-Vocale converts voice messages into text entirely on the phone. No cloud, no account: recognition runs on-device via bundled AI runtimes (sherpa-onnx, LiteRT-LM); the ASR models themselves download at runtime, per the user's choice. Italian and 24+ European languages, automatic language detection, multiple models from fast to accurate, community-model import, video-file audio extraction, auto-copy and SAF auto-save. Open source (Apache 2.0), reproducible F-Droid build.
+**Description:** Anti-Vocale converts voice messages into text entirely on the phone. No cloud, no account: recognition runs on-device via bundled AI runtimes (sherpa-onnx, LiteRT-LM); the ASR models themselves download at runtime, per the user's choice. Italian and 24+ European languages, automatic language detection, models from fast to accurate down to a 17MB entry tier with keyword biasing, automatic WhatsApp voice-note transcription (opt-in, sender-labelled), community-model import, video-file audio extraction, auto-copy and SAF auto-save, settings/history backup. Open source (Apache 2.0), reproducible F-Droid build.
 **Website / source:** https://github.com/RisorseArtificiali/anti-vocale
 **License:** Apache-2.0
 **Track / addition channel:** F-Droid (com.antivocale.app), releases tagged on GitHub.

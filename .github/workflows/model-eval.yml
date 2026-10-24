@@ -1,0 +1,118 @@
+name: Model eval
+
+# TASK-867: the CI-able quality bench for model candidates. Born from the
+# 2026-10-21 tradition campaign (TASK-860/861) which ran entirely on a dev
+# Mac; this workflow moves it to GitHub runners so model probes stop
+# occupying maintainer hardware. Quality (WER/CER) runs on x86 by default;
+# set runner to ubuntu-24.04-arm for an approximate ARM RTF (free and
+# unlimited on public repos; still not a phone: no thermal envelope).
+#
+# The division of labor: CI promotes or disqualifies on QUALITY; the device
+# pass certifies the RUNTIME (RTF/RAM/load on real silicon). Neither
+# replaces the other.
+#
+# Inputs:
+#   entry: a community-catalog entry JSON URL (files + sha256 pins + family
+#            ride the entry: the single source of truth), e.g.
+#            https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/turkish.json
+#   langs: FLEURS configs, comma separated (tr_tr,ko_kr,pt_br)
+#   clips: clips per language (default 40; the 2026-10-21 campaign's number)
+#   mode: clip (per-clip, the default measurement) or segmented (one long
+#            stream chunked with the #162 reporter's field-tested rules)
+#   runner: ubuntu-24.04 (x86 quality) or ubuntu-24.04-arm (approx ARM RTF)
+
+on:
+  workflow_dispatch:
+    inputs:
+      entry:
+        description: 'Catalog entry JSON URL (raw-files mode is local-only, see eval/fleurs_bench.py)'
+        required: true
+      langs:
+        description: 'FLEURS configs (tr_tr,ko_kr,pt_br)'
+        required: true
+        default: 'tr_tr'
+      clips:
+        description: 'clips per language'
+        required: false
+        default: '40'
+      mode:
+        description: 'clip or segmented'
+        required: false
+        default: 'clip'
+      runner:
+        description: 'ubuntu-latest (x86 quality) or ubuntu-24.04-arm (ARM RTF)'
+        required: false
+        default: 'ubuntu-24.04'
+      baseline:
+        description: 'run the whisper-small reference too (true/false)'
+        required: false
+        default: 'true'
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    runs-on: ${{ github.event.inputs.runner || 'ubuntu-24.04' }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      # Content-addressed by the bench's own sha256 pins and owner-namespaced
+      # cache dirs, so the key only needs the langs (parquets + baseline)
+      # plus the entry (its model files). The script hash stays OUT: the
+      # artifacts are pinned, not script-dependent.
+      - name: Cache eval downloads
+        uses: actions/cache@v6
+        with:
+          path: eval/.fleurs_cache
+          key: fleurs-${{ github.event.inputs.langs }}-${{ github.event.inputs.entry }}
+          restore-keys: fleurs-${{ github.event.inputs.langs }}-
+
+      # ffmpeg comes from pip, not apt: the ubuntu-24.04 image's apt-get
+      # update hung for a full runner hour on the second dispatch (hung
+      # mirror). imageio-ffmpeg ships a static binary; the loader only
+      # needs "ffmpeg" on PATH.
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install imageio-ffmpeg
+          sudo ln -sf "$(python -c 'import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())')" /usr/local/bin/ffmpeg
+          ffmpeg -version | head -1
+          # requirements.txt is sherpa sync point 5 of 5: the wheel pinned
+          # there matches .sherpa-version, the shipped AAR.
+          pip install -r eval/requirements.txt
+
+      - name: Run bench
+        env:
+          ENTRY: ${{ github.event.inputs.entry }}
+          LANGS: ${{ github.event.inputs.langs }}
+          CLIPS: ${{ github.event.inputs.clips }}
+          MODE: ${{ github.event.inputs.mode }}
+          BASELINE: ${{ github.event.inputs.baseline }}
+        run: |
+          python eval/fleurs_bench.py --entry "$ENTRY" --langs "$LANGS" \
+            --clips "$CLIPS" --mode "$MODE" --out results.json \
+            $([ "$BASELINE" = "true" ] && echo --baseline)
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## Model eval"
+            echo
+            echo '```json'
+            cat results.json 2>/dev/null || echo 'no results (hard error: see the Run bench step)'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: results
+          path: results.json
+          if-no-files-found: ignore

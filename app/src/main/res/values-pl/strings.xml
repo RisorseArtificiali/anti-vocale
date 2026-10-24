@@ -1322,4 +1322,9 @@
     <string name="backup_import_history_failed">Zaimportowano ustawienia, ale nie udało się dodać historii. Ponowna próba jest bezpieczna.</string>
     <string name="backup_disclosure_title">Zanim wyeksportujesz</string>
     <string name="backup_disclosure_body">Kopia zawiera każdą transkrypcję, nazwę nadawcy i etykietę mówcy jako czytelny tekst. Udostępniaj ją tylko zaufanym odbiorcom.</string>
+    <string name="keyword_biasing_title">Wzmacnianie słów kluczowych (Whistle)</string>
+    <string name="keyword_biasing_description">Nazwy, miejsca lub żargon, które model Whistle powinien preferować, po jednym w wierszu. Zastosowane od następnej transkrypcji, bez przeładowania.</string>
+    <string name="keyword_biasing_placeholder">Jeden termin na wiersz</string>
+    <string name="freeze_protection_title">Ochrona transkrypcji w tle</string>
+    <string name="freeze_protection_description">Utrzymuje cichy strumień audio podczas transkrypcji, aby agresywne oszczędzacze baterii nie wstrzymywały aplikacji. Włącz, jeśli transkrypcja zatrzymuje się po wyłączeniu ekranu (niektóre telefony Oppo, Realme, OnePlus i Vivo).</string>
 </resources>

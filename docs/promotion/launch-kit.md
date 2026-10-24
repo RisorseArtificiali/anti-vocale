@@ -1,6 +1,6 @@
 # Anti-Vocale Launch Kit
 
-Content for all promotion channels. Every claim is sourced (see docs/research/2026-07-12-competitor-landscape.md). Version: 1.8.0.
+Content for all promotion channels. Every claim is sourced (see docs/research/2026-07-12-competitor-landscape.md). Version line: update at posting time from the GitHub releases page (kit refreshed to the 2026-10 feature set).
 
 ---
 
@@ -56,9 +56,9 @@ Content for all promotion channels. Every claim is sourced (see docs/research/20
 > - Per-app notification preferences
 > - Material 3 UI, fully localized in English + Italian
 
-> **What it doesn't do:** upload anything, require an account, show ads, or need a network connection. The models (300MB–940MB each) download once from HuggingFace; pick one and you're set.
+> **What it doesn't do:** upload anything, require an account, show ads, or need a network connection. The models (17MB Whistle up to ~940MB) download once from HuggingFace; pick one and you're set.
 
-> **Links:** [Play Store](https://play.google.com/store/apps/details?id=com.antivocale.app) · [GitHub](https://github.com/RisorseArtificiali/anti-vocale) · v1.8.0 just shipped with a new "save transcripts to folder" feature and three bug fixes.
+> **Links:** [Play Store](https://play.google.com/store/apps/details?id=com.antivocale.app) · [GitHub](https://github.com/RisorseArtificiali/anti-vocale) · [F-Droid](https://f-droid.org/packages/com.antivocale.app/) · (version line at posting time; the 1.15 line adds automatic WhatsApp voice notes, the 17MB Whistle tier with keyword biasing, and settings/history backup)
 
 > Feedback welcome — especially on Italian transcription quality and model preferences.
 
@@ -74,9 +74,9 @@ Content for all promotion channels. Every claim is sourced (see docs/research/20
 > - **Scelta del modello.** 5 backend ASR intercambiabili: Parakeet TDT (multilingua veloce), Whisper Distil-IT (migliore qualità italiana), Qwen3-ASR, Nemotron streaming, Gemma multimodale.
 > - **Open source** (Apache 2.0). Niente tracker, niente account, niente pubblicità.
 
-> **Caratteristiche:** condivisione da WhatsApp/Telegram/Signal, copia automatica negli appunti, salvataggio automatico in una cartella (Drive/Syncthing), trascrizione di file video, visualizzazione progressiva del testo, preferenze di notifica per-app, UI Material 3 localizzata in italiano e inglese.
+> **Caratteristiche:** condivisione da WhatsApp/Telegram/Signal, copia automatica negli appunti, salvataggio automatico in una cartella (Drive/Syncthing), trascrizione di file video, visualizzazione progressiva del testo, preferenze di notifica per-app, UI Material 3 localizzata in 15 lingue; i vocali WhatsApp possono trascriversi da soli (sorveglianza opt-in della cartella con etichetta del mittente); backup di impostazioni e cronologia.
 
-> **Link:** [Play Store](https://play.google.com/store/apps/details?id=com.antivocale.app) · [GitHub](https://github.com/RisorseArtificiali/anti-vocale) · v1.8.0 appena rilasciata con "salvataggio in cartella" e tre bug fix.
+> **Link:** [Play Store](https://play.google.com/store/apps/details?id=com.antivocale.app) · [GitHub](https://github.com/RisorseArtificiali/anti-vocale) · [F-Droid](https://f-droid.org/packages/com.antivocale.app/) · (riga di versione al momento del posting).
 
 > Feedback benvenuto — specialmente sulla qualità della trascrizione italiana.
 
@@ -90,7 +90,7 @@ Content for all promotion channels. Every claim is sourced (see docs/research/20
 
 > The motivation: WhatsApp's native transcription doesn't support Italian on Android (only EN/PT/ES/RU/HI). Telegram's is cloud-only with a 2/week free limit. Anti-Vocale fills the gap with 5 swappable ASR backends running locally, including a multilingual streaming model (Nemotron) that shows text progressively as it decodes.
 
-> Built in Kotlin/Compose, Apache 2.0, no trackers. Models download once from HuggingFace (300MB–940MB each); the app supports model hot-swapping, video-file transcription, auto-save to a SAF folder (for Drive/Syncthing sync), and per-app notification preferences.
+> Built in Kotlin/Compose, Apache 2.0, no trackers. Models download once from HuggingFace (17MB Whistle up to ~940MB); the app supports model hot-swapping, automatic WhatsApp voice-note transcription, video-file transcription, auto-save to a SAF folder (for Drive/Syncthing sync), and per-app notification preferences.
 
 > [Play Store](https://play.google.com/store/apps/details?id=com.antivocale.app) · [GitHub](https://github.com/RisorseArtificiali/anti-vocale)
 
@@ -101,7 +101,7 @@ Content for all promotion channels. Every claim is sourced (see docs/research/20
 1. **Share from WhatsApp → transcription result** (the core flow, one shot)
 2. **Model selection screen** (shows the 5-backend choice — unique differentiator)
 3. **Progressive transcription in PiP** (text appearing in real-time)
-4. **Settings: Auto-Copy + Save to folder** (shows the new v1.8.0 features)
+4. **Settings: Auto-Copy + Save to folder** (retake on the current build at posting time; the July capture predates v1.9)
 
 Take at 1264×2780 (device native). For Reddit, a single combined image or 2-3 max. For Play Store, use the existing screenshots (TASK-137).
 
@@ -120,7 +120,7 @@ Take at 1264×2780 (device native). For Reddit, a single combined image or 2-3 m
 ## FOSS caveat
 
 The app currently ships Firebase Crashlytics. FOSS audiences (r/fossdroid, r/degoogle, IzzyOnDroid) will notice. Two options:
-- **Be upfront** in the post: "the app includes Firebase Crashlytics for crash reporting; I'm working on a de-tracked build flavor (TASK-120.1). The source is open and you can build without it."
+- **Be upfront** in the post: "the Play build includes Firebase Crashlytics for crash reporting; the F-Droid build is the same app, Firebase-free, built from source on F-Droid's servers. Both share one application id, so you can switch stores without losing data."
 - **Land the de-Firebase flavor first** (TASK-120.1), then post in FOSS venues without caveats.
 
 Either is defensible; the upfront approach gets the launch moving faster.

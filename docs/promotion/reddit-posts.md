@@ -20,21 +20,23 @@ Ciao a tutti! Condivido un'app a cui lavoro da un po': Anti-Vocale, un'app Andro
 
 **Cosa fa:**
 - Trascrive l'italiano (e altre 25 lingue europee) con modelli AI che girano sul telefono
-- Scegli tra 5 modelli diversi (Parakeet TDT multilingua veloce, Whisper Distil italiano dedicato, Qwen3-ASR, Nemotron streaming, Gemma multimodale)
+- Scegli tra più motori (Parakeet TDT multilingua veloce, Whisper Distil italiano dedicato, Qwen3-ASR, Nemotron streaming, Gemma multimodale, e Whistle: 17 MB, quaranta volte più piccolo di qualsiasi altro)
+- I messaggi vocali di WhatsApp si trascrivono DA SOLI (sorveglianza opzionale della cartella, trascrizione automatica, etichetta col nome del mittente)
 - Copia automatica negli appunti dopo la trascrizione (incolla direttamente in chat)
 - Salvataggio automatico delle trascrizioni in una cartella a scelta (Drive, Syncthing, Dropbox)
 - Trascrizione di file video (estrae la traccia audio)
 - Visualizzazione progressiva del testo in tempo reale
-- UI Material 3, localizzata in italiano e inglese
+- UI Material 3, localizzata in 15 lingue
+- Backup e trasferimento di impostazioni e cronologia
 
-**Cosa NON fa:** niente cloud, niente account, niente pubblicità. L'audio non lascia mai il telefono. I modelli (300–940MB) si scaricano una volta da HuggingFace.
+**Cosa NON fa:** niente cloud, niente account, niente pubblicità. L'audio non lascia mai il telefono. I modelli (da 17MB di Whistle fino a ~940MB) si scaricano una volta da HuggingFace.
 
 **Tecnologia:** Kotlin + Jetpack Compose, ONNX Runtime per l'inferenza, modelli pre-quantizzati (int8). Apache 2.0, codice aperto su GitHub.
 
 **Link utili:**
 - Play Store: https://play.google.com/store/apps/details?id=com.antivocale.app
 - GitHub: https://github.com/RisorseArtificiali/anti-vocale
-- Ho appena rilasciato la v1.8.0 con salvataggio in cartella e fix vari
+- (riga di versione da aggiornare al momento del posting: rilasci e note sulla pagina GitHub Releases)
 
 Accetto feedback, specialmente sulla qualità della trascrizione italiana e sui modelli preferiti. Se provate l'app e avete casi dove sbaglia, segnalateli — mi aiuta a migliorare.
 
@@ -53,22 +55,23 @@ I built Anti-Vocale because WhatsApp's native transcription doesn't support Ital
 **Key points:**
 - **Fully offline.** No internet needed. Audio never leaves your phone. Inference via ONNX Runtime.
 - **25+ European languages** including Italian, English, French, German, Spanish, Portuguese, Greek, Dutch, Polish, and more.
-- **5 swappable ASR backends:** Parakeet TDT (fast multilingual), Whisper Distil-IT (best Italian quality), Qwen3-ASR, Nemotron streaming (progressive display), Gemma multimodal.
+- **Swappable ASR backends:** Parakeet TDT (fast multilingual), Whisper Distil-IT (best Italian quality), Qwen3-ASR, Nemotron streaming (progressive display), Gemma multimodal, and Whistle, a 17MB model about 40x smaller than the next smallest, with keyword biasing (feed it names/jargon and it favours them).
 - **Open source** (Apache 2.0). No accounts, no ads.
 - **Auto-save to a folder** of your choice — point it at a Syncthing/Drive folder and transcripts sync automatically.
 - **Video file transcription** (extracts the audio track).
-- **Material 3 UI**, localized in English + Italian.
+- **Automatic WhatsApp voice notes** (opt-in): the app watches the WhatsApp audio folder and transcribes new notes by itself, with the sender's name on the result.
+- **Material 3 UI**, localized in 15 languages. Settings + history backup/transfer built in.
 
-**What it doesn't do:** upload anything, require an account, show ads, or need a network. Models (300MB–940MB each) download once from HuggingFace; pick one and you're set.
+**What it doesn't do:** upload anything, require an account, show ads, or need a network. Models (17MB Whistle up to ~940MB) download once from HuggingFace; pick one and you're set.
 
 **Built with:** Kotlin + Jetpack Compose, ONNX Runtime, sherpa-onnx. Apache 2.0 on GitHub.
 
 **Links:**
 - Play Store: https://play.google.com/store/apps/details?id=com.antivocale.app
 - GitHub: https://github.com/RisorseArtificiali/anti-vocale
-- v1.8.0 just shipped — new folder auto-save + three bug fixes
+- (update the version line at posting time: releases and notes live on the GitHub releases page)
 
-**Transparency note:** The app currently includes Firebase Crashlytics for crash reporting. I'm working on a de-tracked build flavor for F-Droid/IzzyOnDroid. The source is open and buildable without it; the FOSS audience is important to me and I want to be upfront about this rather than hide it. Feedback on this is welcome.
+**Transparency note:** The Play build includes Firebase Crashlytics for crash reporting; the F-Droid build is the same app, Firebase-free, built from source with the ASR engine compiled on F-Droid's servers (https://f-droid.org/packages/com.antivocale.app/). Both share one application id, so you can switch stores without losing data.
 
 Feedback welcome — especially on transcription quality and model preferences for different languages.
 
@@ -87,8 +90,9 @@ Anti-Vocale transcribes voice messages entirely on-device — no cloud, no API c
 **Why it exists:** WhatsApp's native transcription doesn't support Italian on Android (only EN/PT/ES/RU/HI). Telegram's is cloud-only with a 2/week free limit. Anti-Vocale fills that gap with on-device AI models.
 
 **Features:**
-- 5 swappable ASR backends (Parakeet TDT, Whisper Distil-IT, Qwen3-ASR, Nemotron streaming, Gemma)
+- Swappable ASR backends (Parakeet TDT, Whisper Distil-IT, Qwen3-ASR, Nemotron streaming, Gemma, 17MB Whistle with keyword biasing)
 - 25+ European languages, Italian-first
+- Automatic WhatsApp voice-note transcription (opt-in folder watch, sender labels)
 - Auto-copy to clipboard after transcription
 - Auto-save transcripts to a folder (Drive/Syncthing/etc.)
 - Video file transcription
@@ -114,12 +118,12 @@ Anti-Vocale transcribes voice messages entirely on-device — no cloud, no API c
 
 Anti-Vocale — offline voice-message transcription for Android. Transcribes Italian + 25 EU languages entirely on-device (ONNX Runtime + local AI models). No cloud, no Google services for transcription, audio never leaves the phone. Share from WhatsApp/Telegram/Signal → get text. Apache 2.0, open-source.
 
-Features: 5 swappable ASR models, auto-copy to clipboard, auto-save to a SAF folder (for Syncthing/Drive sync), video transcription, progressive display, Material 3.
+Features: swappable ASR models (down to a 17MB one), automatic WhatsApp voice notes, auto-copy to clipboard, auto-save to a SAF folder (for Syncthing/Drive sync), video transcription, progressive display, Material 3 in 15 languages.
 
 Play Store: https://play.google.com/store/apps/details?id=com.antivocale.app
 GitHub: https://github.com/RisorseArtificiali/anti-vocale
 
-Note: The app currently uses Firebase Crashlytics for crash reporting. A de-tracked build flavor is in progress for F-Droid. Source is open and buildable without Firebase.
+Note: the Play build carries Firebase Crashlytics; the F-Droid build (https://f-droid.org/packages/com.antivocale.app/) is fully Firebase-free, same app id, source-buildable.
 
 ---
 

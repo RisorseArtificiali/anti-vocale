@@ -52,11 +52,18 @@ android {
         }
     }
 
+    // ONE read of the property feeds both consumers (the CMake stub
+    // switch below and the BuildConfig mirror in defaultConfig): the
+    // name literal exists exactly once, the catalogIndexVersion pattern.
+    // PRESENCE-keyed by design (the F-Droid recipe passes it bare):
+    // -PwhistleEngineDisabled=false does NOT re-enable the engine.
+    val whistleEngineDisabled = project.hasProperty("whistleEngineDisabled")
+
     // TASK-854: -PwhistleEngineDisabled (the F-Droid recipe sets it) makes
     // every ABI build the stub bridge: the needle engine ships only as a
     // prebuilt .a with no buildable source upstream, which F-Droid's
     // native-binary policy rejects. Play/nightly builds leave it unset.
-    if (project.hasProperty("whistleEngineDisabled")) {
+    if (whistleEngineDisabled) {
         defaultConfig {
             externalNativeBuild {
                 cmake {
@@ -101,6 +108,18 @@ android {
             "String",
             "CATALOG_INDEX_ASSET",
             "\"external-catalog/index-$catalogIndexVersion.json\""
+        )
+
+        // TASK-865/C (the F-Droid UX gate): mirrors the SAME
+        // whistleEngineDisabled property that stubs the native bridge, so a
+        // stub build also hides the Whistle catalog card instead of letting
+        // users download 17 MB of weights for an engine that cannot load.
+        // One gradle property, two consumers (CMake + BuildConfig): they
+        // cannot drift apart because both read this exact name.
+        buildConfigField(
+            "boolean",
+            "WHISTLE_ENGINE_DISABLED",
+            if (whistleEngineDisabled) "true" else "false"
         )
 
         // Speculative-decoding (MTP) "model update available" prompt gate.
@@ -350,11 +369,16 @@ dependencies {
     // AppAuth for OAuth authentication (HuggingFace)
     implementation(libs.appauth)
 
-    // sherpa-onnx v1.13.8 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR, Nemotron).
-    // v1.13.8: ORT 1.28.2, Qwen3 mel-frontend fix (PR #3873) + PRNG data-race fix
-    // (PR #3912), Canary empty-transcript-on-eos fix (PR #3920). A/B on the
-    // Italian set: qwen3 14.55->15.17 WER (neutral-at-noise), Parakeet byte-identical.
-    // SRCLIB PIN: k2-fsa/sherpa-onnx v1.13.8 = commit 11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf
+    // sherpa-onnx v2.0.0 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR, Nemotron).
+    // v2.0.0 (TASK-668): JNI C++ exceptions in recognizer/punctuation
+    // constructors now surface as Java exceptions (our #3988; re-audit the
+    // TranscriptionException flow), whisper byte-level-BPE character-loss fix
+    // (#3965, ours), Canary lang2id-from-vocab + warn (#3962, ours), moonshine
+    // v2 decoder mask fix (ours), VAD int64 positions (long-stream SIGSEGV,
+    // #4079), NeMo mel log-zero guard (#3999), omnilingual short-input abort
+    // (#4043), JNI BMP strings (#4064), espeak-ng/piper-phonemize removed
+    // (#4055; AAR contents change).
+    // SRCLIB PIN: k2-fsa/sherpa-onnx v2.0.0 = commit 8abb7c8f87eae85b2e75f9a4115236c978980add
     // (for the F-Droid recipe; keep in sync with scripts/fetch-sherpa-aar.sh).
     // Stock prebuilt AAR (all 4 ABIs).
     implementation(files("libs/sherpa-onnx.aar"))

@@ -74,6 +74,7 @@ class PreferencesManagerImpl(
         private val OUTPUT_FOLDER_URI = stringPreferencesKey("output_folder_uri")
         private val TRANSCRIPT_EXPORT_FORMAT = stringPreferencesKey("transcript_export_format")
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
+        private val FREEZE_PROTECTION_ENABLED = booleanPreferencesKey("freeze_protection_enabled")
         private val PROGRESSIVE_TRANSCRIPTION = booleanPreferencesKey("progressive_transcription")
         // TASK-186: the early-preview gate on pipelined runs.
         private val EARLY_PREVIEW_ENABLED = booleanPreferencesKey("early_preview_enabled")
@@ -81,6 +82,7 @@ class PreferencesManagerImpl(
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
         private val PUNCTUATION_MODE = stringPreferencesKey("punctuation_mode")
         private val PUNCTUATION_PROMPT = stringPreferencesKey("punctuation_prompt")
+        private val KEYWORD_BIASING = stringPreferencesKey("keyword_biasing")
         private val SUMMARIZE_ENABLED = booleanPreferencesKey("summarize_enabled")
         private val SUMMARY_PROMPT = stringPreferencesKey("summary_prompt")
         private val THREAD_COUNT = intPreferencesKey("thread_count")
@@ -153,12 +155,14 @@ class PreferencesManagerImpl(
         val outputFolderUri: String? = null,
         val transcriptExportFormat: String = PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT,
         val vadEnabled: Boolean = PreferencesManager.DEFAULT_VAD_ENABLED,
+        val freezeProtectionEnabled: Boolean = PreferencesManager.DEFAULT_FREEZE_PROTECTION_ENABLED,
         val progressiveTranscription: Boolean = PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         val earlyPreviewEnabled: Boolean = PreferencesManager.DEFAULT_EARLY_PREVIEW,
         val interruptedRunNotifications: Boolean = PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS,
         val defaultPrompt: String = PreferencesManager.DEFAULT_PROMPT_VALUE,
         val punctuationMode: String = PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         val punctuationPrompt: String = "",
+        val keywordBiasing: String = "",
         val summaryPrompt: String = "",
         val summarizeEnabled: Boolean = PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
         val threadCount: Int = PreferencesManager.DEFAULT_THREAD_COUNT,
@@ -221,6 +225,7 @@ class PreferencesManagerImpl(
         outputFolderUri = this[OUTPUT_FOLDER_URI],
         transcriptExportFormat = this[TRANSCRIPT_EXPORT_FORMAT] ?: PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT,
         vadEnabled = this[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED,
+        freezeProtectionEnabled = this[FREEZE_PROTECTION_ENABLED] ?: PreferencesManager.DEFAULT_FREEZE_PROTECTION_ENABLED,
         progressiveTranscription = this[PROGRESSIVE_TRANSCRIPTION] ?: PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         earlyPreviewEnabled = this[EARLY_PREVIEW_ENABLED] ?: PreferencesManager.DEFAULT_EARLY_PREVIEW,
         // TASK-684 follow-up (2026-09-30 review round): this key was MISSING
@@ -231,6 +236,7 @@ class PreferencesManagerImpl(
         defaultPrompt = this[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE,
         punctuationMode = this[PUNCTUATION_MODE] ?: PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         punctuationPrompt = this[PUNCTUATION_PROMPT] ?: "",
+        keywordBiasing = this[KEYWORD_BIASING] ?: "",
         summaryPrompt = this[SUMMARY_PROMPT] ?: "",
         summarizeEnabled = this[SUMMARIZE_ENABLED] ?: PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
         threadCount = this[THREAD_COUNT] ?: PreferencesManager.DEFAULT_THREAD_COUNT,
@@ -538,6 +544,15 @@ class PreferencesManagerImpl(
     override val vadEnabled: Flow<Boolean> = dataStore.data.map { it[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED }
         .onStart { emit(cache.get().vadEnabled) }
 
+    override val freezeProtectionEnabled: Flow<Boolean> =
+        dataStore.data.map { it[FREEZE_PROTECTION_ENABLED] ?: PreferencesManager.DEFAULT_FREEZE_PROTECTION_ENABLED }
+            .onStart { emit(cache.get().freezeProtectionEnabled) }
+
+    override suspend fun saveFreezeProtectionEnabled(enabled: Boolean) {
+        dataStore.edit { it[FREEZE_PROTECTION_ENABLED] = enabled }
+        cache.updateAndGet { c -> c.copy(freezeProtectionEnabled = enabled) }
+    }
+
     override suspend fun saveVadEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[VAD_ENABLED] = enabled
@@ -640,6 +655,17 @@ class PreferencesManagerImpl(
             preferences[PUNCTUATION_PROMPT] = truncated
         }
         cache.updateAndGet { it.copy(punctuationPrompt = truncated) }
+    }
+
+    override val keywordBiasing: Flow<String> = dataStore.data.map { it[KEYWORD_BIASING] ?: "" }
+        .onStart { emit(cache.get().keywordBiasing) }
+
+    override suspend fun saveKeywordBiasing(terms: String) {
+        val truncated = terms.take(PreferencesManager.PROMPT_CAP)
+        dataStore.edit { preferences ->
+            preferences[KEYWORD_BIASING] = truncated
+        }
+        cache.updateAndGet { it.copy(keywordBiasing = truncated) }
     }
 
     override val summarizeEnabled: Flow<Boolean> = dataStore.data.map { it[SUMMARIZE_ENABLED] ?: PreferencesManager.DEFAULT_SUMMARIZE_ENABLED }

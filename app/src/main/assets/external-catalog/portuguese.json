@@ -1,0 +1,27 @@
+{
+  "name": "Distil Whisper Large v3 Brazilian Portuguese (sherpa int8)",
+  "family": "WHISPER",
+  "modelType": "",
+  "languages": ["pt"],
+  "options": {},
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/distil-whisper-large-v3-ptbr-sherpa/resolve/main/encoder.int8.onnx",
+      "sha256": "9262531aa69e5e54f74f1dea6971c471c889b0a876612fd5fc774b9fba303ac6",
+      "size": 668053303
+    },
+    {
+      "name": "decoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/distil-whisper-large-v3-ptbr-sherpa/resolve/main/decoder.int8.onnx",
+      "sha256": "64e0f4ea0bd413d8e903f037edd19503a1c650e81ef2fa7039a4affeda1e4f18",
+      "size": 315006906
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/pantinor/distil-whisper-large-v3-ptbr-sherpa/resolve/main/tokens.txt",
+      "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+      "size": 816730
+    }
+  ]
+}
