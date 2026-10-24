@@ -5,14 +5,17 @@
 #
 # Arm 1 (build-failure): a tag-mode dispatch pointing at a BOGUS tag. The build
 #   job fails at checkout; release-sanity must FAIL with the "BUILD JOB" error.
-#   Cost: one CI run that dies fast at the checkout step (no models fetched).
+#   Cost: the full matrix minutes (the parallel test job runs to its own end).
 # Arm 2 (red-tests / 683.6): a scratch branch carrying one deliberately failing
 #   unit test, dispatched in commit mode. The test job must FAIL while the
 #   build stays green; release-sanity must FAIL on the build-test result too.
-#   Cost: one CI run up to the test step.
+#   Cost: the complete fdroid release + tester-APK builds.
 #
 # Both arms are scratch: the bogus tag exists nowhere, the scratch branch is
 # deleted after the campaign. Nothing here touches a real release or Play.
+# Both pay full matrix minutes: test and build run in parallel with no
+# needs-ordering (the test lane fetches the sherpa AAR and runs the fdroid
+# suite + lint regardless of how the build lane dies).
 #
 # Usage:
 #   scripts/release-sanity-campaign.sh arm1        # bogus-tag dispatch, then watch
@@ -20,6 +23,7 @@
 #   scripts/release-sanity-campaign.sh watch <run-id>
 #
 # Env: REPO (default RisorseArtificiali/anti-vocale)
+
 set -euo pipefail
 
 REPO="${REPO:-RisorseArtificiali/anti-vocale}"
@@ -87,12 +91,23 @@ dispatch_bogus_tag() {
 
 make_scratch_branch() {
   echo ">> creating scratch branch ${SCRATCH_BRANCH} with one failing test"
-  git fetch origin main --quiet
+  # TASK-884: --prune (full fetch, no pathspec) keeps the scratch branch's
+  # remote-tracking ref honest for the --force-with-lease below: a remote
+  # branch deleted out of band would otherwise leave a stale tracking ref
+  # that trips the lease with a raw git error instead of this campaign's
+  # own recovery messaging.
+  git fetch --prune --quiet origin
   local wt
   # /tmp is a symlink to /private/tmp on macOS, and git registers worktrees
   # under the symlink-resolved path: canonicalize FIRST or the collision
   # check false-fails on every reuse (TASK-879 round 2, verified on-device).
   wt="$(cd /tmp && pwd -P)/${SCRATCH_BRANCH//\//-}"
+  # TASK-884 F1: a dir deleted under /tmp while the .git registration lives
+  # (periodic cleanup) makes a bare 'git worktree add' die with a raw
+  # 'missing but already registered' fatal BEFORE the recovery branches
+  # below, which all require the dir to exist. Prune first so the stale
+  # registration is gone and the add genuinely creates the worktree.
+  git worktree prune
   # Reuse a leftover worktree from a previous campaign; a FAILED add must say
   # so (the old '2>/dev/null || true' swallowed fetch/permissions/corrupt
   # failures, TASK-879), and a leftover dir that is NOT our registered
@@ -127,14 +142,24 @@ KOTLIN
   git -C "$wt" add app/src/test/java/com/antivocale/app/ci/ScratchRedTest.kt
   git -C "$wt" -c user.name="Paolo Antinori" -c user.email="pantinor@redhat.com" \
     commit -q -m "ci: scratch red test (TASK-683.3 arm 2; never merge)"
-  git -C "$wt" push -q origin "HEAD:${SCRATCH_BRANCH}"
+  # TASK-884 F2: checkout -B resets the branch onto a fresh origin/main tip
+  # and the scratch commit above is created from scratch, so this push is a
+  # non-fast-forward whenever the previous campaign's remote branch was not
+  # deleted by hand. The branch is deliberately disposable, so force is the
+  # correct semantics; --force-with-lease confines it to this branch (same
+  # guard family as release-fdroid-references.sh and sync-fdroid-mirror.sh;
+  # keep the sites aligned).
+  git -C "$wt" push -q --force-with-lease origin "HEAD:${SCRATCH_BRANCH}"
   echo ">> pushed ${SCRATCH_BRANCH}"
 }
 
 dispatch_red_test() {
   make_scratch_branch
+  # Worktrees share refs, so the branch tip the worktree just pushed is
+  # resolvable locally and free; an ls-remote here costs a network round
+  # trip to learn what rev-parse already knows (TASK-884).
   local sha
-  sha=$(git ls-remote origin "${SCRATCH_BRANCH}" | cut -f1)
+  sha=$(git rev-parse "${SCRATCH_BRANCH}")
   echo ">> dispatching commit mode from ${sha:0:12}"
   local since run_id
   since="$(capture_since)"
@@ -150,23 +175,36 @@ dispatch_red_test() {
 watch_run() {
   local run_id="${1:?run id}"
   gh run watch "${run_id}" --repo "${REPO}" --exit-status || true
+  # gh's bundled --jq only: an external jq is NOT a macOS default, and this
+  # script must run on a stock maintainer box (TASK-884 review).
   echo "================ JOB RESULTS ================"
   gh run view "${run_id}" --repo "${REPO}" --json jobs --jq '.jobs[] | "\(.conclusion // .status)\t\(.name)"'
   echo "============================================="
   local sanity
   sanity=$(gh run view "${run_id}" --repo "${REPO}" --json jobs \
     --jq '.jobs[] | select(.name | startswith("Release sanity")) | .conclusion')
-  echo ">> Release sanity conclusion: ${sanity}"
-  if [ "${sanity}" = "failure" ]; then
-    echo ">> PASS: sanity went red as the campaign requires (AC3)."
-  else
-    echo ">> FAIL: sanity did NOT go red. This is the green-lies bug alive; file it."
-  fi
+  echo ">> Release sanity conclusion: ${sanity:-<job never reported>}"
+  # TASK-884 F4: branch on the conclusion; job-verdict-not-run-verdict per
+  # release-run-verdict.sh (not reused: that script asserts success and
+  # hardcodes the signing-job markers; this one asserts failure). Only a
+  # concluded FAILURE proves AC3; cancelled/skipped/null (jq -r's literal
+  # output for a conclusion that does not exist yet, e.g. a run still
+  # executing when the view was taken)/empty all mean the job has not
+  # reported, which is a rerun, not the green-lies bug, and telling the
+  # operator to file one chases a phantom.
+  case "${sanity}" in
+    failure)
+      echo ">> PASS: sanity went red as the campaign requires (AC3)." ;;
+    cancelled|skipped|null|"")
+      echo ">> INCONCLUSIVE: the run ended before Release sanity could report (${sanity:-no conclusion}). Re-run the arm; nothing is proven either way." ;;
+    *)
+      echo ">> FAIL: sanity concluded '${sanity}', not failure. If this is a green conclusion on a red arm, this is the green-lies bug alive; file it." ;;
+  esac
 }
 
 case "${1:-}" in
   arm1) dispatch_bogus_tag ;;
   arm2) dispatch_red_test ;;
   watch) shift; watch_run "$@" ;;
-  *) sed -n '2,22p' "$0"; exit 2 ;;
+  *) sed -n '2,/^$/p' "$0" | sed '$d'; exit 2 ;;
 esac
