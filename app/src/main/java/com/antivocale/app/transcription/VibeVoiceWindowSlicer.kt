@@ -6,8 +6,10 @@ import com.antivocale.app.util.WavUtils
  * TASK-872: the VibeVoice streaming models take ONE fixed audio window per
  * conversation turn (22 content frames + 4 look-ahead frames at the 7.5 Hz
  * latent rate = 3.4667 seconds). This slicer cuts arbitrary-length input
- * into consecutive windows of exactly that duration; the last window is
- * zero-padded to the full size so the model sees a complete frame set.
+ * into consecutive windows of that duration (the sample count is CEILed
+ * so the 26th frame is never truncated by floor rounding); the last
+ * window is zero-padded to the full size so the model sees a complete
+ * frame set.
  *
  * The window duration is wall-clock: the input's sample rate is preserved
  * (the LiteRT-LM AudioBytes path decodes the WAV container and resamples
@@ -26,7 +28,9 @@ object VibeVoiceWindowSlicer {
      */
     fun sliceToWavWindows(samples: FloatArray, sampleRate: Int): List<ByteArray> {
         if (samples.isEmpty() || sampleRate <= 0) return emptyList()
-        val windowSize = (WINDOW_SECONDS * sampleRate).toInt().coerceAtLeast(1)
+        // ceil, not floor: at 16kHz the exact window is 55466.67 samples;
+        // floor truncates the 26th frame by ~2/3 sample on EVERY window.
+        val windowSize = kotlin.math.ceil(WINDOW_SECONDS * sampleRate).toInt().coerceAtLeast(1)
         val windows = mutableListOf<ByteArray>()
         var offset = 0
         while (offset < samples.size) {

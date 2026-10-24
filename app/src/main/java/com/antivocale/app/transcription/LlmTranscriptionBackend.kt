@@ -42,6 +42,11 @@ class LlmTranscriptionBackend @Inject constructor(
     // is forced regardless of the user toggle. TASK-872: VibeVoice models use
     // FIXED 3.47s windows, so VAD alignment would fight the model's own frame
     // boundaries; the multi-turn loop handles segmentation internally.
+    // Known exposure (gate round): with VAD off the streaming arm still cuts
+    // CHUNKS at arbitrary positions (the RAM-tightened cap, at most 30s);
+    // the multi-turn loop segments within each chunk, so the seam cost is
+    // bounded to one padded partial window per chunk boundary (and speaker
+    // numbering restarts per chunk, TASK-873).
     // Like ExternalSherpaBackend.configuredFamily, this reads the LOADED
     // backend's state: pre-load queries (the Logs gate row) see the Gemma
     // default, which is benign (the orchestrator only consumes it on the

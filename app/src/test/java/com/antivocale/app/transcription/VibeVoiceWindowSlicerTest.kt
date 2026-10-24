@@ -55,8 +55,8 @@ class VibeVoiceWindowSlicerTest {
 
     @Test
     fun `an exact multiple yields no trailing padded window`() {
-        // Exactly 2 windows, computed the same way the slicer does
-        val windowSize = (VibeVoiceWindowSlicer.WINDOW_SECONDS * 16000).toInt()
+        // Exactly 2 windows, computed the same way the slicer does (ceil)
+        val windowSize = kotlin.math.ceil(VibeVoiceWindowSlicer.WINDOW_SECONDS * 16000).toInt()
         val samples = FloatArray(windowSize * 2)
         val windows = VibeVoiceWindowSlicer.sliceToWavWindows(samples, 16000)
         assertEquals(2, windows.size)
