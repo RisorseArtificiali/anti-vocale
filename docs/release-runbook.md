@@ -294,9 +294,12 @@ job's verdict, not the run's: a green run can carry a SKIPPED signing job and
 `gh run watch --exit-status` exits 0 on it; run 37921765037 at 1.14.0 did
 exactly that until c4d43dbb fixed the cause and this script closed the
 detection gap; prepare now runs it automatically ~5 min after dispatch), and
-the three artifacts are present. NOTE the run id (`gh run list --event
-workflow_dispatch --limit 1`) for Step 5b. `gh release view vX.Y.Z` still
-404s: nothing is public yet.
+the three artifacts are present. NOTE the run id prepare printed at dispatch
+(the time-pinned capture; a bare `gh run list --limit 1` can return a
+concurrent run, the race TASK-879 closed) for Step 5b; if prepare printed
+NOT CAPTURED (a missed poll), recover the id with
+`gh run list --event workflow_dispatch --created ">=<dispatch instant>"`.
+`gh release view vX.Y.Z` still 404s: nothing is public yet.
 
 ## Step 5b. Publish: tag + release + all binaries in one act
 
