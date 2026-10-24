@@ -263,4 +263,66 @@ class SentenceCueBuilderTest {
         assertEquals(6_000L, cues[1].endMs)
         assertEquals(5_800L, cues[1].tokens.single().startMs)
     }
+
+    // ---- TASK-541 item 2: marker-less token families join directly ----
+
+    @Test
+    fun `character-level CTC tokens compose words, the explicit space token breaks them`() {
+        // The omnilingual-CTC external-import shape (real tokens.txt: 99.96%
+        // single-char pieces, an explicit " " token, no U+2581 markers;
+        // Latin coverage is lowercase-only): "one tre".
+        val toks = listOf(
+            token("o", 0, 60), token("n", 60, 120), token("e", 120, 180),
+            token(" ", 180, 200),
+            token("t", 200, 260), token("r", 260, 320), token("e", 320, 380))
+        val cues = SentenceCueBuilder.build(toks, chunkStartMs = 0, chunkEndMs = 380)
+        assertEquals(1, cues.size)
+        assertEquals("one tre", cues[0].text)
+    }
+
+    @Test
+    fun `marker-less word tokens keep the space join when no space token exists`() {
+        // The discriminator is the explicit whitespace token: a range with
+        // NO space token is a word-token stream (or a sentencepiece word
+        // pair) and keeps the separator, matching every pre-existing pin.
+        val toks = listOf(token("One", 0, 300), token("sentence.", 300, 600))
+        val cues = SentenceCueBuilder.build(toks, chunkStartMs = 0, chunkEndMs = 600)
+        assertEquals(1, cues.size)
+        assertEquals("One sentence.", cues[0].text)
+    }
+
+    @Test
+    fun `a char CTC cue range without its own space token still glues`() {
+        // Review F1's repro: a pause split isolating "o","n","e","." into
+        // its own cue leaves that range with NO whitespace token; the
+        // stream-level discriminator must still glue it (the per-range form
+        // rendered "o n e.").
+        val toks = listOf(
+            token("o", 0, 60), token("n", 60, 120), token("e", 120, 180), token(".", 180, 200),
+            token(" ", 200, 220),
+            token("t", 1400, 1460), token("w", 1460, 1520), token("o", 1520, 1580), token(".", 1580, 1600))
+        val cues = SentenceCueBuilder.build(toks, chunkStartMs = 0, chunkEndMs = 1600)
+        assertEquals(2, cues.size)
+        assertEquals("one.", cues[0].text)
+        assertEquals("two.", cues[1].text)
+    }
+
+    @Test
+    fun `marker-carrying ranges keep the space join`() {
+        val toks = listOf(token("▁Ciao", 0, 300), token("▁mondo", 300, 600))
+        val cues = SentenceCueBuilder.build(toks, chunkStartMs = 0, chunkEndMs = 600)
+        assertEquals(1, cues.size)
+        assertEquals("Ciao mondo", cues[0].text)
+    }
+
+    @Test
+    fun `marker-less CTC punctuation still glues`() {
+        val toks = listOf(
+            token("o", 0, 60), token("n", 60, 120), token("e", 120, 180),
+            token(",", 180, 200), token(" ", 200, 220),
+            token("t", 220, 280), token("r", 280, 340), token("e", 340, 400))
+        val cues = SentenceCueBuilder.build(toks, chunkStartMs = 0, chunkEndMs = 400)
+        assertEquals(1, cues.size)
+        assertEquals("one, tre", cues[0].text)
+    }
 }
