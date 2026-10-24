@@ -132,3 +132,22 @@ so every clip scores:
 The chunk-boundary word damage (words cut at 8s) inflates these a few points;
 the app's VAD-aligned chunking cuts at speech pauses and will do better. es
 goes 3.0 -> 6.8 purely from boundaries, bounding that inflation.
+
+## 2026-10-24: the mask-length fix verified in the shipped pin (TASK-621 close-out)
+
+sherpa-onnx v2.0.0 (the app's pin since TASK-668) carries the merged fix for
+k2-fsa/sherpa-onnx#3975 (PR #3976, the ForwardDecoder raw-length mask). Proven
+on this harness with the shipped-pin venv (eval/.venv, sherpa-onnx 2.0.0,
+matching the AAR), moonshine-base-uk 2026-02-27:
+
+- uk_008 (20.4s, the #3976 verification clip): ONE uncapped pass decodes full
+  natural text matching the manifest reference's opening ("Яванська кухня
+  зараз дуже поширена..."); wheel 1.13.8 returned EMPTY on this class.
+- Tiled probes at 21s and 30s total input: both decode continuous text (the
+  tiled source loops, so the output loops; the point is TEXT, not content).
+
+Consequence: the moonshine external family's app-side chunk cap rises 8s to
+30s (TASK-621, closed as moot except one consciously deferred step: the
+per-language re-benchmark below, which only matters if a variant's quality
+becomes user-relevant). The
+per-language WER rows above remain wheel-1.13.8/8s-chunked measurements.

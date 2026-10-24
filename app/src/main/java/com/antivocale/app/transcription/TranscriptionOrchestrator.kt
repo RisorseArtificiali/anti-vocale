@@ -2645,10 +2645,11 @@ class TranscriptionOrchestrator @Inject constructor(
                 // behavior, and the flat transducer baseline under-refused
                 // exactly the light models the family exists for (a 953MB
                 // moonshine passed a bar the whisper curve refuses). The
-                // curve still PRICES the 30s whisper window though moonshine
-                // chunks at 8s (TASK-619): deliberate conservatism, no
-                // moonshine RAM measurement exists, and the 600MB overhead
-                // floor dominates the term anyway.
+                // curve PRICES the 30s whisper window and moonshine chunks
+                // at 30s too since sherpa 2.0.0 (TASK-621: the cap's reason
+                // was sherpa's mask bug, fixed in our pin): no moonshine RAM
+                // measurement exists, and the 600MB overhead floor dominates
+                // the term anyway.
                 backend is ExternalSherpaBackend && (
                     backend.memoryFamily == com.antivocale.app.data.ModelFamily.WHISPER ||
                         backend.memoryFamily == com.antivocale.app.data.ModelFamily.MOONSHINE) ->
