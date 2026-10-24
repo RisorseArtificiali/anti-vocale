@@ -16,5 +16,6 @@
 | हिन्दी | [manual.md](hi/manual.md) |
 | فارسی | [rahnama.md](fa/rahnama.md) |
 | 中文（简体） | [manual.md](zh/manual.md) |
+| Suomi | [kasikirja.md](fi/kasikirja.md) |
 
 The English version is the source of truth; translations follow it. If a translation lags, trust the English page.
