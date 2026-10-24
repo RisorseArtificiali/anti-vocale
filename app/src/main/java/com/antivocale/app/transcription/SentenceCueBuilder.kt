@@ -135,6 +135,15 @@ object SentenceCueBuilder {
             if (text.isBlank()) continue
             val start = toks[first].startMs.coerceIn(lo, hi)
             val end = toks[last].endMs.coerceIn(lo, hi).coerceAtLeast(start)
+            // TASK-541 item 1 (observed on device, 2026-10-24): a cue whose
+            // tokens all sit past chunkEnd clamps to start==end and renders
+            // as a zero-duration flash line in SRT/VTT. Two real cases in
+            // the on-device cue store, both a LONE TRAILING PUNCTUATION
+            // MARK at the exact chunk boundary ('.' at 60000ms, '。' at
+            // 90000ms, the 60s-chunk era) - the model's trailing token with
+            // no speech under it. Drop those (no visible text is lost);
+            // a flash cue carrying real WORDS stays visible.
+            if (start == end && text.none { it.isLetterOrDigit() }) continue
             // Trim a previous cue that would reach past this start, keeping its
             // duration non-negative. Full non-overlap holds for the monotonic
             // token starts every wired sherpa family produces; badly inverted

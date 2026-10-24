@@ -308,6 +308,30 @@ class SentenceCueBuilderTest {
     }
 
     @Test
+    fun `a lone trailing punctuation flash cue at the chunk boundary drops`() {
+        // TASK-541 item 1's observed device shape: the model's trailing
+        // period token past chunkEnd clamps to start==end; the flash line
+        // must drop (no visible text lost).
+        val toks = listOf(
+            token("▁Ciao", 0, 400), token("▁mondo", 400, 800), token(".", 30_100, 30_100))
+        val cues = SentenceCueBuilder.build(toks, chunkStartMs = 0, chunkEndMs = 30_000)
+        assertEquals(1, cues.size)
+        assertEquals("Ciao mondo", cues[0].text)
+    }
+
+    @Test
+    fun `a flash cue carrying real words stays visible`() {
+        // The conservative half of the rule: only punctuation-only flash
+        // cues drop; real text at a collapsed range remains (visible-text
+        // loss would be worse than a flash line).
+        val toks = listOf(
+            token("▁Ciao", 0, 400), token("▁mondo", 400, 800), token("▁fine", 30_100, 30_100))
+        val cues = SentenceCueBuilder.build(toks, chunkStartMs = 0, chunkEndMs = 30_000)
+        assertEquals(2, cues.size)
+        assertEquals("fine", cues[1].text)
+    }
+
+    @Test
     fun `marker-carrying ranges keep the space join`() {
         val toks = listOf(token("▁Ciao", 0, 300), token("▁mondo", 300, 600))
         val cues = SentenceCueBuilder.build(toks, chunkStartMs = 0, chunkEndMs = 600)
