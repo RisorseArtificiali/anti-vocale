@@ -176,15 +176,29 @@ class TranscriptionBackendManager @Inject constructor(
      * orchestrator will take for [backendId] WITHOUT loading anything. External
      * ids are resolved from their RECORD (the shared engine's
      * maxChunkDurationSeconds reads the last LOADED family and would mispredict
-     * any other record); static ids read the backend instance.
+     * any other record); the llm row resolves from [selectedModelPath] for
+     * the same reason (the instance's flags read the last LOADED engine, so a
+     * VibeVoice model selected while Gemma sits resident would mispredict the
+     * forced-VAD whole-file path; TASK-873). Every other static id reads the
+     * backend instance, whose flags carry no model-path dependence. The
+     * argument steers ONLY the llm row (ignored for every other id) and a
+     * blank path falls through to the loaded instance.
      */
-    fun gateInputsFor(backendId: String): GateInputs? {
+    fun gateInputsFor(backendId: String, selectedModelPath: String? = null): GateInputs? {
         if (isKnownExternal(backendId)) {
             val record = externalRecordsProvider.records.value.firstOrNull { it.backendId == backendId }
             return record?.let {
                 GateInputs(
                     maxChunkDurationSeconds = ExternalSherpaBackend.familyChunkCapSeconds(it.family),
                     forcesVadAlignedChunking = ExternalSherpaBackend.familyForcesVadAlignedChunking(it.family),
+                )
+            }
+        }
+        if (backendId == LlmTranscriptionBackend.BACKEND_ID && !selectedModelPath.isNullOrBlank()) {
+            return getBackend(backendId)?.let {
+                GateInputs(
+                    maxChunkDurationSeconds = it.maxChunkDurationSeconds,
+                    forcesVadAlignedChunking = LlmTranscriptionBackend.requiresVadAlignedChunkingFor(selectedModelPath),
                 )
             }
         }
