@@ -4,6 +4,7 @@ import com.antivocale.app.transcription.BackendConfig
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.google.ai.edge.litertlm.*
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -133,6 +134,7 @@ class LlmManagerLiteRTUpgradeTest {
     @Test
     fun `transcribeAudio delegates to llmManager generateFromAudio and maps result`() = runTest {
         val llmManager = mockk<LlmManager>()
+        every { llmManager.getModelPath() } returns "gemma-4-E2B-it.litertlm"
         coEvery { llmManager.generateFromAudio(any(), any()) } returns Result.success("Ciao mondo")
 
         val backend = LlmTranscriptionBackend(llmManager)
@@ -144,12 +146,47 @@ class LlmManagerLiteRTUpgradeTest {
     @Test
     fun `transcribeAudio maps failure from generateFromAudio`() = runTest {
         val llmManager = mockk<LlmManager>()
+        every { llmManager.getModelPath() } returns "gemma-4-E2B-it.litertlm"
         coEvery { llmManager.generateFromAudio(any(), any()) } returns
             Result.failure(IllegalStateException("Model not initialized"))
 
         val backend = LlmTranscriptionBackend(llmManager)
         val result = backend.transcribeAudio(FloatArray(16000), 16000, "Transcribe:")
         assertTrue("transcribeAudio should fail", result.isFailure)
+    }
+
+    @Test
+    fun `transcribeAudio routes a vibevoice model to the window path`() = runTest {
+        val llmManager = mockk<LlmManager>()
+        every { llmManager.getModelPath() } returns "vibevoice-streaming-int8.litertlm"
+        coEvery { llmManager.generateFromAudioWindows(any(), any()) } returns Result.success("Speaker 1: Ciao")
+
+        val backend = LlmTranscriptionBackend(llmManager)
+        val result = backend.transcribeAudio(FloatArray(16000), 16000, "Transcribe:")
+
+        assertTrue(result.isSuccess)
+        assertEquals("Speaker 1: Ciao", result.getOrNull()?.text)
+        coVerify(exactly = 1) {
+            llmManager.generateFromAudioWindows(any(), withArg { windows ->
+                // 1s of audio at 16kHz: exactly one 3.4667s zero-padded window
+                assertEquals(1, windows.size)
+            })
+        }
+        coVerify(exactly = 0) { llmManager.generateFromAudio(any(), any()) }
+    }
+
+    @Test
+    fun `a vibevoice model emits native speaker labels, gemma does not`() {
+        val llmManager = mockk<LlmManager>()
+        every { llmManager.getModelPath() } returns "vibevoice-streaming-int8.litertlm"
+        val vibeBackend = LlmTranscriptionBackend(llmManager)
+        assertTrue(vibeBackend.emitsNativeSpeakerLabels)
+        assertTrue(!vibeBackend.requiresVadAlignedChunking)
+
+        every { llmManager.getModelPath() } returns "gemma-4-E2B-it.litertlm"
+        val gemmaBackend = LlmTranscriptionBackend(llmManager)
+        assertTrue(!gemmaBackend.emitsNativeSpeakerLabels)
+        assertTrue(gemmaBackend.requiresVadAlignedChunking)
     }
 
     @Test

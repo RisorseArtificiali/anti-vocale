@@ -378,7 +378,11 @@ def build_recognizer(cfg: dict):
             joiner=str(d / cfg["joiner"]),
             num_threads=NUM_THREADS,
             provider="cpu",
-            decoding_method="greedy_search",
+            # TASK-874 parity: the app's streaming path decodes
+            # modified_beam_search(4) (SherpaBackend.STREAMING_DECODING_METHOD);
+            # greedy measured 10.3 vs beam 9.3 on this set (TASK-530 A/B).
+            decoding_method="modified_beam_search",
+            max_active_paths=4,
             sample_rate=SAMPLE_RATE,
             feature_dim=80,
         ), True  # type: ignore[attr-defined]

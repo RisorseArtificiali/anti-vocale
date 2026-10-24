@@ -19,7 +19,8 @@ We have no hand-curated Italian voice-message test set. Without it:
 
 This harness fixes that. It runs the **same ONNX int8 models the app ships**, via
 sherpa-onnx's Python API, with the **same recognition config** the app uses
-(`greedy_search`, `tailPaddings=1000`, etc.) — so desktop numbers track on-device
+(`greedy_search` offline; the streaming entry decodes `modified_beam_search`
+since TASK-874; `tailPaddings=1000`, etc.), so desktop numbers track on-device
 behavior.
 
 ## Directory layout

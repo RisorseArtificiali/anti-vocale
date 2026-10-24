@@ -585,6 +585,31 @@ class TranscriptionOrchestrator @Inject constructor(
             ) {
                 Log.i(TAG, "Speaker labels skipped: no sample timeline reached this pass (streaming, VAD-segmented, TASK-681 remote-offloaded, or TASK-728 memory-budget abandonment; the W-line above names which)")
             }
+            // TASK-872 gate round: a backend whose output carries its own
+            // speaker attribution (VibeVoice's literal "Speaker N:" lines)
+            // must not get the app's labels ON TOP of them (double labeling
+            // on every cue). Placed AFTER the no-timeline skip above so this
+            // skip carries its own honest reason line instead of being
+            // misattributed to the timeline-absent causes (the TASK-600 F13
+            // family); the flag is a live getter over the loaded path, so
+            // either placement reads the same post-re-init engine.
+            // Round 2: the PRODUCER decides, not the ACTIVE backend (the
+            // same class the punctuation pass guards against above): on the
+            // dual-refinement degradation arms the delivered text comes from
+            // the FAST first-pass model while the active backend is the
+            // phase-2 one; keying on the active backend would skip the pass
+            // on text with NO native labels of its own. The fast producer
+            // never emits native labels, so first-pass delivery never skips.
+            val deliveredFromFirstPass =
+                result.getOrNull()?.firstPass?.skipOutcome != null
+            val producerEmitsNativeLabels = !deliveredFromFirstPass &&
+                backendManager.getActiveBackend()?.emitsNativeSpeakerLabels == true
+            // delivered.isSuccess: a failed run never decoded, so nothing
+            // was skipped (the TASK-600 F13 rule).
+            if (producerEmitsNativeLabels && diarizationChunks != null && delivered.isSuccess) {
+                Log.i(TAG, "Speaker labels skipped: the delivered text carries native speaker labels (TASK-872)")
+                diarizationChunks = null
+            }
             val speakerLabeled: Result<TranscriptionResult> =
                 if (delivered.isSuccess && diarizationChunks != null) {
                     // TASK-698: whole-clip diarization (plus the first-use

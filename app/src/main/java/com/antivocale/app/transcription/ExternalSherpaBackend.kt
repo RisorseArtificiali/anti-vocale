@@ -303,6 +303,12 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                             modelType = "",
                         ),
                         featConfig = FeatureConfig(sampleRate = 16000, featureDim = 80),
+                        // TASK-874: deliberately GREEDY, unlike the built-in
+                        // streaming entry's beam (see SherpaBackend
+                        // STREAMING_DECODING_METHOD): the desktop A/B measured the
+                        // bundled Nemotron artifact only, and these user
+                        // imports are unmeasured per-model; flipping them to
+                        // beam is a per-family measurement, not a free ride.
                     )
                     onlineRecognizer = OnlineRecognizer(config = onlineConfig)
                     modelDir = record.dir

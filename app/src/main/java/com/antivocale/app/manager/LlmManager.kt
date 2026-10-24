@@ -665,10 +665,11 @@ open class LlmManager @Inject constructor(
      * paths (the generateUnderCeiling precedent: two hand-rolled copies drift;
      * the drift was found in review the day the second copy was born). Owns
      * create-with-catch, the ceiling, the native-Error wrap, and the
-     * close-in-finally: a caller-cancellation rethrow or a native Error must
-     * never leak the conversation, which the library holds as ONE live
-     * session per engine. TASK-606: on a WEDGED engine even this close is
-     * skipped: the abandoned cancelProcess may still be inside it.
+     * close-in-finally: a caller-cancellation rethrow must leak the
+     * conversation ONLY under the documented TASK-606 abandonment rule (the
+     * abandoned native cancel may still be inside it; the engine unloads it),
+     * and a native Error skips the close entirely (same rule, wedged side),
+     * because the library holds ONE live session per engine.
      */
     private suspend fun generateInFreshConversation(
         config: ConversationConfig,
@@ -796,6 +797,93 @@ open class LlmManager @Inject constructor(
                     null -> Result.failure(IllegalStateException("No backend initialized"))
                 }
             }
+        }
+    }
+
+    /**
+     * TASK-872: VibeVoice streaming models take ONE fixed audio window per
+     * conversation turn. This method creates ONE persistent Conversation,
+     * sends each window as a sequential message, and concatenates the
+     * responses. Each turn is individually ceiling-bounded: a slow window
+     * fails the WHOLE transcription at that turn, without latching the
+     * engine wedge (the engine stays usable for later requests).
+     *
+     * The model responds with native speaker attribution ("Speaker N: text");
+     * the transcript IS the diarization. The orchestrator suppresses its own
+     * GH #83 speaker pass on this route via the backend's
+     * emitsNativeSpeakerLabels flag, so the model's labels are never
+     * double-labeled.
+     */
+    suspend fun generateFromAudioWindows(prompt: String, windows: List<ByteArray>): Result<String> = audioMutex.withLock {
+        withContext(Dispatchers.IO) {
+            if (engineWedged) {
+                return@withContext Result.failure(wedgedFailure())
+            }
+            if (!isInitialized) {
+                return@withContext Result.failure(IllegalStateException("Model not initialized"))
+            }
+            if (windows.isEmpty()) {
+                return@withContext Result.failure(IllegalArgumentException("No audio windows"))
+            }
+            if (currentBackend != Backend.LITERT_LM) {
+                return@withContext Result.failure(IllegalStateException("VibeVoice multi-turn requires the LiteRT-LM backend"))
+            }
+            return@withContext keepAlive.withWork {
+                generateWindowsInPersistentConversation(prompt, windows)
+            }
+        }
+    }
+
+    /**
+     * The persistent-conversation multi-turn loop. Mirrors
+     * [generateInFreshConversation]'s error taxonomy (wedge latching,
+     * caller-abandonment leaking the conversation) but holds ONE
+     * conversation across all windows instead of one per call.
+     */
+    private suspend fun generateWindowsInPersistentConversation(
+        prompt: String,
+        windows: List<ByteArray>,
+    ): Result<String> = conversationMutex.withLock {
+        val engine = litertEngine
+            ?: return Result.failure(IllegalStateException("LiteRT engine not available"))
+        var conversation: Conversation? = null
+        var abandonedByCaller = false
+        val transcript = StringBuilder()
+        try {
+            conversation = engine.createConversation(AUDIO_CONVERSATION_CONFIG)
+            for ((index, wav) in windows.withIndex()) {
+                val turn = generateUnderCeiling(
+                    conversation,
+                    "audio-window-$index",
+                    Contents.of(Content.AudioBytes(wav), Content.Text(prompt)),
+                )
+                // F2 (gate round): propagate the original failure with its
+                // cause and TYPED exception preserved (the fresh path's
+                // contract; a wedged window must reach the orchestrator as
+                // EngineWedgeTimeoutException, not a plain wrapper).
+                val text = turn.getOrNull()
+                    ?: return Result.failure(turn.exceptionOrNull()
+                        ?: IllegalStateException("VibeVoice window $index failed"))
+                transcript.append(text)
+                if (index < windows.size - 1) transcript.append('\n')
+            }
+            Result.success(transcript.toString())
+        } catch (e: CancellationException) {
+            // Same ordering as the fresh path: the ceiling's unawaited
+            // native cancel may still be inside this conversation; closing
+            // now would race it (the TASK-606 crash class). Leak it.
+            abandonedByCaller = true
+            Log.w(TAG, "VibeVoice multi-turn abandoned by caller; conversation left to engine unload")
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "VibeVoice multi-turn failed", e)
+            Result.failure(e)
+        } catch (e: Error) {
+            engineWedged = true
+            Log.e(TAG, "VibeVoice native error; engine marked wedged", e)
+            Result.failure(IllegalStateException("Native error during VibeVoice multi-turn: ${e.message}", e))
+        } finally {
+            if (!engineWedged && !abandonedByCaller) closeConversationSafe(conversation)
         }
     }
 

@@ -1,0 +1,88 @@
+{
+ "date": "2026-10-24",
+ "model": "VibeVoice-ASR-Streaming-1.5B_int8 (2.77GB, LiteRT-LM 0.17.1, TASK-872 multi-turn loop)",
+ "harness": "device RMX3853 via PROCESS_REQUEST; refs eval/transcripts; normalizer=run_baseline.normalize_it; 'Speaker N:' labels stripped from hyps",
+ "anchors": {
+  "parakeet-tdt-v3-int8": 4.48,
+  "parakeet-smoothquant": 6.28,
+  "whisper-distil-large-v3-it": 6.8
+ },
+ "per_clip": [
+  {
+   "clip": "agnese",
+   "outcome": "EMPTY (NoTranscriptionProduced)"
+  },
+  {
+   "clip": "carlo",
+   "wer": 27.8,
+   "cer": 31.6,
+   "ref_words": 18,
+   "hyp_words": 13
+  },
+  {
+   "clip": "carolina",
+   "wer": 39.3,
+   "cer": 33.6,
+   "ref_words": 89,
+   "hyp_words": 68
+  },
+  {
+   "clip": "cesco",
+   "wer": 21.1,
+   "cer": 20.2,
+   "ref_words": 19,
+   "hyp_words": 18
+  },
+  {
+   "clip": "confessione2",
+   "wer": 86.4,
+   "cer": 46.9,
+   "ref_words": 22,
+   "hyp_words": 18
+  },
+  {
+   "clip": "cosentino",
+   "wer": 100.0,
+   "cer": 95.7,
+   "ref_words": 54,
+   "hyp_words": 3
+  },
+  {
+   "clip": "fabio2",
+   "wer": 73.5,
+   "cer": 59.7,
+   "ref_words": 98,
+   "hyp_words": 56
+  },
+  {
+   "clip": "francesca",
+   "wer": 21.6,
+   "cer": 20.4,
+   "ref_words": 37,
+   "hyp_words": 33
+  },
+  {
+   "clip": "marco_rizzi",
+   "wer": 52.9,
+   "cer": 44.6,
+   "ref_words": 17,
+   "hyp_words": 11
+  },
+  {
+   "clip": "michele",
+   "wer": 50.0,
+   "cer": 52.7,
+   "ref_words": 16,
+   "hyp_words": 11
+  },
+  {
+   "clip": "viviana",
+   "wer": 43.5,
+   "cer": 27.5,
+   "ref_words": 23,
+   "hyp_words": 22
+  }
+ ],
+ "corpus_wer_weighted": 57.0,
+ "verdict": "UNCOMPETITIVE for Italian transcription. Length gradient: 21-28% WER at 1-2 windows (<=7s), 39-53% at 3-4 windows, 74-100% past 8 windows (cosentino 29s: 4 words; confessione2: Spanish-language drift; fabio2 40s: mixed-language with repeated 'Speaker 0:' tokens). Sub-window clips (<3.5s) return EMPTY. Native speaker attribution exists but the underlying text is wrong, so diarization quality is moot. The multi-turn LOOP is correct (engineering deliverable); the model is not shippable as a built-in."
+}
