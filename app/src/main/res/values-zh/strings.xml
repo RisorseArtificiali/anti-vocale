@@ -215,6 +215,7 @@
     <string name="error_model_load">模型文件可能已损坏或格式不对。请在“模型”标签页重新下载。</string>
     <string name="error_model_external_corrupt">导入的模型文件已损坏。请在“模型”标签页删除并重新导入。</string>
     <string name="error_model_corrupt_healed">部分模型文件已损坏，应用已将其移除。请打开“模型”标签页重新下载该模型。</string>
+    <string name="error_model_missing_healed">部分模型文件缺失，应用已将其移除。请打开“模型”标签页重新下载该模型。</string>
     <string name="error_native">转写时发生内部错误。如果反复出现，请尝试其他模型。</string>
     <string name="error_not_initialized">未加载任何模型。请打开“模型”标签页下载或选择一个模型。</string>
     <string name="error_model_unavailable">所选模型已不可用。请打开“模型”标签页另选一个模型。</string>
