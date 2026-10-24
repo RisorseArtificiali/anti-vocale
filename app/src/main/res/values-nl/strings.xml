@@ -1261,7 +1261,7 @@
     <string name="voice_note_identity_description">Labels transcribed voice notes with the sender\'s name, shared here or automatic. WhatsApp only for now. The name appears only when the note\'s notification arrived while this was on and its length matches (no guessed names); the waiting list lives in memory only. Requires notification access.</string>
     <string name="voice_note_identity_grant_hint">Notification access is off. Tap to open the system setting and enable it for this app.</string>
     <string name="voice_note_detection_title">Transcriptie van spraakberichten</string>
-    <string name="voice_note_detection_description">Transcribes new WhatsApp voice notes as they arrive, while the app is running. If Android blocks a background start, a one-tap notification starts it. A note is read only to transcribe it, on this device; while off, nothing is read. Requires audio access.</string>
+    <string name="voice_note_detection_description">Transcribeert nieuwe WhatsApp-spraakberichten zodra ze binnenkomen, terwijl de app draait. Als Android een achtergrondstart blokkeert, start een melding met één tik het alsnog. Een bericht wordt uitsluitend gelezen om het te transcriberen, op dit apparaat; uitgeschakeld wordt er niets gelezen. Audiotoegang vereist.</string>
     <string name="voice_note_detection_grant_hint">Audio-toegang staat uit. Tik om de app-instellingen te openen en dit in te schakelen; transcriptie start zodra het is verleend.</string>
     <string name="voice_note_folder_grant_rejected">Dit is niet de map met WhatsApp-spraakberichten. Kies de map met de naam WhatsApp Voice Notes en probeer het opnieuw.</string>
     <string name="voice_note_folder_card_title">Map met spraakberichten</string>

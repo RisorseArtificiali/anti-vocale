@@ -883,7 +883,7 @@
     <string name="voice_note_detection_title">语音消息转录</string>
     <string name="voice_note_detection_description">在应用运行时自动转录新到达的 WhatsApp 语音消息。若 Android 阻止后台启动，一键通知即可开始。仅在转录时读取消息，且在本机进行；关闭时不读取任何内容。需要音频访问权限。</string>
     <string name="voice_note_detection_grant_hint">音频访问已关闭。点按可打开应用设置并启用；授权后转录随即开始。</string>
-    <string name="voice_note_folder_grant_rejected">That is not the WhatsApp Voice Notes folder. Pick the folder named WhatsApp Voice Notes and try again.</string>
+    <string name="voice_note_folder_grant_rejected">这不是 WhatsApp Voice Notes 文件夹。请选择名为 WhatsApp Voice Notes 的文件夹，然后重试。</string>
     <string name="voice_note_folder_card_title">语音消息文件夹</string>
     <string name="voice_note_folder_card_state_granted">已授权</string>
     <string name="voice_note_folder_card_state_missing">未授权</string>
