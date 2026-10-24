@@ -206,29 +206,9 @@ class VoiceNoteSenderResolutionTest {
             VoiceNoteSenderResolution.matchForDetection(
                 cacheWith(note(durationSeconds = 42L, sender = "Studio Rossi", packageName = "com.whatsapp.w4b")),
                 ap, "com.whatsapp.w4b", "/n.opus", detectedAtMs = System.currentTimeMillis()))
-
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    @Test
-    // ---- one notification, one note (device trace, Galaxy S23) ----
-
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    @Test
-    fun `a notification that labeled one note never labels the next one`() = runTest {
-        // Two same-length notes from one chat, one notification cached: the
-        // first note takes the label, the second stays unlabeled rather
-        // than inherit the first note's sender.
-        val now = System.currentTimeMillis()
-        val cache = cacheWith(note(durationSeconds = 5L, postedAtMs = now, sender = "Anna"))
-        val ap = preprocessor(returning = 5.4)
-        assertEquals("Anna",
-            VoiceNoteSenderResolution.matchForDetection(cache, ap, "com.whatsapp", "/a.opus", detectedAtMs = now))
-        assertNull(
-            VoiceNoteSenderResolution.matchForDetection(cache, ap, "com.whatsapp", "/b.opus", detectedAtMs = now + 50_000))
     }
 
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
-<<<<<<< HEAD
     fun `a notification from one WhatsApp client never labels the other client's note`() = runTest {
         // Same length, same moment, different app: the exact-package cache
         // filter must answer no label in both directions (a wrong name is
@@ -258,7 +238,27 @@ class VoiceNoteSenderResolutionTest {
         assertEquals(
             "Cliente",
             VoiceNoteSenderResolution.matchForDetection(cache, ap, "com.whatsapp.w4b", "/b.opus", detectedAtMs = now))
-=======
+    }
+
+    // ---- one notification, one note (device trace, Galaxy S23) ----
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun `a notification that labeled one note never labels the next one`() = runTest {
+        // Two same-length notes from one chat, one notification cached: the
+        // first note takes the label, the second stays unlabeled rather
+        // than inherit the first note's sender.
+        val now = System.currentTimeMillis()
+        val cache = cacheWith(note(durationSeconds = 5L, postedAtMs = now, sender = "Anna"))
+        val ap = preprocessor(returning = 5.4)
+        assertEquals("Anna",
+            VoiceNoteSenderResolution.matchForDetection(cache, ap, "com.whatsapp", "/a.opus", detectedAtMs = now))
+        assertNull(
+            VoiceNoteSenderResolution.matchForDetection(cache, ap, "com.whatsapp", "/b.opus", detectedAtMs = now + 50_000))
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
     fun `the next note waits for its own notification instead of the consumed one`() = runTest {
         // The S23 trace: note 1 (5s) labeled by its notification; note 2
         // (6s, within the 1s tolerance of 5s) arrives 54s later, and its own
@@ -293,6 +293,5 @@ class VoiceNoteSenderResolutionTest {
         cache.clear()
         cache.remember(n)
         assertEquals(listOf(n), cache.unconsumedForPackage("com.whatsapp"))
->>>>>>> origin/main
     }
 }
