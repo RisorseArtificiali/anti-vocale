@@ -119,6 +119,15 @@ class VoiceNoteBusinessCoordinatorTest {
 
         preferences._voiceNoteBusinessDetectionEnabled.value = false
         until { !business.armed }
+        // The dispose itself hops to Dispatchers.IO after `armed` flips, so
+        // under full-suite load the flag can be observed before the dispose
+        // lands: poll the mock, not the flag, before verifying.
+        until { io.mockk.MockKVerificationScope::class.let { true } &&
+            runCatching {
+                io.mockk.verify(atLeast = 1) {
+                    detectors.getValue(VoiceNoteSource.WHATSAPP_BUSINESS).dispose()
+                }
+            }.isSuccess }
         verify(exactly = 1) { detectors.getValue(VoiceNoteSource.WHATSAPP_BUSINESS).dispose() }
         verify(exactly = 0) { detectors.getValue(VoiceNoteSource.WHATSAPP).dispose() }
         assertTrue("WhatsApp detection must survive the Business toggle", whatsApp.armed)

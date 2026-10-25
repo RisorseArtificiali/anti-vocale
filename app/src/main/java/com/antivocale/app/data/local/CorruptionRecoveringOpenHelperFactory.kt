@@ -34,7 +34,7 @@ class CorruptionRecoveringOpenHelperFactory(
             context = configuration.context,
         )
 
-    private class RecoveringHelper(
+    internal class RecoveringHelper(
         private val delegate: SupportSQLiteOpenHelper,
         private val context: Context,
     ) : SupportSQLiteOpenHelper by delegate {
@@ -49,11 +49,11 @@ class CorruptionRecoveringOpenHelperFactory(
 
         private fun access(open: () -> SupportSQLiteDatabase): SupportSQLiteDatabase =
             try {
-                open()
+                RecoveringDatabase(open(), this)
             } catch (e: SQLiteDiskIOException) {
-                recoverAndRetry(e, open)
+                RecoveringDatabase(recoverThenReopen(e, open), this)
             } catch (e: SQLiteDatabaseCorruptException) {
-                recoverAndRetry(e, open)
+                RecoveringDatabase(recoverThenReopen(e, open), this)
             }
 
         /**
@@ -62,10 +62,18 @@ class CorruptionRecoveringOpenHelperFactory(
          * that already renamed leaves nothing for this one to move, and the
          * retry open then succeeds on the fresh file.
          */
+        /**
+         * The query-path recovery: same rename-aside + ledger, then a FRESH
+         * readable database (wrapped again) for the one replay. Public within
+         * the factory: [RecoveringDatabase.guard] calls it.
+         */
+        fun recoverAfterQueryCorruption(cause: Exception): SupportSQLiteDatabase =
+            recoverThenReopen(cause) { delegate.readableDatabase }
+
         @Synchronized
-        private fun recoverAndRetry(
+        private fun recoverThenReopen(
             cause: Exception,
-            retry: () -> SupportSQLiteDatabase,
+            reopen: () -> SupportSQLiteDatabase,
         ): SupportSQLiteDatabase {
             val name = databaseName ?: throw cause
             Log.e(TAG, "History database corruption (${cause.javaClass.simpleName}: ${cause.message});" +
@@ -92,8 +100,47 @@ class CorruptionRecoveringOpenHelperFactory(
             }
             if (renamedAny) HistoryRecoveryLedger.record(stamp)
             // One retry: fresh files make the framework create an empty DB.
-            return retry()
+            return reopen()
         }
+    }
+
+    /**
+     * TASK-886 device-trial verdict (2026-10-25): the corruption surfaces
+     * at the open of a LAZILY ACQUIRED SECONDARY connection, which happens
+     * INSIDE SupportSQLiteDatabase.query() on the already-returned database
+     * object; the helper-level catch alone never sees it (the on-device
+     * trial reproduced the original crash THROUGH the shipped wrapper).
+     * Every query therefore re-issues through [guard]: on the corruption
+     * classes the helper recovers (close + rename aside + ledger) and the
+     * SAME query replays once against the fresh database.
+     */
+    internal class RecoveringDatabase(
+        private val db: SupportSQLiteDatabase,
+        private val owner: RecoveringHelper,
+    ) : SupportSQLiteDatabase by db {
+
+        internal val innerDb: SupportSQLiteDatabase get() = db
+
+        override fun query(query: String): android.database.Cursor =
+            guard { it.query(query) }
+
+        override fun query(query: androidx.sqlite.db.SupportSQLiteQuery): android.database.Cursor =
+            guard { it.query(query) }
+
+        override fun query(
+            query: androidx.sqlite.db.SupportSQLiteQuery,
+            cancellationSignal: android.os.CancellationSignal?,
+        ): android.database.Cursor =
+            guard { it.query(query, cancellationSignal) }
+
+        private fun <R> guard(reissue: (SupportSQLiteDatabase) -> R): R =
+            try {
+                reissue(db)
+            } catch (e: SQLiteDiskIOException) {
+                reissue(owner.recoverAfterQueryCorruption(e))
+            } catch (e: SQLiteDatabaseCorruptException) {
+                reissue(owner.recoverAfterQueryCorruption(e))
+            }
     }
 
     private companion object {
@@ -127,3 +174,9 @@ object HistoryRecoveryLedger {
      */
     val recoveredAt: kotlinx.coroutines.flow.StateFlow<Long?> = _recoveredAt.asStateFlow()
 }
+
+/** Test seam: the inner database behind a recovery wrapper (the wrapper is
+ *  an implementation detail; identity assertions go through here). */
+@androidx.annotation.VisibleForTesting
+fun unwrappedDb(db: SupportSQLiteDatabase): SupportSQLiteDatabase =
+    (db as? CorruptionRecoveringOpenHelperFactory.RecoveringDatabase)?.innerDb ?: db

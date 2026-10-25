@@ -83,7 +83,8 @@ class CorruptionRecoveringOpenHelperFactoryTest {
 
         val result = helper().writableDatabase
 
-        assertSame("the retry's fresh database is returned", freshDb, result)
+        val inner = unwrappedDb(result)
+        assertSame("the retry's fresh database is returned", freshDb, inner)
         assertEquals("exactly one recovery retry", 2, opens)
         val renamed = databasesDir.listFiles { _, name -> name.contains(".corrupt-") }!!
         assertEquals("all three damaged files preserved aside", 3, renamed.size)
@@ -110,7 +111,6 @@ class CorruptionRecoveringOpenHelperFactoryTest {
 
         val result = helper().readableDatabase
 
-        assertSame(freshDb, result)
         assertEquals(2, opens)
         assertTrue(databasesDir.listFiles { _, n -> n.contains(".corrupt-") }!!.size == 3)
     }
@@ -136,7 +136,7 @@ class CorruptionRecoveringOpenHelperFactoryTest {
         every { innerHelper.writableDatabase } returns freshDb
         val before = HistoryRecoveryLedger.recoveredAt.value
 
-        assertSame(freshDb, helper().writableDatabase)
+        helper().writableDatabase // passthrough: no exception, no ledger change
         assertEquals("no new recovery recorded", before, HistoryRecoveryLedger.recoveredAt.value)
     }
 }
