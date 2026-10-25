@@ -173,11 +173,17 @@ class ExternalCatalogTest {
         // + distil whisper large v3 ptbr (TASK-862: our conversion of
         // freds0's fine-tune, WER 6.35% on FLEURS pt_br, hosted at
         // pantinor/distil-whisper-large-v3-ptbr-sherpa)
+        // + transcribepsy 250m eu transducer (GH #160/TASK-855: qvac's
+        // parakeet-v3 distill, our sherpa int8 with CAFE adapters folded;
+        // FLEURS-verified on all 25 claimed locales, 20 cleared the bar
+        // (es 6.5 it 7.1 pt 9.4 de 10.4 .. hr 26.0); el/lt/mt/sl/uk
+        // measured 30.7-70.3 and are NOT claimed; smallest EU-wide tier
+        // at ~285 MB)
         // - zipformer korean REMOVED (TASK-864: measured CER 48.41% on
         // FLEURS ko vs SenseVoice 8.44% and whisper-small 21.19%; the
         // entry promised quality it does not have on general speech.
         // Still importable by URL; SenseVoice is the ko path)
-        assertEquals(31, entries.size)
+        assertEquals(32, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
@@ -285,8 +291,9 @@ class ExternalCatalogTest {
         assertEquals(4, ExternalCatalog.filter(entries, "canary").size)
         // ...and the "de" code surfaces every German-capable entry via
         // languages (TASK-596: orukeet now declares its full 24-language
-        // set, so it joins the German results)
-        assertEquals(5, ExternalCatalog.filter(entries, "de").size)
+        // set, so it joins the German results; TASK-855: transcribepsy
+        // EU declares de too)
+        assertEquals(6, ExternalCatalog.filter(entries, "de").size)
         // TASK-652: the six IndicConformer entries surface via their codes.
         // TASK-663: Dolphin declares the same six codes, so each surfaces
         // exactly the IndicConformer entry plus Dolphin (order: Dolphin first).
@@ -304,7 +311,8 @@ class ExternalCatalogTest {
         assertEquals(setOf(ModelFamily.MOONSHINE), moonshine.map { it.family }.toSet())
         assertEquals(3, ExternalCatalog.filter(entries, "uk").size)
         assertEquals(3, ExternalCatalog.filter(entries, "vi").size)
-        assertEquals(4, ExternalCatalog.filter(entries, "es").size)
+        // TASK-855: transcribepsy EU declares es (and the other 19).
+        assertEquals(5, ExternalCatalog.filter(entries, "es").size)
     }
 
     /** TASK-652 review: pin the six entry files like the omnilingual

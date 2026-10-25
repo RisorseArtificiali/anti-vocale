@@ -224,6 +224,33 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/persian-small.json"
     },
     {
+      "name": "TranscribePsy-250M-EU (sherpa int8, CAFE adapters folded)",
+      "languages": [
+        "bg",
+        "hr",
+        "cs",
+        "da",
+        "nl",
+        "en",
+        "et",
+        "fi",
+        "fr",
+        "de",
+        "hu",
+        "it",
+        "lv",
+        "pl",
+        "pt",
+        "ro",
+        "ru",
+        "sk",
+        "es",
+        "sv"
+      ],
+      "family": "TRANSDUCER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/transcribepsy-eu.json"
+    },
+    {
       "name": "Whisper Large v3 Turbo Arabic Dialectal (sherpa int8)",
       "languages": [
         "ar"

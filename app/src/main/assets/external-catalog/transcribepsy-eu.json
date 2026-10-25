@@ -1,0 +1,54 @@
+{
+  "name": "TranscribePsy-250M-EU (sherpa int8, CAFE adapters folded)",
+  "family": "TRANSDUCER",
+  "modelType": "nemo_transducer",
+  "languages": [
+    "bg",
+    "hr",
+    "cs",
+    "da",
+    "nl",
+    "en",
+    "et",
+    "fi",
+    "fr",
+    "de",
+    "hu",
+    "it",
+    "lv",
+    "pl",
+    "pt",
+    "ro",
+    "ru",
+    "sk",
+    "es",
+    "sv"
+  ],
+  "options": {},
+  "files": [
+    {
+      "name": "encoder.onnx",
+      "url": "https://huggingface.co/pantinor/transcribepsy-250m-eu-sherpa/resolve/main/encoder.onnx",
+      "sha256": "667d88a6cb772c81091f3c6560bcce6a68469e952480a880cbab594b2f9a668b",
+      "size": 269930694
+    },
+    {
+      "name": "decoder.onnx",
+      "url": "https://huggingface.co/pantinor/transcribepsy-250m-eu-sherpa/resolve/main/decoder.onnx",
+      "sha256": "2c0e8d272d5c42754538883581fc422b191f0cd7f7a3e3406ccdd08d08a14cad",
+      "size": 8543695
+    },
+    {
+      "name": "joiner.onnx",
+      "url": "https://huggingface.co/pantinor/transcribepsy-250m-eu-sherpa/resolve/main/joiner.onnx",
+      "sha256": "1501bd4cc2943d22294564c86f7ec35a0417c650fddc8f5d293b719d1a5304ef",
+      "size": 6109808
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/pantinor/transcribepsy-250m-eu-sherpa/resolve/main/tokens.txt",
+      "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d",
+      "size": 93939
+    }
+  ]
+}
