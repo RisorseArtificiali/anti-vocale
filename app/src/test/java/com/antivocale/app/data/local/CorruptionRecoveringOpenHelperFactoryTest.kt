@@ -85,7 +85,9 @@ class CorruptionRecoveringOpenHelperFactoryTest {
 
         val inner = unwrappedDb(result)
         assertSame("the retry's fresh database is returned", freshDb, inner)
-        assertEquals("exactly one recovery retry", 2, opens)
+        // One recovery pass: exactly one close (the wrapper resolves the
+        // helper per call, so open counts are no longer the retry count).
+        verify(exactly = 1) { innerHelper.close() }
         val renamed = databasesDir.listFiles { _, name -> name.contains(".corrupt-") }!!
         assertEquals("all three damaged files preserved aside", 3, renamed.size)
         assertTrue("the ORIGINAL damaged files are gone (moved, not copied)",
@@ -96,7 +98,6 @@ class CorruptionRecoveringOpenHelperFactoryTest {
             renamed.any { it.readText() == "damaged-main" })
         org.junit.Assert.assertNotEquals("the ledger recorded the recovery (not the setUp sentinel)",
             -1L, HistoryRecoveryLedger.recoveredAt.value)
-        io.mockk.verify(atLeast = 1) { innerHelper.close() }
     }
 
     @Test
@@ -111,7 +112,7 @@ class CorruptionRecoveringOpenHelperFactoryTest {
 
         val result = helper().readableDatabase
 
-        assertEquals(2, opens)
+        verify(exactly = 1) { innerHelper.close() }
         assertTrue(databasesDir.listFiles { _, n -> n.contains(".corrupt-") }!!.size == 3)
     }
 
@@ -129,6 +130,35 @@ class CorruptionRecoveringOpenHelperFactoryTest {
         assertNotNull("the retry's failure surfaces to the caller", thrown)
         // The damaged files were still preserved by the one recovery pass.
         assertTrue(databasesDir.listFiles { _, n -> n.contains(".corrupt-") }!!.size == 3)
+    }
+
+    @Test
+    fun `a second query after a mid-query recovery goes to the live database`() {
+        // TASK-890: an in-flight block holds this wrapper across
+        // statements, so the SECOND query arrives on the same object after
+        // the recovery closed the damaged handle underneath. A wrapper
+        // still pointing at it crashes with IllegalStateException (not a
+        // corruption class: uncatchable at this layer, the mid-session
+        // crash the fix exists to prevent). The inner helper models the
+        // framework contract: readableDatabase returns the same instance
+        // until close(), then the reopened fresh one.
+        writeDamagedFiles()
+        val damagedDb = mockk<SupportSQLiteDatabase>()
+        var damagedQueries = 0
+        every { damagedDb.query(any<String>()) } answers {
+            damagedQueries += 1
+            if (damagedQueries == 1) throw SQLiteDiskIOException("short read (522)")
+            throw IllegalStateException("attempt to re-open an already-closed object")
+        }
+        var closed = false
+        every { innerHelper.readableDatabase } answers { if (closed) freshDb else damagedDb }
+        every { innerHelper.close() } answers { closed = true }
+
+        val db = helper().readableDatabase
+        db.query("SELECT * FROM logs") // first query: corrupted, recovered, replayed fresh
+        db.query("SELECT * FROM logs") // the second query on the SAME wrapper
+
+        verify(exactly = 2) { freshDb.query(any<String>()) }
     }
 
     @Test

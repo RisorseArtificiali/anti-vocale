@@ -49,27 +49,35 @@ class CorruptionRecoveringOpenHelperFactory(
 
         private fun access(open: () -> SupportSQLiteDatabase): SupportSQLiteDatabase =
             try {
-                RecoveringDatabase(open(), this)
+                RecoveringDatabase(open, this)
             } catch (e: SQLiteDiskIOException) {
-                RecoveringDatabase(recoverThenReopen(e, open), this)
+                // The wrapper keeps the instance the recovery itself
+                // validated, not a second unguarded open.
+                val fresh = recoverThenReopen(e, open)
+                RecoveringDatabase({ fresh }, this)
             } catch (e: SQLiteDatabaseCorruptException) {
-                RecoveringDatabase(recoverThenReopen(e, open), this)
+                val fresh = recoverThenReopen(e, open)
+                RecoveringDatabase({ fresh }, this)
             }
+
+        /**
+         * The query-path recovery: same rename-aside + ledger, then one
+         * reopen. Public within the factory: [RecoveringDatabase.guard]
+         * calls it and then re-resolves the live database itself (its
+         * callers hold the wrapper across statements, so the per-call
+         * resolution IS the reopen contract there).
+         */
+        fun recoverAfterQueryCorruption(cause: Exception) {
+            recoverThenReopen(cause) { delegate.readableDatabase }
+        }
 
         /**
          * Serialized: two threads hitting the same corruption must not race
          * the rename. Idempotent by the file's absence: a racing recovery
          * that already renamed leaves nothing for this one to move, and the
-         * retry open then succeeds on the fresh file.
+         * retry open then succeeds on the fresh file. Returns the reopened
+         * database: access() wraps exactly that instance.
          */
-        /**
-         * The query-path recovery: same rename-aside + ledger, then a FRESH
-         * readable database (wrapped again) for the one replay. Public within
-         * the factory: [RecoveringDatabase.guard] calls it.
-         */
-        fun recoverAfterQueryCorruption(cause: Exception): SupportSQLiteDatabase =
-            recoverThenReopen(cause) { delegate.readableDatabase }
-
         @Synchronized
         private fun recoverThenReopen(
             cause: Exception,
@@ -113,13 +121,28 @@ class CorruptionRecoveringOpenHelperFactory(
      * Every query therefore re-issues through [guard]: on the corruption
      * classes the helper recovers (close + rename aside + ledger) and the
      * SAME query replays once against the fresh database.
+     *
+     * TASK-890: [resolve] re-reads the database from the helper on EVERY
+     * guarded call. Room 2.7.1 re-acquires a connection per use, but an
+     * in-flight block (a suspend DAO call, a withTransaction body, the
+     * invalidation tracker's block) holds this wrapper across statements:
+     * a recovery mid-block closes the inner handle underneath it, and a
+     * wrapper holding the old instance would crash the block with
+     * IllegalStateException (not a corruption class). Per-call resolution
+     * repairs every holder shape through one contract, the helper's:
+     * readableDatabase/writableDatabase after close() return the live
+     * database. The `by` delegation keeps the construction-time instance
+     * for the non-query surface: a recovery inside a multi-statement
+     * WRITE block aborts that block regardless (its transaction began on
+     * the closed handle; TASK-895), so only the guarded reads
+     * claim liveness.
      */
     internal class RecoveringDatabase(
-        private val db: SupportSQLiteDatabase,
+        private val resolve: () -> SupportSQLiteDatabase,
         private val owner: RecoveringHelper,
-    ) : SupportSQLiteDatabase by db {
+    ) : SupportSQLiteDatabase by resolve() {
 
-        internal val innerDb: SupportSQLiteDatabase get() = db
+        internal val innerDb: SupportSQLiteDatabase get() = resolve()
 
         override fun query(query: String): android.database.Cursor =
             guard { it.query(query) }
@@ -135,11 +158,13 @@ class CorruptionRecoveringOpenHelperFactory(
 
         private fun <R> guard(reissue: (SupportSQLiteDatabase) -> R): R =
             try {
-                reissue(db)
+                reissue(resolve())
             } catch (e: SQLiteDiskIOException) {
-                reissue(owner.recoverAfterQueryCorruption(e))
+                owner.recoverAfterQueryCorruption(e)
+                reissue(resolve())
             } catch (e: SQLiteDatabaseCorruptException) {
-                reissue(owner.recoverAfterQueryCorruption(e))
+                owner.recoverAfterQueryCorruption(e)
+                reissue(resolve())
             }
     }
 
@@ -175,8 +200,10 @@ object HistoryRecoveryLedger {
     val recoveredAt: kotlinx.coroutines.flow.StateFlow<Long?> = _recoveredAt.asStateFlow()
 }
 
-/** Test seam: the inner database behind a recovery wrapper (the wrapper is
- *  an implementation detail; identity assertions go through here). */
+/** Test seam: the database the wrapper's GUARDED QUERY surface currently
+ *  resolves (it re-reads the helper per call, so after a recovery this is
+ *  the live database; the non-query delegation surface is TASK-895's
+ *  documented gap). Identity assertions go through here. */
 @androidx.annotation.VisibleForTesting
 fun unwrappedDb(db: SupportSQLiteDatabase): SupportSQLiteDatabase =
     (db as? CorruptionRecoveringOpenHelperFactory.RecoveringDatabase)?.innerDb ?: db
