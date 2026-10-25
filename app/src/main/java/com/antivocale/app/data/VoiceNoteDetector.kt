@@ -367,24 +367,24 @@ class VoiceNoteDetector(
     }
 
     /**
-     * TASK-778: the persisted watermark advances to the newest EMITTED
-     * note on every emission (live and catch-up alike). The compare lives
-     * inside the store's bump (monotonic; concurrent emissions cannot
-     * regress it). Fire-and-forget on the app scope: a save lost to
-     * process death at worst re-emits a note the 842 enqueue dedup then
-     * absorbs.
+     * TASK-778: this source's persisted watermark advances to the newest
+     * EMITTED note on every emission (live and catch-up alike). The
+     * compare lives inside the store's bump (monotonic; concurrent
+     * emissions cannot regress it). Fire-and-forget on the app scope: a
+     * save lost to process death at worst re-emits a note the 842 enqueue
+     * dedup then absorbs.
      */
     private fun advanceWatermark(entry: VoiceNoteEntry) {
         val key = VoiceNoteFilter.watermarkKeyOf(File(entry.path ?: return)) ?: return
         scope.launch(Dispatchers.IO) {
-            preferencesManager.bumpVoiceNoteWatermark(key)
+            preferencesManager.bumpVoiceNoteWatermark(source, key)
         }
     }
 
     /**
      * TASK-778 (with the 829 option-C maintainer decision): scan the
      * EXISTING counter folders once per arm and emit the notes newer than
-     * the persisted watermark, younger than [coldCatchUpTtlMs], capped at
+     * this source's persisted watermark, younger than [coldCatchUpTtlMs], capped at
      * the newest [coldCatchUpCap]. This is the recovery path for notes
      * that arrived while the process was dead or a watch channel was
      * silently dead (the documented 830/831 boundary): their events never
@@ -405,7 +405,7 @@ class VoiceNoteDetector(
      *  WhatsApp tree; the real-path resolver is [coldCatchUp]). */
     @VisibleForTesting
     internal suspend fun coldCatchUpScan(folders: List<File>, allowRetry: Boolean = true) {
-        var watermark = preferencesManager.voiceNoteWatermark.first()
+        var watermark = preferencesManager.voiceNoteWatermark(source).first()
         // Review 2026-10-25: a WhatsApp counter reset (reinstall/clear-data
         // rebuilding the tree from low folder numbers) leaves a stale
         // watermark above every existing key, silently suppressing all
@@ -418,7 +418,7 @@ class VoiceNoteDetector(
         ) {
             Log.w(TAG, "watermark folder $watermarkFolder is above every existing folder;" +
                 " WhatsApp counter regressed, resetting the watermark")
-            preferencesManager.resetVoiceNoteWatermark()
+            preferencesManager.resetVoiceNoteWatermark(source)
             watermark = null
         }
         val now = System.currentTimeMillis()
@@ -493,10 +493,10 @@ class VoiceNoteDetector(
     }
 
     /** The settle round: quiet + TTL + watermark re-check on exactly the
-     *  once-fresh files (a live event may have advanced the watermark in
-     *  the delay window; the re-read filter drops it then). */
+     *  once-fresh files (a live event may have advanced this source's
+     *  watermark in the delay window; the re-read filter drops it then). */
     private suspend fun settleFreshNotes(files: List<File>) {
-        val watermark = preferencesManager.voiceNoteWatermark.first()
+        val watermark = preferencesManager.voiceNoteWatermark(source).first()
         val now = System.currentTimeMillis()
         files.mapNotNull { file ->
             val key = VoiceNoteFilter.watermarkKeyOf(file) ?: return@mapNotNull null

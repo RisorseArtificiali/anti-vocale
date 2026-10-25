@@ -144,8 +144,9 @@ internal class TestSpiOps(
             .put("voiceNoteBusinessDetectionEnabled", preferences.voiceNoteBusinessDetectionEnabled.first())
             .put("voiceNoteBusinessTreeUri", preferences.voiceNoteBusinessTreeUri.first() ?: JSONObject.NULL)
             // TASK-778: the persisted catch-up watermark (read-only diagnostic;
-            // the detector owns writes).
+            // the detector owns writes). TASK-891: one per source.
             .put("voiceNoteWatermark", preferences.voiceNoteWatermark.first() ?: JSONObject.NULL)
+            .put("voiceNoteBusinessWatermark", preferences.voiceNoteBusinessWatermark.first() ?: JSONObject.NULL)
             // TASK-681: the LAN-offload config (endpoint visible for E2E
             // verification; the key is masked to its last 4 chars).
             .put("remoteOmnivoiceEnabled", preferences.remoteOmnivoiceEnabled.first())

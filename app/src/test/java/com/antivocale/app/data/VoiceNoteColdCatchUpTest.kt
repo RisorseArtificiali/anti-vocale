@@ -41,21 +41,39 @@ class VoiceNoteColdCatchUpTest {
     private lateinit var detector: VoiceNoteDetector
     private val entries = mutableListOf<VoiceNoteEntry>()
 
-    /** The mock-backed watermark store: what the detector reads and bumps. */
-    private var storedWatermark: String? = null
+    /** The mock-backed per-source watermark store: what the detectors read and bump. */
+    private val storedWatermarks = mutableMapOf<VoiceNoteSource, String?>()
     private val preferences = mockk<PreferencesManager>(relaxed = true)
 
     @Before
     fun setUp() {
-        storedWatermark = null
-        every { preferences.voiceNoteWatermark } answers { flowOf(storedWatermark) }
+        storedWatermarks.clear()
+        every { preferences.voiceNoteWatermark } answers {
+            flowOf(storedWatermarks[VoiceNoteSource.WHATSAPP])
+        }
+        every { preferences.voiceNoteBusinessWatermark } answers {
+            flowOf(storedWatermarks[VoiceNoteSource.WHATSAPP_BUSINESS])
+        }
         coEvery { preferences.bumpVoiceNoteWatermark(any()) } answers {
             val candidate = firstArg<String>()
-            if (storedWatermark == null || candidate > storedWatermark!!) {
-                storedWatermark = candidate
+            val current = storedWatermarks[VoiceNoteSource.WHATSAPP]
+            if (current == null || candidate > current) {
+                storedWatermarks[VoiceNoteSource.WHATSAPP] = candidate
             }
         }
-        coEvery { preferences.resetVoiceNoteWatermark() } answers { storedWatermark = null }
+        coEvery { preferences.bumpVoiceNoteBusinessWatermark(any()) } answers {
+            val candidate = firstArg<String>()
+            val current = storedWatermarks[VoiceNoteSource.WHATSAPP_BUSINESS]
+            if (current == null || candidate > current) {
+                storedWatermarks[VoiceNoteSource.WHATSAPP_BUSINESS] = candidate
+            }
+        }
+        coEvery { preferences.resetVoiceNoteWatermark() } answers {
+            storedWatermarks[VoiceNoteSource.WHATSAPP] = null
+        }
+        coEvery { preferences.resetVoiceNoteBusinessWatermark() } answers {
+            storedWatermarks[VoiceNoteSource.WHATSAPP_BUSINESS] = null
+        }
         scope = CoroutineScope(Dispatchers.Unconfined)
         detector = VoiceNoteDetector(scope, preferences)
         // Unconfined collector: emissions land in `entries` synchronously.
@@ -87,10 +105,13 @@ class VoiceNoteColdCatchUpTest {
      * Unconfined test scope, so watermark assertions poll instead of
      * racing the write.
      */
-    private fun awaitWatermark(expected: String?) {
+    private fun awaitWatermark(
+        expected: String?,
+        source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
+    ) {
         kotlinx.coroutines.runBlocking {
             withTimeout(2_000) {
-                while (storedWatermark != expected) delay(10)
+                while (storedWatermarks[source] != expected) delay(10)
             }
         }
     }
@@ -100,7 +121,7 @@ class VoiceNoteColdCatchUpTest {
         note("100", "PTT-20261020-WA00001.opus", ageMs = 5_000) // AT the watermark
         note("100", "PTT-20261020-WA00002.opus", ageMs = 5_000) // past it
         note("202644", "PTT-20261025-WA00001.opus", ageMs = 5_000) // new counter folder
-        storedWatermark = keyOf("100", "PTT-20261020-WA00001.opus")
+        storedWatermarks[VoiceNoteSource.WHATSAPP] = keyOf("100", "PTT-20261020-WA00001.opus")
 
         kotlinx.coroutines.runBlocking {
             detector.coldCatchUpScan(listOf(File(tmp.root, "100"), File(tmp.root, "202644")))
@@ -147,7 +168,7 @@ class VoiceNoteColdCatchUpTest {
     @Test
     fun `watermark at the newest note swallows the sweep`() {
         note("100", "PTT-20261025-WA00001.opus", ageMs = 5_000)
-        storedWatermark = keyOf("100", "PTT-20261025-WA00001.opus")
+        storedWatermarks[VoiceNoteSource.WHATSAPP] = keyOf("100", "PTT-20261025-WA00001.opus")
 
         kotlinx.coroutines.runBlocking {
             detector.coldCatchUpScan(listOf(File(tmp.root, "100")))
@@ -184,7 +205,7 @@ class VoiceNoteColdCatchUpTest {
         val fresh = note("100", "PTT-20261025-WA00009.opus", ageMs = 0)
         fresh.setLastModified(System.currentTimeMillis())
         note("100", "PTT-20261020-WA00002.opus", ageMs = 60_000) // settled history
-        storedWatermark = keyOf("100", "PTT-20261020-WA00002.opus")
+        storedWatermarks[VoiceNoteSource.WHATSAPP] = keyOf("100", "PTT-20261020-WA00002.opus")
 
         kotlinx.coroutines.runBlocking {
             detector.coldCatchUpScan(listOf(File(tmp.root, "100")))
@@ -209,7 +230,7 @@ class VoiceNoteColdCatchUpTest {
         // reset the watermark, and proceed unfiltered.
         detector.coldCatchUpTtlMs = Long.MAX_VALUE
         note("7", "PTT-20261025-WA00001.opus", ageMs = 60_000) // fresh low-counter tree
-        storedWatermark = keyOf("202644", "PTT-20261020-WA00002.opus") // old high-counter world
+        storedWatermarks[VoiceNoteSource.WHATSAPP] = keyOf("202644", "PTT-20261020-WA00002.opus") // old high-counter world
 
         kotlinx.coroutines.runBlocking {
             detector.coldCatchUpScan(listOf(File(tmp.root, "7")))
@@ -218,6 +239,84 @@ class VoiceNoteColdCatchUpTest {
         assertEquals("the regressed watermark was reset and the note recovered", 1, entries.size)
         assertTrue(entries.single().path!!.endsWith("PTT-20261025-WA00001.opus"))
         awaitWatermark(keyOf("7", "PTT-20261025-WA00001.opus"))
+    }
+
+    /**
+     * TASK-891: the two-source fixture. Production hands ONE
+     * PreferencesManager to the WhatsApp and the Business detector alike
+     * (AppModule builds both coordinators over the same singleton), so
+     * these tests share `preferences` the same way. What must NOT be
+     * shared is the watermark: the two counter trees are independent
+     * number spaces.
+     */
+    private fun businessDetector(entries: MutableList<VoiceNoteEntry>): VoiceNoteDetector {
+        val business = VoiceNoteDetector(scope, preferences, VoiceNoteSource.WHATSAPP_BUSINESS)
+        scope.launch { business.detections.collect { entries += it } }
+        return business
+    }
+
+    @Test
+    fun `a Business arm below the personal watermark does not reset it`() {
+        // The personal watermark sits at a high counter folder; the
+        // Business tree starts at low ones. Sharing one watermark makes
+        // the Business arm read "every folder is below the watermark" as a
+        // WhatsApp counter regression and wipe the PERSONAL watermark
+        // (which then re-emits the personal history on the next catch-up).
+        // TTL is widened on the SCANNING arm (the Business detector);
+        // the personal detector never scans in this test.
+        val businessEntries = mutableListOf<VoiceNoteEntry>()
+        val business = businessDetector(businessEntries)
+        try {
+            business.coldCatchUpTtlMs = Long.MAX_VALUE
+            val personalKey = keyOf("202644", "PTT-20261020-WA00009.opus")
+            note("wa/202644", "PTT-20261020-WA00009.opus", ageMs = 60_000)
+            storedWatermarks[VoiceNoteSource.WHATSAPP] = personalKey
+            note("biz/7", "PTT-20261025-WA00001.opus", ageMs = 60_000)
+
+            kotlinx.coroutines.runBlocking {
+                business.coldCatchUpScan(listOf(File(tmp.root, "biz/7")))
+            }
+
+            assertEquals("the Business note is recovered", 1, businessEntries.size)
+            assertEquals("the personal watermark survives the Business arm",
+                personalKey, storedWatermarks[VoiceNoteSource.WHATSAPP])
+            awaitWatermark(keyOf("biz/7", "PTT-20261025-WA00001.opus"),
+                VoiceNoteSource.WHATSAPP_BUSINESS)
+        } finally {
+            business.dispose()
+        }
+    }
+
+    @Test
+    fun `a genuinely new Business note below the personal watermark is not suppressed`() {
+        // The Business note sorts below the personal watermark (older PTT
+        // date, same folder number, so the folder prune cannot explain the
+        // outcome either). With independent stores the Business arm's own
+        // null watermark suppresses nothing; under the shared-key bug this
+        // exact shape was the silent-suppression leg: no reset rescues it
+        // because the shared watermark's folder matches the scanned one.
+        val businessEntries = mutableListOf<VoiceNoteEntry>()
+        val business = businessDetector(businessEntries)
+        try {
+            business.coldCatchUpTtlMs = Long.MAX_VALUE
+            val personalKey = keyOf("wa/202644", "PTT-20261020-WA00009.opus")
+            note("wa/202644", "PTT-20261020-WA00009.opus", ageMs = 60_000)
+            storedWatermarks[VoiceNoteSource.WHATSAPP] = personalKey
+            note("biz/202644", "PTT-20261019-WA00001.opus", ageMs = 60_000)
+
+            kotlinx.coroutines.runBlocking {
+                business.coldCatchUpScan(listOf(File(tmp.root, "biz/202644")))
+            }
+
+            assertEquals("the Business note is emitted despite sorting below" +
+                " the personal watermark", 1, businessEntries.size)
+            assertEquals("the personal watermark is untouched",
+                personalKey, storedWatermarks[VoiceNoteSource.WHATSAPP])
+            awaitWatermark(keyOf("biz/202644", "PTT-20261019-WA00001.opus"),
+                VoiceNoteSource.WHATSAPP_BUSINESS)
+        } finally {
+            business.dispose()
+        }
     }
 
     @Test

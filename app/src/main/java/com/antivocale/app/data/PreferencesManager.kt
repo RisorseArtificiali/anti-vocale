@@ -343,9 +343,13 @@ interface PreferencesManager {
      * newest EMITTED note. The durable form of the detector's RAM-only
      * seen filter: what the cold-start catch-up sweep compares against so
      * notes that arrived while the process was dead are recovered instead
-     * of invisible. Null until the first emission.
+     * of invisible. Null until the first emission. The WhatsApp entry
+     * (this one) keeps its original store key.
      */
     val voiceNoteWatermark: Flow<String?>
+
+    /** TASK-891: the Business client's own watermark (independent counter tree). */
+    val voiceNoteBusinessWatermark: Flow<String?>
 
     /**
      * TASK-778: advances [voiceNoteWatermark] monotonically (a candidate
@@ -356,6 +360,9 @@ interface PreferencesManager {
      */
     suspend fun bumpVoiceNoteWatermark(candidate: String)
 
+    /** TASK-891: the Business twin of [bumpVoiceNoteWatermark]. */
+    suspend fun bumpVoiceNoteBusinessWatermark(candidate: String)
+
     /**
      * TASK-778: clears [voiceNoteWatermark]. Called when the detector
      * observes the WhatsApp counter space regressed (reinstall/clear-data
@@ -363,6 +370,10 @@ interface PreferencesManager {
      * would silently suppress every future recovery.
      */
     suspend fun resetVoiceNoteWatermark()
+
+    /** TASK-891: the Business twin of [resetVoiceNoteWatermark]. */
+    suspend fun resetVoiceNoteBusinessWatermark()
+
     suspend fun saveCompactResultActions(enabled: Boolean)
     suspend fun saveLanguageChipEnabled(enabled: Boolean)
 

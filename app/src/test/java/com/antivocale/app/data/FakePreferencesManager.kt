@@ -46,6 +46,14 @@ internal class FakePreferencesManager : PreferencesManager {
         if (current == null || candidate > current) _voiceNoteWatermark.value = candidate
     }
     override suspend fun resetVoiceNoteWatermark() { _voiceNoteWatermark.value = null }
+    // TASK-891: the Business twin (independent counter tree).
+    val _voiceNoteBusinessWatermark = MutableStateFlow<String?>(null)
+    override val voiceNoteBusinessWatermark: Flow<String?> = _voiceNoteBusinessWatermark
+    override suspend fun bumpVoiceNoteBusinessWatermark(candidate: String) {
+        val current = _voiceNoteBusinessWatermark.value
+        if (current == null || candidate > current) _voiceNoteBusinessWatermark.value = candidate
+    }
+    override suspend fun resetVoiceNoteBusinessWatermark() { _voiceNoteBusinessWatermark.value = null }
     val _vadEnabled = MutableStateFlow(false)
     val _freezeProtectionEnabled = MutableStateFlow(false)
     override val freezeProtectionEnabled: Flow<Boolean> = _freezeProtectionEnabled

@@ -91,3 +91,29 @@ suspend fun PreferencesManager.saveVoiceNoteTreeUri(source: VoiceNoteSource, uri
         VoiceNoteSource.WHATSAPP -> saveVoiceNoteTreeUri(uri)
         VoiceNoteSource.WHATSAPP_BUSINESS -> saveVoiceNoteBusinessTreeUri(uri)
     }
+
+/**
+ * TASK-891: the per-source catch-up watermark. The two clients' counter
+ * trees are independent number spaces, so each keeps its own; the WhatsApp
+ * entry keeps its original key, so released installs (which never ran a
+ * Business detector) migrate by construction. A pre-release shared-key
+ * build may have mixed Business keys into it; bounded, one-time (see
+ * TASK-891's notes).
+ */
+fun PreferencesManager.voiceNoteWatermark(source: VoiceNoteSource): Flow<String?> =
+    when (source) {
+        VoiceNoteSource.WHATSAPP -> voiceNoteWatermark
+        VoiceNoteSource.WHATSAPP_BUSINESS -> voiceNoteBusinessWatermark
+    }
+
+suspend fun PreferencesManager.bumpVoiceNoteWatermark(source: VoiceNoteSource, candidate: String) =
+    when (source) {
+        VoiceNoteSource.WHATSAPP -> bumpVoiceNoteWatermark(candidate)
+        VoiceNoteSource.WHATSAPP_BUSINESS -> bumpVoiceNoteBusinessWatermark(candidate)
+    }
+
+suspend fun PreferencesManager.resetVoiceNoteWatermark(source: VoiceNoteSource) =
+    when (source) {
+        VoiceNoteSource.WHATSAPP -> resetVoiceNoteWatermark()
+        VoiceNoteSource.WHATSAPP_BUSINESS -> resetVoiceNoteBusinessWatermark()
+    }

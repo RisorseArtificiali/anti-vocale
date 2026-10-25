@@ -144,7 +144,10 @@ class VoiceNoteCatchUpScanTest {
         note(waFolder, name, lastModifiedAgoMs = 60_000)
         note(w4bFolder, name, lastModifiedAgoMs = 60_000)
         val business = VoiceNoteDetector(scope, io.mockk.mockk<PreferencesManager>(relaxed = true).also {
-                io.mockk.every { it.voiceNoteWatermark } returns kotlinx.coroutines.flow.flowOf(null)
+                // The Business detector reads its OWN watermark member at
+                // arm time; an unstubbed relaxed Flow answers empty and
+                // .first() kills the shared scope.
+                io.mockk.every { it.voiceNoteBusinessWatermark } returns kotlinx.coroutines.flow.flowOf(null)
             }, VoiceNoteSource.WHATSAPP_BUSINESS)
         val businessEntries = mutableListOf<VoiceNoteEntry>()
         try {
@@ -177,7 +180,7 @@ class VoiceNoteCatchUpScanTest {
         note(waFolder, "PTT-20261020-WA0002.opus", lastModifiedAgoMs = 60_000)
         note(w4bFolder, "PTT-20261020-WA0002.opus", lastModifiedAgoMs = 60_000)
         val business = VoiceNoteDetector(scope, io.mockk.mockk<PreferencesManager>(relaxed = true).also {
-                io.mockk.every { it.voiceNoteWatermark } returns kotlinx.coroutines.flow.flowOf(null)
+                io.mockk.every { it.voiceNoteBusinessWatermark } returns kotlinx.coroutines.flow.flowOf(null)
             }, VoiceNoteSource.WHATSAPP_BUSINESS)
         val businessEntries = mutableListOf<VoiceNoteEntry>()
         detector.catchUpDelayMs = 2_000
