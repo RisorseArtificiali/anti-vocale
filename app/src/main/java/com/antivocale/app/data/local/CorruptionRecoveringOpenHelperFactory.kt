@@ -24,7 +24,7 @@ internal const val DB_ASIDE_INFIX = ".corrupt-"
  * moves the database files ASIDE (preserving transcripts for manual
  * recovery; the 660/661 model-heal precedent) and retries once; a fresh
  * empty database is created and the app lives. TASK-892: when the rename
- * itself fails (dying disk), the damaged file is DELETED instead - losing
+ * itself fails (dying disk), the damaged file is DELETED instead; losing
  * the bytes is the smaller harm next to reopening the same corruption at
  * every launch, and the ledger's preservedAside flag keeps the banner
  * honest about which happened. A second corruption during the retry
@@ -58,13 +58,15 @@ class CorruptionRecoveringOpenHelperFactory(
             try {
                 RecoveringDatabase(open, this)
             } catch (e: SQLiteDiskIOException) {
-                // The wrapper keeps the instance the recovery itself
-                // validated, not a second unguarded open.
-                val fresh = recoverThenReopen(e, open)
-                RecoveringDatabase({ fresh }, this)
+                // The LIVE resolver, not a pinned instance: a later
+                // query-path recovery swaps the database underneath this
+                // wrapper again, and the guard's per-call resolution must
+                // follow it (the 890 contract holds for every holder).
+                recoverThenReopen(e, open)
+                RecoveringDatabase(open, this)
             } catch (e: SQLiteDatabaseCorruptException) {
-                val fresh = recoverThenReopen(e, open)
-                RecoveringDatabase({ fresh }, this)
+                recoverThenReopen(e, open)
+                RecoveringDatabase(open, this)
             }
 
         /**
@@ -82,8 +84,9 @@ class CorruptionRecoveringOpenHelperFactory(
          * Serialized: two threads hitting the same corruption must not race
          * the rename. Idempotent by the file's absence: a racing recovery
          * that already renamed leaves nothing for this one to move, and the
-         * retry open then succeeds on the fresh file. Returns the reopened
-         * database: access() wraps exactly that instance.
+         * retry open then succeeds on the fresh file. Callers re-resolve
+         * the live database through the helper afterwards; nothing needs
+         * the return value.
          *
          * TASK-892: a rename that FAILS on a dying disk falls back to
          * delete(). Leaving the damaged file in place would reopen the
@@ -97,7 +100,7 @@ class CorruptionRecoveringOpenHelperFactory(
         private fun recoverThenReopen(
             cause: Exception,
             reopen: () -> SupportSQLiteDatabase,
-        ): SupportSQLiteDatabase {
+        ) {
             val name = databaseName ?: throw cause
             Log.e(TAG, "History database corruption (${cause.javaClass.simpleName}: ${cause.message});" +
                 " renaming the damaged files aside and recreating; the app would otherwise" +
@@ -115,6 +118,7 @@ class CorruptionRecoveringOpenHelperFactory(
             }
             var mainPreserved = false
             var minted = false
+            var deletedAny = false
             DATABASE_SUFFIXES.forEach { suffix ->
                 val damaged = File(databasesDir, name + suffix)
                 if (damaged.exists()) {
@@ -124,6 +128,7 @@ class CorruptionRecoveringOpenHelperFactory(
                         minted = true
                         Log.w(TAG, "damaged file preserved at ${aside.name}")
                     } else if (damaged.delete()) {
+                        deletedAny = true
                         Log.e(TAG, "rename aside failed for ${damaged.name};" +
                             " deleted it to escape the relaunch crash loop (TASK-892)")
                     } else {
@@ -136,11 +141,15 @@ class CorruptionRecoveringOpenHelperFactory(
             // that preserved nothing must not spend the user's last
             // recoverable snapshots.
             if (minted) pruneAsideSets(databasesDir, name)
-            // Recorded on every ATTEMPT (a delete-fallback recovery must be
-            // explained too, not only a clean rename-aside one).
-            HistoryRecoveryLedger.record(stamp, mainPreserved)
+            // Recorded only on attempts that MOVED something. An idempotent
+            // racing attempt (a prior recovery already renamed everything)
+            // must not overwrite the first recovery's notice with a
+            // preservedAside=false re-surface of the same event.
+            if (minted || deletedAny) {
+                HistoryRecoveryLedger.record(stamp, mainPreserved)
+            }
             // One retry: fresh files make the framework create an empty DB.
-            return reopen()
+            reopen()
         }
 
         /** Test seam for a dying disk: rename indirection, injectable. */

@@ -467,6 +467,11 @@ class VoiceNoteDetector(
                 }
             }
             .sortedByDescending { it.second }
+            // TASK-893: a decorated twin keys as its original; same key is
+            // the same note, so a burst that contains both emits ONE of
+            // them (the auto voice-note path dedups by full file name, so
+            // without this the pair would transcribe twice).
+            .distinctBy { it.second }
             .take(coldCatchUpCap)
         if (candidates.isNotEmpty()) {
             Log.i(TAG, "cold-start catch-up: ${candidates.size} note(s) newer than watermark $watermark")
@@ -506,6 +511,7 @@ class VoiceNoteDetector(
             val lm = file.lastModified()
             lm <= now - catchUpDelayMs && now - lm <= coldCatchUpTtlMs
         }.sortedByDescending { it.second }
+            .distinctBy { it.second } // same key = same note (TASK-893)
             .take(coldCatchUpCap)
             .forEach { (file, _) -> onDetection(entryFor(file).copy(catchup = true)) }
     }
@@ -588,9 +594,10 @@ object VoiceNoteFilter {
      * redownload suffix ("...WA12 (1).opus") were silently unrecoverable;
      * a decorated name now keys as its ORIGINAL (same note, same
      * position), so it can never jump the watermark past the folder's
-     * real notes. When both twins are unseen, catch-up emits both and the
-     * enqueue-side content-hash dedup (the 842 row) absorbs the pair; the
-     * shared key is what keeps the watermark honest, not a dedup gate.
+     * real notes. The catch-up scans dedupe candidates BY KEY (same key
+     * is the same note: one emission per burst), which is also what keeps
+     * an unseen twin from transcribing twice; the watermark itself is a
+     * monotonic max, so the twin's identical key is a no-op on it.
      */
     fun watermarkKeyOf(file: File): String? {
         val folder = file.parentFile?.name?.toLongOrNull() ?: return null

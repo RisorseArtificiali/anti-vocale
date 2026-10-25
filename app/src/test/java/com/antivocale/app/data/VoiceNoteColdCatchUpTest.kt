@@ -268,6 +268,22 @@ class VoiceNoteColdCatchUpTest {
     }
 
     @Test
+    fun `an original and its decorated twin emit once per burst`() {
+        // Same key = same note: the auto voice-note path dedups by full
+        // file name, so without the by-key candidate dedup a burst holding
+        // both twins would transcribe the audio twice.
+        detector.coldCatchUpTtlMs = Long.MAX_VALUE
+        note("100", "PTT-20261025-WA00007.opus", ageMs = 60_000)
+        note("100", "PTT-20261025-WA00007 (1).opus", ageMs = 60_000)
+
+        kotlinx.coroutines.runBlocking {
+            detector.coldCatchUpScan(listOf(File(tmp.root, "100")))
+        }
+
+        assertEquals("the twin pair emits once", 1, entries.size)
+    }
+
+    @Test
     fun `unparseable filter-passing names still return null keys`() {
         // The residual gap stays honest: a name the live filter accepts
         // but whose PTT-date-WA prefix does not parse cannot be ordered

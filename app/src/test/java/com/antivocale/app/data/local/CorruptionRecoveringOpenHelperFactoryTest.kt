@@ -230,6 +230,59 @@ class CorruptionRecoveringOpenHelperFactoryTest {
     }
 
     @Test
+    fun `a query-path recovery after an access recovery still resolves live`() {
+        // TASK-890 review round 2: the access-recovery wrapper must keep
+        // the LIVE resolver. A second corruption on the SAME wrapper (the
+        // query path) re-swaps the database underneath it; a wrapper
+        // pinned to the first recovery's instance would replay on the
+        // closed handle and crash with IllegalStateException.
+        val db2 = mockk<SupportSQLiteDatabase>()
+        var db2Queries = 0
+        every { db2.query(any<String>()) } answers {
+            db2Queries += 1
+            if (db2Queries == 1) throw SQLiteDiskIOException("transient blip")
+            throw IllegalStateException("closed")
+        }
+        val db3 = mockk<SupportSQLiteDatabase>(relaxed = true)
+        var stage = 0
+        every { innerHelper.readableDatabase } answers {
+            when (stage) {
+                0 -> throw SQLiteDatabaseCorruptException("malformed")
+                1 -> db2
+                else -> db3
+            }
+        }
+        every { innerHelper.close() } answers { stage += 1 }
+
+        val db = helper().readableDatabase // access recovery -> db2
+        db.query("SELECT 1") // query recovery -> db3
+        db.query("SELECT 2") // must land on db3, not the closed db2
+
+        verify(exactly = 2) { db3.query(any<String>()) }
+    }
+
+    @Test
+    fun `an idempotent recovery attempt does not clobber the ledger notice`() {
+        // The record fires only on attempts that MOVED something: a
+        // racing thread finding nothing to rename must not overwrite the
+        // first recovery's notice with a preservedAside=false re-surface
+        // of the same event.
+        writeDamagedFiles()
+        arrangeFirstAccessFails(write = false)
+        val h = helper()
+        h.renameAside = { _, _ -> false } // the dying-disk seam
+
+        h.readableDatabase // recovery: delete fallback, recorded unpreserved
+        val after = HistoryRecoveryLedger.lastRecovery.value
+        assertEquals(false, after?.preservedAside)
+
+        h.recoverAfterQueryCorruption(SQLiteDiskIOException("idempotent"))
+
+        assertSame("the no-op attempt left the notice alone", after,
+            HistoryRecoveryLedger.lastRecovery.value)
+    }
+
+    @Test
     fun `clean access is a pure passthrough`() {
         every { innerHelper.writableDatabase } returns freshDb
         val before = HistoryRecoveryLedger.lastRecovery.value
