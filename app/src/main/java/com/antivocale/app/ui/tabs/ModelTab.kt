@@ -2180,8 +2180,13 @@ private fun ExternalModelsSection(
                                 ExternalCatalog.filterByLanguage(ready.entries, catalogLanguage)
                             }
                             LazyColumn(modifier = Modifier.heightIn(max = 220.dp)) {
-                                items(shown) { entry ->
-                                    CatalogPickRow(entry, entry.entryUrl == selectedEntry?.entryUrl) {
+                                items(shown, key = { it.entryUrl },
+                                    contentType = { "catalog_entry" }) { entry ->
+                                    // TASK-898: the selection read moved to the
+                                    // row (provider form): a tap invalidates one
+                                    // row, not every visible one.
+                                    val isSelected = entry.entryUrl == selectedEntry?.entryUrl
+                                    CatalogPickRow(entry, isSelected) {
                                         selectedEntry = entry
                                     }
                                 }
