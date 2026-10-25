@@ -85,6 +85,44 @@ class VoiceNoteTreeGrantTest {
     }
 
     @Test
+    fun `a Business pick saves the Business slot and releases only its own old grant`() = runBlocking {
+        // WhatsApp Business support: the two slots are independent; a
+        // Business re-pick must never release or overwrite the live
+        // WhatsApp grant.
+        fake._voiceNoteTreeUri.value = "content://tree/wa"
+        fake._voiceNoteBusinessTreeUri.value = "content://tree/w4b-old"
+        val grant = armStubs()
+        every {
+            VoiceNoteTreeGrant.looksLikeVoiceNotesTree(context, any(), VoiceNoteSource.WHATSAPP_BUSINESS)
+        } returns true
+
+        val outcome = grant.acceptGrant(Uri.parse("content://tree/w4b-new"), VoiceNoteSource.WHATSAPP_BUSINESS)
+
+        assertEquals(VoiceNoteTreeGrant.GrantOutcome.Saved("content://tree/w4b-new"), outcome)
+        assertEquals("content://tree/w4b-new", fake._voiceNoteBusinessTreeUri.value)
+        assertEquals("content://tree/wa", fake._voiceNoteTreeUri.value)
+        verify(exactly = 1) { TreeUris.releasePersistableReadGrant(context, Uri.parse("content://tree/w4b-old")) }
+        verify(exactly = 0) { TreeUris.releasePersistableReadGrant(context, Uri.parse("content://tree/wa")) }
+    }
+
+    @Test
+    fun `the Business slot validates against the Business folder`() = runBlocking {
+        // The validation is asked for the SLOT's source: a tree the
+        // Business check rejects leaves both slots unchanged.
+        fake._voiceNoteTreeUri.value = "content://tree/wa"
+        val grant = armStubs()
+        every {
+            VoiceNoteTreeGrant.looksLikeVoiceNotesTree(context, any(), VoiceNoteSource.WHATSAPP_BUSINESS)
+        } returns false
+
+        val outcome = grant.acceptGrant(Uri.parse("content://tree/wa"), VoiceNoteSource.WHATSAPP_BUSINESS)
+
+        assertEquals(VoiceNoteTreeGrant.GrantOutcome.WrongFolder, outcome)
+        assertEquals(null, fake._voiceNoteBusinessTreeUri.value)
+        assertEquals("content://tree/wa", fake._voiceNoteTreeUri.value)
+    }
+
+    @Test
     fun `a non-persistable take saves and releases nothing`() = runBlocking {
         fake._voiceNoteTreeUri.value = "content://tree/old"
         val grant = armStubs(take = false)

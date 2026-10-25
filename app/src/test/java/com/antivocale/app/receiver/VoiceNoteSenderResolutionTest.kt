@@ -42,8 +42,9 @@ class VoiceNoteSenderResolutionTest {
         durationSeconds: Long?,
         postedAtMs: Long = System.currentTimeMillis(),
         sender: String = "Anna",
+        packageName: String = "com.whatsapp",
     ) = VoiceNoteIdentityExtractor.VoiceNote(
-        packageName = "com.whatsapp",
+        packageName = packageName,
         sender = sender,
         durationSeconds = durationSeconds,
         postedAtMs = postedAtMs,
@@ -194,6 +195,51 @@ class VoiceNoteSenderResolutionTest {
         verify(exactly = 0) { ap.getAudioDuration(any()) }
         assertEquals(2_000L, currentTime)
     }
+
+    // ---- WhatsApp Business support: the source app is part of the match ----
+
+    @Test
+    fun `a Business note is labeled from a Business notification`() = runTest {
+        val ap = preprocessor(returning = 42.4)
+        assertEquals(
+            "Studio Rossi",
+            VoiceNoteSenderResolution.matchForDetection(
+                cacheWith(note(durationSeconds = 42L, sender = "Studio Rossi", packageName = "com.whatsapp.w4b")),
+                ap, "com.whatsapp.w4b", "/n.opus", detectedAtMs = System.currentTimeMillis()))
+    }
+
+    @Test
+    fun `a notification from one WhatsApp client never labels the other client's note`() = runTest {
+        // Same length, same moment, different app: the exact-package cache
+        // filter must answer no label in both directions (a wrong name is
+        // worse than no name), even after the race-window re-check.
+        val now = System.currentTimeMillis()
+        val businessOnly = cacheWith(note(durationSeconds = 42L, postedAtMs = now, packageName = "com.whatsapp.w4b"))
+        assertNull(
+            VoiceNoteSenderResolution.matchForDetection(
+                businessOnly, preprocessor(returning = 42.4), "com.whatsapp", "/n.opus", detectedAtMs = now))
+        val whatsAppOnly = cacheWith(note(durationSeconds = 42L, postedAtMs = now))
+        assertNull(
+            VoiceNoteSenderResolution.matchForDetection(
+                whatsAppOnly, preprocessor(returning = 42.4), "com.whatsapp.w4b", "/n.opus", detectedAtMs = now))
+    }
+
+    @Test
+    fun `two simultaneous notes from the two clients each get their own sender`() = runTest {
+        val now = System.currentTimeMillis()
+        val cache = cacheWith(
+            note(durationSeconds = 42L, postedAtMs = now, sender = "Anna"),
+            note(durationSeconds = 42L, postedAtMs = now, sender = "Cliente", packageName = "com.whatsapp.w4b"),
+        )
+        val ap = preprocessor(returning = 42.4)
+        assertEquals(
+            "Anna",
+            VoiceNoteSenderResolution.matchForDetection(cache, ap, "com.whatsapp", "/a.opus", detectedAtMs = now))
+        assertEquals(
+            "Cliente",
+            VoiceNoteSenderResolution.matchForDetection(cache, ap, "com.whatsapp.w4b", "/b.opus", detectedAtMs = now))
+    }
+
     // ---- one notification, one note (device trace, Galaxy S23) ----
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)

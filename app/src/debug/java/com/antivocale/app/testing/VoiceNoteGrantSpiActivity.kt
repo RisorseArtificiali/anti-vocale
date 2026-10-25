@@ -37,7 +37,7 @@ class VoiceNoteGrantSpiActivity : ComponentActivity() {
         if (uri == null) {
             // The user backed out or DocumentsUI failed: nothing taken,
             // nothing saved; the trial script sees the unchanged state.
-            TestSpiReceiver.logSpi(OP, "canceled")
+            TestSpiReceiver.logSpi(OP, "canceled source=${source.name}")
             finish()
             return@registerForActivityResult
         }
@@ -50,7 +50,7 @@ class VoiceNoteGrantSpiActivity : ComponentActivity() {
             // discipline: it is lifecycle control flow, not a failure to
             // report or log as error.
             val outcome = try {
-                treeGrant.acceptGrant(uri)
+                treeGrant.acceptGrant(uri, source)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -60,9 +60,10 @@ class VoiceNoteGrantSpiActivity : ComponentActivity() {
             TestSpiReceiver.logSpi(
                 OP,
                 when (outcome) {
-                    is VoiceNoteTreeGrant.GrantOutcome.Saved -> "saved ${outcome.uriString}"
-                    VoiceNoteTreeGrant.GrantOutcome.TakeFailed -> "take_failed"
-                    VoiceNoteTreeGrant.GrantOutcome.WrongFolder -> "wrong_folder"
+                    // Review F5: every outcome names the slot.
+                    is VoiceNoteTreeGrant.GrantOutcome.Saved -> "saved ${outcome.uriString} source=${source.name}"
+                    VoiceNoteTreeGrant.GrantOutcome.TakeFailed -> "take_failed source=${source.name}"
+                    VoiceNoteTreeGrant.GrantOutcome.WrongFolder -> "wrong_folder source=${source.name}"
                     // Unreachable outside a caught throw: the script sees
                     // the error line and checks voice_note_state.
                     null -> "error"
@@ -83,15 +84,22 @@ class VoiceNoteGrantSpiActivity : ComponentActivity() {
             // cannot start at all answers on the channel instead of
             // crashing onCreate (the Settings site's guard shape).
             try {
-                picker.launch(VoiceNoteTreeGrant.pickerInitialUri())
+                picker.launch(VoiceNoteTreeGrant.pickerInitialUri(source))
             } catch (e: android.content.ActivityNotFoundException) {
-                TestSpiReceiver.logSpi(OP, "error")
+                TestSpiReceiver.logSpi(OP, "error source=${source.name}")
                 finish()
             }
         }
     }
 
-    private companion object {
-        val OP = TestSpiReceiver.OP_VOICE_NOTE_GRANT_OPEN
+    /** The slot this run grants (WhatsApp Business support); unknown or absent = WhatsApp. */
+    private val source: com.antivocale.app.data.VoiceNoteSource
+        get() = intent.getStringExtra(EXTRA_SOURCE)?.let { token ->
+            com.antivocale.app.data.VoiceNoteSource.entries.firstOrNull { it.name.equals(token, ignoreCase = true) }
+        } ?: com.antivocale.app.data.VoiceNoteSource.WHATSAPP
+
+    companion object {
+        private val OP = TestSpiReceiver.OP_VOICE_NOTE_GRANT_OPEN
+        const val EXTRA_SOURCE = "source"
     }
 }

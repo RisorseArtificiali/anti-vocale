@@ -528,6 +528,48 @@ class TestSpiOpsTest {
     }
 
     @Test
+    fun `voice_note_state selects the Business coordinator by value`() = runTest {
+        // WhatsApp Business support: value=whatsapp_business answers the
+        // Business pair and asks the seams for THAT source; no value keeps
+        // the original WhatsApp answer (existing scripts unchanged).
+        val asked = mutableListOf<com.antivocale.app.data.VoiceNoteSource>()
+        val perSource = TestSpiOps(
+            fake, ExternalModelStore(fake), fakeImporter,
+            detectionArmed = { source -> asked += source; source == com.antivocale.app.data.VoiceNoteSource.WHATSAPP_BUSINESS },
+            detectionGateState = { com.antivocale.app.data.VoiceNoteGateState.Inactive })
+        fake._voiceNoteBusinessDetectionEnabled.value = true
+        fake._voiceNoteBusinessTreeUri.value = "content://tree/w4b"
+
+        val business = JSONObject(perSource.handle(TestSpiOps.OP_VOICE_NOTE_STATE, value = "whatsapp_business"))
+        assertEquals("whatsapp_business", business.getString("source"))
+        assertTrue(business.getBoolean("enabled"))
+        assertEquals("content://tree/w4b", business.getString("treeUri"))
+        assertTrue(business.getBoolean("armed"))
+
+        val whatsApp = JSONObject(perSource.handle(TestSpiOps.OP_VOICE_NOTE_STATE))
+        assertEquals("whatsapp", whatsApp.getString("source"))
+        assertFalse(whatsApp.getBoolean("enabled"))
+        assertTrue(whatsApp.isNull("treeUri"))
+        assertFalse(whatsApp.getBoolean("armed"))
+        assertEquals(
+            listOf(com.antivocale.app.data.VoiceNoteSource.WHATSAPP_BUSINESS, com.antivocale.app.data.VoiceNoteSource.WHATSAPP),
+            asked)
+
+        val unknown = JSONObject(perSource.handle(TestSpiOps.OP_VOICE_NOTE_STATE, value = "telegram"))
+        assertTrue(unknown.getString("error").contains("unknown source"))
+    }
+
+    @Test
+    fun `get and set cover the Business detection pair`() = runTest {
+        JSONObject(ops.handle(TestSpiOps.OP_SET, key = "voice_note_business_detection_enabled", value = "true"))
+        assertTrue(fake._voiceNoteBusinessDetectionEnabled.value)
+        assertFalse("the WhatsApp gate is a different key", fake._voiceNoteDetectionEnabled.value)
+        val json = JSONObject(ops.handle(TestSpiOps.OP_GET))
+        assertTrue(json.toString(), json.toString().contains("\"voiceNoteBusinessDetectionEnabled\":true"))
+        assertTrue(json.toString().contains("\"voiceNoteBusinessTreeUri\":null"))
+    }
+
+    @Test
     fun `every OP_ constant is in OPS so a when arm cannot outlive the help list`() {
         // The ops array and the usage line both render from OPS, so an
         // equality check between them can never fail; the real drift

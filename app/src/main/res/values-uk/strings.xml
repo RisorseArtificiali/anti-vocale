@@ -1074,6 +1074,10 @@
     <string name="voice_note_folder_sheet_step2">Пройдіть шляхом до папки голосових повідомлень:</string>
     <string name="voice_note_folder_sheet_step3">Вибравши папку WhatsApp Voice Notes (не відкриваючи), торкніться ВИКОРИСТАТИ ЦЮ ПАПКУ, а потім ДОЗВОЛИТИ.</string>
     <string name="voice_note_folder_sheet_open">Відкрити вибір</string>
+    <string name="voice_note_business_detection_description">Розшифровує нові голосові повідомлення WhatsApp Business у міру надходження, поки застосунок працює. Якщо Android блокує фоновий запуск, один дотик до сповіщення продовжить роботу. Повідомлення читається лише для розшифровки, на цьому пристрої; вимкнено, нічого не читається. Потрібен доступ до аудіо.</string>
+    <string name="voice_note_business_folder_grant_rejected">Це не папка голосових повідомлень WhatsApp Business. Виберіть папку з назвою WhatsApp Business Voice Notes і спробуйте ще раз.</string>
+    <string name="voice_note_business_folder_card_desc">Щоб читати повідомлення, один раз надайте доступ до папки, куди WhatsApp Business їх зберігає:</string>
+    <string name="voice_note_business_folder_sheet_step3">Вибравши папку WhatsApp Business Voice Notes (не відкриваючи), торкніться ВИКОРИСТАТИ ЦЮ ПАПКУ, а потім ДОЗВОЛИТИ.</string>
     <string name="share_targets_description">Показувати кожну завантажену модель окремим варіантом у меню надсилання Android. Коли ви надсилаєте аудіо через конкретну модель, вона використовується тимчасово лише для цієї розшифровки.</string>
     <string name="advanced_sharing_toggle">Показувати моделі в меню надсилання</string>
     <string name="share_targets_models_info">Кожна завантажена модель з\'явиться як окрема ціль надсилання. Видалення моделі прибирає її ціль надсилання.</string>

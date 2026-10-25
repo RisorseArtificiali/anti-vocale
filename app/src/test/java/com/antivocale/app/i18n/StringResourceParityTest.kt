@@ -61,10 +61,14 @@ class StringResourceParityTest {
      * nature; per-locale copies made buildType label overrides (Debug,
      * Nightly) lose on non-English launchers, so the copies were deleted
      * and the key pinned here.
+     * voice_note_source_whatsapp(_business): the client brand names that
+     * head the per-app voice-note sections; proper nouns, like the
+     * AppInfoUtils display names that are deliberately not localized.
      */
     @Test
     fun `untranslatable keys match the reviewed allowlist`() {
-        val expected = setOf("app_name")
+        val expected = setOf(
+            "app_name", "voice_note_source_whatsapp", "voice_note_source_whatsapp_business")
         val actual = rawKeys(stringsFile("src/main/res/values/strings.xml"))
             .filterValues { it == "false" }.keys
         assertEquals(

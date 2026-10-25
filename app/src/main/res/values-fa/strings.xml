@@ -1017,6 +1017,10 @@
     <string name="voice_note_folder_sheet_step2">در مسیر تا پوشه پیام‌های صوتی پایین بروید:</string>
     <string name="voice_note_folder_sheet_step3">با انتخاب پوشه WhatsApp Voice Notes (بدون باز کردن آن)، روی استفاده از این پوشه و سپس اجازه بزنید.</string>
     <string name="voice_note_folder_sheet_open">باز کردن انتخابگر</string>
+    <string name="voice_note_business_detection_description">تا زمانی که برنامه در حال اجراست، پیام‌های صوتی جدید WhatsApp Business را به‌محض رسیدن به متن تبدیل می‌کند. اگر اندروید شروع در پس‌زمینه را مسدود کند، یک نوتیفیکیشن تک‌لمسی آن را آغاز می‌کند. پیام فقط برای تبدیل خوانده می‌شود، روی همین دستگاه؛ خاموش باشد هیچ‌چیز خوانده نمی‌شود. نیاز به دسترسی صدا دارد.</string>
+    <string name="voice_note_business_folder_grant_rejected">این پوشه پیام‌های صوتی WhatsApp Business نیست. پوشه‌ای به نام WhatsApp Business Voice Notes را انتخاب کنید و دوباره امتحان کنید.</string>
+    <string name="voice_note_business_folder_card_desc">برای خواندن پیام‌ها، یک بار به پوشه‌ای که WhatsApp Business آن‌ها را ذخیره می‌کند دسترسی دهید:</string>
+    <string name="voice_note_business_folder_sheet_step3">با انتخاب پوشه WhatsApp Business Voice Notes (بدون باز کردن آن)، روی استفاده از این پوشه و سپس اجازه بزنید.</string>
     <string name="share_targets_description">هر مدل دانلودشده به شکل گزینه‌ای جدا در منوی سیستم ظاهر می‌شود. صدا توسط مدل انتخاب‌شده پردازش می‌شود.</string>
     <string name="advanced_sharing_toggle">نمایش مدل‌های دانلودشده</string>
     <string name="share_targets_models_info">هر مدل دانلودشده به شکل موردی در منوی هم‌رسانی ظاهر می‌شود. با حذف یک مدل، آن از منو برداشته می‌شود.</string>

@@ -8,8 +8,11 @@ package com.antivocale.app.data
  * notification ids).
  *
  * Classes deliberately EXCLUDED (evaluator classification, 2026-10-14):
- * - device-bound: output_folder_uri and voice_note_tree_uri (persisted SAF
- *   grants are per-install and arrive dead), scheduled_folders_json (carries
+ * - device-bound: output_folder_uri, voice_note_tree_uri and
+ *   voice_note_business_tree_uri (persisted SAF grants are per-install and
+ *   arrive dead), voice_note_watermark (names
+ *   THIS install's WhatsApp note history; restored elsewhere it would
+ *   wrongly suppress that install's catch-up), scheduled_folders_json (carries
  *   a device-derived file-snapshot dedup memory), external_models_json
  *   (references this device's sandbox dirs; models travel via the bundle),
  *   all *_model_path keys, measured_model_memory and demoted_backends
@@ -55,6 +58,7 @@ object BackupSettingsKeys {
         "freeze_protection_enabled",
         "vad_advisory_dismissed",
         "vad_enabled",
+        "voice_note_business_detection_enabled",
         "voice_note_detection_enabled",
         "voice_note_identity_enabled",
     )

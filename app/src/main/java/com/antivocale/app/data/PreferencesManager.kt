@@ -186,6 +186,13 @@ interface PreferencesManager {
     val voiceNoteDetectionEnabled: Flow<Boolean>
 
     /**
+     * WhatsApp Business support: the same gate for the WhatsApp Business
+     * client, independent of [voiceNoteDetectionEnabled]. Off by default.
+     * Callers that work per source go through [VoiceNoteSource]'s accessors.
+     */
+    val voiceNoteBusinessDetectionEnabled: Flow<Boolean>
+
+    /**
      * TASK-681: the LAN-offload consent gate. Off by default; while off the
      * backend has no surface anywhere and nothing leaves the device. The
      * disclosure paragraph the Settings card renders is the contract this
@@ -325,6 +332,37 @@ interface PreferencesManager {
     suspend fun saveVoiceNoteDetectionEnabled(enabled: Boolean)
     val voiceNoteTreeUri: Flow<String?>
     suspend fun saveVoiceNoteTreeUri(uri: String?)
+
+    /** WhatsApp Business support: see [voiceNoteBusinessDetectionEnabled]. */
+    suspend fun saveVoiceNoteBusinessDetectionEnabled(enabled: Boolean)
+    val voiceNoteBusinessTreeUri: Flow<String?>
+    suspend fun saveVoiceNoteBusinessTreeUri(uri: String?)
+    /**
+     * TASK-778 (with the 829 option-C decision): the persisted watermark
+     * for voice-note detection, "zero-padded-counter/PTT-name" of the
+     * newest EMITTED note. The durable form of the detector's RAM-only
+     * seen filter: what the cold-start catch-up sweep compares against so
+     * notes that arrived while the process was dead are recovered instead
+     * of invisible. Null until the first emission.
+     */
+    val voiceNoteWatermark: Flow<String?>
+
+    /**
+     * TASK-778: advances [voiceNoteWatermark] monotonically (a candidate
+     * at or below the stored value is a no-op). The compare lives inside
+     * the store's edit so concurrent emissions cannot regress the
+     * watermark, which is why there is no plain setter: nothing but the
+     * detector writes this key.
+     */
+    suspend fun bumpVoiceNoteWatermark(candidate: String)
+
+    /**
+     * TASK-778: clears [voiceNoteWatermark]. Called when the detector
+     * observes the WhatsApp counter space regressed (reinstall/clear-data
+     * rebuilding the tree from low counters), where a stale watermark
+     * would silently suppress every future recovery.
+     */
+    suspend fun resetVoiceNoteWatermark()
     suspend fun saveCompactResultActions(enabled: Boolean)
     suspend fun saveLanguageChipEnabled(enabled: Boolean)
 

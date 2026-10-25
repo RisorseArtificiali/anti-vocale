@@ -1191,4 +1191,8 @@
         <item quantity="many">النسخ غير مكتمل (فشل %1$d مقطعاً)</item>
         <item quantity="other">النسخ غير مكتمل (فشل %1$d مقطع)</item>
     </plurals>
+    <string name="voice_note_business_detection_description">ينسخ رسائل WhatsApp Business الصوتية الجديدة فور وصولها أثناء عمل التطبيق. إذا منع Android البدء في الخلفية، يتولى إشعار بنقرة واحدة بدء النسخ. لا تُقرأ الرسالة الصوتية إلا لنسخها، ويجري ذلك على هذا الجهاز؛ وعند إيقاف الميزة لا يُقرأ أي شيء. يتطلب الوصول إلى الصوت.</string>
+    <string name="voice_note_business_folder_grant_rejected">هذا ليس مجلد WhatsApp Business Voice Notes. اختر المجلد المسمى WhatsApp Business Voice Notes وحاول مرة أخرى.</string>
+    <string name="voice_note_business_folder_card_desc">لقراءة الرسائل الصوتية، امنح مرة واحدة الوصول إلى المجلد الذي يحفظ فيه WhatsApp Business رسائله:</string>
+    <string name="voice_note_business_folder_sheet_step3">مع تحديد مجلد WhatsApp Business Voice Notes (دون فتحه)، انقر استخدام هذا المجلد ثم السماح.</string>
 </resources>

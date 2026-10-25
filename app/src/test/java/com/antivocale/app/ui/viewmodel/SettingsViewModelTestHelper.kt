@@ -105,7 +105,7 @@ internal class SettingsViewModelTestHelper(
         // never enroll.
         speakerEnroller = mockk(),
         // TASK-271: the permission-poke seam; never poked here.
-        voiceNoteDetectionCoordinator = mockk(relaxed = true),
+        voiceNoteDetectionCoordinators = mockk(relaxed = true),
         // TASK-826: the grant-acceptance owner; the helper's suites drive
         // saveVoiceNoteTreeUri directly, acceptGrant is never awaited here.
         voiceNoteTreeGrant = mockk(relaxed = true),

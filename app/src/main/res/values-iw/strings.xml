@@ -1060,6 +1060,10 @@
     <string name="voice_note_folder_sheet_step2">רדו בנתיב עד לתיקיית ההודעות הקוליות:</string>
     <string name="voice_note_folder_sheet_step3">כשתיקיית WhatsApp Voice Notes מסומנת (בלי לפתוח אותה), הקישו על השתמש בתיקייה זו ולאחר מכן על אפשר.</string>
     <string name="voice_note_folder_sheet_open">פתיחת הבורר</string>
+    <string name="voice_note_business_detection_description">מתמלל הודעות קול חדשות של WhatsApp Business בהגעתן, בזמן שהאפליקציה פועלת. אם Android חוסם התחלה ברקע, התראה בנגיעה אחת מתחילה אותה. הודעה נקראת רק לצורך התמלול, במכשיר זה; כשזה כבוי לא נקרא דבר. דורש הרשאת גישה לשמע.</string>
+    <string name="voice_note_business_folder_grant_rejected">זו אינה תיקיית ההודעות הקוליות של WhatsApp Business. בחרו את התיקייה בשם WhatsApp Business Voice Notes ונסו שוב.</string>
+    <string name="voice_note_business_folder_card_desc">כדי לקרוא את ההודעות, העניקו פעם אחת גישה לתיקייה שבה WhatsApp Business שומר אותן:</string>
+    <string name="voice_note_business_folder_sheet_step3">כשתיקיית WhatsApp Business Voice Notes מסומנת (בלי לפתוח אותה), הקישו על השתמש בתיקייה זו ולאחר מכן על אפשר.</string>
     <string name="share_targets_description">כל מודל שהורד מופיע כאפשרות נפרדת בתפריט המערכת. האודיו מעובד על ידי המודל שנבחר.</string>
     <string name="advanced_sharing_toggle">הצגת מודלים שהורדו</string>
     <string name="share_targets_models_info">כל מודל שהורד יופיע כפריט בתפריט השיתוף. מחיקת מודל מסירה אותו מהתפריט.</string>
