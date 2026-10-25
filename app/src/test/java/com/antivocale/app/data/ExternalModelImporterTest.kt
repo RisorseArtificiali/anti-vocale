@@ -533,4 +533,22 @@ class ExternalModelImporterTest {
         assertTrue("error must name the entry JSON form: $message", message?.contains(".json") == true)
         assertEquals(0, store.records().size)
     }
+
+    @org.junit.Test
+    fun `blob entry urls are rewritten to resolve and other urls pass through`() {
+        // TASK-900 (GH #160): the HF web /blob/ link serves HTML, not the
+        // file; the import must fetch the canonical /resolve/ form.
+        assertEquals(
+            "https://huggingface.co/pantinor/transcribepsy-250m-eu-sherpa/resolve/main/entry.json",
+            ExternalModelImporter.canonicalizeEntryUrl(
+                "https://huggingface.co/pantinor/transcribepsy-250m-eu-sherpa/blob/main/entry.json"))
+        assertEquals(
+            "https://huggingface.co/pantinor/transcribepsy-250m-eu-sherpa/resolve/main/entry.json",
+            ExternalModelImporter.canonicalizeEntryUrl(
+                "https://huggingface.co/pantinor/transcribepsy-250m-eu-sherpa/resolve/main/entry.json"))
+        assertEquals(
+            "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/turkish.json",
+            ExternalModelImporter.canonicalizeEntryUrl(
+                "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/turkish.json"))
+    }
 }

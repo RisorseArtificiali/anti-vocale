@@ -114,6 +114,21 @@ class ExternalModelImporter(
          */
         fun isCatalogEntryUrl(url: String): Boolean = url.trim().endsWith(".json")
 
+        /**
+         * TASK-900 (GH #160 follow-up): a HuggingFace WEB url for a file
+         * (/blob/<rev>/<path>) serves the HTML page, not the file, so an
+         * entry link copied from the browser fails the JSON parse with an
+         * opaque error. The canonical raw-file form is /resolve/; rewrite
+         * just that segment and leave every other url untouched.
+         */
+        fun canonicalizeEntryUrl(url: String): String {
+            val trimmed = url.trim()
+            val marker = "/blob/"
+            val idx = trimmed.indexOf(marker)
+            if (idx < 0) return trimmed
+            return trimmed.substring(0, idx) + "/resolve/" + trimmed.substring(idx + marker.length)
+        }
+
         private const val TAG = "ExternalModelImporter"
         internal const val COPY_BUFFER = 64 * 1024
 
@@ -381,7 +396,7 @@ class ExternalModelImporter(
         onProgress: ExternalImportProgress,
     ): ExternalModelRecord =
         if (isCatalogEntryUrl(url)) {
-            importFromEntryJson(url, onProgress)
+            importFromEntryJson(canonicalizeEntryUrl(url), onProgress)
         } else if (HuggingFaceRepoListing.parseRepoId(url) != null) {
             importFromHuggingFaceRepo(url, modelType, family, options, languages, streaming, onProgress)
         } else {
