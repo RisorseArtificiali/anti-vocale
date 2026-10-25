@@ -152,7 +152,7 @@ qwen3_asr_downloaded,%1$s downloaded successfully,formatted,keep verbatim: ['%1$
 qwen3_asr_deleted,%1$s deleted,formatted,keep verbatim: ['%1$s']
 nemotron_name,Nemotron 3.5,plain,
 nemotron_title,Nemotron 3.5 (streaming),plain,
-nemotron_description,~640MB • Streaming transducer,plain,
+nemotron_description,~640MB • Streaming • Accuracy over speed,plain,
 nemotron_download_confirm_title,Download %1$s?,formatted,keep verbatim: ['%1$s']
 nemotron_download_confirm_message,This will download ~%1$dMB. Nemotron 3.5 is a streaming multilingual ASR model.,formatted,keep verbatim: ['%1$d']
 nemotron_download,Download Nemotron,plain,
@@ -162,6 +162,11 @@ nemotron_deleted,%1$s deleted,formatted,keep verbatim: ['%1$s']
 gigaam_title,GigaAM v3,plain,
 gigaam_description,~326MB • Fast • Russian ASR with punctuation,plain,
 gigaam_name,GigaAM v3,plain,
+whistle_name,Whistle (17 MB),plain,
+whistle_description,"~17MB • Very fast • 7 languages, detected automatically",plain,
+benchmark_unsupported_engine,Benchmarking is not supported for this engine,plain,
+model_info_best_for_whistle,"Fastest on-device start: 17 MB, 7 languages, instant first text",plain,
+model_info_notes_whistle,Word accuracy trails Parakeet on Italian; music can transcribe as text (the engine has no music filter),plain,
 gigaam_download_confirm_title,Download GigaAM v3?,plain,
 gigaam_download_confirm_message,This will download ~%1$dMB. GigaAM v3 is a Russian-only ASR model from Sber with strong Russian accuracy.,formatted,keep verbatim: ['%1$d']
 gigaam_download,Download GigaAM,plain,
@@ -470,6 +475,9 @@ punctuation_prompt_placeholder,Built-in prompt,plain,
 summary_prompt_title,Summary prompt,plain,
 signature_setting_title,Transcription signature (AI disclaimer),plain,
 signature_setting_description,"Adds a signature line to every transcript that leaves the app: copies, shares and exported files. The app\'s own screens keep the plain text.",plain,
+keyword_biasing_title,Keyword biasing (Whistle),plain,
+keyword_biasing_description,"Names, places or jargon the Whistle model should favour, one per line. Applies to the next transcription, no reload needed.",plain,
+keyword_biasing_placeholder,One term per line,plain,
 signature_text_title,Signature text,plain,
 signature_text_description,Leave empty to use the standard disclaimer.,plain,
 signature_position_title,Position,plain,
@@ -1047,6 +1055,34 @@ folder_watch_scan_now,Scan now,plain,
 folder_watch_remove,Remove,plain,
 folder_watch_period_label,Scan interval,plain,
 folder_watch_grant_failed,"Could not keep access to that folder, so it was not added. Try picking it again.",plain,
+result_play_audio,Play audio,plain,
+result_pause_audio,Pause audio,plain,
+duplicate_found_title,Already transcribed,plain,
+duplicate_found_message,This file was already transcribed with %1$s.,formatted,keep verbatim: ['%1$s']
+duplicate_found_open,Open result,plain,
+duplicate_found_again,Transcribe again,plain,
+result_language_advisory,"This model detects the language by itself. To lock %1$s, pick the language in Settings (models that honor the language setting, like Whisper, are listed there).",formatted,keep verbatim: ['%1$s']
+result_skip_silences,Skip silences,plain,
+result_playback_speed,Playback speed (%1$s),formatted,keep verbatim: ['%1$s']
+backup_transfer_title,Backup and transfer,plain,
+backup_transfer_summary,"Save your settings and history to a file, or restore them on another device",plain,
+backup_export_title,Export backup,plain,
+backup_export_description,Writes one file with your settings and your full transcription history. The file is plaintext: anyone who has it can read every transcript and sender name.,plain,
+backup_export_action,Create backup file,plain,
+backup_import_title,Import backup,plain,
+backup_import_description,Adds settings and past transcriptions from a backup file to this device. What you already have is kept.,plain,
+backup_import_action,Choose backup file,plain,
+backup_export_progress,Writing the backup…,plain,
+backup_import_progress,Reading the backup…,plain,
+backup_export_done,Backup saved,plain,
+backup_export_failed,Could not write the backup,plain,
+backup_import_done,"Imported: %1$d, skipped: %2$d",formatted,"keep verbatim: ['%1$d', '%2$d']"
+backup_import_failed,Could not read the backup file,plain,
+backup_import_history_failed,"Settings imported, but the history could not be added. Retrying is safe.",plain,
+backup_disclosure_title,Before you export,plain,
+backup_disclosure_body,"The backup contains every transcript, sender name, and speaker label in readable text. Share it only with places you trust.",plain,
+freeze_protection_title,Background transcription protection,plain,
+freeze_protection_description,"Keeps a silent audio stream active during transcription so aggressive battery managers cannot suspend the app. Turn this on if transcription stalls when the screen is off (some Oppo, Realme, OnePlus and Vivo phones).",plain,
 logs_entries_deleted [one],%d entry deleted,plural,supply only the quantities the locale table lists
 logs_entries_deleted [other],%d entries deleted,plural,supply only the quantities the locale table lists
 settings_search_matches [one],%1$d match,plural,supply only the quantities the locale table lists

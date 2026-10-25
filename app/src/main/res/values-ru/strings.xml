@@ -168,7 +168,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (потоковая)</string>
-    <string name="nemotron_description">~640 МБ • Потоковый преобразователь</string>
+    <string name="nemotron_description">~640 МБ • Потоковая • Точность важнее скорости</string>
     <string name="nemotron_download_confirm_title">Скачать %1$s?</string>
     <string name="nemotron_download_confirm_message">Будет загружено ~%1$d МБ. Nemotron 3.5, многоязычная потоковая модель распознавания речи.</string>
     <string name="nemotron_download">Скачать Nemotron</string>
@@ -245,6 +245,7 @@
     <string name="error_model_load">Файл модели может быть повреждён или иметь неверный формат. Попробуйте скачать его заново на вкладке «Модель».</string>
     <string name="error_model_external_corrupt">Файлы импортированной модели повреждены. Удалите её на вкладке Модели и импортируйте снова.</string>
     <string name="error_model_corrupt_healed">Некоторые файлы модели оказались повреждены и были удалены. Откройте вкладку Модели и скачайте модель заново.</string>
+    <string name="error_model_missing_healed">Некоторые файлы модели отсутствовали и были удалены. Откройте вкладку Модели и скачайте модель заново.</string>
     <string name="error_native">Во время распознавания произошла внутренняя ошибка. Если это повторяется, попробуйте другую модель.</string>
     <string name="error_not_initialized">Модель не загружена. Откройте вкладку «Модель», чтобы скачать или выбрать модель.</string>
     <string name="error_model_unavailable">Выбранная модель больше недоступна. Откройте вкладку «Модель» и выберите другую.</string>

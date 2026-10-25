@@ -1,0 +1,3 @@
+Uutta versiossa 1.13.1:
+• Korjattu: muistivaroituksiin lisättiin "Avaa asetus" -toiminto, joka vie täsmälleen oikealle asetusriville
+• Muutettu: mallit yrittävät aina suorituksen; muistisuoja ei enää estä oletuksena ja on valinnainen (Asetukset > Lisäasetukset)

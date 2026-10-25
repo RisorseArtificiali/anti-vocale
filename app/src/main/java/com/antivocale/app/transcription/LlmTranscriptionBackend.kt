@@ -32,6 +32,14 @@ class LlmTranscriptionBackend @Inject constructor(
          */
         internal fun isVibeVoiceModel(modelPath: String?): Boolean =
             modelPath != null && modelPath.contains("vibevoice", ignoreCase = true)
+
+        /**
+         * The VAD gate rule for any llm model path, stated once for the
+         * loaded-engine getter and the selected-path pre-load query
+         * (TranscriptionBackendManager.gateInputsFor, TASK-873).
+         */
+        internal fun requiresVadAlignedChunkingFor(modelPath: String?): Boolean =
+            !isVibeVoiceModel(modelPath)
     }
 
     override val id: String = BACKEND_ID
@@ -48,11 +56,12 @@ class LlmTranscriptionBackend @Inject constructor(
     // bounded to one padded partial window per chunk boundary (and speaker
     // numbering restarts per chunk, TASK-873).
     // Like ExternalSherpaBackend.configuredFamily, this reads the LOADED
-    // backend's state: pre-load queries (the Logs gate row) see the Gemma
-    // default, which is benign (the orchestrator only consumes it on the
-    // initialized backend).
+    // backend's state: pre-load queries key on the SELECTED path instead
+    // (TranscriptionBackendManager.gateInputsFor, TASK-873), so this getter
+    // serves them only when no selection is known; the orchestrator consumes
+    // it on the initialized backend.
     override val requiresVadAlignedChunking: Boolean
-        get() = !isVibeVoiceModel(llmManager.getModelPath())
+        get() = requiresVadAlignedChunkingFor(llmManager.getModelPath())
 
     // TASK-872 gate-round: the model's own "Speaker N:" lines ARE the
     // diarization; the GH #83 post-pass would double-label every cue.

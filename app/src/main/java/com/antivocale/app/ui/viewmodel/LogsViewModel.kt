@@ -456,11 +456,15 @@ class LogsViewModel @Inject constructor(
         val duration = withContext(Dispatchers.IO) {
             runCatching { audioPreprocessor.getAudioDuration(filePath) }.getOrDefault(0.0)
         }
+        val descriptor = backendId?.let { backendRegistry.byBackendId(it) }
+        val modelPath = descriptor?.modelPathFlow(preferencesManager)?.first()
+        // TASK-873: the llm row keys on the SELECTED model path (read above
+        // for the calibrator), so the dialog predicts the run the user is
+        // about to start, not the engine that happens to be resident.
         val decodePath = backendId
-            ?.let { transcriptionBackendManager.gateInputsFor(it) }
+            ?.let { transcriptionBackendManager.gateInputsFor(it, modelPath) }
             ?.decodePath(preferencesManager.vadEnabled.first())
             ?: AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM
-        val descriptor = backendId?.let { backendRegistry.byBackendId(it) }
         // TASK-681: an offload run never decodes on the phone, so the
         // RAM-derived ceilings do not apply; the honest bound is the
         // backend's wall-clock budget over the server throughput
@@ -472,7 +476,6 @@ class LogsViewModel @Inject constructor(
             AudioDurationPolicy.ceilingSeconds(
                 decodePath, MemoryReadings.availableRamBytes(context), MemoryReadings.maxHeapBytes())
         }
-        val modelPath = descriptor?.modelPathFlow(preferencesManager)?.first()
         val profile = backendId?.let { transcriptionCalibrator.getEstimate(it, modelPath ?: "") }
         val calibrated = profile?.hasEstimate == true
         val estimate = AudioDurationPolicy.resolveEstimateMsPerSec(

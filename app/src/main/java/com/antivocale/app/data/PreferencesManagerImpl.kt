@@ -113,6 +113,9 @@ class PreferencesManagerImpl(
         // WhatsApp Business support: the same pair for the Business client.
         private val VOICE_NOTE_BUSINESS_DETECTION_ENABLED = booleanPreferencesKey("voice_note_business_detection_enabled")
         private val VOICE_NOTE_BUSINESS_TREE_URI = stringPreferencesKey("voice_note_business_tree_uri")
+        // TASK-778: the persisted voice-note watermark (the durable dedup
+        // boundary the cold-start catch-up sweep compares against).
+        private val VOICE_NOTE_WATERMARK = stringPreferencesKey("voice_note_watermark")
         // TASK-681: the LAN-offload (OmniVoice) consent gate and its config triple.
         private val REMOTE_OMNIVOICE_ENABLED = booleanPreferencesKey("remote_omnivoice_enabled")
         private val REMOTE_OMNIVOICE_ENDPOINT = stringPreferencesKey("remote_omnivoice_endpoint")
@@ -187,6 +190,7 @@ class PreferencesManagerImpl(
         val voiceNoteTreeUri: String? = null,
         val voiceNoteBusinessDetectionEnabled: Boolean = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED,
         val voiceNoteBusinessTreeUri: String? = null,
+        val voiceNoteWatermark: String? = null,
         val remoteOmnivoiceEnabled: Boolean = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED,
         val remoteOmnivoiceEndpoint: String = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT,
         val remoteOmnivoiceApiKey: String = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY,
@@ -259,6 +263,7 @@ class PreferencesManagerImpl(
         voiceNoteTreeUri = this[VOICE_NOTE_TREE_URI],
         voiceNoteBusinessDetectionEnabled = this[VOICE_NOTE_BUSINESS_DETECTION_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED,
         voiceNoteBusinessTreeUri = this[VOICE_NOTE_BUSINESS_TREE_URI],
+        voiceNoteWatermark = this[VOICE_NOTE_WATERMARK],
         remoteOmnivoiceEnabled = this[REMOTE_OMNIVOICE_ENABLED] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED,
         remoteOmnivoiceEndpoint = this[REMOTE_OMNIVOICE_ENDPOINT] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT,
         remoteOmnivoiceApiKey = this[REMOTE_OMNIVOICE_API_KEY] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY,
@@ -900,6 +905,8 @@ class PreferencesManagerImpl(
         .onStart { emit(cache.get().voiceNoteDetectionEnabled) }
     override val voiceNoteTreeUri: Flow<String?> = dataStore.data.map { it[VOICE_NOTE_TREE_URI] }
         .onStart { emit(cache.get().voiceNoteTreeUri) }
+    override val voiceNoteWatermark: Flow<String?> = dataStore.data.map { it[VOICE_NOTE_WATERMARK] }
+        .onStart { emit(cache.get().voiceNoteWatermark) }
 
     override suspend fun saveVoiceNoteTreeUri(uri: String?) {
         dataStore.edit { preferences ->
@@ -927,6 +934,25 @@ class PreferencesManagerImpl(
             else preferences[VOICE_NOTE_BUSINESS_TREE_URI] = uri
         }
         cache.updateAndGet { it.copy(voiceNoteBusinessTreeUri = uri) }
+    override suspend fun bumpVoiceNoteWatermark(candidate: String) {
+        dataStore.edit { preferences ->
+            val current = preferences[VOICE_NOTE_WATERMARK]
+            if (current == null || candidate > current) {
+                preferences[VOICE_NOTE_WATERMARK] = candidate
+            }
+        }
+        cache.updateAndGet { cached ->
+            if (cached.voiceNoteWatermark == null || candidate > cached.voiceNoteWatermark) {
+                cached.copy(voiceNoteWatermark = candidate)
+            } else {
+                cached
+            }
+        }
+    }
+
+    override suspend fun resetVoiceNoteWatermark() {
+        dataStore.edit { it.remove(VOICE_NOTE_WATERMARK) }
+        cache.updateAndGet { it.copy(voiceNoteWatermark = null) }
     }
 
 

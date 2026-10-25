@@ -179,7 +179,7 @@
     <!-- Nemotron 3.5 streaming -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (جریانی)</string>
-    <string name="nemotron_description">~640MB • ترنسدیوسر جریانی</string>
+    <string name="nemotron_description">~640MB • جریانی • کیفیت به جای سرعت</string>
     <string name="nemotron_download_confirm_title">%1$s دانلود شود؟</string>
     <string name="nemotron_download_confirm_message">حدود %1$dMB دانلود خواهد شد. Nemotron 3.5 یک مدل ASR چندزبانه جریانی است.</string>
     <string name="nemotron_download">دانلود Nemotron</string>
@@ -254,6 +254,7 @@
     <string name="error_model_load">ممکن است فایل مدل خراب باشد یا قالب آن نادرست باشد. دانلود دوباره آن را از زبانه مدل امتحان کنید.</string>
     <string name="error_model_external_corrupt">فایل‌های مدل واردشده خراب است. آن را از تب مدل‌ها حذف و دوباره وارد کنید.</string>
     <string name="error_model_corrupt_healed">برخی فایل‌های مدل خراب بودند و برنامه آن‌ها را حذف کرد. زبانه مدل‌ها را باز کنید و مدل را دوباره دانلود کنید.</string>
+    <string name="error_model_missing_healed">برخی فایل‌های مدل مفقود بودند و برنامه آن‌ها را حذف کرد. زبانه مدل‌ها را باز کنید و مدل را دوباره دانلود کنید.</string>
     <string name="error_native">هنگام رونویسی خطای داخلی رخ داد. اگر ادامه داشت، مدل دیگری را امتحان کنید.</string>
     <string name="error_not_initialized">هیچ مدلی بارگذاری نشده است. برای دانلود یا انتخاب مدل، زبانه مدل را باز کنید.</string>
     <string name="error_model_unavailable">مدل انتخاب‌شده دیگر در دسترس نیست. زبانه مدل را باز کنید و مدل دیگری انتخاب کنید.</string>

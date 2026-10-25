@@ -309,6 +309,25 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
     class CorruptModelFiles(detail: String) : ModelLoadError(detail)
 
     /**
+     * TASK-885: catalog-listed files are ABSENT at load time (vanished after
+     * a previously successful download/verification, or inside the load
+     * attempt itself between the completeness check and the native open; the
+     * 1.14.1 crash class, whose Lenovo instance was exactly a listed decoder
+     * gone at the native open). Healable exactly like [CorruptModelFiles]:
+     * a vanished file never returns on its own, so the orchestrator deletes
+     * the dir and re-resolves for re-download, and the History row gets the
+     * dedicated missing-healed copy. Before this verdict the failure was a
+     * generic [ModelLoadError] that wedged the entry until the user deleted
+     * the model by hand. Deliberately NOT fired for a file that exists but
+     * is incomplete (that is a download in flight; deleting the dir
+     * mid-download would evaporate the re-download) and distinct from
+     * [CorruptModelFiles] so the History row tells missing from corrupted.
+     * Still a [ModelLoadError] subtype so every existing generic-error
+     * consumer (mapping, benchmark) keeps working unchanged.
+     */
+    class MissingModelFiles(detail: String) : ModelLoadError(detail)
+
+    /**
      * TASK-482: the same pre-native content gate as [CorruptModelFiles], but
      * the rejected model is a USER IMPORT (external backend): there is no
      * catalog re-download to offer, so the orchestrator heal must NOT fire;

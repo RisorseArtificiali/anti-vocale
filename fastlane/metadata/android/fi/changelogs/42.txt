@@ -1,0 +1,9 @@
+Uutta versiossa 1.12.0:
+• Uutta: opastettu kierros ensikäynnistyksellä (toistettavissa asetuksista)
+• Uutta: ääni- ja videotiedostojen valinta Historia-välilehdeltä
+• Uutta: pitkien transkriptien tekoälyyhteenveto: kopioitava, uudelleen yritettävä, mukautettava kehote
+• Uutta: sovelluskuvakkeen valinta ja hepreankielinen käyttöliittymä
+• Asetukset järjestelty uudelleen; välimerkkien jälkikäsittely lisätty
+• Korjattu: Telegramin ääniviestin kesto
+• Korjattu: Whisper käänsi transkriboinnin sijaan
+• Korjattu: selkeämmät virheilmoitukset muistin loppumisesta ja vioittuneista malleista

@@ -1,0 +1,5 @@
+Korjattu: Parakeet-malli (kvantisoitu) kaatui hiljaisesti; mallitiedostot tarkistetaan nyt ennen lataamista
+Tyypitetty virheenkäsittely: omat viestit vioittuneelle mallille, sisäiselle virheelle ja puuttuvalle mallille
+Kaatumisten esto: virheelliset mallitiedostot tunnistetaan ennen lataamista
+Palautuminen kaatumisista: natiivikaatumusten tunnistus ohjaa lataamaan mallin uudelleen
+Oletusmalli vaihdettu Parakeet TDT:hen (sherpa-onnx)

@@ -45,6 +45,34 @@ class TranscriptionErrorMappingTest {
     }
 
     @Test
+    fun `MissingModelFiles maps to the missing-healed re-download string`() {
+        // TASK-885: the vanished-files twin routes to its own healed copy so
+        // the History row tells missing from corrupted.
+        val error = TranscriptionException.MissingModelFiles(
+            "files missing (removed, re-download from the Models tab): turbo-decoder.int8.onnx")
+        val msg = TranscriptionOrchestrator.userFacingErrorMessage(context, error)
+        assertEquals(context.getString(R.string.error_model_missing_healed), msg)
+    }
+
+    @Test
+    fun `MissingModelFiles message differs from the corrupt and generic messages`() {
+        // The three verdicts must stay distinguishable in user-facing copy.
+        val missingMsg = TranscriptionOrchestrator.userFacingErrorMessage(
+            context, TranscriptionException.MissingModelFiles("test")
+        )
+        val corruptMsg = TranscriptionOrchestrator.userFacingErrorMessage(
+            context, TranscriptionException.CorruptModelFiles("test")
+        )
+        val genericMsg = TranscriptionOrchestrator.userFacingErrorMessage(
+            context, TranscriptionException.ModelLoadError("test")
+        )
+        assertTrue("MissingModelFiles and CorruptModelFiles should produce different messages",
+            missingMsg != corruptMsg)
+        assertTrue("MissingModelFiles and ModelLoadError should produce different messages",
+            missingMsg != genericMsg)
+    }
+
+    @Test
     fun `NativeError maps to error_native string`() {
         val error = TranscriptionException.NativeError("JNI crash in sherpa-onnx")
         val msg = TranscriptionOrchestrator.userFacingErrorMessage(context, error)

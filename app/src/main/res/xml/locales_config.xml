@@ -12,5 +12,9 @@
     <locale android:name="pl" />
     <locale android:name="uk" />
     <locale android:name="fa" />
+    <locale android:name="nl" />
     <locale android:name="he" />
+    <locale android:name="zh" />
+    <locale android:name="ar" />
+    <locale android:name="fi" />
 </locale-config>

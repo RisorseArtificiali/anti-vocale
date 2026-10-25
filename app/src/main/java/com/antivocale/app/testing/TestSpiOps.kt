@@ -143,6 +143,9 @@ internal class TestSpiOps(
             // WhatsApp Business support: the Business client's pair.
             .put("voiceNoteBusinessDetectionEnabled", preferences.voiceNoteBusinessDetectionEnabled.first())
             .put("voiceNoteBusinessTreeUri", preferences.voiceNoteBusinessTreeUri.first() ?: JSONObject.NULL)
+            // TASK-778: the persisted catch-up watermark (read-only diagnostic;
+            // the detector owns writes).
+            .put("voiceNoteWatermark", preferences.voiceNoteWatermark.first() ?: JSONObject.NULL)
             // TASK-681: the LAN-offload config (endpoint visible for E2E
             // verification; the key is masked to its last 4 chars).
             .put("remoteOmnivoiceEnabled", preferences.remoteOmnivoiceEnabled.first())

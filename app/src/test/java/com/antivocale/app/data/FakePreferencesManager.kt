@@ -39,6 +39,13 @@ internal class FakePreferencesManager : PreferencesManager {
     val _signatureText = MutableStateFlow("")
     val _signaturePosition = MutableStateFlow("append")
     val _outputFolderUri = MutableStateFlow<String?>(null)
+    val _voiceNoteWatermark = MutableStateFlow<String?>(null)
+    override val voiceNoteWatermark: Flow<String?> = _voiceNoteWatermark
+    override suspend fun bumpVoiceNoteWatermark(candidate: String) {
+        val current = _voiceNoteWatermark.value
+        if (current == null || candidate > current) _voiceNoteWatermark.value = candidate
+    }
+    override suspend fun resetVoiceNoteWatermark() { _voiceNoteWatermark.value = null }
     val _vadEnabled = MutableStateFlow(false)
     val _freezeProtectionEnabled = MutableStateFlow(false)
     override val freezeProtectionEnabled: Flow<Boolean> = _freezeProtectionEnabled

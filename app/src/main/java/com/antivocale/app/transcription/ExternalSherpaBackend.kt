@@ -55,21 +55,21 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
             // path appends a 1s pad per chunk on top (the 31s case).
             ModelFamily.WHISPER -> 29
             ModelFamily.CANARY -> 10
-            // Moonshine (GH #89): the whisper-sized window guess was WRONG for
-            // the 2026-02-27 v2 .ort exports. Measured on the eval harness
-            // (sherpa 1.13.8, TASK-619, 2026-09-22): uk/ar/vi decode correctly
-            // up to 9.2s of TOTAL input and return EMPTY above ~9.25s (sherpa
-            // catches the onnxruntime broadcast failure inside the
-            // optimum-exported decoder and silently yields ""), so a 30s cap
-            // produced silent blanks on most voice-message-length audio. The
-            // app's decode path appends a 1s silence pad to every chunk, so
-            // the cap must leave room for it: 8+1=9.0s total, inside the
-            // ceiling (verified: 8s+pad TEXT, 9s+pad EMPTY). The es export of
-            // the same line tolerates 21s+, but 8s stays correct for every
-            // variant (per-record caps tracked on the follow-up task);
-            // re-measure if a v3 shape arrives. Dolphin decodes whole files
-            // like SenseVoice (no cap).
-            ModelFamily.MOONSHINE -> 8
+            // Moonshine (GH #89, TASK-621 closed as moot): the 8s cap
+            // existed for the 2026-02-27 v2 .ort exports' 384-frame ceiling,
+            // which was SHERPA'S mask-length bug (k2-fsa/sherpa-onnx#3975,
+            // fix PR #3976 merged 2026-09-22), not a model defect. The pin
+            // is now v2.0.0, which carries the fix (verified at the tag in
+            // offline-moonshine-model-v2.cc) and empirically on the harness
+            // (2026-10-24, recorded in eval/smallclass/RESULTS.md): uk_008
+            // (20.4s, the 3976 verification clip) and 21s/30s tiled probes
+            // decode to full text in ONE uncapped pass where wheel 1.13.8
+            // returned empty. The post-fix graphs are contract-correct at
+            // any length (the moonshine impl feeds all frames; no
+            // whisper-style decode cap on this path), so the whisper-class
+            // 30s window applies as TASK-621 prescribed. If a v3 shape
+            // arrives, re-measure.
+            ModelFamily.MOONSHINE -> 30
             else -> null
         }
 

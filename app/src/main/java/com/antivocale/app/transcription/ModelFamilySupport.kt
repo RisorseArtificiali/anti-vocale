@@ -799,9 +799,9 @@ object CanarySupport : ModelFamilySupport {
  *    cached_decode.int8.onnx + tokens
  *  - v2: encoder_model.ort + decoder_model_merged.ort + tokens (NOTE the
  *    .ort extension: only this family ships it).
- * Chunk cap 8s: the 2026-02-27 v2 .ort exports decode empty above ~9.25s of
- * total input INCLUDING the decode path's 1s silence pad (measured,
- * TASK-619; the backend table owns the number).
+ * Chunk cap 30s (TASK-621): the old 8s guarded the exports' empty-above-
+ * ~9.25s behavior, which was SHERPA'S mask-length bug (k2-fsa#3975, fixed
+ * in our sherpa 2.0.0 pin); the backend table owns the number.
  */
 object MoonshineSupport : ModelFamilySupport {
     // Role segments (the name before the first dot): the canonical file

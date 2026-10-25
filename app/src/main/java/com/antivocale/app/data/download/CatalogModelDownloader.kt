@@ -149,4 +149,31 @@ object CatalogModelValidator {
             }
         }
     }
+
+    /**
+     * TASK-885: the catalog files that are ABSENT (existence only). A file
+     * that exists but fails [isValidModelDir] is a download-in-flight
+     * signature (present, shorter than its .size sidecar), NOT an absence:
+     * callers distinguish the two because only absence is healable. Deleting
+     * a dir mid-download would evaporate the re-download (files keep writing
+     * to unlinked inodes).
+     */
+    fun missingFiles(dir: File, fileNames: List<String>): List<String> =
+        fileNames.filter { !File(dir, it).exists() }
+
+    /**
+     * TASK-885 review: the absent files a DOWNLOAD still owns. The .size
+     * sidecar is written BEFORE the body file is created, so during a
+     * download's connect window (and after any interruption before the body
+     * starts) a catalog file is absent WITH its sidecar present: that is the
+     * downloader's bookkeeping, not a vanish. Only absent-with-NO-sidecar is
+     * a true vanish; the conservative misclassification (a body deleted
+     * after a completed download, sidecar kept) degrades to the non-healing
+     * generic error, which is the safe direction.
+     */
+    fun filesPendingDownload(dir: File, fileNames: List<String>): List<String> =
+        fileNames.filter { name ->
+            val file = File(dir, name)
+            !file.exists() && ResumeDownloadHelper.sizeSidecar(file).exists()
+        }
 }

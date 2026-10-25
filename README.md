@@ -96,7 +96,7 @@ Everything the app can transcribe with, on one page: bundled models with sizes, 
 - **Configurable inference threads** - Auto-detects or manually sets thread count; NNAPI and CPU providers selectable
 - **Performance stats** - Track real-world transcription speed per model on your device
 - **Theming** - Three color palettes (Indigo, WhatsApp, Telegram) with light and dark modes
-- **Multilingual UI** - Interface translated in English, Italian, German, Spanish, French, Hindi, Polish, Portuguese (BR), Russian, Turkish, Ukrainian, Persian, and Chinese
+- **Multilingual UI** - Interface translated in English, Italian, German, Spanish, French, Hindi, Polish, Portuguese (BR), Russian, Turkish, Ukrainian, Persian, Dutch, Hebrew, Chinese, Arabic, and Finnish
 - **Per-app settings** - Configure notification behavior per messaging app
 - **Organized settings** - Grouped into Transcription, Appearance, and Advanced sections
 

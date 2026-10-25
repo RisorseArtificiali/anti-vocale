@@ -655,10 +655,11 @@ class ModelFamilySupportTest {
 
     @Test
     fun `family chunk caps`() {
-        // MOONSHINE's 8: the TASK-619 measurement, 1s below the 9.0s TEXT /
-        // 9.2s EMPTY boundary because the decode path pads every chunk with
-        // 1s of silence (rationale on the cap site and RESULTS.md).
-        assertEquals(8, ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.MOONSHINE))
+        // MOONSHINE's 30 (TASK-621, closed as moot): the old 8 guarded
+        // against sherpa's mask-length bug (k2-fsa#3975, PR #3976), fixed in
+        // the v2.0.0 pin and verified uncapped on the harness (uk_008 20.4s
+        // + tiled 21s/30s probes, all full text; RESULTS.md 2026-10-24).
+        assertEquals(30, ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.MOONSHINE))
         // TASK-718: 29, under sherpa's 29.5s whisper decode cap (30 dropped ~0.48s/window).
         assertEquals(29, ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.WHISPER))
         assertEquals(10, ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.CANARY))

@@ -20,6 +20,9 @@ class BackupSettingsKeysTest {
         "output_folder_uri" to "device-bound (per-install SAF grant)",
         "voice_note_tree_uri" to "device-bound (per-install SAF grant)",
         "voice_note_business_tree_uri" to "device-bound (per-install SAF grant)",
+        // TASK-778: names a THIS device's WhatsApp note history; restored on
+        // another install it would wrongly suppress that install's catch-up.
+        "voice_note_watermark" to "device-bound (per-install WhatsApp note history)",
         "scheduled_folders_json" to "device-bound (paths + snapshot dedup memory)",
         "external_models_json" to "device-bound (sandbox dirs; models travel via the bundle)",
         "model_path" to "device-bound (sandbox dir)",

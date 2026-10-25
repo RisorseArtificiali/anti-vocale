@@ -1,0 +1,5 @@
+Uutta: ajastettu kansioiden valvonta: valitsemiesi kansioiden uudet äänitiedostot transkriboituvat automaattisesti
+Uutta: etäsuoritus (kokeellinen, oletuksena pois päältä): siirrä pitkät työt omalle palvelimellesi
+Uutta: ladattujen mallien vienti offline-paketeiksi toiselle laitteelle
+Uutta: käyttöliittymä kiinaksi
+Uutta: yhteisöluettelo ylitti 30 mallia, suodatettavissa kielen mukaan (kevyt arabia, heprea, persia, korea, intialaiset kielet ja lisää)

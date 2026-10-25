@@ -1,0 +1,6 @@
+Korjattu: Parakeet-malli (kvantisoitu) kaatui hiljaisesti; mallitiedostot tarkistetaan nyt ennen lataamista, joten vioittunut lataus jää kiinni kaatumisen sijaan
+Selkeämmät, tarkat virheilmoitukset: todellinen syy (vioittunut malli, sisäinen virhe, mallia ei ladattu) yleisen "transkriptio epäonnistui" -viestin sijaan
+Kaatumispalautus: kaatumisen jälkeen sovellus avautuu Mallit-välilehdelle ja ohjaa lataamaan kyseisen mallin uudelleen
+Oletustranskriptiomoottori on nyt Parakeet TDT (aiemmin Gemma), mikä vastaa eniten ladattua mallia
+Poistettiin käyttämättömät tallennustilan oikeudet (READ_MEDIA_AUDIO, READ_EXTERNAL_STORAGE); kaikki tiedostojen käyttö tapahtuu järjestelmän tiedostonvalitsimen kautta
+Selkeämpi virheilmoitus, kun jaettu tiedosto on tuettamattomassa äänimuodossa

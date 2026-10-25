@@ -132,6 +132,11 @@ class TranscriptionOrchestrator @Inject constructor(
                     // (ModelLoadError prepends "Model load failed: " to every
                     // detail).
                     context.getString(R.string.error_model_corrupt_healed)
+                is TranscriptionException.MissingModelFiles ->
+                    // TASK-885: the vanished-files twin of the corruption
+                    // verdict; same heal outcome, distinct History-row copy
+                    // so the row tells the user what actually happened.
+                    context.getString(R.string.error_model_missing_healed)
                 is TranscriptionException.ExternalModelCorruptFiles ->
                     // TASK-482: an import's corruption has no re-download to
                     // offer; the generic model-load advice would point at a
@@ -1803,22 +1808,27 @@ class TranscriptionOrchestrator @Inject constructor(
         )
         // TASK-660 layer 2: the self-heal. Only the typed corruption verdict
         // deletes anything; a generic load failure (OOM, NNAPI, wedge, missing
-        // metadata) must leave the model dir on disk. When the heal itself
-        // fails (the dir could not be deleted) the row must NOT claim the
-        // files were removed, so the failure is downgraded to the generic
-        // message (review F3).
+        // metadata) must leave the model dir on disk. TASK-885: a typed
+        // MISSING verdict heals identically: a vanished catalog file never
+        // returns on its own, so the dir goes and the Models tab re-offers
+        // the download. When the heal itself fails (the dir could not be
+        // deleted) the row must NOT claim the files were removed, so the
+        // failure is downgraded to the generic message (review F3).
         val loadFailure = load.exceptionOrNull()
-        if (loadFailure is TranscriptionException.CorruptModelFiles) {
-            if (!healCorruptModelDir(context, descriptor, resolvedPath)) {
+        if (loadFailure is TranscriptionException.CorruptModelFiles ||
+            loadFailure is TranscriptionException.MissingModelFiles
+        ) {
+            if (!healModelDir(context, descriptor, resolvedPath)) {
                 return Result.failure(TranscriptionException.ModelLoadError(
-                    "corrupt model dir could not be removed: $resolvedPath"))
+                    "model dir could not be removed: $resolvedPath"))
             }
         }
         return load
     }
 
     /**
-     * TASK-660 layer 2: deletes the corrupt model DIRECTORY and re-resolves
+     * TASK-660 layer 2 (widened by TASK-885 to the missing-files verdict):
+     * deletes the bad model DIRECTORY and re-resolves
      * the saved path the same WAY as the Models-tab delete (delete dir; a
      * remaining healthy sibling variant stays active, none leaves the entry
      * not-installed for a clean re-download), INCLUDING the tab's
@@ -1835,7 +1845,7 @@ class TranscriptionOrchestrator @Inject constructor(
      * orchestrator owns. Returns false when the deletion fails, so the caller
      * downgrades to the generic error instead of claiming removal.
      */
-    private suspend fun healCorruptModelDir(
+    private suspend fun healModelDir(
         context: Context,
         descriptor: BackendDescriptor,
         resolvedPath: String,
@@ -1843,15 +1853,15 @@ class TranscriptionOrchestrator @Inject constructor(
         val manager = SherpaModelManager.of(descriptor.backendId)
         val deleted = manager.deleteModel(resolvedPath)
         if (!deleted) {
-            // Review F3: with the dir still on disk (and the corrupt files
+            // Review F3: with the dir still on disk (and the bad files
             // still in it; the backend no longer strips them), every later
             // load re-runs this heal; claiming removal now would be a lie on
             // every History row until one deletion succeeds.
-            Log.e(TAG, "Corrupt model dir deletion FAILED at $resolvedPath; " +
+            Log.e(TAG, "Model dir heal deletion FAILED at $resolvedPath; " +
                 "delivering the generic error and retrying the heal on the next load")
             return false
         }
-        Log.w(TAG, "Corrupt model dir deleted at $resolvedPath; " +
+        Log.w(TAG, "Model dir heal deleted $resolvedPath; " +
             "the Models tab offers the re-download")
         val next = manager.resolveActiveModelPath(context)
         if (next != null) {
@@ -2645,10 +2655,11 @@ class TranscriptionOrchestrator @Inject constructor(
                 // behavior, and the flat transducer baseline under-refused
                 // exactly the light models the family exists for (a 953MB
                 // moonshine passed a bar the whisper curve refuses). The
-                // curve still PRICES the 30s whisper window though moonshine
-                // chunks at 8s (TASK-619): deliberate conservatism, no
-                // moonshine RAM measurement exists, and the 600MB overhead
-                // floor dominates the term anyway.
+                // curve PRICES the 30s whisper window and moonshine chunks
+                // at 30s too since sherpa 2.0.0 (TASK-621: the cap's reason
+                // was sherpa's mask bug, fixed in our pin): no moonshine RAM
+                // measurement exists, and the 600MB overhead floor dominates
+                // the term anyway.
                 backend is ExternalSherpaBackend && (
                     backend.memoryFamily == com.antivocale.app.data.ModelFamily.WHISPER ||
                         backend.memoryFamily == com.antivocale.app.data.ModelFamily.MOONSHINE) ->

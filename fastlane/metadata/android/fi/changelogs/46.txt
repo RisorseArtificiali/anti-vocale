@@ -1,0 +1,1 @@
+Korjattu: Historian haku ei enää jää jumiin ilman osumia; hakupalkki pysyy näkyvissä tyhjennyspainikkeensa kanssa (TASK-662).

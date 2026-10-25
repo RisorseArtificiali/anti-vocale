@@ -26,8 +26,11 @@ package com.antivocale.app.transcription
  *
  * Normalization: cue texts prefer the recognizer's own chunk text (exact
  * character alignment, whitespace-insensitive); when the token sequence does
- * not align, tokens join instead: sherpa's U+2581 (LOWER ONE EIGHTH BLOCK)
- * word-start marker becomes a space, a token starting with closing punctuation
+ * not align, tokens join instead: character-level CTC streams glue their
+ * pieces directly (the stream-level discriminator is the explicit
+ * whitespace token), every other stream space-joins; sherpa's U+2581
+ * (LOWER ONE EIGHTH BLOCK) word-start marker becomes a space, a token
+ * starting with closing punctuation
  * (. , ! ? ; : )) glues to the previous word without a preceding space, runs
  * of spaces collapse, and cues whose text is blank drop. Cues never overlap.
  */
@@ -123,14 +126,24 @@ object SentenceCueBuilder {
                 startMs = originalTimelineMs(it.startMs, chunkStartMs, anchors),
                 endMs = originalTimelineMs(it.endMs, chunkStartMs, anchors))
         }
+        val charCtcStream = isCharCtcStream(tokens)
         val cues = mutableListOf<TimedSegment>()
         for ((first, last) in cueBounds(toks)) {
             val text = aligned?.let { (source, spans) ->
                 source.substring(spans[first].first, spans[last].second).trim()
-            } ?: joinText(tokens, first, last)
+            } ?: joinText(tokens, first, last, charCtcStream)
             if (text.isBlank()) continue
             val start = toks[first].startMs.coerceIn(lo, hi)
             val end = toks[last].endMs.coerceIn(lo, hi).coerceAtLeast(start)
+            // TASK-541 item 1 (observed on device, 2026-10-24): a cue whose
+            // tokens all sit past chunkEnd clamps to start==end and renders
+            // as a zero-duration flash line in SRT/VTT. Two real cases in
+            // the on-device cue store, both a LONE TRAILING PUNCTUATION
+            // MARK at the exact chunk boundary ('.' at 60000ms, '。' at
+            // 90000ms, the 60s-chunk era) - the model's trailing token with
+            // no speech under it. Drop those (no visible text is lost);
+            // a flash cue carrying real WORDS stays visible.
+            if (start == end && text.none { it.isLetterOrDigit() }) continue
             // Trim a previous cue that would reach past this start, keeping its
             // duration non-negative. Full non-overlap holds for the monotonic
             // token starts every wired sherpa family produces; badly inverted
@@ -196,7 +209,7 @@ object SentenceCueBuilder {
         return if (spans != null) {
             chunkText.substring(spans[fromIndex].first, spans[toIndex].second).trim()
         } else {
-            joinText(tokens, fromIndex, toIndex)
+            joinText(tokens, fromIndex, toIndex, isCharCtcStream(tokens))
         }
     }
 
@@ -317,22 +330,44 @@ object SentenceCueBuilder {
         return i >= 0 && text[i] in SENTENCE_ENDERS
     }
 
-    private fun joinText(tokens: List<TimedToken>, first: Int, last: Int): String {
+    private fun joinText(
+        tokens: List<TimedToken>,
+        first: Int,
+        last: Int,
+        charCtcStream: Boolean,
+    ): String {
         val sb = StringBuilder()
-        for (i in first..last) appendNormalized(sb, normalized(tokens[i].text))
+        for (i in first..last) appendToken(sb, normalized(tokens[i].text), spaceSeparator = !charCtcStream)
         return MULTIPLE_SPACES.replace(sb.toString(), " ").trim()
     }
 
     /** Joins one normalized token, gluing closing punctuation to the previous word. */
-    private fun appendNormalized(sb: StringBuilder, normalized: String) {
+    private fun appendToken(sb: StringBuilder, normalized: String, spaceSeparator: Boolean) {
         val glued = normalized.trimStart()
         if (sb.isNotEmpty() && glued.isNotEmpty() && glued[0] in CLOSING_PUNCTUATION) {
             sb.append(glued)
             return
         }
-        if (sb.isNotEmpty() && sb.last() != ' ') sb.append(' ')
+        if (spaceSeparator && sb.isNotEmpty() && sb.last() != ' ') sb.append(' ')
         sb.append(normalized)
     }
+
+    /**
+     * TASK-541 item 2: a character-level CTC STREAM joins its tokens with no
+     * separator (the pieces compose: "o","n","e" is "one"). The stream-level
+     * discriminator is the EXPLICIT whitespace token: the omnilingual CTC
+     * vocab (real tokens.txt, 99.96% single-char pieces) carries a literal
+     * " " piece and emits it between words, while sentencepiece vocabs never
+     * do (the U+2581 marker replaces it; a bare marker token is NOT blank,
+     * so marker streams keep the space join). Computed ONCE per stream, not
+     * per cue: a char-CTC cue range with no space token of its own (a
+     * one-word cue after a pause split) is still a char stream (review F1,
+     * proven by repro: the per-range form rendered "o n e."). Deliberately
+     * NOT handled: sentencepiece continuation pieces, which are
+     * string-indistinguishable from plain word tokens.
+     */
+    private fun isCharCtcStream(tokens: List<TimedToken>): Boolean =
+        tokens.any { it.text.isBlank() }
 
     private fun normalized(raw: String): String = raw.replace(WORD_START_MARKER, ' ')
 }

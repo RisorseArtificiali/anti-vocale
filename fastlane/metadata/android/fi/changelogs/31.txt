@@ -1,0 +1,2 @@
+Poistettiin käyttämättömät tallennustilan oikeudet (READ_MEDIA_AUDIO, READ_EXTERNAL_STORAGE): sovellus ei koskaan tarvinnut niitä; kaikki tiedostojen käyttö tapahtuu järjestelmän tiedostonvalitsimen kautta
+Selkeämpi virheilmoitus, kun jaettu tiedosto on tuettamattomassa äänimuodossa

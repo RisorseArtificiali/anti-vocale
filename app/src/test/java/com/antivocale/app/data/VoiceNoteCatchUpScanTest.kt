@@ -39,7 +39,12 @@ class VoiceNoteCatchUpScanTest {
     @Before
     fun setUp() {
         scope = CoroutineScope(Dispatchers.Unconfined)
-        detector = VoiceNoteDetector(scope)
+        // TASK-778: the detector now carries the watermark preferences; the
+        // 831 scan never reads it, but the constructor needs the stub.
+        val preferences = io.mockk.mockk<PreferencesManager>(relaxed = true)
+        io.mockk.every { preferences.voiceNoteWatermark } returns
+            kotlinx.coroutines.flow.flowOf(null)
+        detector = VoiceNoteDetector(scope, preferences)
     }
 
     @After

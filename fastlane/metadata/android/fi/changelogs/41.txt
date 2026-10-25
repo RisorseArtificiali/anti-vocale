@@ -1,0 +1,1 @@
+GigaAM v3 (venäjä): selvästi parempi tarkkuus yli minuutin nauhoituksissa. Pitkä ääni pilkotaan nyt 30 sekunnin suorituskerroihin mallin koulutustavan mukaisesti (testauksessamme pitkien nauhoitusten WER laski noin 65 prosentista noin 11 prosenttiin).

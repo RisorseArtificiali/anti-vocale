@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -29,6 +30,14 @@ data class VoiceNoteEntry(
     val id: Long,
     val path: String?,
     val detectedAtMs: Long,
+    /**
+     * TASK-778: true when the entry came from the cold-start catch-up
+     * sweep (the note arrived while the process was dead) rather than a
+     * live observer event. Downstream treats both identically in v1 (the
+     * enqueue-side 842 dedup makes a false positive cheap); the flag is
+     * the seam the burst-digest notification will key on.
+     */
+    val catchup: Boolean = false,
 )
 
 /**
@@ -66,6 +75,9 @@ class VoiceNoteDetector(
     // per the TASK-438 rule against hand-built concurrency owners.
     @ApplicationScope private val scope: CoroutineScope,
     val source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
+    // TASK-778: the persisted watermark this detector reads at arm and
+    // advances on every emission.
+    private val preferencesManager: PreferencesManager,
 ) {
 
     private val _detections = Channel<VoiceNoteEntry>(Channel.UNLIMITED)
@@ -113,6 +125,24 @@ class VoiceNoteDetector(
         // corner is a seen-filter no-op.
         pendingCatchUps.toList().forEach { launchCatchUp(File(it)) }
         Log.i(TAG, "subscribed ${source.name}: ${observers.size} watchers under ${root.absolutePath}")
+        launchColdCatchUp()
+        Log.i(TAG, "subscribed: ${observers.size} watchers under ${root.absolutePath}")
+    }
+
+    /**
+     * TASK-778 (829 option C): the watermark-gated recovery sweep, fired at
+     * every arm AND every [refresh] tick. Notes that arrived while the
+     * process was dead OR while a watch channel was silently dead (the
+     * documented 830 boundary, healed by the blind rearm) have no observer
+     * events waiting; the persisted watermark is the only thing that can
+     * tell them from pre-existing history. On the app scope, outside the
+     * monitor: the sweep lists the FUSE tree, which can stall (the 831
+     * outside-the-monitor rule), and steady-state refreshes pay one
+     * listing plus zero stats (the watermark key filter runs before any
+     * lastModified call).
+     */
+    private fun launchColdCatchUp() {
+        scope.launch(Dispatchers.IO) { coldCatchUp() }
     }
 
     /** The watcher enumeration both subscribe() and refresh() ride. */
@@ -142,10 +172,9 @@ class VoiceNoteDetector(
      * open a recurring event-loss window on healthy channels; the brief
      * overlap is safe because the `seen` filter dedups the double
      * delivery). A no-op when not armed: a refresh can never resurrect a
-     * disarmed detector. Notes that arrived while the channel was dead are
-     * NOT recovered here or anywhere (their events never fired; the
-     * TASK-831 catch-up scan is scoped to NEW counter folders, not
-     * existing ones): this cadence is what bounds that loss window.
+     * disarmed detector. TASK-778 widened the recovery: notes that arrived
+     * while a channel was dead are picked up by the watermark-gated cold
+     * sweep this tick also fires ([launchColdCatchUp]).
      */
     @Synchronized
     fun refresh() {
@@ -163,6 +192,11 @@ class VoiceNoteDetector(
             oldObservers.forEach { it.stopWatching() }
         }
         Log.i(TAG, "refreshed ${source.name}: ${observers.size} watchers (gap-free)")
+        // TASK-778: this tick also fires the watermark-gated cold sweep, so
+        // a note whose event fired into a dead channel between ticks is
+        // recovered at the NEXT tick, not only at the next process restart.
+        launchColdCatchUp()
+        Log.i(TAG, "refreshed: ${observers.size} watchers (gap-free)")
     }
 
     @Synchronized
@@ -260,6 +294,20 @@ class VoiceNoteDetector(
     @Synchronized
     internal fun pendingCatchUpsCount(): Int = pendingCatchUps.size
 
+    /** TASK-778 test seams (the rearmIntervalMs/catchUpDelayMs precedent):
+     * the cold-start catch-up TTL (notes older than this are stale: a
+     * 3-day-old note transcribed at 07:00 is rarely wanted, and WhatsApp
+     * notes also arrive while the user is IN WhatsApp reading them) and
+     * the burst cap (newest K only).
+     */
+    @VisibleForTesting
+    @Volatile
+    internal var coldCatchUpTtlMs = COLD_CATCH_UP_TTL_MS
+
+    @VisibleForTesting
+    @Volatile
+    internal var coldCatchUpCap = COLD_CATCH_UP_CAP
+
     /**
      * TASK-831: emits every unseen QUALIFYING and QUIET note in [folder].
      * Quiet means no write for [catchUpDelayMs]: name filtering alone
@@ -312,7 +360,137 @@ class VoiceNoteDetector(
 
     private fun onDetection(entry: VoiceNoteEntry) {
         val isNew = synchronized(this@VoiceNoteDetector) { seen.observe(entry) }
-        if (isNew) _detections.trySend(entry)
+        if (isNew) {
+            _detections.trySend(entry)
+            advanceWatermark(entry)
+        }
+    }
+
+    /**
+     * TASK-778: the persisted watermark advances to the newest EMITTED
+     * note on every emission (live and catch-up alike). The compare lives
+     * inside the store's bump (monotonic; concurrent emissions cannot
+     * regress it). Fire-and-forget on the app scope: a save lost to
+     * process death at worst re-emits a note the 842 enqueue dedup then
+     * absorbs.
+     */
+    private fun advanceWatermark(entry: VoiceNoteEntry) {
+        val key = VoiceNoteFilter.watermarkKeyOf(File(entry.path ?: return)) ?: return
+        scope.launch(Dispatchers.IO) {
+            preferencesManager.bumpVoiceNoteWatermark(key)
+        }
+    }
+
+    /**
+     * TASK-778 (with the 829 option-C maintainer decision): scan the
+     * EXISTING counter folders once per arm and emit the notes newer than
+     * the persisted watermark, younger than [coldCatchUpTtlMs], capped at
+     * the newest [coldCatchUpCap]. This is the recovery path for notes
+     * that arrived while the process was dead or a watch channel was
+     * silently dead (the documented 830/831 boundary): their events never
+     * fired, so nothing else can see them. False-positive emission is
+     * cheap (the enqueue-side 842 dedup stamps a content hash on an
+     * existing SUCCESS row), so the TTL and cap are UX dials bounding the
+     * cold-start burst, not correctness guards.
+     */
+    private suspend fun coldCatchUp() {
+        if (!armed) return
+        val folders = root.listFiles()
+            ?.filter { it.isDirectory && VoiceNoteFilter.isCounterFolderName(it.name) }
+            .orEmpty()
+        coldCatchUpScan(folders)
+    }
+
+    /** Test seam: the scan body over explicit folders (Robolectric has no
+     *  WhatsApp tree; the real-path resolver is [coldCatchUp]). */
+    @VisibleForTesting
+    internal suspend fun coldCatchUpScan(folders: List<File>, allowRetry: Boolean = true) {
+        var watermark = preferencesManager.voiceNoteWatermark.first()
+        // Review 2026-10-25: a WhatsApp counter reset (reinstall/clear-data
+        // rebuilding the tree from low folder numbers) leaves a stale
+        // watermark above every existing key, silently suppressing all
+        // future recovery. If no scanned folder can hold a key above the
+        // watermark, the key space regressed: reset and proceed unfiltered
+        // (TTL and cap still bound the burst).
+        val watermarkFolder = watermark?.substringBefore('/')?.toLongOrNull()
+        if (watermarkFolder != null &&
+            folders.none { (it.name.toLongOrNull() ?: -1L) >= watermarkFolder }
+        ) {
+            Log.w(TAG, "watermark folder $watermarkFolder is above every existing folder;" +
+                " WhatsApp counter regressed, resetting the watermark")
+            preferencesManager.resetVoiceNoteWatermark()
+            watermark = null
+        }
+        val now = System.currentTimeMillis()
+        // The watermark key is the ONE ordering definition: candidates are
+        // keyed before any stat (the key is pure path work), so a steady
+        // arm with nothing newer never pays a lastModified syscall.
+        val fresh = mutableListOf<File>()
+        val candidates = folders
+            .flatMap { folder ->
+                folder.listFiles().orEmpty()
+                    .filter { it.isFile && VoiceNoteFilter.isWhatsAppVoiceNoteName(it.name) }
+            }
+            .mapNotNull { file ->
+                val key = VoiceNoteFilter.watermarkKeyOf(file)
+                if (key == null || (watermark != null && key <= watermark)) null else file to key
+            }
+            .mapNotNull { (file, key) ->
+                val lastModified = file.lastModified()
+                when {
+                    // The 831 quiet gate, same rationale: a note mid-write
+                    // at arm time must not be emitted half-written (the
+                    // seen dedup would swallow its live CLOSE_WRITE).
+                    lastModified > now - catchUpDelayMs -> {
+                        // Review finding: a note COMPLETED inside the gate
+                        // window has no live event coming (its write ended
+                        // before the watcher attached), so dropping it here
+                        // loses it until the next arm. Collected for the
+                        // single settle round below.
+                        fresh += file
+                        null
+                    }
+                    now - lastModified > coldCatchUpTtlMs -> null // stale
+                    else -> Triple(file, key, lastModified)
+                }
+            }
+            .sortedByDescending { it.second }
+            .take(coldCatchUpCap)
+        if (candidates.isNotEmpty()) {
+            Log.i(TAG, "cold-start catch-up: ${candidates.size} note(s) newer than watermark $watermark")
+            candidates.forEach { (file, _, _) ->
+                onDetection(entryFor(file).copy(catchup = true))
+            }
+        }
+        // ONE settle round for the quiet-gate exclusions, re-statting only
+        // the collected files (no re-listing of the FUSE tree, which the
+        // 831 evidence shows can stall). A write still in progress by the
+        // settle delivers via its live CLOSE_WRITE (the watcher attached
+        // at arm); the bound keeps a pathological folder from looping.
+        if (fresh.isNotEmpty() && allowRetry) {
+            scope.launch(Dispatchers.IO) {
+                delay(catchUpDelayMs)
+                if (armed) settleFreshNotes(fresh)
+            }
+        }
+    }
+
+    /** The settle round: quiet + TTL + watermark re-check on exactly the
+     *  once-fresh files (a live event may have advanced the watermark in
+     *  the delay window; the re-read filter drops it then). */
+    private suspend fun settleFreshNotes(files: List<File>) {
+        val watermark = preferencesManager.voiceNoteWatermark.first()
+        val now = System.currentTimeMillis()
+        files.mapNotNull { file ->
+            val key = VoiceNoteFilter.watermarkKeyOf(file) ?: return@mapNotNull null
+            if (watermark != null && key <= watermark) return@mapNotNull null
+            file to key
+        }.filter { (file, _) ->
+            val lm = file.lastModified()
+            lm <= now - catchUpDelayMs && now - lm <= coldCatchUpTtlMs
+        }.sortedByDescending { it.second }
+            .take(coldCatchUpCap)
+            .forEach { (file, _) -> onDetection(entryFor(file).copy(catchup = true)) }
     }
 
     private companion object {
@@ -324,6 +502,16 @@ class VoiceNoteDetector(
          * second); short enough that the catch-up still feels instant.
          */
         const val CATCH_UP_DELAY_MS = 2_000L
+
+        /**
+         * TASK-778: the cold-start catch-up window. 12h covers the
+         * overnight-death case (the design's motivating scenario) while
+         * excluding anything the user would call ancient history.
+         */
+        const val COLD_CATCH_UP_TTL_MS = 12L * 60 * 60 * 1000
+
+        /** TASK-778: the burst cap; the digest notification is the filed follow-up. */
+        const val COLD_CATCH_UP_CAP = 5
     }
 }
 
@@ -364,4 +552,27 @@ object VoiceNoteFilter {
         fun observe(entry: VoiceNoteEntry): Boolean =
             seen.put(entry.id, Unit) == null
     }
+
+    /**
+     * TASK-778: the persisted watermark key for a note,
+     * "zero-padded-folder/date/zero-padded-counter". Every component is
+     * NUMERICALLY padded (folder to 20 digits, the PTT date verbatim as
+     * fixed YYYYMMDD, the WA counter to 10 digits), so plain String
+     * comparison equals (folder, date, counter) ordering and survives a
+     * counter digit-width roll (WA9999 -> WA10000 breaks naive
+     * lexicographic name order, review 2026-10-25). THE one ordering
+     * definition: the cold scan sorts candidates by this key. Null for
+     * non-counter parents or names that do not parse (never
+     * cold-recovered; a format change deserves a conscious revisit, not a
+     * silent guess). ROOT locale: no digit separators in the padding.
+     */
+    fun watermarkKeyOf(file: File): String? {
+        val folder = file.parentFile?.name?.toLongOrNull() ?: return null
+        val match = PTT_NAME.find(file.name) ?: return null
+        val (date, counter) = match.destructured
+        return String.format(java.util.Locale.ROOT, "%020d/%s/%010d", folder, date, counter.toLong())
+    }
+
+    /** PTT-YYYYMMDD-WA<digits>.opus (case-insensitive, per [isWhatsAppVoiceNoteName]). */
+    private val PTT_NAME = Regex("""(?i)^PTT-(\d{8})-WA(\d+)\.opus$""")
 }

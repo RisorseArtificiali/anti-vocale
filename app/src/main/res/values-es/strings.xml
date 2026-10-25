@@ -140,7 +140,7 @@
     <string name="qwen3_asr_deleted">%1$s eliminado</string>
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (streaming)</string>
-    <string name="nemotron_description">~640 MB • Transductor en streaming</string>
+    <string name="nemotron_description">~640 MB • Streaming • Calidad antes que velocidad</string>
     <string name="nemotron_download_confirm_title">¿Descargar %1$s?</string>
     <string name="nemotron_download_confirm_message">Esto descargará ~%1$d MB. Nemotron 3.5 es un modelo ASR multilingüe en streaming.</string>
     <string name="nemotron_download">Descargar Nemotron</string>
@@ -205,6 +205,7 @@
     <string name="error_model_load">El archivo del modelo puede estar corrupto o en formato incorrecto. Vuelve a descargarlo desde la pestaña Modelo.</string>
     <string name="error_model_external_corrupt">Los archivos del modelo importado están dañados. Elimínalo de la pestaña Modelos e impórtalo de nuevo.</string>
     <string name="error_model_corrupt_healed">Algunos archivos del modelo estaban dañados y se han eliminado. Abre la pestaña Modelos y descarga el modelo de nuevo.</string>
+    <string name="error_model_missing_healed">Algunos archivos del modelo faltaban y se han eliminado. Abre la pestaña Modelos y descarga el modelo de nuevo.</string>
     <string name="error_native">Ocurrió un error interno durante la transcripción. Si persiste, prueba con otro modelo.</string>
     <string name="error_not_initialized">No hay ningún modelo cargado. Abre la pestaña Modelo para descargar o seleccionar uno.</string>
     <string name="error_model_unavailable">El modelo seleccionado ya no está disponible. Abre la pestaña Modelo y elige otro.</string>

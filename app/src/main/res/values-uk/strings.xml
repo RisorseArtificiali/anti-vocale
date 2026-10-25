@@ -186,7 +186,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (потокова)</string>
-    <string name="nemotron_description">~640МБ • Потоковий трансдюсер</string>
+    <string name="nemotron_description">~640МБ • Потокова • Точність замість швидкості</string>
     <string name="nemotron_download_confirm_title">Завантажити %1$s?</string>
     <string name="nemotron_download_confirm_message">Буде завантажено ~%1$dМБ. Nemotron 3.5 - це потокова багатомовна модель ASR.</string>
     <string name="nemotron_download">Завантажити Nemotron</string>
@@ -263,6 +263,7 @@
     <string name="error_model_load">Файл моделі може бути пошкоджений або мати хибний формат. Спробуйте завантажити його знову на вкладці «Модель».</string>
     <string name="error_model_external_corrupt">Файли імпортованої моделі пошкоджено. Видаліть її на вкладці Моделі та імпортуйте знову.</string>
     <string name="error_model_corrupt_healed">Деякі файли моделі були пошкоджені, і їх видалено. Відкрийте вкладку Моделі та завантажте модель знову.</string>
+    <string name="error_model_missing_healed">Деякі файли моделі були відсутні, і їх видалено. Відкрийте вкладку Моделі та завантажте модель знову.</string>
     <string name="error_native">Під час розшифровки сталася внутрішня помилка. Якщо це повторюється, спробуйте іншу модель.</string>
     <string name="error_not_initialized">Модель не завантажено. Відкрийте вкладку «Модель», щоб завантажити або вибрати модель.</string>
     <string name="error_model_unavailable">Вибрана модель більше недоступна. Відкрийте вкладку «Модель» і виберіть іншу.</string>

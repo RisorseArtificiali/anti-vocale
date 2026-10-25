@@ -157,7 +157,7 @@ if [ "$RECIPE_GUARD_OK" = "true" ]; then
   fi
 fi
 if [ "$RUN_HEAD" != "$COMMIT" ] && [ "$RECIPE_GUARD_OK" != "true" ]; then
-  fail "run $RUN_ID headSha is $RUN_HEAD, expected the bump commit $COMMIT, and the run's recipe-commit guard step did not succeed (stale run id? re-check: gh run list --event workflow_dispatch --limit 3)"
+  fail "run $RUN_ID headSha is $RUN_HEAD, expected the bump commit $COMMIT, and the run's recipe-commit guard step did not succeed (stale run id? re-check against the id prepare printed at dispatch; a bare newest-run scrape can return a concurrent run, TASK-879)"
 fi
 # Same job selector as verify-github-workflow-before-recipe-push.sh (twice:
 # the reference-run picker and the in-progress check); three copies total,

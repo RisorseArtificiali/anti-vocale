@@ -476,9 +476,26 @@ class SherpaBackend(
         val variantMatchesDir = variant.dirName == dir.name
 
         // Completeness: every catalog file must be present (ONNX via .size sidecar).
-        if (!CatalogModelValidator.isValidModelDir(dir, fileNames)) {
+        // TASK-885: files ABSENT with no .size sidecar are a true vanish and
+        // get the typed healable verdict (delete + re-download; the generic
+        // ModelLoadError this used to return wedged the entry until a manual
+        // delete). Files a download still owns (present but shorter than the
+        // sidecar, or absent WITH the sidecar: the sidecar is written before
+        // the body exists) are NOT healable, because deleting the dir
+        // mid-download would evaporate the re-download.
+        val absent = CatalogModelValidator.missingFiles(dir, fileNames)
+        val pending = CatalogModelValidator.filesPendingDownload(dir, fileNames)
+        val vanished = absent - pending.toSet()
+        if (vanished.isNotEmpty()) {
+            return Result.failure(TranscriptionException.MissingModelFiles(
+                "files missing in $modelDirectory (re-download from the Models tab): " +
+                    vanished.joinToString()
+            ))
+        }
+        if (absent.isNotEmpty() || !CatalogModelValidator.isValidModelDir(dir, fileNames)) {
             return Result.failure(TranscriptionException.ModelLoadError(
-                "missing files in $modelDirectory: ${fileNames.joinToString()}"
+                "model files incomplete in $modelDirectory (a download may still be in " +
+                    "progress): ${fileNames.joinToString()}"
             ))
         }
 
@@ -562,6 +579,35 @@ class SherpaBackend(
                             "The model may be corrupt or an incompatible export. Try re-downloading it."
                     ))
                 }
+            }
+
+            // TASK-885 G1: the integrity gate above is deliberately blind to
+            // ABSENT files (missing is the completeness layer's job, see
+            // ModelDirIntegrity.verify) and it may have hashed ~1GB since the
+            // completeness check that opened this attempt, so a file can
+            // vanish inside this very window and reach the native open (the
+            // 1.14.1 Lenovo crash texture: a listed decoder gone at
+            // construction; at the 1.13.x pin that was an uncatchable abort).
+            // One last cheap existence pass, no hashing, right before the
+            // constructor closes the window for every catalog file. Same
+            // rule as the opening check: absent-without-sidecar heals;
+            // anything a download owns (sidecar present) stays generic so a
+            // concurrent re-download is never deleted out from under its own
+            // stream.
+            val lateAbsent = CatalogModelValidator.missingFiles(dir, fileNames)
+            val latePending = CatalogModelValidator.filesPendingDownload(dir, fileNames)
+            val lateVanished = lateAbsent - latePending.toSet()
+            if (lateVanished.isNotEmpty()) {
+                return@withContext Result.failure(TranscriptionException.MissingModelFiles(
+                    "files vanished during load in $modelDirectory " +
+                        "(re-download from the Models tab): ${lateVanished.joinToString()}"
+                ))
+            }
+            if (lateAbsent.isNotEmpty()) {
+                return@withContext Result.failure(TranscriptionException.ModelLoadError(
+                    "model files incomplete in $modelDirectory (a download may still be " +
+                        "in progress): ${lateAbsent.joinToString()}"
+                ))
             }
 
             try {
