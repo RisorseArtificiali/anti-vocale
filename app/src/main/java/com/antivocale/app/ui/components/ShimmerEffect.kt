@@ -36,7 +36,10 @@ import com.antivocale.app.R
 
 @Composable
 fun SkeletonLine(
-    progress: Float,
+    // TASK-898: a lambda provider, not a raw Float: the shimmer's animated
+    // progress is read inside drawBehind (Draw phase), so each frame
+    // invalidates draw only instead of recomposing every skeleton row.
+    progressProvider: () -> Float,
     modifier: Modifier = Modifier,
     widthFraction: Float = 1f,
     height: Dp = 12.dp,
@@ -52,6 +55,7 @@ fun SkeletonLine(
             .clip(shape)
             .drawBehind {
                 drawRect(color = baseColor)
+                val progress = progressProvider()
                 val shimmerWidth = size.width * 0.6f
                 val offset = (progress * (size.width + shimmerWidth)) - shimmerWidth
                 drawRect(
@@ -87,9 +91,9 @@ fun SkeletonTranscriptionPreview(
             this.contentDescription = contentDescription
         }
     ) {
-        SkeletonLine(progress = progress, widthFraction = 0.85f, height = 14.dp)
+        SkeletonLine(progressProvider = { progress }, widthFraction = 0.85f, height = 14.dp)
         Spacer(modifier = Modifier.height(6.dp))
-        SkeletonLine(progress = progress, widthFraction = 0.6f, height = 14.dp)
+        SkeletonLine(progressProvider = { progress }, widthFraction = 0.6f, height = 14.dp)
     }
 }
 
@@ -121,32 +125,32 @@ fun SkeletonTranscriptionCard(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SkeletonLine(
-                    progress = progress,
+                    progressProvider = { progress },
                     modifier = Modifier.size(16.dp),
                     shape = CircleShape,
                     height = 16.dp
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                SkeletonLine(progress = progress, widthFraction = 0.15f, height = 10.dp)
+                SkeletonLine(progressProvider = { progress }, widthFraction = 0.15f, height = 10.dp)
                 Spacer(modifier = Modifier.width(4.dp))
-                SkeletonLine(progress = progress, widthFraction = 0.2f, height = 8.dp)
+                SkeletonLine(progressProvider = { progress }, widthFraction = 0.2f, height = 8.dp)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SkeletonLine(
-                    progress = progress,
+                    progressProvider = { progress },
                     modifier = Modifier.size(14.dp),
                     shape = CircleShape,
                     height = 14.dp
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                SkeletonLine(progress = progress, widthFraction = 0.12f, height = 8.dp)
+                SkeletonLine(progressProvider = { progress }, widthFraction = 0.12f, height = 8.dp)
             }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        SkeletonLine(progress = progress, widthFraction = 0.85f, height = 14.dp)
+        SkeletonLine(progressProvider = { progress }, widthFraction = 0.85f, height = 14.dp)
         Spacer(modifier = Modifier.height(6.dp))
-        SkeletonLine(progress = progress, widthFraction = 0.6f, height = 14.dp)
+        SkeletonLine(progressProvider = { progress }, widthFraction = 0.6f, height = 14.dp)
     }
 }

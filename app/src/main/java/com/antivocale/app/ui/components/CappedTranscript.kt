@@ -154,7 +154,7 @@ internal fun CappedTranscriptText(
         ReadingProgressLine(
             state = state,
             color = indicatorColor,
-            viewportPx = viewportPx,
+            viewportPx = { viewportPx },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 2.dp),
@@ -301,19 +301,39 @@ internal fun Modifier.transcriptPositionIndicator(
 internal fun ReadingProgressLine(
     state: ScrollState,
     color: Color,
-    viewportPx: Int,
+    // TASK-898: a lambda, not an Int: the scroll position AND the viewport
+    // size are read inside the progress lambda (Draw phase), so every
+    // scroll pixel invalidates draw only instead of recomposing this
+    // line, and the onSizeChanged write stops being a Composition-read
+    // backwards write (the first frame used to compute on a NaN that
+    // callers papered over).
+    viewportPx: () -> Int,
     modifier: Modifier = Modifier,
 ) {
-    val fraction = progressFraction(state.value, state.maxValue, viewportPx)
+    // TASK-384 pattern (ModelVariantCard, BenchmarkDialog): TalkBack reads
+    // the same percentage the bar shows, not a raw range. The percentage
+    // is derived in 5-point buckets and read HERE, in composition (the
+    // in-repo TASK-384 form: a value captured by the semantics block is
+    // only as fresh as the recomposition that produced it, so the read
+    // must sit in the body); bucketing keeps the recompositions to ~20
+    // per full scroll instead of one per pixel, and the bar itself stays
+    // draw-phase deferred above.
+    val talkbackPercent = remember(state) {
+        androidx.compose.runtime.derivedStateOf {
+            val fraction = progressFraction(state.value, state.maxValue, viewportPx())
+            if (fraction.isNaN()) -1 else ((fraction * 100).toInt() / 5) * 5
+        }
+    }.value
     LinearProgressIndicator(
-        progress = { if (fraction.isNaN()) 0f else fraction },
-        // TASK-384 pattern (ModelVariantCard, BenchmarkDialog): TalkBack reads
-        // the same percentage the bar shows, not a raw range.
+        progress = {
+            val fraction = progressFraction(state.value, state.maxValue, viewportPx())
+            if (fraction.isNaN()) 0f else fraction
+        },
         modifier = modifier
             .height(2.dp)
             .semantics {
-                if (!fraction.isNaN()) {
-                    stateDescription = "${(fraction * 100).toInt()}%"
+                if (talkbackPercent >= 0) {
+                    stateDescription = "$talkbackPercent%"
                 }
             },
         color = color.copy(alpha = 0.50f),

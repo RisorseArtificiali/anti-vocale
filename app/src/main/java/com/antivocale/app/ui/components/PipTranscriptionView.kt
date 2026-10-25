@@ -6,6 +6,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -111,8 +112,15 @@ fun PipTranscriptionView(
                 Box(
                     modifier = Modifier
                         .size(6.dp)
+                        // TASK-898: the animated alpha is read in the Draw
+                        // phase (graphicsLayer), not in Composition via
+                        // primary.copy(alpha = ...): the pulse runs for the
+                        // whole live-transcription session and must not
+                        // recompose this Row at frame rate while text streams
+                        // into it (in-repo template: SwipeToRevealBox).
+                        .graphicsLayer { this.alpha = alpha }
                         .background(
-                            MaterialTheme.colorScheme.primary.copy(alpha = alpha),
+                            MaterialTheme.colorScheme.primary,
                             CircleShape
                         )
                         // TASK-386: decorative pulse; the adjacent label carries the
