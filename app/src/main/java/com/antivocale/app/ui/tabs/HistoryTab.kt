@@ -477,8 +477,17 @@ private fun RowScope.PlaybackControls(
     // TASK-841: the row's cues, parsed once per payload; the skip toggle is
     // OFFERED only when a skippable gap exists (rows without one never see
     // the button - hiding a useless control beats explaining it).
-    val cues = remember(cuesJson) {
-        com.antivocale.app.data.local.TimedSegmentsConverter.fromJson(cuesJson)
+    // TASK-898: the parse is OFF-MAIN (a streamed transcript's cue list is
+    // thousands of entries; the share path was moved off-main for the same
+    // reason, review F1): produceState keeps the row composable cheap and
+    // swaps in the parsed list when it lands.
+    val cues by produceState(
+        initialValue = emptyList(),
+        cuesJson,
+    ) {
+        value = withContext(kotlinx.coroutines.Dispatchers.IO) {
+            com.antivocale.app.data.local.TimedSegmentsConverter.fromJson(cuesJson)
+        }
     }
     val skippable = remember(cues) { PlaybackCueGaps.hasSkippableGap(cues) }
     val skipSilences by playback.skipSilences.collectAsState()
@@ -742,6 +751,22 @@ fun HistoryTab(
     val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
     val compactActions by viewModel.compactResultActions.collectAsState()
     val advancedShare by viewModel.advancedShareFormats.collectAsState()
+    // TASK-898: the three row-wide preference flags hoisted OUT of
+    // LogEntryWithSwipe (they were collected per row: a fling registered
+    // and tore down three collectors per recycled row, and one emission
+    // recomposed every visible row at once). Passed down as parameters.
+    val showLanguageChip by viewModel.languageChipEnabled.collectAsState()
+    val reRunLanguages by viewModel.offeredLanguageCodes.collectAsState()
+    val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
+    // TASK-898: one-minute tick driving the rows' relative-time labels:
+    // the per-row remember(timestamp, minuteTick) refreshes the string at
+    // most once a minute instead of re-running the formatter per emission.
+    val minuteTick by produceState(initialValue = 0L) {
+        while (true) {
+            value = System.currentTimeMillis() / 60000
+            kotlinx.coroutines.delay(60_000)
+        }
+    }
     // TASK-840 (GH #157 pt 1): the ONE tab-owned audio player for result
     // rows (hoisted above the LazyColumn: a row-local player would die
     // mid-playback when its row recycles out; released with the tab).
@@ -1066,9 +1091,9 @@ fun HistoryTab(
                     LogEntryWithSwipe(
                         log = log,
                         searchQuery = searchQuery,
-                        isExpanded = log.taskId in expandedTaskIds,
+                        isExpandedProvider = { log.taskId in expandedTaskIds },
                         swipeActionMode = swipeActionMode,
-                        revealedLogId = revealedLogId,
+                        revealedLogIdProvider = { revealedLogId },
                         onRevealedLogIdChange = { revealedLogId = it },
                         onExpandChange = { expanded ->
                             expandedTaskIds = if (expanded) {
@@ -1085,6 +1110,10 @@ fun HistoryTab(
                         onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null,
                         compactActions = compactActions,
                         advancedShareFormats = advancedShare,
+                        showLanguageChip = showLanguageChip,
+                        reRunLanguages = reRunLanguages,
+                        showTechnicalDetails = showTechnicalDetails,
+                        minuteTick = minuteTick,
                         onNavigateToSettings = onNavigateToSettings,
                         onOpenLanguageSetting = onOpenLanguageSetting,
                     )
@@ -1451,6 +1480,10 @@ fun LogEntryItem(
      *  a call site that forgets the pass-through must be a compile error,
      *  not a silently dropped diagnostics line. */
     showTechnicalDetails: Boolean,
+    /** TASK-898: the tab's one-minute tick, keying the relative-time
+     *  remember so the label refreshes at most once a minute. No default,
+     *  like its siblings. */
+    minuteTick: Long,
 ) {
     val context = LocalContext.current
     val rowScope = rememberCoroutineScope()
@@ -1551,12 +1584,18 @@ fun LogEntryItem(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     if (log.type == LogEntry.Type.AUDIO) {
+                        // TASK-898: remembered per package: the uncensured
+                        // fallback in AppInfoUtils is a PackageManager binder
+                        // call, and this row recomposes on every interim write.
+                        val senderApp = remember(log.sourcePackageName) {
+                            log.sourcePackageName?.let { AppInfoUtils.getAppName(context, it) }
+                        }
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             // TASK-736: the matched sender leads, the source app follows.
                             text = listOfNotNull(
                                 log.senderName,
-                                log.sourcePackageName?.let { AppInfoUtils.getAppName(context, it) },
+                                senderApp,
                             ).joinToString(", ").ifEmpty { stringResource(R.string.voice_message_duration) },
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1611,8 +1650,17 @@ fun LogEntryItem(
                         }
                     )
                     Spacer(modifier = Modifier.width(4.dp))
+                    // TASK-898: remembered per (timestamp, minuteTick, locale):
+                    // the Room list re-emits on every interim write, and
+                    // unremembered this rebuilt two Calendars plus a
+                    // SimpleDateFormat per visible row per emission; the tick
+                    // keeps the label fresh (one refresh per minute, not per
+                    // emission).
+                    val relativeTime = remember(log.timestamp, minuteTick) {
+                        formatRelativeTime(log.timestamp, context)
+                    }
                     Text(
-                        text = formatRelativeTime(log.timestamp, context),
+                        text = relativeTime,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -2243,9 +2291,9 @@ private fun getPreviewText(text: String, maxLength: Int = 50): String {
 private fun LogEntryWithSwipe(
     log: LogEntry,
     searchQuery: String,
-    isExpanded: Boolean,
+    isExpandedProvider: () -> Boolean,
     swipeActionMode: String,
-    revealedLogId: String?,
+    revealedLogIdProvider: () -> String?,
     onRevealedLogIdChange: (String?) -> Unit,
     onExpandChange: (Boolean) -> Unit,
     onSwipeCollapse: () -> Unit = {},
@@ -2256,18 +2304,18 @@ private fun LogEntryWithSwipe(
     onRetranscribe: (() -> Unit)? = null,
     compactActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
     advancedShareFormats: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS,
+    showLanguageChip: Boolean = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
+    reRunLanguages: Set<String> = emptySet(),
+    showTechnicalDetails: Boolean = PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS,
+    minuteTick: Long = 0L,
     onNavigateToSettings: (() -> Unit)? = null,
     onOpenLanguageSetting: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
-    // TASK-546: the chip flag, collected once here (the item stays stateless).
-    val showLanguageChip by viewModel.languageChipEnabled.collectAsState()
-    // TASK-546 AC3: the re-run picker's offered codes, same collection point
-    // (the derivation lives in the ViewModel through the Settings picker's
-    // owner, so the two cannot drift).
-    val reRunLanguages by viewModel.offeredLanguageCodes.collectAsState()
-    // TASK-616: same pattern for the technical processing-context line.
-    val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
+    // TASK-546/546-AC3/616 + TASK-898: the three tab-wide flags arrive as
+    // parameters, hoisted to the tab (per-row collection churned three
+    // collectors per recycled row and recomposed all visible rows on any
+    // emission).
     // TASK-599: the row's annotated transcript is collected HERE (the item
     // stays stateless) from the ViewModel's cached per-row flow: no
     // cold-flow-per-recomposition, no flash of unlabeled text, no JSON
@@ -2279,14 +2327,14 @@ private fun LogEntryWithSwipe(
     val speakerAnnotated = viewModel.speakerAnnotatedFlow(log.id).collectAsState().value
     // TASK-595 F5: the first-pass transcript rides the same lean per-row
     // flow (it left the list projections); collected here, handed down.
-    val firstPassTranscript = if (isExpanded) {
+    val firstPassTranscript = if (isExpandedProvider()) {
         viewModel.firstPassFlow(log.id).collectAsState().value
     } else {
         null
     }
     // TASK-800: the row's raw cues for the Share-as formats (the list
     // projection keeps the column null; same lean read as firstPass).
-    val rowSegmentsJson = if (isExpanded) {
+    val rowSegmentsJson = if (isExpandedProvider()) {
         viewModel.segmentsFlow(log.id).collectAsState().value
     } else {
         null
@@ -2311,12 +2359,13 @@ private fun LogEntryWithSwipe(
         val revealState = rememberSwipeToRevealState()
 
         LaunchedEffect(log.id, revealState.isRevealed) {
-            if (revealState.isRevealed && revealedLogId != log.id) {
+            if (revealState.isRevealed && revealedLogIdProvider() != log.id) {
                 onRevealedLogIdChange(log.id)
             }
         }
-        LaunchedEffect(log.id, revealedLogId) {
-            if (revealedLogId != null && revealedLogId != log.id && revealState.isRevealed) {
+        LaunchedEffect(log.id) {
+            val revealed = revealedLogIdProvider()
+            if (revealed != null && revealed != log.id && revealState.isRevealed) {
                 revealState.reset()
             }
         }
@@ -2343,7 +2392,7 @@ private fun LogEntryWithSwipe(
             state = revealState,
             actions = actions,
             onSwipeStart = {
-                if (isExpanded) onSwipeCollapse()
+                if (isExpandedProvider()) onSwipeCollapse()
             }
         ) {
             LogEntryItem(
@@ -2353,7 +2402,7 @@ private fun LogEntryWithSwipe(
                 firstPassTranscript = firstPassTranscript,
                 rowSegmentsJson = rowSegmentsJson,
                 searchQuery = searchQuery,
-                expanded = isExpanded,
+                expanded = isExpandedProvider(),
                 onExpandChange = { expanded ->
                     if (revealState.isRevealed) {
                         revealState.reset()
@@ -2373,6 +2422,7 @@ private fun LogEntryWithSwipe(
                 reRunLanguages = reRunLanguages,
                 onReRunWithLanguage = { code -> viewModel.reTranscribeWithLanguage(log, code, context) },
                 showTechnicalDetails = showTechnicalDetails,
+                        minuteTick = minuteTick,
             )
         }
     } else {
@@ -2418,7 +2468,7 @@ private fun LogEntryWithSwipe(
                 firstPassTranscript = firstPassTranscript,
                 rowSegmentsJson = rowSegmentsJson,
                 searchQuery = searchQuery,
-                expanded = isExpanded,
+                expanded = isExpandedProvider(),
                 onExpandChange = onExpandChange,
                 playback = playback,
                 onRetranscribe = onRetranscribe,
@@ -2432,6 +2482,7 @@ private fun LogEntryWithSwipe(
                 reRunLanguages = reRunLanguages,
                 onReRunWithLanguage = { code -> viewModel.reTranscribeWithLanguage(log, code, context) },
                 showTechnicalDetails = showTechnicalDetails,
+                        minuteTick = minuteTick,
             )
         }
     }
