@@ -817,14 +817,18 @@ fun HistoryTab(
     // Undo deletion via Snackbar
     val snackbarHostState = remember { SnackbarHostState() }
     // The undo prompt fires from a non-composable coroutine, so both
-    // strings resolve here in composition.
+    // strings resolve here in composition; rememberUpdatedState keeps the
+    // coroutine reading the latest strings across recompositions
+    // (TASK-898: a locale change mid-snackbar must not show stale text).
     val entryDeletedMessage = stringResource(R.string.logs_entry_deleted)
     val undoLabel = stringResource(R.string.logs_undo)
+    val currentEntryDeletedMessage by rememberUpdatedState(entryDeletedMessage)
+    val currentUndoLabel by rememberUpdatedState(undoLabel)
     LaunchedEffect(recentlyDeletedEntry) {
         val entry = recentlyDeletedEntry ?: return@LaunchedEffect
         val result = snackbarHostState.showSnackbar(
-            message = entryDeletedMessage,
-            actionLabel = undoLabel,
+            message = currentEntryDeletedMessage,
+            actionLabel = currentUndoLabel,
             duration = SnackbarDuration.Short
         )
         if (result == SnackbarResult.ActionPerformed) {
@@ -839,7 +843,7 @@ fun HistoryTab(
     // instance per recomposition would defeat the LazyColumn content
     // lambda's memoization and recompose every visible row (750 efficiency).
     // Expansion toggles legitimately rebuild: collapsed sections drop rows.
-    val historyRows = remember(filteredLogs, groupByConversation, expandedConversationGroups, expandedSenderGroups) {
+    val historyRows = remember(filteredLogs, groupByConversation, expandedConversationGroups, expandedSenderGroups, context) {
         buildHistoryRows(
             historyGroupsFor(filteredLogs, groupByConversation, context),
             isSectionExpanded = { it in expandedConversationGroups },
