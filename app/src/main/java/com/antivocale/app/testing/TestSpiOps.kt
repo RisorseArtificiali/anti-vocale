@@ -138,6 +138,9 @@ internal class TestSpiOps(
             .put("voiceNoteDetectionEnabled", preferences.voiceNoteDetectionEnabled.first())
             // TASK-271: the SAF tree grant URI (the one read route), or null.
             .put("voiceNoteTreeUri", preferences.voiceNoteTreeUri.first() ?: JSONObject.NULL)
+            // TASK-778: the persisted catch-up watermark (read-only diagnostic;
+            // the detector owns writes).
+            .put("voiceNoteWatermark", preferences.voiceNoteWatermark.first() ?: JSONObject.NULL)
             // TASK-681: the LAN-offload config (endpoint visible for E2E
             // verification; the key is masked to its last 4 chars).
             .put("remoteOmnivoiceEnabled", preferences.remoteOmnivoiceEnabled.first())
