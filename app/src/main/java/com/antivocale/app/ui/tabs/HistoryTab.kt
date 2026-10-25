@@ -92,6 +92,7 @@ import com.antivocale.app.ui.MAX_RENDERED_TRANSCRIPT_CHARS
 import com.antivocale.app.ui.components.CappedTranscriptText
 import com.antivocale.app.ui.components.highlightText
 import com.antivocale.app.data.local.HistoryRecoveryLedger
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 import androidx.compose.runtime.produceState
@@ -731,8 +732,12 @@ fun HistoryTab(
     highlightTaskId: String? = null,
     tourRevealState: com.svenjacobs.reveal.RevealState,
 ) {
-    val logs by viewModel.logs.collectAsState()
-    val filteredLogs by viewModel.filteredLogs.collectAsState()
+    // TASK-898: DAO-backed streams use the lifecycle-aware collection so
+    // Room observation + entity mapping stop while the app is STOPPED
+    // (the preference/dataStore streams stay on plain collectAsState: they
+    // are in-memory StateFlows, no background work to pause).
+    val logs by viewModel.logs.collectAsStateWithLifecycle()
+    val filteredLogs by viewModel.filteredLogs.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val context = LocalContext.current
     val swipeActionMode by viewModel.swipeActionMode
