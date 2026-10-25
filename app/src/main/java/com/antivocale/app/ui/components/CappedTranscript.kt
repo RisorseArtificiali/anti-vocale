@@ -220,15 +220,17 @@ internal fun thumbGeometry(
     viewportPx: Int,
     trackPx: Int,
     minThumbPx: Int,
-): Pair<Float, Float>? {
-    if (maxValue <= 0 || trackPx <= 0 || viewportPx <= 0) return null
+): Offset? {
+    if (maxValue <= 0 || trackPx <= 0 || viewportPx <= 0) return Offset.Unspecified
     val content = viewportPx + maxValue
     val minThumb = minOf(minThumbPx.toFloat(), trackPx.toFloat())
     val h = (trackPx * viewportPx.toFloat() / content).coerceIn(minThumb, trackPx.toFloat())
     // The thumb's travel is what remains of the track after its own height.
     val travel = trackPx - h
     val top = travel * (value.toFloat() / maxValue)
-    return top to h
+    // x = thumb height, y = thumb top: a packed value class, no Pair per
+    // draw frame (TASK-898).
+    return Offset(h, top)
 }
 
 /**
@@ -284,8 +286,8 @@ internal fun Modifier.transcriptPositionIndicator(
     drawRoundRect(
         color = color.copy(alpha = 0.70f),
         cornerRadius = CornerRadius(w / 2),
-        topLeft = Offset(x, geo.first),
-        size = Size(w, geo.second),
+        topLeft = Offset(x, geo.y),
+        size = Size(w, geo.x),
     )
 }
 

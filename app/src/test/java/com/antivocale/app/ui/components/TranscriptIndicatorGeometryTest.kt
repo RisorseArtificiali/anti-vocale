@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.components
 
+import androidx.compose.ui.geometry.Offset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -15,19 +16,20 @@ class TranscriptIndicatorGeometryTest {
 
     @Test
     fun `nothing to scroll hides the thumb`() {
-        assertNull(thumbGeometry(value = 0, maxValue = 0, viewportPx = 500, trackPx = 400, minThumbPx = 24))
+        assertEquals(Offset.Unspecified,
+            thumbGeometry(value = 0, maxValue = 0, viewportPx = 500, trackPx = 400, minThumbPx = 24))
     }
 
     @Test
     fun `zero dimensions hide the thumb`() {
-        assertNull(thumbGeometry(10, 100, 0, 400, 24))
-        assertNull(thumbGeometry(10, 100, 500, 0, 24))
+        assertEquals(Offset.Unspecified, thumbGeometry(10, 100, 0, 400, 24))
+        assertEquals(Offset.Unspecified, thumbGeometry(10, 100, 500, 0, 24))
     }
 
     @Test
     fun `thumb height is the viewport fraction of the content`() {
         // content = 1000 (viewport 300 + scrollable 700); track 400.
-        val (top, h) = thumbGeometry(0, 700, 300, 400, 24)!!
+        val (h, top) = thumbGeometry(0, 700, 300, 400, 24)!!
         assertEquals(400f * 300f / 1000f, h, 0.01f)
         assertEquals(0f, top, 0.01f)
     }
@@ -42,14 +44,14 @@ class TranscriptIndicatorGeometryTest {
     @Test
     fun `thumb never shrinks below the floor`() {
         // A tiny viewport in a huge content would collapse the thumb to ~4px.
-        val (_, h) = thumbGeometry(0, 100_000, 100, 400, 24)!!
+        val (h, _) = thumbGeometry(0, 100_000, 100, 400, 24)!!
         assertEquals(24f, h, 0.01f)
     }
 
     @Test
     fun `thumb never exceeds the track when content fits`() {
         // content barely over one viewport: fraction ~0.8 of track.
-        val (_, h) = thumbGeometry(0, 100, 900, 400, 24)!!
+        val (h, _) = thumbGeometry(0, 100, 900, 400, 24)!!
         assertEquals(400f * 900f / 1000f, h, 0.01f)
     }
 
