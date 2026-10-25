@@ -1240,7 +1240,19 @@ fun HistoryTab(
                     items(
                         historyRows,
                         key = { it.key },
-                        contentType = { row -> if (row is HistoryRow.LogRow) "log" else "header" },
+                        // TASK-898: four visual kinds, not two: the advisory
+                        // card and the date header share nothing with the
+                        // collapsible group skeletons, so recycling across
+                        // them re-filled mismatched slots on fast scroll.
+                        contentType = { row ->
+                            when (row) {
+                                is HistoryRow.LogRow -> "log"
+                                is HistoryRow.AdvisoryRow -> "advisory"
+                                is HistoryRow.SenderHeaderRow,
+                                is HistoryRow.ConversationHeaderRow -> "group_header"
+                                else -> "date_header"
+                            }
+                        },
                     ) { row ->
                         when (row) {
                             is HistoryRow.AdvisoryRow -> VadAdvisoryCard(
