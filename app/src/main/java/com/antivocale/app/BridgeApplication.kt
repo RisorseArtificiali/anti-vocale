@@ -69,7 +69,7 @@ class BridgeApplication : Application(), Configuration.Provider {
         // guard decide per row.
         // TASK-899 (MEDIUM-4): the cleanup's directory syscalls (exists/
         // listFiles/lastModified/delete) used to run on main here; the
-        // ordering note below stays true in both orders (the sweep guards
+        // ordering note above stays true in both orders (the sweep guards
         // per row), so the move to the application scope is behavior-neutral.
         applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
@@ -224,8 +224,9 @@ class BridgeApplication : Application(), Configuration.Provider {
         }
         // GH #51: rows left QUEUED/PROCESSING by a process death can never complete
         // (START_NOT_STICKY restores nothing); fail them so they don't render as a
-        // permanently in-flight queue. Runs at process start, before the service can
-        // exist in this process, so no live row can be caught.
+        // permanently in-flight queue. Runs at process start; the sweep is the
+        // only closer of non-terminal rows and StartupSweepGate (TASK-899)
+        // orders it against the first live row/run.
         // TASK-396: set BEFORE the sweep (it calls consumeLastCrashWasOOM)
         CrashReporter.filesDir = filesDir
         // TASK-430: annotate every crash report with the device's memory
@@ -279,7 +280,7 @@ class BridgeApplication : Application(), Configuration.Provider {
                     )
             }.onFailure { e ->
                 android.util.Log.e("BridgeApplication", "Non-terminal log sweep failed", e)
-                }
+            }
         }.also { com.antivocale.app.service.StartupSweepGate.arm(it) }
         // TASK-264: the share-target sync's DataStore reads + PackageManager IPCs must
         // not block the main thread at cold start, so it launches on the application

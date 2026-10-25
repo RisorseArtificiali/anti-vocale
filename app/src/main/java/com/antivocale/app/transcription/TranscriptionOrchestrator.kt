@@ -10,6 +10,7 @@ import com.antivocale.app.util.SubtitleParser
 import com.antivocale.app.audio.AudioDurationPolicy
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.service.ResultNotificationFactory
+import com.antivocale.app.service.StartupSweepGate
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
 import com.antivocale.app.audio.AudioPreprocessor.StreamEvent
 import com.antivocale.app.transcription.diarization.DiarizationModels
@@ -4276,7 +4277,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // point this KDoc names, so no future caller can forget it: a row
         // inserted while the (async) sweep still runs would be closed as
         // interrupted underneath its own transcription.
-        com.antivocale.app.service.StartupSweepGate.await()
+        StartupSweepGate.await()
         logDao.insert(
             LogEntry(
                 taskId = taskId,
