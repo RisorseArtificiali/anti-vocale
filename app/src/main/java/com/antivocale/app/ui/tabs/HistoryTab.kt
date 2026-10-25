@@ -469,8 +469,10 @@ private fun RowScope.PlaybackControls(
     compact: Boolean,
     cuesJson: String? = null,
 ) {
-    val now by playback.state.collectAsState()
-    val mine = now?.taskId == taskId
+    // TASK-898: the row's own slice: the 5Hz progress tick recomposes
+    // only the playing row (the shared flow recomposed every rendered row).
+    val now by playback.stateFor(taskId).collectAsState(initial = null)
+    val mine = now != null
     val filePresent = remember(filePath) {
         playbackFileExists(filePath)
     }
@@ -554,12 +556,11 @@ private fun PlaybackProgressBar(
     playback: ResultPlaybackController,
     taskId: String,
 ) {
-    val now by playback.state.collectAsState()
-    val playing = now
-    val mine = playing?.taskId == taskId
-    if (mine && playing != null) {
-        val fraction = if (playing.durationMs > 0) {
-            (playing.positionMs.toFloat() / playing.durationMs).coerceIn(0f, 1f)
+    val playing by playback.stateFor(taskId).collectAsState(initial = null)
+    val current = playing
+    if (current != null) {
+        val fraction = if (current.durationMs > 0) {
+            (current.positionMs.toFloat() / current.durationMs).coerceIn(0f, 1f)
         } else 0f
         LinearProgressIndicator(
             progress = { fraction },

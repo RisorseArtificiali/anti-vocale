@@ -16,11 +16,17 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * TASK-840 (GH #157 part 1): ONE tab-owned audio player for the result
@@ -76,6 +82,18 @@ class ResultPlaybackController(
 
     private val _state = MutableStateFlow<NowPlaying?>(null)
     val state: StateFlow<NowPlaying?> = _state.asStateFlow()
+
+    /**
+     * TASK-898: this row's slice of [state], null unless [taskId] is the
+     * active one. Row indicators collect THIS so the 5Hz progress tick
+     * recomposes only the playing row, not every rendered row of the
+     * list. A cold mapped flow on purpose: the shared upstream stays hot
+     * (it is a StateFlow), each row's collection subscribes/unsubscribes
+     * with its own composition, and no scope is needed to keep it alive.
+     */
+    fun stateFor(taskId: String): Flow<NowPlaying?> = _state
+        .map { it?.takeIf { playing -> playing.taskId == taskId } }
+        .distinctUntilChanged()
 
     /**
      * TASK-841 (GH #157 pt 2b): cue-gap silence skipping, offered only on
