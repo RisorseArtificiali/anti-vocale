@@ -9,6 +9,9 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 
+/** The aside-naming infix the recovery mints and every consumer matches on. */
+internal const val DB_ASIDE_INFIX = ".corrupt-"
+
 /**
  * TASK-886: the History DB's corruption-recovery path. The motivating
  * crash: SQLITE_IOERR_SHORT_READ (522) at connection open, on the History
@@ -18,11 +21,15 @@ import java.io.File
  * intercepts every readable/writable access (the crash fired on a lazily
  * opened SECONDARY connection, so guarding the first open alone would
  * miss it): on the two corruption-class exceptions it closes the helper,
- * RENAMES the database files aside (transcripts preserved on disk for
- * manual recovery, never deleted; the 660/661 model-heal precedent),
- * and retries once; a fresh empty database is created and the app lives.
- * A second corruption during the retry rethrows: a genuinely dying disk
- * must not become a delete-everything loop.
+ * moves the database files ASIDE (preserving transcripts for manual
+ * recovery; the 660/661 model-heal precedent) and retries once; a fresh
+ * empty database is created and the app lives. TASK-892: when the rename
+ * itself fails (dying disk), the damaged file is DELETED instead - losing
+ * the bytes is the smaller harm next to reopening the same corruption at
+ * every launch, and the ledger's preservedAside flag keeps the banner
+ * honest about which happened. A second corruption during the retry
+ * rethrows: a genuinely dying disk must not become a delete-everything
+ * loop.
  */
 class CorruptionRecoveringOpenHelperFactory(
     private val inner: SupportSQLiteOpenHelper.Factory,
@@ -77,6 +84,14 @@ class CorruptionRecoveringOpenHelperFactory(
          * that already renamed leaves nothing for this one to move, and the
          * retry open then succeeds on the fresh file. Returns the reopened
          * database: access() wraps exactly that instance.
+         *
+         * TASK-892: a rename that FAILS on a dying disk falls back to
+         * delete(). Leaving the damaged file in place would reopen the
+         * same corruption at EVERY launch, the exact permanent crash loop
+         * this class exists to kill; losing the bytes is the smaller harm,
+         * and the ledger records preservedAside=false so the banner says
+         * so honestly. Repeated recoveries cap the aside sets at
+         * [ASIDE_SETS_KEPT] so a sick disk cannot accumulate them forever.
          */
         @Synchronized
         private fun recoverThenReopen(
@@ -91,24 +106,61 @@ class CorruptionRecoveringOpenHelperFactory(
             // on an already-broken helper must not block the recovery.
             runCatching { delegate.close() }
             val databasesDir = context.getDatabasePath(name).parentFile
-            val stamp = System.currentTimeMillis()
-            var renamedAny = false
+            // Strictly monotonic: two recoveries in the same millisecond
+            // must not share an aside name (a second rename would silently
+            // REPLACE the first preserved set) nor a notice stamp (the
+            // banner's resurfacing guarantee keys on it).
+            val stamp = LAST_STAMP.updateAndGet { prev ->
+                maxOf(System.currentTimeMillis(), prev + 1)
+            }
+            var mainPreserved = false
+            var minted = false
             DATABASE_SUFFIXES.forEach { suffix ->
                 val damaged = File(databasesDir, name + suffix)
                 if (damaged.exists()) {
-                    val aside = File(databasesDir, "${name}.corrupt-$stamp$suffix")
-                    if (damaged.renameTo(aside)) {
-                        renamedAny = true
+                    val aside = File(databasesDir, "${name}$DB_ASIDE_INFIX$stamp$suffix")
+                    if (renameAside(damaged, aside)) {
+                        if (suffix == MAIN_SUFFIX) mainPreserved = true
+                        minted = true
                         Log.w(TAG, "damaged file preserved at ${aside.name}")
+                    } else if (damaged.delete()) {
+                        Log.e(TAG, "rename aside failed for ${damaged.name};" +
+                            " deleted it to escape the relaunch crash loop (TASK-892)")
                     } else {
-                        Log.e(TAG, "could not rename ${damaged.name}; the retry will fail" +
-                            " loudly rather than loop")
+                        Log.e(TAG, "could not rename OR delete ${damaged.name};" +
+                            " the retry will fail loudly")
                     }
                 }
             }
-            if (renamedAny) HistoryRecoveryLedger.record(stamp)
+            // The cap runs only on attempts that ADDED a set: an attempt
+            // that preserved nothing must not spend the user's last
+            // recoverable snapshots.
+            if (minted) pruneAsideSets(databasesDir, name)
+            // Recorded on every ATTEMPT (a delete-fallback recovery must be
+            // explained too, not only a clean rename-aside one).
+            HistoryRecoveryLedger.record(stamp, mainPreserved)
             // One retry: fresh files make the framework create an empty DB.
             return reopen()
+        }
+
+        /** Test seam for a dying disk: rename indirection, injectable. */
+        @androidx.annotation.VisibleForTesting
+        internal var renameAside: (File, File) -> Boolean = { from, to -> from.renameTo(to) }
+
+        /** Keeps the newest [ASIDE_SETS_KEPT] recovery sets; deletes older. */
+        private fun pruneAsideSets(databasesDir: File?, name: String) {
+            val pattern = Regex(Regex.escape("${name}$DB_ASIDE_INFIX") + "(\\d+)")
+            val stamps = databasesDir?.listFiles()
+                .orEmpty()
+                .mapNotNull { f ->
+                    pattern.find(f.name)?.groupValues[1]?.toLongOrNull()?.let { it to f }
+                }
+                .groupBy({ it.first }, { it.second })
+            stamps.keys.sortedDescending().drop(ASIDE_SETS_KEPT).forEach { old ->
+                stamps.getValue(old).forEach { file ->
+                    if (file.delete()) Log.w(TAG, "capped aside set ${old}: deleted ${file.name}")
+                }
+            }
         }
     }
 
@@ -173,31 +225,43 @@ class CorruptionRecoveringOpenHelperFactory(
 
         /** The main file plus every journaling sidecar SQLite may hold. */
         val DATABASE_SUFFIXES = listOf("", "-wal", "-shm", "-journal")
+        const val MAIN_SUFFIX = ""
+
+        /** TASK-892: aside sets kept before the cap deletes the oldest. */
+        const val ASIDE_SETS_KEPT = 2
+
+        val LAST_STAMP = java.util.concurrent.atomic.AtomicLong(0L)
     }
 }
 
 /**
  * TASK-886: process-wide one-shot record that the History DB was damaged
- * and reinitialized, so the History tab can tell the user what happened
- * (their transcripts were preserved aside, not deleted). An object, not
- * an injected singleton, because the recovery fires from the Room open
- * helper where no DI graph exists yet; the UI reads it lazily.
+ * and reinitialized, so the History tab can tell the user what happened.
+ * An object, not an injected singleton, because the recovery fires from
+ * the Room open helper where no DI graph exists yet; the UI reads it
+ * lazily. TASK-892: the record carries whether the damaged files were
+ * PRESERVED aside or had to be deleted (rename failed on a dying disk);
+ * the banner's wording depends on it.
  */
 object HistoryRecoveryLedger {
-    private val _recoveredAt = kotlinx.coroutines.flow.MutableStateFlow<Long?>(null)
 
-    fun record(atMs: Long) {
-        _recoveredAt.value = atMs
+    /** One recovery event: [stamp] keys the banner dismissal. */
+    data class RecoveryNotice(val stamp: Long, val preservedAside: Boolean)
+
+    private val _lastRecovery = kotlinx.coroutines.flow.MutableStateFlow<RecoveryNotice?>(null)
+
+    fun record(atMs: Long, preservedAside: Boolean) {
+        _lastRecovery.value = RecoveryNotice(atMs, preservedAside)
     }
 
     /**
      * Observable (review 2026-10-25): a recovery can fire MID-SESSION (the
      * motivating crash opened a lazy secondary connection), so the History
-     * banner must see updates after its first composition; the stamp value
-     * also keys the dismissal so a second recovery re-surfaces the notice.
-     * Null when no recovery happened this process.
+     * banner must see updates after its first composition; the notice's
+     * stamp also keys the dismissal so a second recovery re-surfaces the
+     * notice. Null when no recovery happened this process.
      */
-    val recoveredAt: kotlinx.coroutines.flow.StateFlow<Long?> = _recoveredAt.asStateFlow()
+    val lastRecovery: kotlinx.coroutines.flow.StateFlow<RecoveryNotice?> = _lastRecovery.asStateFlow()
 }
 
 /** Test seam: the database the wrapper's GUARDED QUERY surface currently

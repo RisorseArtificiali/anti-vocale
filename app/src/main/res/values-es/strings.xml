@@ -1171,4 +1171,5 @@
     <string name="freeze_protection_title">Protección de transcripción en segundo plano</string>
     <string name="freeze_protection_description">Mantiene un flujo de audio silencioso activo durante la transcripción para que los ahorradores agresivos de batería no suspendan la app. Actívala si la transcripción se detiene con la pantalla apagada (algunos Oppo, Realme, OnePlus y Vivo).</string>
     <string name="history_db_recovered">La base de datos del historial estaba dañada y se ha restablecido. Tus transcripciones anteriores se han guardado en un archivo de copia de seguridad.</string>
+    <string name="history_db_recovered_unpreserved">La base de datos del historial estaba dañada y se ha restablecido. No se han podido conservar los archivos dañados.</string>
 </resources>

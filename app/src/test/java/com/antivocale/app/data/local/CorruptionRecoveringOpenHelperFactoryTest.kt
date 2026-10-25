@@ -27,14 +27,18 @@ import org.robolectric.annotation.Config
  * file (SQLITE_IOERR_SHORT_READ at connection open) is a LAUNCH CRASH
  * LOOP - the History query runs at every app open. These tests pin the
  * recovery contract on a real temp filesystem: the damaged files are
- * RENAMED aside (preserved, never deleted), a fresh database is returned,
- * the ledger records the event exactly once, a second corruption during
- * the retry rethrows (a dying disk must not become a delete-everything
- * loop), and the clean path is a pure passthrough.
+ * RENAMED aside when the filesystem cooperates (TASK-892: DELETED when
+ * the rename fails, so the launch loop cannot survive; the ledger flags
+ * which happened), a fresh database is returned, the ledger records the
+ * event exactly once, a second corruption during the retry rethrows (a
+ * dying disk must not become a delete-everything loop), and the clean
+ * path is a pure passthrough.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class CorruptionRecoveringOpenHelperFactoryTest {
+
+    private val dbName = "anti_vocale_database"
 
     @get:Rule
     val tmp = TemporaryFolder()
@@ -53,33 +57,46 @@ class CorruptionRecoveringOpenHelperFactoryTest {
             File(databasesDir, firstArg())
         }
         every { innerFactory.create(any()) } returns innerHelper
-        every { innerHelper.databaseName } returns "anti_vocale_database"
-        HistoryRecoveryLedger.record(-1) // sentinel distinguishing record() from never-called
+        every { innerHelper.databaseName } returns dbName
+        HistoryRecoveryLedger.record(-1, preservedAside = true) // sentinel distinguishing record() from never-called
     }
 
-    private fun helper() = CorruptionRecoveringOpenHelperFactory(innerFactory)
-        .create(
-            SupportSQLiteOpenHelper.Configuration.builder(roboContext)
-                .name("anti_vocale_database")
-                .callback(mockk(relaxed = true))
-                .build(),
-        )
+    private fun helper(): CorruptionRecoveringOpenHelperFactory.RecoveringHelper =
+        CorruptionRecoveringOpenHelperFactory(innerFactory)
+            .create(
+                SupportSQLiteOpenHelper.Configuration.builder(roboContext)
+                    .name(dbName)
+                    .callback(mockk(relaxed = true))
+                    .build(),
+            ) as CorruptionRecoveringOpenHelperFactory.RecoveringHelper
+
+    /**
+     * The common failing-first-access arrangement: the first
+     * readableDatabase/writableDatabase call throws the corruption, the
+     * reopened one returns [freshDb].
+     */
+    private fun arrangeFirstAccessFails(write: Boolean) {
+        var opens = 0
+        val stub = if (write) every { innerHelper.writableDatabase }
+        else every { innerHelper.readableDatabase }
+        stub answers {
+            opens += 1
+            if (opens == 1) throw SQLiteDiskIOException("disk I/O error (code 522)")
+            freshDb
+        }
+    }
 
     private fun writeDamagedFiles() {
-        File(databasesDir, "anti_vocale_database").writeText("damaged-main")
-        File(databasesDir, "anti_vocale_database-wal").writeText("damaged-wal")
-        File(databasesDir, "anti_vocale_database-shm").writeText("damaged-shm")
+        File(databasesDir, dbName).writeText("damaged-main")
+        File(databasesDir, dbName + "-wal").writeText("damaged-wal")
+        File(databasesDir, dbName + "-shm").writeText("damaged-shm")
+        File(databasesDir, dbName + "-journal").writeText("damaged-journal")
     }
 
     @Test
     fun `disk IO corruption renames files aside, retries fresh, records the ledger`() {
         writeDamagedFiles()
-        var opens = 0
-        every { innerHelper.writableDatabase } answers {
-            opens += 1
-            if (opens == 1) throw SQLiteDiskIOException("disk I/O error (code 522)")
-            freshDb
-        }
+        arrangeFirstAccessFails(write = true)
 
         val result = helper().writableDatabase
 
@@ -88,16 +105,67 @@ class CorruptionRecoveringOpenHelperFactoryTest {
         // One recovery pass: exactly one close (the wrapper resolves the
         // helper per call, so open counts are no longer the retry count).
         verify(exactly = 1) { innerHelper.close() }
-        val renamed = databasesDir.listFiles { _, name -> name.contains(".corrupt-") }!!
-        assertEquals("all three damaged files preserved aside", 3, renamed.size)
+        val renamed = databasesDir.listFiles { _, name -> name.contains(dbName + DB_ASIDE_INFIX) }!!
+        assertEquals("all four damaged files preserved aside", 4, renamed.size)
         assertTrue("the ORIGINAL damaged files are gone (moved, not copied)",
-            !File(databasesDir, "anti_vocale_database").exists() &&
-                !File(databasesDir, "anti_vocale_database-wal").exists() &&
-                !File(databasesDir, "anti_vocale_database-shm").exists())
+            !File(databasesDir, dbName).exists() &&
+                !File(databasesDir, dbName + "-wal").exists() &&
+                !File(databasesDir, dbName + "-shm").exists())
         assertTrue("the damaged CONTENT survives in the renamed main file",
             renamed.any { it.readText() == "damaged-main" })
         org.junit.Assert.assertNotEquals("the ledger recorded the recovery (not the setUp sentinel)",
-            -1L, HistoryRecoveryLedger.recoveredAt.value)
+            -1L, HistoryRecoveryLedger.lastRecovery.value?.stamp)
+        assertTrue("a successful rename-aside records preservedAside",
+            HistoryRecoveryLedger.lastRecovery.value?.preservedAside == true)
+    }
+
+    @Test
+    fun `a failed rename deletes the damaged files and records the loss`() {
+        // TASK-892: on a dying disk the rename can fail; leaving the file
+        // in place would reopen the same corruption at EVERY launch (the
+        // permanent crash loop this class exists to kill), so the recovery
+        // falls back to delete and the ledger must say the bytes were NOT
+        // preserved (the banner's wording depends on it).
+        writeDamagedFiles()
+        arrangeFirstAccessFails(write = false)
+        val h = helper()
+        h.renameAside = { _, _ -> false } // the dying-disk seam
+
+        val result = h.readableDatabase
+
+        assertSame("the recovery still delivers the fresh database", freshDb, unwrappedDb(result))
+        assertEquals("no aside files were minted (rename failed)",
+            0, databasesDir.listFiles { _, n -> n.contains(dbName + DB_ASIDE_INFIX) }!!.size)
+        assertTrue("the damaged files are GONE (delete fallback)",
+            !File(databasesDir, dbName).exists() &&
+                !File(databasesDir, dbName + "-wal").exists())
+        assertEquals("the ledger recorded the recovery attempt as not preserved",
+            false, HistoryRecoveryLedger.lastRecovery.value?.preservedAside)
+    }
+
+    @Test
+    fun `aside sets are capped at the newest two`() {
+        // TASK-892: repeated recoveries must not accumulate .corrupt sets
+        // forever on a sick disk; the oldest beyond two are deleted. Three
+        // pre-seeded sets plus the one this recovery mints: the two oldest
+        // go, the newest pre-seeded set and the fresh one stay.
+        writeDamagedFiles()
+        listOf(111L, 222L, 333L).forEach { stamp ->
+            File(databasesDir, dbName + DB_ASIDE_INFIX + stamp).writeText("old-$stamp")
+            File(databasesDir, dbName + DB_ASIDE_INFIX + stamp + "-wal").writeText("old-wal")
+        }
+        arrangeFirstAccessFails(write = false)
+
+        helper().readableDatabase
+
+        val stamps = databasesDir.listFiles { _, n -> n.contains(dbName + DB_ASIDE_INFIX) }!!
+            .mapNotNull { Regex("corrupt-(\\d+)").find(it.name)?.groupValues?.get(1) }
+            .toSet()
+        assertEquals("exactly two aside sets survive", 2, stamps.size)
+        assertTrue("the two oldest pre-seeded sets were pruned",
+            "111" !in stamps && "222" !in stamps)
+        assertTrue("the newest pre-seeded set and the fresh one survive",
+            "333" in stamps)
     }
 
     @Test
@@ -113,7 +181,7 @@ class CorruptionRecoveringOpenHelperFactoryTest {
         val result = helper().readableDatabase
 
         verify(exactly = 1) { innerHelper.close() }
-        assertTrue(databasesDir.listFiles { _, n -> n.contains(".corrupt-") }!!.size == 3)
+        assertTrue(databasesDir.listFiles { _, n -> n.contains(dbName + DB_ASIDE_INFIX) }!!.size == 4)
     }
 
     @Test
@@ -129,7 +197,7 @@ class CorruptionRecoveringOpenHelperFactoryTest {
         }
         assertNotNull("the retry's failure surfaces to the caller", thrown)
         // The damaged files were still preserved by the one recovery pass.
-        assertTrue(databasesDir.listFiles { _, n -> n.contains(".corrupt-") }!!.size == 3)
+        assertTrue(databasesDir.listFiles { _, n -> n.contains(dbName + DB_ASIDE_INFIX) }!!.size == 4)
     }
 
     @Test
@@ -164,9 +232,9 @@ class CorruptionRecoveringOpenHelperFactoryTest {
     @Test
     fun `clean access is a pure passthrough`() {
         every { innerHelper.writableDatabase } returns freshDb
-        val before = HistoryRecoveryLedger.recoveredAt.value
+        val before = HistoryRecoveryLedger.lastRecovery.value
 
         helper().writableDatabase // passthrough: no exception, no ledger change
-        assertEquals("no new recovery recorded", before, HistoryRecoveryLedger.recoveredAt.value)
+        assertEquals("no new recovery recorded", before, HistoryRecoveryLedger.lastRecovery.value)
     }
 }

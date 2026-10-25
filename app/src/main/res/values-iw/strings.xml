@@ -1314,4 +1314,5 @@
     <string name="freeze_protection_title">הגנת תמלול ברקע</string>
     <string name="freeze_protection_description">מחזיק זרימת שמע שקטה פעילה במהלך התמלול כדי שחוסכי סוללה אגרסיביים לא ישהו את האפליקציה. הפעל אם התמלול נעצר כשהמסך כבוי (חלק מטלפוני Oppo‏, Realme‏, OnePlus ו־Vivo).</string>
     <string name="history_db_recovered">מסד הנתונים של ההיסטוריה נפגם ואופס. התמלילים הקודמים שלך נשמרו בקובץ גיבוי.</string>
+    <string name="history_db_recovered_unpreserved">מסד הנתונים של ההיסטוריה נפגם ואופס. לא ניתן היה לשמר את הקבצים הפגומים.</string>
 </resources>

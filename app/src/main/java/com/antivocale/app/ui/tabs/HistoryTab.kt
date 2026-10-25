@@ -1165,25 +1165,29 @@ fun HistoryTab(
                 var dbRecoveryDismissedStamp by rememberSaveable {
                     mutableStateOf<Long?>(null)
                 }
-                val dbRecoveredAt by HistoryRecoveryLedger.recoveredAt.collectAsState()
-                if (dbRecoveredAt != null && dbRecoveredAt != dbRecoveryDismissedStamp) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.history_db_recovered),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconButton(onClick = { dbRecoveryDismissedStamp = dbRecoveredAt }) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = null,
+                val dbRecovery by HistoryRecoveryLedger.lastRecovery.collectAsState()
+                dbRecovery?.let { recovery ->
+                    if (recovery.stamp != dbRecoveryDismissedStamp) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    if (recovery.preservedAside) R.string.history_db_recovered
+                                    else R.string.history_db_recovered_unpreserved),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f),
                             )
+                            IconButton(onClick = { dbRecoveryDismissedStamp = recovery.stamp }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = null,
+                                )
+                            }
                         }
                     }
                 }

@@ -1308,4 +1308,5 @@
     <string name="freeze_protection_title">محافظت از رونویسی پس‌زمینه</string>
     <string name="freeze_protection_description">در طول رونویسی یک جریان صوتی بی‌صدا فعال نگه می‌دارد تا صرفه‌جویان تهاجمی باتری برنامه را متوقف نکنند. اگر رونویسی با خاموش شدن صفحه متوقف می‌شود، این را روشن کنید (برخی گوشی‌های Oppo، Realme، OnePlus و Vivo).</string>
     <string name="history_db_recovered">پایگاه دادهٔ تاریخچه آسیب دید و بازنشانی شد. رونوشت‌های قبلی شما در یک فایل پشتیبان نگه داشته شدند.</string>
+    <string name="history_db_recovered_unpreserved">پایگاه دادهٔ تاریخچه آسیب دید و بازنشانی شد. نگه‌داری فایل‌های آسیب‌دیده ممکن نشد.</string>
 </resources>

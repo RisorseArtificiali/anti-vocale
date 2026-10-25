@@ -1323,4 +1323,5 @@
     <!-- TASK-886: shown once on the History tab after the DB corruption
          recovery preserved the damaged files aside and reinitialized. -->
     <string name="history_db_recovered">The history database was damaged and has been reset. Your previous transcripts were kept in a backup file.</string>
+    <string name="history_db_recovered_unpreserved">The history database was damaged and has been reset. The damaged files could not be preserved.</string>
 </resources>

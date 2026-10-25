@@ -1329,4 +1329,5 @@
     <string name="freeze_protection_title">Ochrona transkrypcji w tle</string>
     <string name="freeze_protection_description">Utrzymuje cichy strumień audio podczas transkrypcji, aby agresywne oszczędzacze baterii nie wstrzymywały aplikacji. Włącz, jeśli transkrypcja zatrzymuje się po wyłączeniu ekranu (niektóre telefony Oppo, Realme, OnePlus i Vivo).</string>
     <string name="history_db_recovered">Baza danych historii została uszkodzona i zresetowana. Twoje wcześniejsze transkrypcje zostały zachowane w pliku kopii zapasowej.</string>
+    <string name="history_db_recovered_unpreserved">Baza danych historii została uszkodzona i zresetowana. Nie udało się zachować uszkodzonych plików.</string>
 </resources>
