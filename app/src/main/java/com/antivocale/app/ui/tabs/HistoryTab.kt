@@ -183,6 +183,9 @@ internal sealed interface HistoryRow {
         // The expansion-set key, stored so consumers read the model instead
         // of re-deriving the formula (750 simplify: one derivation site).
         val senderKey: String = senderGroupKey(groupKey, sender.senderName),
+        // TASK-898: precomputed so the header composable does not rescan
+        // the group's rows per composition.
+        val newestTimestamp: Long = sender.logs.maxOf { it.timestamp },
     ) : HistoryRow {
         override val key = "sender_$senderKey"
     }
@@ -1282,7 +1285,7 @@ fun HistoryTab(
                                 SenderGroupHeader(
                                     senderName = row.sender.senderName,
                                     count = row.sender.logs.size,
-                                    lastTimestamp = row.sender.logs.maxOf { it.timestamp },
+                                    lastTimestamp = row.newestTimestamp,
                                     expanded = isSenderExpanded,
                                     onToggle = {
                                         expandedSenderGroups = if (isSenderExpanded) {

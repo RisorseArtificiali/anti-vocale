@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -687,7 +688,11 @@ fun ModelTab(
                     // coordinates are HELD and a LaunchedEffect on the flag
                     // performs the scroll when both exist.
                     modifier = if (com.antivocale.app.transcription.BuiltInBackendIds.isLlm(entry.id)) {
-                        Modifier.onGloballyPositioned { coords -> gemmaRevealCoords[0] = coords }
+                        // TASK-898: onPlaced, not onGloballyPositioned: the
+                        // consumed value is positionInParent, which does not
+                        // change with scroll inside this Column; the
+                        // global-position form re-fired per scroll frame.
+                        Modifier.onPlaced { coords -> gemmaRevealCoords[0] = coords }
                     } else Modifier,
                     state = catalogStates[entry.id] ?: ModelViewModel.ModelEntryUiState(),
                     activeBackendId = activeBackendId,
