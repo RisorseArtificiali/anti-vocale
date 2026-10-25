@@ -94,19 +94,18 @@ fun MainScreen(
     // tour start; dismiss only when a DIFFERENT taskId appears.
     val activeEntry by viewModel.activeTranscription.collectAsState()
     var tourStartTaskId by remember { mutableStateOf<String?>(null) }
+    // TASK-898: the two tourStep-keyed effects merged: the snapshot must
+    // land before the dismissal check reads it, and effect ordering inside
+    // one coroutine makes that explicit instead of an accident of
+    // composition order.
     LaunchedEffect(tourStep) {
         if (tourStep != null) tourStartTaskId = activeEntry?.taskId
-    }
-    LaunchedEffect(activeEntry?.taskId, tourStep) {
         val entry = activeEntry
         if (tourStep != null && entry != null && entry.taskId != tourStartTaskId) {
             finishTour()
         }
-    }
-
-    // Drive the reveal: each step's key revealed on entry; steps that
-    // target a specific tab switch to it first so the revealable exists.
-    LaunchedEffect(tourStep) {
+        // Drive the reveal: each step's key revealed on entry; steps that
+        // target a specific tab switch to it first so the revealable exists.
         when (val step = tourStep) {
             null -> revealState.hide()
             TourStep.Welcome -> revealState.reveal(TourStep.Welcome.key)
