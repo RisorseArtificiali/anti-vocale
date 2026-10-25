@@ -934,6 +934,8 @@ class PreferencesManagerImpl(
             else preferences[VOICE_NOTE_BUSINESS_TREE_URI] = uri
         }
         cache.updateAndGet { it.copy(voiceNoteBusinessTreeUri = uri) }
+    }
+
     override suspend fun bumpVoiceNoteWatermark(candidate: String) {
         dataStore.edit { preferences ->
             val current = preferences[VOICE_NOTE_WATERMARK]

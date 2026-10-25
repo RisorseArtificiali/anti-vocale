@@ -143,7 +143,9 @@ class VoiceNoteCatchUpScanTest {
         val w4bFolder = tmp.newFolder("w4b", "202642")
         note(waFolder, name, lastModifiedAgoMs = 60_000)
         note(w4bFolder, name, lastModifiedAgoMs = 60_000)
-        val business = VoiceNoteDetector(scope, VoiceNoteSource.WHATSAPP_BUSINESS)
+        val business = VoiceNoteDetector(scope, io.mockk.mockk<PreferencesManager>(relaxed = true).also {
+                io.mockk.every { it.voiceNoteWatermark } returns kotlinx.coroutines.flow.flowOf(null)
+            }, VoiceNoteSource.WHATSAPP_BUSINESS)
         val businessEntries = mutableListOf<VoiceNoteEntry>()
         try {
             detector.catchUpDelayMs = 2_000
@@ -174,7 +176,9 @@ class VoiceNoteCatchUpScanTest {
         val w4bFolder = tmp.newFolder("w4b2", "202642")
         note(waFolder, "PTT-20261020-WA0002.opus", lastModifiedAgoMs = 60_000)
         note(w4bFolder, "PTT-20261020-WA0002.opus", lastModifiedAgoMs = 60_000)
-        val business = VoiceNoteDetector(scope, VoiceNoteSource.WHATSAPP_BUSINESS)
+        val business = VoiceNoteDetector(scope, io.mockk.mockk<PreferencesManager>(relaxed = true).also {
+                io.mockk.every { it.voiceNoteWatermark } returns kotlinx.coroutines.flow.flowOf(null)
+            }, VoiceNoteSource.WHATSAPP_BUSINESS)
         val businessEntries = mutableListOf<VoiceNoteEntry>()
         detector.catchUpDelayMs = 2_000
         detector.subscribe()

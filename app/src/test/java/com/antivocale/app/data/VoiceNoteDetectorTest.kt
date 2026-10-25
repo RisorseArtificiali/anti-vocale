@@ -70,8 +70,10 @@ class VoiceNoteDetectorTest {
     @Test
     fun `each source's detector watches its own root`() {
         val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
-        val wa = VoiceNoteDetector(scope)
-        val w4b = VoiceNoteDetector(scope, VoiceNoteSource.WHATSAPP_BUSINESS)
+        val prefs = io.mockk.mockk<PreferencesManager>(relaxed = true)
+        io.mockk.every { prefs.voiceNoteWatermark } returns kotlinx.coroutines.flow.flowOf(null)
+        val wa = VoiceNoteDetector(scope, prefs)
+        val w4b = VoiceNoteDetector(scope, prefs, VoiceNoteSource.WHATSAPP_BUSINESS)
         assertTrue(wa.root.path.endsWith("/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes"))
         assertTrue(w4b.root.path.endsWith(
             "/com.whatsapp.w4b/WhatsApp Business/Media/WhatsApp Business Voice Notes"))

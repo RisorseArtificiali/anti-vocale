@@ -74,10 +74,10 @@ class VoiceNoteDetector(
     // cancelled): the catch-up delay rides it instead of a private executor,
     // per the TASK-438 rule against hand-built concurrency owners.
     @ApplicationScope private val scope: CoroutineScope,
-    val source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
     // TASK-778: the persisted watermark this detector reads at arm and
     // advances on every emission.
     private val preferencesManager: PreferencesManager,
+    val source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
 ) {
 
     private val _detections = Channel<VoiceNoteEntry>(Channel.UNLIMITED)

@@ -95,7 +95,7 @@ object AppModule {
         com.antivocale.app.data.VoiceNoteDetectionCoordinators(
             com.antivocale.app.data.VoiceNoteSource.entries.associateWith { source ->
                 com.antivocale.app.data.VoiceNoteDetectionCoordinator(
-                    com.antivocale.app.data.VoiceNoteDetector(applicationScope, source),
+                    com.antivocale.app.data.VoiceNoteDetector(applicationScope, preferencesManager, source),
                     preferencesManager,
                     treeGrant,
                     autoTranscriber,
