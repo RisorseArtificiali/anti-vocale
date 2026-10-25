@@ -91,6 +91,8 @@ import com.antivocale.app.ui.onboarding.TourStep
 import com.antivocale.app.ui.MAX_RENDERED_TRANSCRIPT_CHARS
 import com.antivocale.app.ui.components.CappedTranscriptText
 import com.antivocale.app.ui.components.highlightText
+import com.antivocale.app.data.local.HistoryRecoveryLedger
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 import androidx.compose.runtime.produceState
 import com.antivocale.app.ui.dialogs.LongAudioWarningDialog
@@ -1152,6 +1154,38 @@ fun HistoryTab(
                         listState.animateScrollToItem(flatIndex)
                     }
                     viewModel.clearHighlight()
+                }
+
+                // TASK-886: notice after a History DB corruption recovery.
+                // The ledger is a StateFlow set by the open-helper wrapper
+                // (a recovery can fire mid-session, on a lazily opened
+                // secondary connection, so a first-composition snapshot
+                // would miss it); dismissal keys on the STAMP, so a second
+                // recovery re-surfaces the notice.
+                var dbRecoveryDismissedStamp by rememberSaveable {
+                    mutableStateOf<Long?>(null)
+                }
+                val dbRecoveredAt by HistoryRecoveryLedger.recoveredAt.collectAsState()
+                if (dbRecoveredAt != null && dbRecoveredAt != dbRecoveryDismissedStamp) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.history_db_recovered),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = { dbRecoveryDismissedStamp = dbRecoveredAt }) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = null,
+                            )
+                        }
+                    }
                 }
 
                 LazyColumn(

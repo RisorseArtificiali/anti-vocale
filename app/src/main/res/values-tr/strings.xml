@@ -1298,4 +1298,5 @@
     <string name="keyword_biasing_placeholder">Satır başına bir terim</string>
     <string name="freeze_protection_title">Arka plan transkripsiyon koruması</string>
     <string name="freeze_protection_description">Transkripsiyon sırasında sessiz bir ses akışını etkin tutar, böylece agresif pil tasarrufu araçları uygulamayı duraklatamaz. Ekran kapalıyken transkripsiyon duruyorsa açın (bazı Oppo, Realme, OnePlus ve Vivo telefonlar).</string>
+    <string name="history_db_recovered">Geçmiş veritabanı hasarlıydı ve sıfırlandı. Önceki transkripsiyonlarınız bir yedek dosyasında saklandı.</string>
 </resources>

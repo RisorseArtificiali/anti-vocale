@@ -1126,4 +1126,5 @@
     <plurals name="folder_watch_period_value">
         <item quantity="other">每 %1$d 小时</item>
     </plurals>
+    <string name="history_db_recovered">历史记录数据库已损坏并被重置。你之前的转写内容已保存在备份文件中。</string>
 </resources>

@@ -1166,4 +1166,5 @@
     <string name="keyword_biasing_placeholder">Um termo por linha</string>
     <string name="freeze_protection_title">Proteção da transcrição em segundo plano</string>
     <string name="freeze_protection_description">Mantém um fluxo de áudio silencioso ativo durante a transcrição para que economizadores agressivos de bateria não suspendam o app. Ative se a transcrição parar com a tela apagada (alguns Oppo, Realme, OnePlus e Vivo).</string>
+    <string name="history_db_recovered">O banco de dados do histórico estava danificado e foi redefinido. Suas transcrições anteriores foram mantidas em um arquivo de backup.</string>
 </resources>

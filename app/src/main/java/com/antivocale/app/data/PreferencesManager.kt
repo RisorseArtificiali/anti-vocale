@@ -328,7 +328,7 @@ interface PreferencesManager {
 
     /**
      * TASK-778 (with the 829 option-C decision): the persisted watermark
-     * for voice-note detection, "zero-padded-counter/PTT-name" of the
+     * for voice-note detection, "zero-padded-folder/YYYYMMDD/zero-padded-counter" of the
      * newest EMITTED note. The durable form of the detector's RAM-only
      * seen filter: what the cold-start catch-up sweep compares against so
      * notes that arrived while the process was dead are recovered instead

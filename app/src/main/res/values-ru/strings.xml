@@ -1325,4 +1325,5 @@
     <string name="keyword_biasing_placeholder">Один термин на строку</string>
     <string name="freeze_protection_title">Защита фоновой расшифровки</string>
     <string name="freeze_protection_description">Держит беззвучный аудиопоток активным во время расшифровки, чтобы агрессивные экономии батареи не приостанавливали приложение. Включите, если расшифровка останавливается при выключенном экране (некоторые Oppo, Realme, OnePlus и Vivo).</string>
+    <string name="history_db_recovered">База данных истории оказалась повреждена и была сброшена. Предыдущие расшифровки сохранены в файле резервной копии.</string>
 </resources>

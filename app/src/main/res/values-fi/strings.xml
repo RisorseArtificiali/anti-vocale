@@ -1138,4 +1138,5 @@
     <string name="backup_disclosure_body">Varmuuskopio sisältää kaikki transkriptiot, lähettäjien nimet ja puhujaotsikot selväkielisenä. Jaa se vain osapuolille, joihin luotat.</string>
     <string name="freeze_protection_title">Taustatranskription suojaus</string>
     <string name="freeze_protection_description">Pitää hiljaisen äänivirran aktiivisena transkription aikana, jotta aggressiiviset virranhallintaominaisuudet eivät voi pysäyttää sovellusta. Ota tämä käyttöön, jos transkriptio pysähtyy näytön ollessa pois päältä (jotkin Oppo-, Realme-, OnePlus- ja Vivo-puhelimet).</string>
+    <string name="history_db_recovered">Historiatietokanta oli vioittunut, joten se nollattiin. Aiemmat transkriptiosi säilytettiin varmuuskopiotiedostossa.</string>
 </resources>

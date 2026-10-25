@@ -1304,4 +1304,5 @@
     <string name="keyword_biasing_placeholder">Un termine per riga</string>
     <string name="freeze_protection_title">Protezione trascrizione in background</string>
     <string name="freeze_protection_description">Mantiene un flusso audio silenzioso attivo durante la trascrizione, così i risparmiatori di batteria aggressivi non possono sospendere l\'app. Attivala se la trascrizione si blocca a schermo spento (alcuni telefoni Oppo, Realme, OnePlus e Vivo).</string>
+    <string name="history_db_recovered">Il database della cronologia era danneggiato ed è stato azzerato. Le trascrizioni precedenti sono state conservate in un file di backup.</string>
 </resources>

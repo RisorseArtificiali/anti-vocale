@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 
 @Database(entities = [LogEntity::class], version = 15, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
@@ -123,6 +124,14 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "anti_vocale_database"
                 )
+                    // TASK-886: corruption recovery at the connection-open
+                    // layer (renames damaged files aside, recreates empty,
+                    // records the one-shot ledger the History tab surfaces).
+                    .openHelperFactory(
+                        CorruptionRecoveringOpenHelperFactory(
+                            FrameworkSQLiteOpenHelperFactory(),
+                        )
+                    )
                     .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
                     .build().also { INSTANCE = it }
             }

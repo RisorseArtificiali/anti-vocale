@@ -408,7 +408,7 @@ class VoiceNoteDetector @Inject constructor(
         // watermark, the key space regressed: reset and proceed unfiltered
         // (TTL and cap still bound the burst).
         val watermarkFolder = watermark?.substringBefore('/')?.toLongOrNull()
-        if (watermarkFolder != null &&
+        if (watermarkFolder != null && folders.isNotEmpty() &&
             folders.none { (it.name.toLongOrNull() ?: -1L) >= watermarkFolder }
         ) {
             Log.w(TAG, "watermark folder $watermarkFolder is above every existing folder;" +
@@ -417,11 +417,23 @@ class VoiceNoteDetector @Inject constructor(
             watermark = null
         }
         val now = System.currentTimeMillis()
+        // Review 2026-10-25: folders whose number is below the watermark's
+        // folder cannot hold a newer key (the folder is the key's first
+        // component), so they are pruned before listing: a steady state
+        // lists only the watermark's own folder and anything newer. The
+        // reset above nulls `watermark`, and the prune must follow the
+        // post-reset value, not the stale pre-reset folder.
+        val effectiveWatermarkFolder = watermark?.substringBefore('/')?.toLongOrNull()
+        val liveFolders = if (effectiveWatermarkFolder != null) {
+            folders.filter { (it.name.toLongOrNull() ?: -1L) >= effectiveWatermarkFolder }
+        } else {
+            folders
+        }
         // The watermark key is the ONE ordering definition: candidates are
         // keyed before any stat (the key is pure path work), so a steady
         // arm with nothing newer never pays a lastModified syscall.
         val fresh = mutableListOf<File>()
-        val candidates = folders
+        val candidates = liveFolders
             .flatMap { folder ->
                 folder.listFiles().orEmpty()
                     .filter { it.isFile && VoiceNoteFilter.isWhatsAppVoiceNoteName(it.name) }
@@ -453,8 +465,13 @@ class VoiceNoteDetector @Inject constructor(
             .take(coldCatchUpCap)
         if (candidates.isNotEmpty()) {
             Log.i(TAG, "cold-start catch-up: ${candidates.size} note(s) newer than watermark $watermark")
-            candidates.forEach { (file, _, _) ->
-                onDetection(entryFor(file).copy(catchup = true))
+            candidates.forEach { (file, _, lastModified) ->
+                // detectedAtMs is the note's OWN write time, not the scan
+                // time: the sender matcher's notification window must not
+                // pair an hours-old note with a live note's notification
+                // (review 2026-10-25; the TASK-833 wrong-name invariant).
+                onDetection(
+                    entryFor(file).copy(detectedAtMs = lastModified, catchup = true))
             }
         }
         // ONE settle round for the quiet-gate exclusions, re-statting only
@@ -565,7 +582,8 @@ object VoiceNoteFilter {
         val folder = file.parentFile?.name?.toLongOrNull() ?: return null
         val match = PTT_NAME.find(file.name) ?: return null
         val (date, counter) = match.destructured
-        return String.format(java.util.Locale.ROOT, "%020d/%s/%010d", folder, date, counter.toLong())
+        val counterValue = counter.toLongOrNull() ?: return null
+        return String.format(java.util.Locale.ROOT, "%020d/%s/%010d", folder, date, counterValue)
     }
 
     /** PTT-YYYYMMDD-WA<digits>.opus (case-insensitive, per [isWhatsAppVoiceNoteName]). */

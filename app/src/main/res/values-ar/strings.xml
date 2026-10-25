@@ -1191,4 +1191,5 @@
         <item quantity="many">النسخ غير مكتمل (فشل %1$d مقطعاً)</item>
         <item quantity="other">النسخ غير مكتمل (فشل %1$d مقطع)</item>
     </plurals>
+    <string name="history_db_recovered">تضررت قاعدة بيانات السجل وتمت إعادة تعيينها. تم حفظ نسخك السابقة في ملف نسخة احتياطية.</string>
 </resources>

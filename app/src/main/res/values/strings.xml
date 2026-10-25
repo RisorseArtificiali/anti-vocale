@@ -1314,4 +1314,7 @@
     <!-- GH #67 (scoped): opt-in freezer protection for background transcription -->
     <string name="freeze_protection_title">Background transcription protection</string>
     <string name="freeze_protection_description">Keeps a silent audio stream active during transcription so aggressive battery managers cannot suspend the app. Turn this on if transcription stalls when the screen is off (some Oppo, Realme, OnePlus and Vivo phones).</string>
+    <!-- TASK-886: shown once on the History tab after the DB corruption
+         recovery preserved the damaged files aside and reinitialized. -->
+    <string name="history_db_recovered">The history database was damaged and has been reset. Your previous transcripts were kept in a backup file.</string>
 </resources>
