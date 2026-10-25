@@ -142,6 +142,7 @@ class VoiceNoteDetector(
      * lastModified call).
      */
     private fun launchColdCatchUp() {
+        Log.i(TAG, "cold catch-up launched")
         scope.launch(Dispatchers.IO) { coldCatchUp() }
     }
 
@@ -394,10 +395,12 @@ class VoiceNoteDetector(
      * cold-start burst, not correctness guards.
      */
     private suspend fun coldCatchUp() {
+        Log.i(TAG, "cold catch-up running (armed=$armed)")
         if (!armed) return
         val folders = root.listFiles()
             ?.filter { it.isDirectory && VoiceNoteFilter.isCounterFolderName(it.name) }
             .orEmpty()
+        Log.i(TAG, "cold catch-up folders=${folders.size}")
         coldCatchUpScan(folders)
     }
 
@@ -473,6 +476,8 @@ class VoiceNoteDetector(
             // without this the pair would transcribe twice).
             .distinctBy { it.second }
             .take(coldCatchUpCap)
+        Log.i(TAG, "cold scan: ${candidates.size} candidate(s) after filters" +
+            " (fresh=${fresh.size}, watermark=$watermark)")
         if (candidates.isNotEmpty()) {
             Log.i(TAG, "cold-start catch-up: ${candidates.size} note(s) newer than watermark $watermark")
             candidates.forEach { (file, _, lastModified) ->
