@@ -582,6 +582,15 @@ object VoiceNoteFilter {
      * non-counter parents or names that do not parse (never
      * cold-recovered; a format change deserves a conscious revisit, not a
      * silent guess). ROOT locale: no digit separators in the padding.
+     *
+     * TASK-893: the parse is a PREFIX match (no strict .opus tail). The
+     * live filter accepts any PTT-*.opus, and decorations like WhatsApp's
+     * redownload suffix ("...WA12 (1).opus") were silently unrecoverable;
+     * a decorated name now keys as its ORIGINAL (same note, same
+     * position), so it can never jump the watermark past the folder's
+     * real notes. When both twins are unseen, catch-up emits both and the
+     * enqueue-side content-hash dedup (the 842 row) absorbs the pair; the
+     * shared key is what keeps the watermark honest, not a dedup gate.
      */
     fun watermarkKeyOf(file: File): String? {
         val folder = file.parentFile?.name?.toLongOrNull() ?: return null
@@ -591,6 +600,10 @@ object VoiceNoteFilter {
         return String.format(java.util.Locale.ROOT, "%020d/%s/%010d", folder, date, counterValue)
     }
 
-    /** PTT-YYYYMMDD-WA<digits>.opus (case-insensitive, per [isWhatsAppVoiceNoteName]). */
-    private val PTT_NAME = Regex("""(?i)^PTT-(\d{8})-WA(\d+)\.opus$""")
+    /**
+     * The strict note-name PREFIX: PTT-YYYYMMDD-WA<digits> (case-
+     * insensitive, per [isWhatsAppVoiceNoteName]). Anything after the
+     * counter is decoration and does not change the note's identity.
+     */
+    private val PTT_NAME = Regex("""(?i)^PTT-(\d{8})-WA(\d+)""")
 }

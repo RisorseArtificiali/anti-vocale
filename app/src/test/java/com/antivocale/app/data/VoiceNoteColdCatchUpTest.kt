@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -220,6 +221,63 @@ class VoiceNoteColdCatchUpTest {
         assertEquals("the settle round recovered exactly the fresh note", 1, entries.size)
         assertTrue(entries.single().path!!.endsWith("PTT-20261025-WA00009.opus"))
         awaitWatermark(keyOf("100", "PTT-20261025-WA00009.opus"))
+    }
+
+    @Test
+    fun `a decorated redownload name is recovered and keyed as its original`() {
+        // TASK-893: the live filter accepts any PTT-*.opus, but the strict
+        // full-name parse rejected decorations like WhatsApp's redownload
+        // suffix; those notes were never cold-recovered and never advanced
+        // the watermark. The lenient prefix parse keys a decorated name as
+        // its ORIGINAL (same note, same position), so the twin is emitted
+        // when unseen and suppressed when the original was already seen.
+        detector.coldCatchUpTtlMs = Long.MAX_VALUE
+        note("100", "PTT-20261025-WA00001.opus", ageMs = 60_000)
+        storedWatermarks[VoiceNoteSource.WHATSAPP] = keyOf("100", "PTT-20261020-WA00009.opus")
+
+        kotlinx.coroutines.runBlocking {
+            detector.coldCatchUpScan(listOf(File(tmp.root, "100")))
+        }
+        assertEquals(1, entries.size)
+
+        // A decorated twin of the SAME note is keyed identically: a later
+        // catch-up sees it as already-seen, never re-emitting the content.
+        assertEquals(
+            keyOf("100", "PTT-20261025-WA00001.opus"),
+            VoiceNoteFilter.watermarkKeyOf(File("100/PTT-20261025-WA00001 (1).opus")))
+        assertEquals(
+            keyOf("100", "PTT-20261025-WA00001.opus"),
+            VoiceNoteFilter.watermarkKeyOf(File("100/ptt-20261025-wa00001-copy.opus")))
+
+        // A decorated note NEWER than the watermark is recovered too, and
+        // advances the watermark to its semantic key.
+        val decoratedEntries = mutableListOf<VoiceNoteEntry>()
+        val business = businessDetector(decoratedEntries)
+        try {
+            note("200", "PTT-20261025-WA00012 (1).opus", ageMs = 60_000)
+            kotlinx.coroutines.runBlocking {
+                business.coldCatchUpScan(listOf(File(tmp.root, "200")))
+            }
+            assertEquals("the decorated note is recovered", 1, decoratedEntries.size)
+            awaitWatermark(
+                keyOf("200", "PTT-20261025-WA00012.opus"),
+                VoiceNoteSource.WHATSAPP_BUSINESS)
+        } finally {
+            business.dispose()
+        }
+    }
+
+    @Test
+    fun `unparseable filter-passing names still return null keys`() {
+        // The residual gap stays honest: a name the live filter accepts
+        // but whose PTT-date-WA prefix does not parse cannot be ordered
+        // (no semantic position), so it stays null rather than inventing a
+        // lexicographic key that would sort past every real note in the
+        // folder and suppress them from catch-up.
+        assertNull(VoiceNoteFilter.watermarkKeyOf(File("100/PTT-hello.opus")))
+        assertNull(VoiceNoteFilter.watermarkKeyOf(File("100/PTT-20261025.opus")))
+        assertNull(VoiceNoteFilter.watermarkKeyOf(File("100/not-a-ptt.opus")))
+        assertNull(VoiceNoteFilter.watermarkKeyOf(File("Recordings/PTT-20261025-WA00001.opus")))
     }
 
     @Test
