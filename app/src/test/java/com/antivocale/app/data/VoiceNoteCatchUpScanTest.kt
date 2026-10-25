@@ -131,4 +131,66 @@ class VoiceNoteCatchUpScanTest {
             entries.single().path!!.substringAfterLast('/'))
         assertEquals(0, detector.pendingCatchUpsCount())
     }
+
+    @Test
+    fun `the two sources' detectors emit independently, even for the same PTT name`() = runBlocking {
+        // WhatsApp Business support: one detector per source, each with its
+        // own seen filter. A same-named note in both trees is two notes;
+        // the Business detector must not swallow it as a duplicate of the
+        // WhatsApp one (or the reverse).
+        val name = "PTT-20261020-WA0001.opus"
+        val waFolder = tmp.newFolder("wa", "202642")
+        val w4bFolder = tmp.newFolder("w4b", "202642")
+        note(waFolder, name, lastModifiedAgoMs = 60_000)
+        note(w4bFolder, name, lastModifiedAgoMs = 60_000)
+        val business = VoiceNoteDetector(scope, io.mockk.mockk<PreferencesManager>(relaxed = true).also {
+                io.mockk.every { it.voiceNoteWatermark } returns kotlinx.coroutines.flow.flowOf(null)
+            }, VoiceNoteSource.WHATSAPP_BUSINESS)
+        val businessEntries = mutableListOf<VoiceNoteEntry>()
+        try {
+            detector.catchUpDelayMs = 2_000
+            business.catchUpDelayMs = 2_000
+            detector.subscribe()
+            business.subscribe()
+            collector()
+            scope.launch { business.detections.collect { businessEntries.add(it) } }
+
+            detector.catchUpScan(waFolder)
+            business.catchUpScan(w4bFolder)
+            awaitCount(1)
+            withTimeout(5_000) { while (businessEntries.isEmpty()) delay(25) }
+            // A re-scan of the same folder is deduped per detector.
+            business.catchUpScan(w4bFolder)
+            delay(200)
+
+            assertEquals(listOf(File(waFolder, name).absolutePath), entries.map { it.path })
+            assertEquals(listOf(File(w4bFolder, name).absolutePath), businessEntries.map { it.path })
+        } finally {
+            business.dispose()
+        }
+    }
+
+    @Test
+    fun `a disposed Business detector scans nothing while WhatsApp keeps working`() = runBlocking {
+        val waFolder = tmp.newFolder("wa2", "202642")
+        val w4bFolder = tmp.newFolder("w4b2", "202642")
+        note(waFolder, "PTT-20261020-WA0002.opus", lastModifiedAgoMs = 60_000)
+        note(w4bFolder, "PTT-20261020-WA0002.opus", lastModifiedAgoMs = 60_000)
+        val business = VoiceNoteDetector(scope, io.mockk.mockk<PreferencesManager>(relaxed = true).also {
+                io.mockk.every { it.voiceNoteWatermark } returns kotlinx.coroutines.flow.flowOf(null)
+            }, VoiceNoteSource.WHATSAPP_BUSINESS)
+        val businessEntries = mutableListOf<VoiceNoteEntry>()
+        detector.catchUpDelayMs = 2_000
+        detector.subscribe()
+        business.subscribe()
+        business.dispose()
+        collector()
+        scope.launch { business.detections.collect { businessEntries.add(it) } }
+
+        business.catchUpScan(w4bFolder)
+        detector.catchUpScan(waFolder)
+        awaitCount(1)
+        delay(200)
+        assertTrue("monitoring off must read nothing for that source", businessEntries.isEmpty())
+    }
 }

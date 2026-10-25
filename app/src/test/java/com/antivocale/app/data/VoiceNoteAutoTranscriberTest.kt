@@ -10,6 +10,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,6 +34,8 @@ class VoiceNoteAutoTranscriberTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val resolvedUris = mutableListOf<String?>()
+    private val resolvedSources = mutableListOf<VoiceNoteSource>()
+    private val checkedTaskIds = mutableListOf<String>()
 
     private fun impl(
         resolveResult: String?,
@@ -40,15 +43,19 @@ class VoiceNoteAutoTranscriberTest {
     ) = VoiceNoteAutoTranscriber(
         context,
         mockk<VoiceNoteTreeGrant> {
-            coEvery { resolve(any(), any()) } coAnswers {
+            coEvery { resolve(any(), any(), any()) } coAnswers {
                 resolvedUris += firstArg<String?>()
+                resolvedSources += thirdArg<VoiceNoteSource>()
                 resolveResult
             }
         },
         mockk<AudioPreprocessor>(),
         VoiceNoteIdentityCache(),
         mockk<VoiceNoteDuplicateGuard> {
-            coEvery { alreadyTranscribed(any()) } returns alreadyTranscribed
+            coEvery { alreadyTranscribed(any()) } coAnswers {
+                checkedTaskIds += firstArg<String>()
+                alreadyTranscribed
+            }
         },
     )
 
@@ -79,6 +86,40 @@ class VoiceNoteAutoTranscriberTest {
         assertEquals("com.whatsapp", serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE_PACKAGE))
         assertEquals(InferenceService.SOURCE_VOICE_NOTE, serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE))
         assertEquals(InferenceService::class.java.name, serviceIntent.component?.className)
+    }
+
+    @Test
+    fun `a Business note is stamped with the Business package and a namespaced task id`() {
+        // WhatsApp Business support: History rows and the result
+        // notification name the source app from this package, and the
+        // namespace keeps the two clients' same-named PTT files apart.
+        val serviceIntent = impl("/local/n.opus").serviceIntent(
+            "/local/n.opus", "/tree/202642/PTT-1.opus", source = VoiceNoteSource.WHATSAPP_BUSINESS)
+        assertEquals("com.whatsapp.w4b", serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE_PACKAGE))
+        val businessId = serviceIntent.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)
+        assertEquals("voicenote_w4b_PTT-1.opus", businessId)
+        val whatsAppId = impl("/local/n.opus").serviceIntent("/local/n.opus", "/tree/202642/PTT-1.opus")
+            .getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)
+        assertNotEquals("the same PTT name from the two apps must not share an id", whatsAppId, businessId)
+        assertEquals(InferenceService.SOURCE_VOICE_NOTE, serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE))
+    }
+
+    @Test
+    fun `a Business enqueue dedups and resolves under its own source`() = runBlocking {
+        impl(resolveResult = null).enqueue(
+            "/w4b/PTT-1.opus", 1_000L, treeUri = "content://tree/w4b", source = VoiceNoteSource.WHATSAPP_BUSINESS)
+        assertEquals(listOf("voicenote_w4b_PTT-1.opus"), checkedTaskIds)
+        assertEquals(listOf(VoiceNoteSource.WHATSAPP_BUSINESS), resolvedSources)
+        assertEquals(listOf<String?>("content://tree/w4b"), resolvedUris)
+    }
+
+    @Test
+    fun `a WhatsApp enqueue keeps the original task id`() = runBlocking {
+        // Regression: completed rows written before Business support must
+        // keep deduping (an id change would re-transcribe them).
+        impl(resolveResult = null).enqueue("/w/PTT-1.opus", 1_000L, treeUri = "content://tree/wa")
+        assertEquals(listOf("voicenote_PTT-1.opus"), checkedTaskIds)
+        assertEquals(listOf(VoiceNoteSource.WHATSAPP), resolvedSources)
     }
 
     @Test

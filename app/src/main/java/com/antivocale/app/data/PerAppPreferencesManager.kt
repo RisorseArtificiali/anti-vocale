@@ -71,6 +71,9 @@ class PerAppPreferencesManager(private val context: Context) {
          * Package names for common apps
          */
         const val WHATSAPP = "com.whatsapp"
+
+        /** Review F1: the Business client's package; same defaults family. */
+        const val WHATSAPP_BUSINESS = "com.whatsapp.w4b"
         const val TELEGRAM = "org.telegram.messenger"
         const val SIGNAL = "org.thoughtcrime.securesms"
     }
@@ -161,7 +164,14 @@ class PerAppPreferencesManager(private val context: Context) {
      */
     private fun getDefaultPreferences(packageName: String): AppNotificationPreferences {
         return when (packageName) {
-            WHATSAPP -> AppNotificationPreferences.whatsappDefaults()
+            WHATSAPP, WHATSAPP_BUSINESS ->
+                // Review F1: the KnownApp table maps w4b into the WhatsApp
+                // family; this dispatch must agree, or an auto-transcribed
+                // Business note loses auto-copy and the one-tap send-back
+                // (ResultNotificationFactory gates Send-to on
+                // prefs.quickShareBack), contradicting the README parity
+                // claim. Pinned by PerAppPreferencesManagerTest.
+                AppNotificationPreferences.whatsappDefaults()
             TELEGRAM -> AppNotificationPreferences.telegramDefaults()
             SIGNAL -> AppNotificationPreferences.telegramDefaults() // Similar to Telegram
             else -> AppNotificationPreferences.default()

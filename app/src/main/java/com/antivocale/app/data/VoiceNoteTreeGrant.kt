@@ -47,12 +47,16 @@ class VoiceNoteTreeGrant @Inject constructor(
      * releases the old grant and never re-arms, so arm-time capture would
      * strand every later note on a released grant).
      */
-    suspend fun resolve(treeUri: String?, whatsappPath: String): String? = try {
+    suspend fun resolve(
+        treeUri: String?,
+        whatsappPath: String,
+        source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
+    ): String? = try {
         if (treeUri == null) {
             Log.w(TAG, "resolve called with no live tree URI supplied")
             null
         } else {
-            resolveToSandbox(Uri.parse(treeUri), whatsappPath)
+            resolveToSandbox(Uri.parse(treeUri), whatsappPath, source)
         }
     } catch (e: kotlinx.coroutines.CancellationException) {
         // Disarm cancels the collector mid-copy: cancellation is control
@@ -89,7 +93,10 @@ class VoiceNoteTreeGrant @Inject constructor(
         object WrongFolder : GrantOutcome
     }
 
-    suspend fun acceptGrant(uri: Uri): GrantOutcome = kotlinx.coroutines.withContext(
+    suspend fun acceptGrant(
+        uri: Uri,
+        source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
+    ): GrantOutcome = kotlinx.coroutines.withContext(
         kotlinx.coroutines.Dispatchers.IO,
     ) {
         // The take must precede the validation query or the query itself
@@ -97,7 +104,7 @@ class VoiceNoteTreeGrant @Inject constructor(
         if (!com.antivocale.app.util.TreeUris.takePersistableReadGrant(context, uri)) {
             return@withContext GrantOutcome.TakeFailed
         }
-        if (!looksLikeVoiceNotesTree(context, uri)) {
+        if (!looksLikeVoiceNotesTree(context, uri, source)) {
             com.antivocale.app.util.TreeUris.releasePersistableReadGrant(context, uri)
             return@withContext GrantOutcome.WrongFolder
         }
@@ -105,11 +112,13 @@ class VoiceNoteTreeGrant @Inject constructor(
         // (platform cap 128/512) before overwriting. The STORED value, not
         // a flow's .value (still initialValue before DataStore's first
         // emission; review F9).
-        val old = preferencesManager.voiceNoteTreeUri.firstOrNull()
+        // Per source: each client's slot releases only its OWN previous
+        // grant (the other client's live grant must survive this pick).
+        val old = preferencesManager.voiceNoteTreeUri(source).firstOrNull()
         if (old != null && old != uri.toString()) {
             com.antivocale.app.util.TreeUris.releasePersistableReadGrant(context, Uri.parse(old))
         }
-        preferencesManager.saveVoiceNoteTreeUri(uri.toString())
+        preferencesManager.saveVoiceNoteTreeUri(source, uri.toString())
         GrantOutcome.Saved(uri.toString())
     }
 
@@ -126,13 +135,15 @@ class VoiceNoteTreeGrant @Inject constructor(
      * "counter/name" throws inside the provider). A stale note fails the
      * copy, which maps to the same honest null.
      */
-    private fun resolveToSandbox(treeUri: Uri, whatsappPath: String): String? {
+    private fun resolveToSandbox(treeUri: Uri, whatsappPath: String, source: VoiceNoteSource): String? {
         val name = whatsappPath.substringAfterLast('/')
         val counter = whatsappPath.substringBeforeLast('/').substringAfterLast('/')
         val treeDocId = android.provider.DocumentsContract.getTreeDocumentId(treeUri)
         val noteUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(
             treeUri, "$treeDocId/$counter/$name")
-        val localName = "voicenote_$name"
+        // The source namespace keeps two clients' same-named PTT files from
+        // reusing each other's sandbox copy (empty for WhatsApp: unchanged).
+        val localName = "voicenote_${source.idNamespace}$name"
         val existing = File(File(context.filesDir, "shared_audio"), localName)
         if (existing.isFile && existing.length() > 0) {
             return existing.absolutePath
@@ -150,7 +161,9 @@ class VoiceNoteTreeGrant @Inject constructor(
         private const val TAG = "VoiceNoteTreeGrant"
 
         /** WhatsApp's folder name under Android/media (not localized there). */
-        const val EXPECTED_FOLDER_NAME = "WhatsApp Voice Notes"
+        // Review F6: EXPECTED_FOLDER_NAME deleted (its last production
+        // reader went with the multi-source rework); VoiceNoteSource's
+        // folderName is the live contract, pinned by VoiceNoteSourceTest.
 
         /**
          * The pick-time check the Settings card rejects a wrong folder
@@ -159,10 +172,22 @@ class VoiceNoteTreeGrant @Inject constructor(
          * covers a fresh install whose folder is still empty, the child
          * arm covers a renamed folder). Static: a pure predicate the
          * activity-result callback calls without DI.
+         *
+         * Per source (WhatsApp Business support): the name arm checks
+         * [source]'s folder name, and a tree inside ANOTHER client's storage
+         * is rejected before either arm. Both clients use numeric counter
+         * folders, so without that check the child arm would accept the
+         * WhatsApp folder in the Business slot (or the reverse), and every
+         * resolve would then read same-named files from the wrong app.
          */
-        fun looksLikeVoiceNotesTree(context: Context, treeUri: Uri): Boolean = try {
+        fun looksLikeVoiceNotesTree(
+            context: Context,
+            treeUri: Uri,
+            source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
+        ): Boolean = try {
+            if (belongsToOtherSource(treeUri, source) || isOtherFolderOfSource(treeUri, source)) return false
             val root = DocumentFile.fromTreeUri(context, treeUri) ?: return false
-            root.name == EXPECTED_FOLDER_NAME ||
+            root.name == source.folderName ||
                 root.listFiles().any { it.name?.toIntOrNull() != null }
         } catch (e: Exception) {
             Log.w(TAG, "tree validation failed", e)
@@ -176,9 +201,41 @@ class VoiceNoteTreeGrant @Inject constructor(
          * shape more reliably than a file:// URI. Null when the document
          * URI cannot be built (the caller then opens the picker plain).
          */
-        fun pickerInitialUri(): Uri? = try {
+        /**
+         * The pure half of the cross-client check: the tree's document path
+         * (after the volume colon) lies in another source's storage. A
+         * non-ExternalStorage tree (no colon) belongs to no source.
+         */
+        internal fun belongsToOtherSource(treeUri: Uri, source: VoiceNoteSource): Boolean {
+            val docPath = treeDocumentPath(treeUri) ?: return false
+            if (docPath.isEmpty() || source.ownsDocumentPath(docPath)) return false
+            return VoiceNoteSource.entries.any { it != source && it.ownsDocumentPath(docPath) }
+        }
+
+        /**
+         * A tree inside the source's OWN scoped media dir that is not its
+         * voice-notes root. Device evidence (Galaxy S23, 2026-10-20): a
+         * WhatsApp Business install migrated from WhatsApp carries a stale
+         * "WhatsApp Voice Notes" folder with numeric counter children
+         * inside its own Media dir; the child arm would accept it, and the
+         * detector (which watches the real root) would never see a note
+         * resolve. Inside the scoped dir the root's path is known exactly,
+         * so anything else is the wrong folder.
+         */
+        internal fun isOtherFolderOfSource(treeUri: Uri, source: VoiceNoteSource): Boolean {
+            val docPath = treeDocumentPath(treeUri) ?: return false
+            return docPath.startsWith("Android/media/${source.packageName}/") &&
+                docPath.trimEnd('/') != source.relativeRootPath
+        }
+
+        /** The tree's document path after the volume colon, or null. */
+        private fun treeDocumentPath(treeUri: Uri): String? = runCatching {
+            android.provider.DocumentsContract.getTreeDocumentId(treeUri)
+        }.getOrNull()?.substringAfter(':', missingDelimiterValue = "")
+
+        fun pickerInitialUri(source: VoiceNoteSource = VoiceNoteSource.WHATSAPP): Uri? = try {
             val storageRoot = Environment.getExternalStorageDirectory().absolutePath
-            val relative = voiceNotesRoot().absolutePath
+            val relative = voiceNotesRoot(source).absolutePath
                 .removePrefix(storageRoot)
                 .trimStart('/')
             android.provider.DocumentsContract.buildDocumentUri(

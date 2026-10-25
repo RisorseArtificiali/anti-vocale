@@ -132,4 +132,24 @@ class VoiceNoteIdentityExtractorTest {
         assertNull(VoiceNoteIdentityExtractor.parseDurationSeconds("0x04"))
         assertNull(VoiceNoteIdentityExtractor.parseDurationSeconds("1:2:3:4"))
     }
+
+    @Test
+    fun `a WhatsApp Business voice notification is recognized under its own package`() {
+        // WhatsApp Business support: the allowlist already admitted
+        // com.whatsapp.w4b; the cached entry must carry THAT package so the
+        // automatic route can keep the two clients apart. The shape is
+        // assumed equal to WhatsApp's (device verification pending).
+        val note = VoiceNoteIdentityExtractor.fromNotification(
+            packageName = "com.whatsapp.w4b",
+            title = "Cliente",
+            text = "🎤 Messaggio vocale (0:42)",
+            conversationTitle = null,
+            messagingPersons = { emptyList() },
+            isGroupSummary = false,
+            postedAtMs = 1_000L,
+        )
+        assertEquals("com.whatsapp.w4b", note?.packageName)
+        assertEquals("Cliente", note?.sender)
+        assertEquals(42L, note?.durationSeconds)
+    }
 }

@@ -7,6 +7,8 @@ import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.transcription.ModelFamilySupport
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.voiceNoteDetectionEnabled
+import com.antivocale.app.data.voiceNoteTreeUri
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.LlmTranscriptionBackend
@@ -54,12 +56,12 @@ internal class TestSpiOps(
     /** TASK-826: the detection coordinator's armed flag, passed by the
      *  debug receiver as { coordinator.armed }; null under the shared unit
      *  fakes, where the op answers null for the field. */
-    private val detectionArmed: (() -> Boolean)? = null,
+    private val detectionArmed: ((com.antivocale.app.data.VoiceNoteSource) -> Boolean)? = null,
     /** TASK-827 review F3: the coordinator's gate state next to armed, so a
      *  scripted trial can see the DESIRED-vs-completed divergence the
      *  coordinator's KDoc names (gateState=Active with armed=false after a
      *  failed subscribe); same null-under-fakes story. */
-    private val detectionGateState: (() -> com.antivocale.app.data.VoiceNoteGateState)? = null,
+    private val detectionGateState: ((com.antivocale.app.data.VoiceNoteSource) -> com.antivocale.app.data.VoiceNoteGateState)? = null,
 ) {
 
     suspend fun handle(
@@ -81,7 +83,7 @@ internal class TestSpiOps(
             OP_CLIPBOARD -> clipboard()
             OP_NOTIFICATIONS -> notifications()
             OP_UNLOAD -> unload()
-            OP_VOICE_NOTE_STATE -> voiceNoteState()
+            OP_VOICE_NOTE_STATE -> voiceNoteState(value)
             OP_MODEL_DOWNLOAD -> modelDownload(entry, value)
             OP_CLEAR_ORPHANED -> clearOrphaned(entry, value)
             OP_HELP -> help()
@@ -138,6 +140,9 @@ internal class TestSpiOps(
             .put("voiceNoteDetectionEnabled", preferences.voiceNoteDetectionEnabled.first())
             // TASK-271: the SAF tree grant URI (the one read route), or null.
             .put("voiceNoteTreeUri", preferences.voiceNoteTreeUri.first() ?: JSONObject.NULL)
+            // WhatsApp Business support: the Business client's pair.
+            .put("voiceNoteBusinessDetectionEnabled", preferences.voiceNoteBusinessDetectionEnabled.first())
+            .put("voiceNoteBusinessTreeUri", preferences.voiceNoteBusinessTreeUri.first() ?: JSONObject.NULL)
             // TASK-778: the persisted catch-up watermark (read-only diagnostic;
             // the detector owns writes).
             .put("voiceNoteWatermark", preferences.voiceNoteWatermark.first() ?: JSONObject.NULL)
@@ -225,6 +230,8 @@ internal class TestSpiOps(
         "voice_note_identity_enabled" to preferences::saveVoiceNoteIdentityEnabled,
         // TASK-271: the voice-note detection gate (device trials flip it).
         "voice_note_detection_enabled" to preferences::saveVoiceNoteDetectionEnabled,
+        // WhatsApp Business support: the Business client's detection gate.
+        "voice_note_business_detection_enabled" to preferences::saveVoiceNoteBusinessDetectionEnabled,
         "auto_copy" to preferences::saveAutoCopyEnabled,
         "vad_advisory" to preferences::saveVadAdvisoryDismissed,
         "onboarding" to preferences::saveOnboardingCompleted,
@@ -787,9 +794,20 @@ internal class TestSpiOps(
      * under the shared unit fakes (the clipboard degrade story), and
      * willArm follows: null in, null out, never a fabricated false.
      */
-    private suspend fun voiceNoteState(): String {
-        val enabled = preferences.voiceNoteDetectionEnabled.first()
-        val uri = preferences.voiceNoteTreeUri.first()
+    private suspend fun voiceNoteState(sourceToken: String?): String {
+        // WhatsApp Business support: value=whatsapp_business selects the
+        // Business coordinator; no value keeps the original WhatsApp answer.
+        val source = if (sourceToken == null) {
+            com.antivocale.app.data.VoiceNoteSource.WHATSAPP
+        } else {
+            com.antivocale.app.data.VoiceNoteSource.entries
+                .firstOrNull { it.name.equals(sourceToken, ignoreCase = true) }
+                ?: throw IllegalArgumentException(
+                    "unknown source '$sourceToken' (valid: " +
+                        com.antivocale.app.data.VoiceNoteSource.entries.joinToString { it.name.lowercase() } + ")")
+        }
+        val enabled = preferences.voiceNoteDetectionEnabled(source).first()
+        val uri = preferences.voiceNoteTreeUri(source).first()
         val audioGranted = appContext?.let {
             com.antivocale.app.data.VoiceNoteDetectionPermission.granted(it)
         }
@@ -803,7 +821,7 @@ internal class TestSpiOps(
                     .holdsPersistableReadGrant(it, android.net.Uri.parse(uri))
             }
         }
-        val armed = detectionArmed?.invoke()
+        val armed = detectionArmed?.invoke(source)
         // The coordinator's REAL conjunction, detectionAvailable included:
         // the production permission checker folds it into audioReadGranted
         // (AppModule), so on Android 10 the coordinator stays disarmed no
@@ -817,12 +835,13 @@ internal class TestSpiOps(
             }
         return JSONObject()
             .put("op", OP_VOICE_NOTE_STATE)
+            .put("source", source.name.lowercase())
             .put("enabled", enabled)
             .put("treeUri", uri ?: JSONObject.NULL)
             .put("audioPermissionGranted", audioGranted ?: JSONObject.NULL)
             .put("grantHeld", grantHeld ?: JSONObject.NULL)
             .put("armed", armed ?: JSONObject.NULL)
-            .put("gateState", detectionGateState?.invoke()?.javaClass?.simpleName ?: JSONObject.NULL)
+            .put("gateState", detectionGateState?.invoke(source)?.javaClass?.simpleName ?: JSONObject.NULL)
             .put("willArm", willArm ?: JSONObject.NULL)
             .toString()
     }

@@ -46,6 +46,17 @@ class PerAppPreferencesManagerTest {
     }
 
     @Test
+    fun testDefaultPreferencesForWhatsAppBusiness() = runTest {
+        // Review F1 pin: the Business package must inherit the WhatsApp
+        // defaults family (auto-copy + one-tap send-back), not the generic
+        // defaults; the dispatch and the KnownApp table must agree.
+        val prefs = manager.getCurrentPreferences(PerAppPreferencesManager.WHATSAPP_BUSINESS)
+        assertTrue("WhatsApp Business should auto-copy like WhatsApp", prefs.autoCopy)
+        assertTrue("WhatsApp Business should show share action", prefs.showShareAction)
+        assertTrue("WhatsApp Business should have quick share back", prefs.quickShareBack)
+    }
+
+    @Test
     fun testDefaultPreferencesForTelegram() = runTest {
         val prefs = manager.getCurrentPreferences(PerAppPreferencesManager.TELEGRAM)
 

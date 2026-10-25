@@ -900,6 +900,10 @@
     <string name="voice_note_folder_sheet_step2">沿路径向下滚动，找到语音消息文件夹：</string>
     <string name="voice_note_folder_sheet_step3">选中 WhatsApp Voice Notes 文件夹（不要打开它），点按“使用此文件夹”，然后点按“允许”。</string>
     <string name="voice_note_folder_sheet_open">打开选择器</string>
+    <string name="voice_note_business_detection_description">在应用运行时自动转录新到达的 WhatsApp Business 语音消息。若 Android 阻止后台启动，一键通知即可开始。仅在转录时读取消息，且在本机进行；关闭时不读取任何内容。需要音频访问权限。</string>
+    <string name="voice_note_business_folder_grant_rejected">这不是 WhatsApp Business Voice Notes 文件夹。请选择名为 WhatsApp Business Voice Notes 的文件夹，然后重试。</string>
+    <string name="voice_note_business_folder_card_desc">如需读取语音消息，请一次性授权访问 WhatsApp Business 保存它们的文件夹：</string>
+    <string name="voice_note_business_folder_sheet_step3">选中 WhatsApp Business Voice Notes 文件夹（不要进入）后，点按使用此文件夹，然后点按允许。</string>
     <string name="share_targets_description">每个已下载的模型都会作为单独的选项出现在系统菜单中。音频由所选模型处理。</string>
     <string name="advanced_sharing_toggle">显示已下载的模型</string>
     <string name="share_targets_models_info">每个已下载的模型都会作为一项出现在分享菜单中。删除模型后即从菜单中移除。</string>

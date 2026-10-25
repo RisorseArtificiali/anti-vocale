@@ -52,7 +52,7 @@ class TestSpiReceiver : BroadcastReceiver() {
     @Inject lateinit var voiceNoteIdentityCache: com.antivocale.app.receiver.VoiceNoteIdentityCache
     @Inject lateinit var backendManager: com.antivocale.app.transcription.TranscriptionBackendManager
     // TASK-826: the armed flag behind op=voice_note_state.
-    @Inject lateinit var voiceNoteDetectionCoordinator: com.antivocale.app.data.VoiceNoteDetectionCoordinator
+    @Inject lateinit var voiceNoteDetectionCoordinators: com.antivocale.app.data.VoiceNoteDetectionCoordinators
 
     companion object {
         const val TAG = "TestSpi"
@@ -106,15 +106,21 @@ class TestSpiReceiver : BroadcastReceiver() {
      * Like nav, receiver-side: an activity start is beyond the JVM-pure
      * ops engine. The op is deliberately absent from TestSpiOps.OPS.
      */
-    private fun handleVoiceNoteGrantOpen(context: Context): String =
+    private fun handleVoiceNoteGrantOpen(context: Context, sourceToken: String?): String =
         runCatching {
             context.startActivity(
                 android.content.Intent(
                     context, com.antivocale.app.testing.VoiceNoteGrantSpiActivity::class.java)
                     .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    // WhatsApp Business support: value=whatsapp_business
+                    // grants the Business slot; absent = WhatsApp.
+                    .putExtra(com.antivocale.app.testing.VoiceNoteGrantSpiActivity.EXTRA_SOURCE, sourceToken)
             )
             ack(OP_VOICE_NOTE_GRANT_OPEN) {
                 put("launched", true)
+                // Review F5: name the slot; dual-slot trials must tell the
+                // acks apart (absent token = the WhatsApp default).
+                put("source", sourceToken ?: "whatsapp")
                 put("note", "confirm USE THIS FOLDER in the DocumentsUI dialog; " +
                     "op=voice_note_state reports grantHeld/armed after")
             }
@@ -198,8 +204,8 @@ class TestSpiReceiver : BroadcastReceiver() {
             // TASK-826: op=voice_note_state reads the live armed flag;
             // TASK-827 adds the gate state beside it (the divergence of the
             // two is a catchable signal, not an invariant).
-            { voiceNoteDetectionCoordinator.armed },
-            { voiceNoteDetectionCoordinator.gateState.value })
+            { source -> voiceNoteDetectionCoordinators.forSource(source).armed },
+            { source -> voiceNoteDetectionCoordinators.forSource(source).gateState.value })
         val op = intent.getStringExtra(EXTRA_OP)
         val key = intent.getStringExtra(EXTRA_KEY)
         val value = intent.getStringExtra(EXTRA_VALUE)
@@ -224,7 +230,7 @@ class TestSpiReceiver : BroadcastReceiver() {
                 val json = if (op == "nav") {
                     handleNav(context, dest, scroll)
                 } else if (op == OP_VOICE_NOTE_GRANT_OPEN) {
-                    handleVoiceNoteGrantOpen(context)
+                    handleVoiceNoteGrantOpen(context, intent.getStringExtra(EXTRA_VALUE))
                 } else {
                     // handle() answers every request with JSON, errors included.
                     ops.handle(op, key, value, entry, url, family, modelType)
