@@ -44,9 +44,11 @@ class CustomTransducerMigrator(
         preferencesManager.saveExternalMigrationDone(true)
 
         // The pin computation and the size walk read the whole legacy model dir
-        // (~hundreds of MB); BridgeApplication drives this with runBlocking on the
-        // main thread, so keep the file I/O off it. The outer runBlocking still
-        // awaits completion, preserving the syncAll ordering contract above.
+        // (~hundreds of MB). TASK-899: BridgeApplication runs this whole
+        // migration on the application scope (Dispatchers.Default) and arms
+        // StartupSweepGate with its job; the share-sync chain joins that job
+        // as its first step, which is what preserves the syncAll ordering
+        // contract above (no runBlocking anywhere in the chain anymore).
         withContext(Dispatchers.IO) {
             migrateLegacyModel()
         }

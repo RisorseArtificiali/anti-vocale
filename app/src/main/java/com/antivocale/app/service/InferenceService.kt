@@ -302,6 +302,8 @@ class InferenceService : Service(), TranscriptionListener {
         // GH #51: make the request visible in the Logs tab from enqueue time.
         // processRequest's markProcessing promotes the entry once work starts.
         serviceScope.launch {
+            // TASK-899: the sweep gate is awaited inside logQueued (the
+            // single insert point), so this launch needs no await of its own.
             runCatching {
                 orchestrator.logQueued(
                     taskId = request.taskId,
@@ -345,6 +347,13 @@ class InferenceService : Service(), TranscriptionListener {
                 Log.d(TAG, "Already processing, request will wait in queue")
                 return@launch
             }
+
+            // TASK-899: the startup sweep's "non-terminal = orphaned by
+            // process death" classification is only safe while no run is
+            // active; a request racing the (now async) sweep would have its
+            // fresh row closed as interrupted underneath it. Await the gate
+            // before this drain touches any row.
+            StartupSweepGate.await()
 
             _isTranscribing.value = true
             val totalInBatch = pendingCount.get()

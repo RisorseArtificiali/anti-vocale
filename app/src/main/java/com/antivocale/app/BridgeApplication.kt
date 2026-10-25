@@ -60,18 +60,23 @@ class BridgeApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         com.antivocale.app.data.catalog.BundledCatalog.attach(this)
-        runCatching {
-            // TASK-684 review: ORDERING. The suspension sweep (further down)
+        // TASK-684 review: ORDERING. The suspension sweep (further down)
         // posts a Retry notification pointing at files/shared_audio; this
         // 24h cleanup must not delete that file BEFORE the offer. The sweep
         // itself now guards on the file's existence (drops a dead Retry
         // action rather than offering a doomed one), so both orders stay
         // honest; keep the cleanup where it is (early) and let the sweep's
         // guard decide per row.
-        runCatching {
-            com.antivocale.app.util.SharedAudioHandler.cleanupOldFiles(this)
-        }.onFailure { e ->
-            android.util.Log.w("BridgeApplication", "shared_audio cleanup failed", e)
+        // TASK-899 (MEDIUM-4): the cleanup's directory syscalls (exists/
+        // listFiles/lastModified/delete) used to run on main here; the
+        // ordering note below stays true in both orders (the sweep guards
+        // per row), so the move to the application scope is behavior-neutral.
+        applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                com.antivocale.app.util.SharedAudioHandler.cleanupOldFiles(this@BridgeApplication)
+            }.onFailure { e ->
+                android.util.Log.w("BridgeApplication", "shared_audio cleanup failed", e)
+            }
         }
         // TASK-741: reconcile the folder-watch schedules with the records at
         // every process start (off the main thread; the DataStore read is
@@ -88,23 +93,28 @@ class BridgeApplication : Application(), Configuration.Provider {
                 android.util.Log.w("BridgeApplication", "Folder-watch schedule reconcile failed", e)
             }
         }
-        }.onFailure { Log.w("BridgeApplication", "shared_audio cleanup failed", it) }
         // BEFORE syncAll: a persisted "custom-transductor" id must already resolve to an
         // external record, or the share sync (and any early transcription) would see a
         // registry without it and silently fall through to the LLM loader.
-        // Contained: any IO failure must not crash Application.onCreate (which runs
-        // before the global exception handler is installed).
-        runCatching {
-            kotlinx.coroutines.runBlocking {
+        // TASK-899 (ANR audit HIGH-2): the migration used to runBlocking the
+        // MAIN thread here (a SHA-256 over ~326 MB of legacy model files for
+        // every upgrading user); it now runs on the application scope, arms
+        // StartupSweepGate (so no transcription resolves a backend before the
+        // registry is migrated), and the share-sync chain below JOINS it as
+        // its first step, preserving the old ordering without blocking
+        // onCreate. Contained: any IO failure must not crash
+        // Application.onCreate (which runs before the global exception
+        // handler is installed); the failure path clears the done-marker so
+        // the migration retries next launch.
+        val legacyMigrationJob = applicationScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+            runCatching {
                 com.antivocale.app.data.CustomTransducerMigrator(preferencesManager, externalModelStore).migrate()
+            }.onFailure { e ->
+                android.util.Log.e("BridgeApplication", "External-model migration failed (will retry on next launch)", e)
+                // Clear the done-marker so the migration retries on the next launch.
+                runCatching { preferencesManager.saveExternalMigrationDone(false) }
             }
-        }.onFailure { e ->
-            android.util.Log.e("BridgeApplication", "External-model migration failed (will retry on next launch)", e)
-            // Clear the done-marker so the migration retries on the next launch.
-            kotlinx.coroutines.runBlocking {
-                preferencesManager.saveExternalMigrationDone(false)
-            }
-        }
+        }.also { com.antivocale.app.service.StartupSweepGate.arm(it) }
         // Road test 2026-10-08: backfill of name-derived languages for
         // records imported before the derivation existed (paraformer-zh and
         // friends). Runs at EVERY app start, idempotently (writes only when
@@ -229,16 +239,30 @@ class BridgeApplication : Application(), Configuration.Provider {
         }.onFailure { e ->
             android.util.Log.e("BridgeApplication", "Memory-info telemetry failed", e)
         }
-        runCatching {
-            val wasOOMCrash = CrashReporter.consumeLastCrashWasOOM()
-            kotlinx.coroutines.runBlocking {
-                // TASK-684 (GH #109): the sweep grew a classifier. Rows a
-                // process death orphaned still all close (the GH #51 guarantee:
-                // nothing renders as in-flight forever), but a death the
-                // heartbeat evidence proves was an OEM-freezer suspension now
-                // gets the honest label, the re-run notification, and the
-                // battery-exemption link, instead of the bare "Interrupted by
-                // app restart" that blamed a restart that never happened.
+        // TASK-899: only the crash-marker read stays synchronous here (a
+        // bounded prefs read; the sweep below needs its verdict).
+        val wasOOMCrash = runCatching {
+            CrashReporter.consumeLastCrashWasOOM()
+        }.onFailure { e ->
+            android.util.Log.e("BridgeApplication", "OOM crash-marker read failed", e)
+        }.getOrDefault(false)
+        // TASK-899 (ANR audit HIGH-1): the sweep's full-table SQLite
+        // (plus the process-first Room open, and the whole corruption
+        // recovery on a sick disk) used to runBlocking the MAIN thread
+        // here at every cold start. It now runs on the application
+        // scope; StartupSweepGate preserves the ordering the
+        // runBlocking used to guarantee by accident of position: the
+        // transcription service's drain AND every queued-row insert
+        // await the gate, so "non-terminal = orphaned" stays safe.
+        applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            // TASK-684 (GH #109): the sweep grew a classifier. Rows a
+            // process death orphaned still all close (the GH #51 guarantee:
+            // nothing renders as in-flight forever), but a death the
+            // heartbeat evidence proves was an OEM-freezer suspension now
+            // gets the honest label, the re-run notification, and the
+            // battery-exemption link, instead of the bare "Interrupted by
+            // app restart" that blamed a restart that never happened.
+            runCatching {
                 com.antivocale.app.service.SuspendedRunRecovery
                     .closeInterruptedRuns(
                         this@BridgeApplication, logDao, wasOOMCrash,
@@ -253,25 +277,36 @@ class BridgeApplication : Application(), Configuration.Provider {
                             runCatching { preferencesManager.getInterruptedRunNotifications() }
                                 .getOrDefault(PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS),
                     )
-            }
-        }.onFailure { e ->
-            android.util.Log.e("BridgeApplication", "Non-terminal log sweep failed", e)
-        }
+            }.onFailure { e ->
+                android.util.Log.e("BridgeApplication", "Non-terminal log sweep failed", e)
+                }
+        }.also { com.antivocale.app.service.StartupSweepGate.arm(it) }
         // TASK-264: the share-target sync's DataStore reads + PackageManager IPCs must
         // not block the main thread at cold start, so it launches on the application
-        // scope. Ordering: launched after the migrator and dangling-backend cleaner
-        // above complete (they are synchronous), so the store/registry it reads is
-        // settled. Race: component enable/disable is idempotent; a share intent
-        // racing this async sync resolves its alias against the PREVIOUS sync's
-        // component state, which was correct when the app last ran (component state
-        // persists in PackageManager), and share-target state only changes when a
-        // model is downloaded or deleted.
+        // scope. Ordering (TASK-899): this chain's first step JOINS the
+        // legacy migration launched above, so the registry is settled for the
+        // sync itself. The dangling-backend cleaner further up still runs
+        // BEFORE the migration completes on the one launch where the
+        // migration does work; that is benign today only because the cleaner
+        // ignores the unprefixed legacy 'custom-transducer' id (it acts on
+        // 'external:' ids alone), NOT because the registry is settled; if
+        // the cleaner ever validates the active id generally, it must join
+        // the migration job first. Race: component enable/disable is
+        // idempotent; a share intent racing this async sync resolves its
+        // alias against the PREVIOUS sync's component state, which was
+        // correct when the app last ran (component state persists in
+        // PackageManager), and share-target state only changes when a model
+        // is downloaded or deleted.
         // Explicit Default: preserves the pre-TASK-438 private scope's built-in
         // dispatcher; the shared scope carries none.
         // TASK-472b: silent-death telemetry OUTSIDE the launched sync, so an
         // OEM/LMK kill ending the process mid-sync still left its record.
         com.antivocale.app.util.NativeCrashDetector.reportUnreportedDeaths(this)
         applicationScope.launch(Dispatchers.Default) {
+            // TASK-899: the legacy migration (armed above) is the chain's
+            // first step: the id must resolve to an external record before
+            // the share sync reads the registry.
+            legacyMigrationJob.join()
             // Launcher-alias heal BEFORE the shortcut refresh: a user coming
             // from a retired icon variant (TASK-473) has every alias disabled,
             // and the shortcuts must anchor to the healed, enabled Default.

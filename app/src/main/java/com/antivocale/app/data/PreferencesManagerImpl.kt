@@ -282,6 +282,16 @@ class PreferencesManagerImpl(
     )
 
     fun initialize() {
+        // TASK-899 (ANR audit MEDIUM-3, accept-and-document): this
+        // runBlocking runs at DI-graph build on the main thread and pays
+        // the process's first DataStore file read there. Deliberate: the
+        // cache it primes is what every later blocking first() depends on
+        // staying warm (the TaskerRequestReceiver comment documents that
+        // coupling). The cost is one small file today; the growth axes are
+        // externalModelsJson and scheduledFoldersJson. If either grows
+        // large, revisit by priming on the application scope with a
+        // runBlocking fallback only for the cold-start synchronous
+        // consumers; until then the ms-scale read is not worth the churn.
         runBlocking {
             cache.set(dataStore.data.first().toCached())
         }

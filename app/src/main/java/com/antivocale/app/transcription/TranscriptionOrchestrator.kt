@@ -4272,6 +4272,11 @@ class TranscriptionOrchestrator @Inject constructor(
          *  lookup key); null on every legacy/non-interactive producer. */
         contentHash: String? = null,
     ) {
+        // TASK-899: the startup-sweep gate lives HERE, at the single insert
+        // point this KDoc names, so no future caller can forget it: a row
+        // inserted while the (async) sweep still runs would be closed as
+        // interrupted underneath its own transcription.
+        com.antivocale.app.service.StartupSweepGate.await()
         logDao.insert(
             LogEntry(
                 taskId = taskId,

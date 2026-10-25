@@ -103,6 +103,7 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
         // without it (getByTaskId() ?: return), and the failure left
         // nothing in History while the notification fired. Insert the row
         // ourselves before the request starts.
+        // TASK-899: the sweep gate is awaited inside logQueued.
         orchestrator.logQueued(
             taskId = taskId,
             requestType = com.antivocale.app.receiver.TaskerRequestReceiver.REQUEST_TYPE_AUDIO,

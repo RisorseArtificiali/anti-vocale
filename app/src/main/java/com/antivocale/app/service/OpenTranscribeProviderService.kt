@@ -222,6 +222,7 @@ class OpenTranscribeProviderService : Service() {
             // The API run gets a History row like a Tasker run (source and
             // calling package land on it); the orchestrator's run-terminal
             // cleanup no longer depends on the row existing.
+            // TASK-899: the sweep gate is awaited inside logQueued.
             orchestrator.logQueued(
                 taskId = taskId,
                 requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO,
