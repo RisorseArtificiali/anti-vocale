@@ -90,14 +90,6 @@ class TranscriptionOrchestratorCorruptModelTest : TranscriptionOrchestratorTestB
         every { backendManager.hasActiveBackend() } returns false
     }
 
-    /** Delegates the one mocked hop to a real SherpaBackend so the validation actually runs. */
-    private fun delegateSetActiveBackendToRealBackend() {
-        coEvery { backendManager.setActiveBackend(any(), any(), any()) } coAnswers {
-            SherpaBackend(BuiltInBackendIds.WHISPER)
-                .initialize(context = secondArg(), config = thirdArg())
-        }
-    }
-
     private suspend fun runTextRequest(context: Context, scope: kotlinx.coroutines.CoroutineScope): Result<String> =
         orchestrator.processRequest(
             taskId = "corrupt-model-test",
@@ -180,23 +172,87 @@ class TranscriptionOrchestratorCorruptModelTest : TranscriptionOrchestratorTestB
             }
         }
         stubWhisperLoad(turboDir)
-        delegateSetActiveBackendToRealBackend()
+        delegateSetActiveBackendToRealBackend(healthyDir = smallDir)
 
         val result = runTextRequest(context, this)
 
-        assertTrue(result.exceptionOrNull() is TranscriptionException.CorruptModelFiles)
-        // TASK-887: the sibling heal re-raises the typed verdict WITH the
-        // flag, so the History row says the switch, not a re-download.
-        assertTrue("the sibling heal must set the flag",
-            (result.exceptionOrNull() as TranscriptionException.CorruptModelFiles).switchedToSibling)
-        // TASK-887 review: the re-raise carries the stored DETAIL, so the
-        // "Model load failed:" prefix appears exactly once.
-        assertEquals(1, Regex("Model load failed:")
-            .findAll(result.exceptionOrNull()!!.message!!).count())
+        // TASK-904: the heal landed on the healthy sibling and the load
+        // RETRIED on it, so the request gets PAST the model gate. This
+        // harness drives a TEXT request on the audio-only sherpa backend,
+        // so the run still ends downstream ("does not support text
+        // generation"); the contract here is that the typed heal verdict
+        // is GONE: the load succeeded, the switch was transparent.
+        val error = result.exceptionOrNull()
+        assertTrue("expected the sibling retry to clear the model load, got $error",
+            error !is TranscriptionException.CorruptModelFiles &&
+                error !is TranscriptionException.MissingModelFiles)
         assertFalse("the corrupt turbo dir must be gone", turboDir.exists())
         assertTrue("the healthy sibling dir must stay", smallDir.exists())
         coVerify { preferencesManager.saveSherpaModelPath(BuiltInBackendIds.WHISPER, smallDir.absolutePath) }
         coVerify(exactly = 0) { preferencesManager.clearSherpaModelPath(any()) }
+    }
+
+    /**
+     * TASK-904: the sibling retry is BOUNDED. When the sibling itself fails
+     * validation, the request fails with the retry's typed verdict carrying
+     * the 887 sibling flag (the copy names the switch), NO nested heal runs
+     * (the corrupt sibling dir stays, saved as the active path, and gets its
+     * own heal chain on the NEXT request - self-limiting, one variant per
+     * request).
+     */
+    @Test
+    fun `a corrupt sibling fails the retry with the sibling copy and no nested heal`() = runTest {
+        val context = createMockContext()
+        val entry = BundledCatalog.byId(BuiltInBackendIds.WHISPER)!!
+        val storageRoot = File(context.filesDir, entry.storageDir ?: BuiltInBackendIds.WHISPER)
+        storageRoot.mkdirs()
+        tempDirs.add(storageRoot.parentFile)
+        val small = entry.variant("small")!!
+        val smallDir = File(storageRoot, small.dirName)
+        smallDir.mkdirs()
+        small.files.forEach { f ->
+            val file = File(smallDir, f.name)
+            if (f.name.endsWith(".onnx")) {
+                // Structural pass, pin fail is not even reached: zero the
+                // ONNX magic so the RETRY fails the structural gate.
+                file.writeBytes(ByteArray(2048))
+            } else {
+                file.writeText((1..100).joinToString("\n") { "tok$it $it" })
+            }
+        }
+        val turbo = entry.variant("turbo")!!
+        val turboDir = File(storageRoot, turbo.dirName)
+        turboDir.mkdirs()
+        turbo.files.forEach { f ->
+            val file = File(turboDir, f.name)
+            if (f.name.endsWith(".onnx")) {
+                file.writeBytes(ByteArray(2048).also { it[0] = 0x08 })
+                if (f.name.contains("encoder")) file.writeBytes(ByteArray(2048))
+            } else {
+                file.writeText((1..100).joinToString("\n") { "tok$it $it" })
+            }
+        }
+        stubWhisperLoad(turboDir)
+        // The retry runs REAL validation on the sibling dir too (the
+        // delegate's savedDir gate makes only the FIRST load special).
+        delegateSetActiveBackendToRealBackend()
+
+        val result = runTextRequest(context, this)
+
+        val error = result.exceptionOrNull()
+        assertTrue("expected the corrupt sibling to fail the retry typed, got $error",
+            error is TranscriptionException.CorruptModelFiles)
+        // Review F2: the flag rides FALSE here - the sibling just failed, so
+        // the plain healed copy (re-download) is the honest remedy, not the
+        // "no download needed" sibling copy.
+        assertFalse("the sibling flag must NOT ride a failed retry",
+            (error as TranscriptionException.CorruptModelFiles).switchedToSibling)
+        assertEquals("the prefix rides once (the re-raise carries the detail)",
+            1, Regex("Model load failed:").findAll(error.message!!).count())
+        assertFalse("the corrupt turbo dir is gone (first heal)", turboDir.exists())
+        assertTrue("NO nested heal: the corrupt sibling dir stays for the next request",
+            smallDir.exists())
+        coVerify { preferencesManager.saveSherpaModelPath(BuiltInBackendIds.WHISPER, smallDir.absolutePath) }
     }
 
     @Test

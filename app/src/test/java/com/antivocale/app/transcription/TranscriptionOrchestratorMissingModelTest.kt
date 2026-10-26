@@ -88,13 +88,6 @@ class TranscriptionOrchestratorMissingModelTest : TranscriptionOrchestratorTestB
         every { backendManager.hasActiveBackend() } returns false
     }
 
-    private fun delegateSetActiveBackendToRealBackend() {
-        coEvery { backendManager.setActiveBackend(any(), any(), any()) } coAnswers {
-            SherpaBackend(BuiltInBackendIds.WHISPER)
-                .initialize(context = secondArg(), config = thirdArg())
-        }
-    }
-
     private suspend fun runTextRequest(context: Context, scope: kotlinx.coroutines.CoroutineScope): Result<String> =
         orchestrator.processRequest(
             taskId = "missing-model-test",
@@ -266,21 +259,21 @@ class TranscriptionOrchestratorMissingModelTest : TranscriptionOrchestratorTestB
             }
         }
         stubWhisperLoad(turboDir)
-        delegateSetActiveBackendToRealBackend()
+        delegateSetActiveBackendToRealBackend(healthyDir = smallDir)
 
         val result = runTextRequest(context, this)
 
-        assertTrue(result.exceptionOrNull() is TranscriptionException.MissingModelFiles)
-        // TASK-887: sibling twin of the corrupt arm; the flag rides the
-        // re-raised verdict.
-        assertTrue("the sibling heal must set the flag",
-            (result.exceptionOrNull() as TranscriptionException.MissingModelFiles).switchedToSibling)
-        assertEquals("the prefix rides once (the re-raise carries the detail)",
-            1, Regex("Model load failed:")
-                .findAll(result.exceptionOrNull()!!.message!!).count())
+        // TASK-904: sibling twin of the corrupt arm; the retry clears the
+        // model load gate (the text-request failure downstream is expected
+        // on the audio-only backend; the contract is the verdict is GONE).
+        val error = result.exceptionOrNull()
+        assertTrue("expected the sibling retry to clear the model load, got $error",
+            error !is TranscriptionException.CorruptModelFiles &&
+                error !is TranscriptionException.MissingModelFiles)
         assertFalse("the gutted turbo dir must be gone", turboDir.exists())
         assertTrue("the healthy sibling dir must stay", smallDir.exists())
         coVerify { preferencesManager.saveSherpaModelPath(BuiltInBackendIds.WHISPER, smallDir.absolutePath) }
         coVerify(exactly = 0) { preferencesManager.clearSherpaModelPath(any()) }
     }
+
 }

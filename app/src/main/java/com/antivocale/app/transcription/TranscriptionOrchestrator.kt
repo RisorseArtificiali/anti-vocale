@@ -1806,14 +1806,15 @@ class TranscriptionOrchestrator @Inject constructor(
                 CatalogStringKeys.resolve(d.key), entry.titleCountArg())
             is CatalogDisplay.Literal -> d.text
         }
-        val load = configureSherpaBackend(
+        suspend fun loadOn(path: String): Result<Unit> = configureSherpaBackend(
             backendId = descriptor.backendId,
-            modelPath = resolvedPath,
+            modelPath = path,
             label = label,
             language = language,
             context = context,
             modelType = entry.modelType,
         )
+        val load = loadOn(resolvedPath)
         // TASK-660 layer 2: the self-heal. Only the typed corruption verdict
         // deletes anything; a generic load failure (OOM, NNAPI, wedge, missing
         // metadata) must leave the model dir on disk. TASK-885: a typed
@@ -1826,45 +1827,60 @@ class TranscriptionOrchestrator @Inject constructor(
         if (loadFailure is TranscriptionException.CorruptModelFiles ||
             loadFailure is TranscriptionException.MissingModelFiles
         ) {
-            when (healModelDir(context, descriptor, resolvedPath)) {
-                HealOutcome.DELETION_FAILED -> return Result.failure(
+            when (val heal = healModelDir(context, descriptor, resolvedPath)) {
+                HealOutcome.DeletionFailed -> return Result.failure(
                     TranscriptionException.ModelLoadError(
                         "model dir could not be removed: $resolvedPath"))
-                // TASK-887: re-raise the typed verdict WITH the sibling
-                // flag so the row's copy names the switch (the exception is
-                // the mapping's only carrier of the heal outcome; the copy
-                // claims nothing about the sibling's health, which the
-                // existence-based resolve never verified). The
-                // reconstruction carries the stored detail, NOT the
-                // prefixed message (ModelLoadError re-prefixes on every
-                // construction). The gate above admits exactly these two
-                // types, so the else arm is unreachable by construction.
-                HealOutcome.SIBLING -> return Result.failure(
-                    when (loadFailure) {
-                        is TranscriptionException.CorruptModelFiles ->
-                            TranscriptionException.CorruptModelFiles(
-                                loadFailure.detail, switchedToSibling = true)
-                        is TranscriptionException.MissingModelFiles ->
-                            TranscriptionException.MissingModelFiles(
-                                loadFailure.detail, switchedToSibling = true)
-                        else -> loadFailure
-                    })
-                HealOutcome.NO_SIBLING -> return load
+                // TASK-904: a sibling JUST took over the saved path, so the
+                // triggering request retries the load ONCE on it instead of
+                // failing: the user asked for a transcription, and a usable
+                // model now exists. On retry success the request completes
+                // with no error row at all (the switch was transparent).
+                is HealOutcome.Sibling -> {
+                    val retry = loadOn(heal.path)
+                    val retryFailure = retry.exceptionOrNull()
+                    if (retryFailure != null) {
+                        // Bounded: NO nested heal here. The saved path (the
+                        // sibling) gets its own heal chain on the NEXT
+                        // request; self-limiting, one variant per request.
+                        // Review F2: the re-raise carries NO sibling flag.
+                        // The 887 sibling copy says "no download is needed",
+                        // a health claim that is FALSE in exactly this arm
+                        // (the sibling just failed validation); the plain
+                        // healed copy names the actual remedy (the chain
+                        // completes to a re-download offer next request).
+                        return Result.failure(
+                            when (retryFailure) {
+                                is TranscriptionException.CorruptModelFiles ->
+                                    TranscriptionException.CorruptModelFiles(retryFailure.detail)
+                                is TranscriptionException.MissingModelFiles ->
+                                    TranscriptionException.MissingModelFiles(retryFailure.detail)
+                                else -> retryFailure
+                            })
+                    }
+                    return retry
+                }
+                HealOutcome.NoSibling -> return load
             }
         }
         return load
     }
 
-    /** TASK-887: the heal's tri-state outcome (the Boolean could not say
-     *  WHICH success landed, and the History row's copy needs exactly
-     *  that). */
-    private enum class HealOutcome {
+    /**
+     * TASK-887/904: the heal's tri-state outcome (the Boolean could not
+     * say WHICH success landed, and the History row's copy needs exactly
+     * that). TASK-904: SIBLING carries the freshly saved path so the
+     * load can be retried ONCE on it instead of failing the request.
+     */
+    private sealed interface HealOutcome {
         /** The directory could not be deleted; nothing was claimed. */
-        DELETION_FAILED,
-        /** Deleted, and a sibling variant took over the saved path. */
-        SIBLING,
+        data object DeletionFailed : HealOutcome
+
+        /** Deleted, and this sibling variant took over the saved path. */
+        data class Sibling(val path: String) : HealOutcome
+
         /** Deleted, no sibling: the entry is not-installed and re-downloadable. */
-        NO_SIBLING,
+        data object NoSibling : HealOutcome
     }
 
     /**
@@ -1883,9 +1899,9 @@ class TranscriptionOrchestrator @Inject constructor(
      * caller (a direct initialize like the benchmark cannot heal and must not
      * wedge the entry behind a stripped dir); THIS heal then removes the whole
      * directory and rewrites the saved-path preference, which only the
-     * orchestrator owns. Returns [HealOutcome.DELETION_FAILED] when the
+     * orchestrator owns. Returns [HealOutcome.DeletionFailed] when the
      * deletion fails, so the caller downgrades to the generic error instead
-     * of claiming removal; [HealOutcome.SIBLING] vs [HealOutcome.NO_SIBLING]
+     * of claiming removal; [HealOutcome.Sibling] vs [HealOutcome.NoSibling]
      * is the TASK-887 fact the History row's copy keys on.
      */
     private suspend fun healModelDir(
@@ -1902,14 +1918,14 @@ class TranscriptionOrchestrator @Inject constructor(
             // every History row until one deletion succeeds.
             Log.e(TAG, "Model dir heal deletion FAILED at $resolvedPath; " +
                 "delivering the generic error and retrying the heal on the next load")
-            return HealOutcome.DELETION_FAILED
+            return HealOutcome.DeletionFailed
         }
         Log.w(TAG, "Model dir heal deleted $resolvedPath; " +
             "the Models tab offers the re-download")
         val next = manager.resolveActiveModelPath(context)
         if (next != null) {
             descriptor.saveModelPath(preferencesManager, next)
-            return HealOutcome.SIBLING
+            return HealOutcome.Sibling(next)
         }
         descriptor.clearModelPath(preferencesManager)
         // Review F2: mirror the Models-tab delete's share-surface
@@ -1918,7 +1934,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // retirement lands BEFORE the shortcut refresh below.
         shareTargetManager.onModelDeletedNow(descriptor.backendId)
         shareShortcutManager.refresh()
-        return HealOutcome.NO_SIBLING
+        return HealOutcome.NoSibling
     }
 
     /**

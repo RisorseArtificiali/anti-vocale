@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import java.io.File
 import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.data.ExternalModelRecord
@@ -120,6 +121,26 @@ abstract class TranscriptionOrchestratorTestBase {
         // the identity behavior (an unstubbed relaxed-mock Flow explodes on
         // first(), the modelPath trap above).
         every { preferencesManager.earlyPreviewEnabled } returns flowOf(false)
+    }
+
+    /**
+     * Delegates the one mocked hop to a real SherpaBackend so the validation
+     * actually runs on EVERY path (TASK-904). [healthyDir] is the ONE
+     * exemption: a sibling whose load must succeed for a retry test; its
+     * real catalog SHA pins cannot be faked in-process, so an instant
+     * success stands in for the healthy sibling the device trial proves.
+     */
+    protected fun delegateSetActiveBackendToRealBackend(healthyDir: File? = null) {
+        coEvery { backendManager.setActiveBackend(any(), any(), any()) } coAnswers {
+            val config = thirdArg<BackendConfig>()
+            val modelDir = (config as? BackendConfig.SherpaOnnxConfig)?.modelDir
+            if (healthyDir != null && modelDir == healthyDir.absolutePath) {
+                Result.success(Unit)
+            } else {
+                SherpaBackend(BuiltInBackendIds.WHISPER)
+                    .initialize(context = secondArg(), config = config)
+            }
+        }
     }
 
     protected fun stubWhisperBackend(): TranscriptionBackend =
