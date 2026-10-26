@@ -2679,7 +2679,16 @@ class TranscriptionOrchestrator @Inject constructor(
             // avail first: the model-size walk is skipped when memory is unreadable,
             // preserving the TASK-314 rule that the filesystem is not touched when
             // the measurement is unavailable.
-            val availBytes = availableMemoryBytes(context)
+            // TASK-909 (GH #118): the free-RAM read and the device-tier
+            // derivation share ONE getMemoryInfo (availMem and totalMem
+            // come from the same struct); the tier is STANDARD whenever
+            // any input is unreadable (it scales a band, never refuses).
+            val memorySnapshot = MemoryReadings.availableAndTotalRamBytes(context)
+            val availBytes = memorySnapshot?.first ?: availableMemoryBytes(context)
+            val deviceTier = DeviceTier.of(
+                memorySnapshot?.second,
+                MemoryReadings.coreCount(),
+                MemoryReadings.mediaPerformanceClass())
             val modelSize = if (availBytes <= 0) 0L
                 else modelPathForBackend(backend.id).takeIf { it.isNotBlank() }
                     ?.let { modelSizeBytes(File(it)) } ?: 0L
@@ -2723,11 +2732,13 @@ class TranscriptionOrchestrator @Inject constructor(
             // required figure is the decode-side bar only; the displayed
             // number is exactly the compared number.
             if (preferencesManager.memoryProtection.first() &&
-                TranscriptionMemoryPolicy.canServeMinimumChunk(availBytes, modelSize, memoryFamily) == false
+                TranscriptionMemoryPolicy.canServeMinimumChunk(
+                    availBytes, modelSize, memoryFamily, deviceTier) == false
             ) {
                 // minimumDecodeBaselineBytes already carries the headroom:
                 // this IS the compared bar, byte for byte.
-                val requiredBytes = TranscriptionMemoryPolicy.minimumDecodeBaselineBytes(memoryFamily, modelSize)
+                val requiredBytes = TranscriptionMemoryPolicy.minimumDecodeBaselineBytes(
+                    memoryFamily, modelSize, deviceTier)
                 Log.w(
                     TAG,
                     "Refusing ${backend.id}: post-load avail=${availBytes / MB}MB cannot hold " +
@@ -2738,7 +2749,8 @@ class TranscriptionOrchestrator @Inject constructor(
                         R.string.transcribe_low_memory, formatMb(availBytes), formatMb(requiredBytes))
                 ))
             }
-            val effective = TranscriptionMemoryPolicy.effectiveChunkSeconds(availBytes, modelSize, cap, memoryFamily)
+            val effective = TranscriptionMemoryPolicy.effectiveChunkSeconds(
+                availBytes, modelSize, cap, memoryFamily, deviceTier)
             if (effective != cap) {
                 Log.i(TAG, "Chunk cap tightened ${cap}s -> ${effective}s for ${backend.id} (RAM-derived)")
             }

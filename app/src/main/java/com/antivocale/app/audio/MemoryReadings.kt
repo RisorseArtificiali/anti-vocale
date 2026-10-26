@@ -21,6 +21,14 @@ internal object MemoryReadings {
     /** ActivityManager.MemoryInfo.availMem, or null when the service is unavailable. */
     fun availableRamBytes(context: Context): Long? = memoryInfo(context)?.availMem
 
+    /**
+     * availMem and totalMem from ONE getMemoryInfo call (the struct serves
+     * both; two reads would pay the binder IPC twice per request,
+     * TASK-909 review F3). Null when the service is unavailable.
+     */
+    fun availableAndTotalRamBytes(context: Context): Pair<Long, Long>? =
+        memoryInfo(context)?.let { it.availMem to it.totalMem }
+
     /** ActivityManager.MemoryInfo.totalMem, or null when the service is unavailable. */
     fun totalRamBytes(context: Context): Long? = memoryInfo(context)?.totalMem
 
@@ -32,4 +40,18 @@ internal object MemoryReadings {
 
     /** Dalvik heap limit for this process (no largeHeap in the manifest). */
     fun maxHeapBytes(): Long = Runtime.getRuntime().maxMemory()
+
+    /** Logical cores (Runtime). TASK-909: one input of the device tier. */
+    fun coreCount(): Int = Runtime.getRuntime().availableProcessors()
+
+    /**
+     * Build.VERSION.MEDIA_PERFORMANCE_CLASS, 0 below API 31 or when the
+     * device declares none. TASK-909: one input of the device tier.
+     */
+    fun mediaPerformanceClass(): Int =
+        if (android.os.Build.VERSION.SDK_INT >= 31) {
+            android.os.Build.VERSION.MEDIA_PERFORMANCE_CLASS
+        } else {
+            0
+        }
 }

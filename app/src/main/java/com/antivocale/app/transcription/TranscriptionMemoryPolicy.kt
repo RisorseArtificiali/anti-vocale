@@ -98,9 +98,11 @@ object TranscriptionMemoryPolicy {
         availableBytes: Long,
         modelSizeBytes: Long,
         family: Family = Family.TRANSDUCER,
+        tier: DeviceTier = DeviceTier.STANDARD,
     ): Boolean? {
         if (availableBytes <= 0 || modelSizeBytes <= 0) return null
-        return decodeFits(availableBytes, minimumDecodeBaselineMiB(family, modelSizeBytes))
+        return decodeFits(
+            availableBytes, minimumDecodeBaselineMiB(family, modelSizeBytes), tier)
     }
 
     /**
@@ -113,6 +115,7 @@ object TranscriptionMemoryPolicy {
         modelSizeBytes: Long,
         catalogCapSeconds: Int,
         family: Family = Family.TRANSDUCER,
+        tier: DeviceTier = DeviceTier.STANDARD,
     ): Int {
         if (availableBytes <= 0 || modelSizeBytes <= 0) return catalogCapSeconds
         // The floor can never exceed the catalog cap: families below the 30s
@@ -121,23 +124,30 @@ object TranscriptionMemoryPolicy {
         // own cap, not to 30s of degenerate decode.
         val floor = minOf(MIN_CHUNK_SECONDS, catalogCapSeconds)
         val overhead = family.overheadMiB(modelSizeBytes / (1024.0 * 1024.0))
-        if (!decodeFits(availableBytes, overhead)) return floor
-        val budgetMiB = decodeBudgetMiB(availableBytes)
+        if (!decodeFits(availableBytes, overhead, tier)) return floor
+        val budgetMiB = decodeBudgetMiB(availableBytes, tier)
         val seconds = floor(sqrt((budgetMiB - overhead) / K_MIB_PER_S2) / STEP_SECONDS) * STEP_SECONDS
         return seconds.toInt().coerceIn(floor, catalogCapSeconds)
     }
 
-    /** The decode-side budget: post-load free RAM minus the system headroom (MiB). */
-    private fun decodeBudgetMiB(availableBytes: Long): Double =
-        availableBytes / (1024.0 * 1024.0) - HEADROOM_MIB
+    /**
+     * The decode-side budget: post-load free RAM minus the system headroom
+     * (MiB), scaled by the device tier (TASK-909: a constrained device
+     * keeps more aside, a flagship less; STANDARD is the historical band
+     * and the fail-open default).
+     */
+    private fun decodeBudgetMiB(availableBytes: Long, tier: DeviceTier): Double = availableBytes / (1024.0 * 1024.0) - HEADROOM_MIB * DeviceTier.effectiveScale(tier)
 
     /**
      * Single source of every budget comparison, so the refusal predicate and the
      * cap predicate cannot drift apart. Null is impossible here (inputs are
      * pre-gated by the callers' fail-open), the Boolean is the verdict.
      */
-    private fun decodeFits(availableBytes: Long, decodeBaselineMiB: Double): Boolean =
-        decodeBudgetMiB(availableBytes) > decodeBaselineMiB
+    private fun decodeFits(
+        availableBytes: Long,
+        decodeBaselineMiB: Double,
+        tier: DeviceTier,
+    ): Boolean = decodeBudgetMiB(availableBytes, tier) > decodeBaselineMiB
 
     /**
      * Decode cost of the smallest chunk the cap machinery can hand a backend:
@@ -152,8 +162,10 @@ object TranscriptionMemoryPolicy {
     fun minimumDecodeBaselineBytes(
         family: Family = Family.TRANSDUCER,
         modelSizeBytes: Long = 0L,
+        tier: DeviceTier = DeviceTier.STANDARD,
     ): Long =
-        ((minimumDecodeBaselineMiB(family, modelSizeBytes) + HEADROOM_MIB) * 1024 * 1024).toLong()
+        ((minimumDecodeBaselineMiB(family, modelSizeBytes) +
+            HEADROOM_MIB * DeviceTier.effectiveScale(tier)) * 1024 * 1024).toLong()
 
     /** Peak-RSS prediction for the calibration test; same constants as the cap. */
     internal fun predictedPeakMiB(
