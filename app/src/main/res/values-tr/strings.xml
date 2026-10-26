@@ -257,7 +257,9 @@
     <string name="error_model_load">Model dosyası bozuk veya yanlış biçimde olabilir. Model sekmesinden yeniden indirmeyi deneyin.</string>
     <string name="error_model_external_corrupt">İçe aktarılan modelin dosyaları bozuk. Modeller sekmesinden silin ve yeniden içe aktarın.</string>
     <string name="error_model_corrupt_healed">Modelin bazı dosyaları bozuktu ve kaldırıldı. Modeller sekmesini açıp modeli yeniden indirin.</string>
+    <string name="error_model_corrupt_sibling">Modelin bazı dosyaları bozuktu, bu yüzden uygulama bu varyantı kaldırdı ve cihazda zaten bulunan sağlıklı kopyaya geçti. Yeniden indirmek gerekmiyor.</string>
     <string name="error_model_missing_healed">Modelin bazı dosyaları eksikti ve kaldırıldı. Modeller sekmesini açıp modeli yeniden indirin.</string>
+    <string name="error_model_missing_sibling">Modelin bazı dosyaları eksikti, bu yüzden uygulama bu varyantı kaldırdı ve cihazda zaten bulunan sağlıklı kopyaya geçti. Yeniden indirmek gerekmiyor.</string>
     <string name="error_native">Metin çıkarma sırasında bir iç hata oluştu. Sorun sürerse farklı bir model deneyin.</string>
     <string name="error_not_initialized">Yüklü model yok. Model sekmesini açıp bir model indirin veya seçin.</string>
     <string name="error_model_unavailable">Seçili model artık kullanılamıyor. Model sekmesini açıp başka bir model seçin.</string>
@@ -1305,6 +1307,7 @@
     <string name="history_db_recovered">Geçmiş veritabanı hasarlıydı ve sıfırlandı. Önceki transkripsiyonlarınız bir yedek dosyasında saklandı.</string>
     <string name="catchup_digest_title">Sen yokken gelen sesli notlar</string>
     <plurals name="catchup_digest_text">
+        <item quantity="one">Uygulama kapalıyken gelen %1$d sesli not şu anda yazıya çevriliyor. Sonuçlar geçmişte görünecek.</item>
         <item quantity="other">Uygulama kapalıyken gelen %1$d sesli not şu anda yazıya çevriliyor. Sonuçlar geçmişte görünecek.</item>
     </plurals>
     <string name="history_db_recovered_unpreserved">Geçmiş veritabanı hasarlıydı ve sıfırlandı. Hasarlı dosyalar korunamadı.</string>
