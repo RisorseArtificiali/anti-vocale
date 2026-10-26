@@ -227,11 +227,16 @@ class VoiceNoteDetectionCoordinatorTest {
     fun `the entry's catchup flag rides the enqueue call unchanged`() = runBlocking {
         val h = Harness(permissionGranted = { true })
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
-        withTimeout(5_000) {
-            h.emitAndSettle(entry("/voice/PTT-live.opus")) // live: flag off
-            while (h.enqueuedCatchups.size < 1) delay(10)
-            h.emitAndSettle(entry("/voice/PTT-sweep.opus").copy(catchup = true))
-            while (h.enqueuedCatchups.size < 2) delay(10)
+        withTimeout(10_000) {
+            // Re-fire until landed (the burst test's TASK-272 AC3 pattern:
+            // under a loaded runner the collector's subscription can lag
+            // the first emission; a single emit+poll timed out on CI).
+            while (h.enqueuedCatchups.isEmpty()) {
+                h.emitAndSettle(entry("/voice/PTT-live.opus")) // live: flag off
+            }
+            while (h.enqueuedCatchups.size < 2) {
+                h.emitAndSettle(entry("/voice/PTT-sweep.opus").copy(catchup = true))
+            }
         }
         assertEquals("live then sweep, flag unchanged end to end",
             listOf(false, true), h.enqueuedCatchups)
