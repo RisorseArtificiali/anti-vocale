@@ -1,7 +1,9 @@
 package com.antivocale.app.data.local
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** TASK-570: the failure-diagnostics column codec and its one-line rendering. */
@@ -69,5 +71,32 @@ class FailureContextJsonTest {
     fun `old rows without suspendedMs read as null`() {
         val json = """{"errorClass":"PipelineFailure"}"""
         assertNull(FailureContextJson.fromJson(json)!!.suspendedMs)
+    }
+
+    @Test
+    fun `sibling-heal flag round trips and renders the marker`() {
+        // TASK-904: the switched-variant heal is distinguishable from a
+        // re-download heal in the report line, and the JSON stays absent
+        // for ordinary failures (old rows and zero-flag runs unchanged).
+        val ctx = FailureContext(errorClass = "CorruptModelFiles", siblingHealed = true)
+        val raw = FailureContextJson.toJson(ctx)!!
+        assertTrue(raw.contains("\"siblingHealed\":true"))
+        val back = FailureContextJson.fromJson(raw)!!
+        assertEquals(ctx, back)
+        assertEquals("CorruptModelFiles sibling", FailureContextJson.render(back))
+
+        // The default (false) leaves the JSON untouched, exactly like the
+        // pre-TASK-904 shape, and the plain render carries NO marker token
+        // (the History view parses the line positionally).
+        val plainBack = FailureContextJson.fromJson(
+            FailureContextJson.toJson(FailureContext(errorClass = "CorruptModelFiles")))!!
+        assertFalse(plainBack.siblingHealed)
+        assertEquals("CorruptModelFiles", FailureContextJson.render(plainBack))
+
+        // The missing verdict's sibling row renders the same marker.
+        val missing = FailureContext(errorClass = "MissingModelFiles", siblingHealed = true)
+        assertEquals("MissingModelFiles sibling",
+            FailureContextJson.render(FailureContextJson.fromJson(
+                FailureContextJson.toJson(missing))!!))
     }
 }

@@ -4609,6 +4609,15 @@ class TranscriptionOrchestrator @Inject constructor(
                         errorClass = (error as? PipelineFailure)?.cause
                             ?.let { "PipelineFailure(${it::class.simpleName})" }
                             ?: "${error::class.simpleName}",
+                        // TASK-904: a sibling-switch heal is a different
+                        // outcome than a re-download heal; the report line
+                        // (and its frequency stat) must tell them apart.
+                        // Unwraps PipelineFailure.cause so the two fields
+                        // above and this one can never disagree about the
+                        // same failure.
+                        siblingHealed = ((error as? PipelineFailure)?.cause ?: error)
+                            .let { it as? TranscriptionException.ModelLoadError }
+                            ?.switchedToSibling == true,
                         backendId = resolvedBackend,
                         provider = provider,
                         appVersion = version,

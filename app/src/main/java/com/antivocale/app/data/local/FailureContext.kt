@@ -41,6 +41,10 @@ data class FailureContext(
      *  run before the process died; null on old rows and every
      *  non-suspension failure. */
     val suspendedMs: Long? = null,
+    /** TASK-904: the model-dir heal landed on a sibling variant (the saved
+     *  path switched to it) at this failure. Absent on old rows; false is
+     *  the default for every ordinary failure. */
+    val siblingHealed: Boolean = false,
 )
 
 object FailureContextJson {
@@ -58,6 +62,7 @@ object FailureContextJson {
             c.metadataSeconds?.let { put("metadataSeconds", it) }
             c.decodedSeconds?.let { put("decodedSeconds", it) }
             c.suspendedMs?.let { put("suspendedMs", it) }
+            if (c.siblingHealed) put("siblingHealed", true)
         }.toString()
     }
 
@@ -78,6 +83,7 @@ object FailureContextJson {
                     metadataSeconds = o.optDoubleOrNull("metadataSeconds"),
                     decodedSeconds = o.optDoubleOrNull("decodedSeconds"),
                     suspendedMs = o.optLongOrNull("suspendedMs"),
+                    siblingHealed = o.optBooleanOrNull("siblingHealed") ?: false,
                 )
             }.getOrNull()
         }
@@ -86,6 +92,9 @@ object FailureContextJson {
     fun render(context: FailureContext?): String? = context?.let { c ->
         buildList {
             add(c.errorClass)
+            // TASK-904: the sibling marker separates a switched-variant
+            // heal from a re-download heal in the report line.
+            if (c.siblingHealed) add("sibling")
             c.backendId?.let { add("backend=$it") }
             c.provider?.let { add("provider=$it") }
             c.appVersion?.let { add("v$it") }
@@ -113,3 +122,6 @@ private fun org.json.JSONObject.optDoubleOrNull(key: String): Double? =
 
 private fun org.json.JSONObject.optLongOrNull(key: String): Long? =
     if (has(key) && !isNull(key)) getLong(key) else null
+
+private fun org.json.JSONObject.optBooleanOrNull(key: String): Boolean? =
+    if (has(key) && !isNull(key)) getBoolean(key) else null

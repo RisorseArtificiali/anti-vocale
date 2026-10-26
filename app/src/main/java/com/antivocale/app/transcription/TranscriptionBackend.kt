@@ -288,7 +288,17 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
 
     /** The model file is missing, corrupt, truncated, or the wrong format for this backend. */
     open class ModelLoadError(detail: String, cause: Throwable? = null) :
-        TranscriptionException("Model load failed: $detail", cause)
+        TranscriptionException("Model load failed: $detail", cause) {
+        /**
+         * TASK-887/904: set on the re-raise when the orchestrator's heal
+         * landed on a sibling variant (the saved path switched to it; no
+         * re-download exists to offer). On the base so the failure-context
+         * derivation reads ONE property for every verdict; a verdict the
+         * heal never fires for (ExternalModelCorruptFiles) keeps the false
+         * default.
+         */
+        open val switchedToSibling: Boolean = false
+    }
 
     /**
      * TASK-660: the pre-load integrity gate rejected the model files before any
@@ -308,11 +318,8 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
      */
     class CorruptModelFiles(
         val detail: String,
-        /** TASK-887: set on the re-raise when the orchestrator's heal
-         *  landed on a sibling variant (the saved path switched to it; no
-         *  re-download exists to offer). The History row's copy keys on
-         *  it. */
-        val switchedToSibling: Boolean = false,
+        /** TASK-887: the History row's copy keys on it. */
+        override val switchedToSibling: Boolean = false,
     ) : ModelLoadError(detail)
 
     /**
@@ -335,7 +342,7 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
     class MissingModelFiles(
         val detail: String,
         /** TASK-887: [CorruptModelFiles.switchedToSibling]'s twin. */
-        val switchedToSibling: Boolean = false,
+        override val switchedToSibling: Boolean = false,
     ) : ModelLoadError(detail)
 
     /**
