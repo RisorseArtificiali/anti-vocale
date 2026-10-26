@@ -14,6 +14,11 @@ import org.junit.Test
  */
 class VoiceNoteDetectorTest {
 
+    /** TASK-906: the detector's SAF-lane context; these tests ride the raw
+     *  lane and never query it, so a relaxed mock stands in. */
+    private fun appContext(): android.content.Context = io.mockk.mockk(relaxed = true)
+
+
     @Test
     fun `whatsapp voice note names match the PTT pattern`() {
         assertTrue(VoiceNoteFilter.isWhatsAppVoiceNoteName(
@@ -73,8 +78,8 @@ class VoiceNoteDetectorTest {
         val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
         val prefs = io.mockk.mockk<PreferencesManager>(relaxed = true)
         io.mockk.every { prefs.voiceNoteWatermark } returns kotlinx.coroutines.flow.flowOf(null)
-        val wa = VoiceNoteDetector(scope, prefs)
-        val w4b = VoiceNoteDetector(scope, prefs, VoiceNoteSource.WHATSAPP_BUSINESS)
+        val wa = VoiceNoteDetector(scope, appContext(), prefs)
+        val w4b = VoiceNoteDetector(scope, appContext(), prefs, VoiceNoteSource.WHATSAPP_BUSINESS)
         assertTrue(wa.root.path.endsWith("/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes"))
         assertTrue(w4b.root.path.endsWith(
             "/com.whatsapp.w4b/WhatsApp Business/Media/WhatsApp Business Voice Notes"))

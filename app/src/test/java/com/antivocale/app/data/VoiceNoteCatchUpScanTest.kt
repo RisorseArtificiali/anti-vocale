@@ -29,6 +29,11 @@ import org.junit.rules.TemporaryFolder
 @org.robolectric.annotation.Config(sdk = [34])
 class VoiceNoteCatchUpScanTest {
 
+    /** TASK-906: the detector's SAF-lane context; these tests ride the raw
+     *  lane and never query it, so a relaxed mock stands in. */
+    private fun appContext(): android.content.Context = io.mockk.mockk(relaxed = true)
+
+
     @get:Rule
     val tmp = TemporaryFolder()
 
@@ -44,7 +49,7 @@ class VoiceNoteCatchUpScanTest {
         val preferences = io.mockk.mockk<PreferencesManager>(relaxed = true)
         io.mockk.every { preferences.voiceNoteWatermark } returns
             kotlinx.coroutines.flow.flowOf(null)
-        detector = VoiceNoteDetector(scope, preferences)
+        detector = VoiceNoteDetector(scope, appContext(), preferences)
     }
 
     @After
@@ -143,7 +148,7 @@ class VoiceNoteCatchUpScanTest {
         val w4bFolder = tmp.newFolder("w4b", "202642")
         note(waFolder, name, lastModifiedAgoMs = 60_000)
         note(w4bFolder, name, lastModifiedAgoMs = 60_000)
-        val business = VoiceNoteDetector(scope, io.mockk.mockk<PreferencesManager>(relaxed = true).also {
+        val business = VoiceNoteDetector(scope, appContext(), io.mockk.mockk<PreferencesManager>(relaxed = true).also {
                 // The Business detector reads its OWN watermark member at
                 // arm time; an unstubbed relaxed Flow answers empty and
                 // .first() kills the shared scope.
@@ -179,7 +184,7 @@ class VoiceNoteCatchUpScanTest {
         val w4bFolder = tmp.newFolder("w4b2", "202642")
         note(waFolder, "PTT-20261020-WA0002.opus", lastModifiedAgoMs = 60_000)
         note(w4bFolder, "PTT-20261020-WA0002.opus", lastModifiedAgoMs = 60_000)
-        val business = VoiceNoteDetector(scope, io.mockk.mockk<PreferencesManager>(relaxed = true).also {
+        val business = VoiceNoteDetector(scope, appContext(), io.mockk.mockk<PreferencesManager>(relaxed = true).also {
                 io.mockk.every { it.voiceNoteBusinessWatermark } returns kotlinx.coroutines.flow.flowOf(null)
             }, VoiceNoteSource.WHATSAPP_BUSINESS)
         val businessEntries = mutableListOf<VoiceNoteEntry>()

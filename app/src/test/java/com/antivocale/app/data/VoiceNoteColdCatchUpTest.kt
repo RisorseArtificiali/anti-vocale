@@ -35,6 +35,11 @@ import org.junit.rules.TemporaryFolder
 @org.robolectric.annotation.Config(sdk = [34])
 class VoiceNoteColdCatchUpTest {
 
+    /** TASK-906: the detector's SAF-lane context (Robolectric application). */
+    private fun appContext(): android.content.Context =
+        androidx.test.core.app.ApplicationProvider.getApplicationContext()
+
+
     @get:Rule
     val tmp = TemporaryFolder()
 
@@ -76,7 +81,7 @@ class VoiceNoteColdCatchUpTest {
             storedWatermarks[VoiceNoteSource.WHATSAPP_BUSINESS] = null
         }
         scope = CoroutineScope(Dispatchers.Unconfined)
-        detector = VoiceNoteDetector(scope, preferences)
+        detector = VoiceNoteDetector(scope, appContext(), preferences)
         // Unconfined collector: emissions land in `entries` synchronously.
         scope.launch { detector.detections.collect { entries += it } }
         detector.subscribe()
@@ -110,8 +115,11 @@ class VoiceNoteColdCatchUpTest {
         expected: String?,
         source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
     ) {
+        // 5s: the 2s deadline flaked twice under full-suite load (a real
+        // IO-dispatched bump losing the race on a busy host); only the
+        // failure latency changes.
         kotlinx.coroutines.runBlocking {
-            withTimeout(2_000) {
+            withTimeout(5_000) {
                 while (storedWatermarks[source] != expected) delay(10)
             }
         }
@@ -142,6 +150,38 @@ class VoiceNoteColdCatchUpTest {
      * rounds into ONE cumulative digest notification); a round that
      * emits nothing reports nothing (a 0-count digest would be noise).
      */
+    /**
+     * TASK-906: the PRODUCTION sweep lane. With a tree grant present the
+     * sweep reads through the SAF walk (the seam stands in for
+     * DocumentsContract; Robolectric has no documents provider) and never
+     * touches the raw tree - on scoped storage that listing is denied
+     * device-wide. Raw-path output must stay byte-identical: the entries'
+     * ids and the watermark keys are the same strings the raw lane and the
+     * transcriber's grant-resolve produce.
+     */
+    @Test
+    fun `the SAF lane drives the sweep when the tree grant is present`() {
+        val names = listOf("PTT-20261026-WA00003.opus", "PTT-20261026-WA00004.opus")
+        val mtime = System.currentTimeMillis() - 5_000
+        detector.safWalkForTest = { _, _ ->
+            VoiceNoteDetector.SafWalk(
+                filesByFolder = mapOf("202643" to names.map {
+                    SweepFile("${detector.root.absolutePath}/202643/$it", mtime) }),
+                folderDocIds = mapOf("202643" to "doc-202643"))
+        }
+        detector.subscribe("content://tree/test")
+
+        kotlinx.coroutines.runBlocking {
+            withTimeout(5_000) { while (entries.size < 2) kotlinx.coroutines.delay(25) }
+        }
+        assertEquals(2, entries.size)
+        assertTrue("every swept entry is a catchup entry", entries.all { it.catchup })
+        assertEquals(
+            names.toSet(),
+            entries.map { it.path!!.substringAfterLast('/') }.toSet())
+        awaitWatermark(keyOf("202643", "PTT-20261026-WA00004.opus"))
+    }
+
     @Test
     fun `each sweep round reports its burst count and silence emits nothing`() {
         val bursts = mutableListOf<Int>()
@@ -381,7 +421,7 @@ class VoiceNoteColdCatchUpTest {
      * number spaces.
      */
     private fun businessDetector(entries: MutableList<VoiceNoteEntry>): VoiceNoteDetector {
-        val business = VoiceNoteDetector(scope, preferences, VoiceNoteSource.WHATSAPP_BUSINESS)
+        val business = VoiceNoteDetector(scope, appContext(), preferences, VoiceNoteSource.WHATSAPP_BUSINESS)
         scope.launch { business.detections.collect { entries += it } }
         return business
     }

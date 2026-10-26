@@ -1,6 +1,8 @@
 package com.antivocale.app.data
 
+import android.net.Uri
 import android.os.FileObserver
+import android.provider.DocumentsContract
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.antivocale.app.di.ApplicationScope
@@ -41,6 +43,21 @@ data class VoiceNoteEntry(
 )
 
 /**
+ * TASK-906: one file the catch-up sweep is considering, decoupled from
+ * java.io: the SAF lane cannot stat (the provider cursor carries the
+ * mtime), so [lastModified] travels WITH the candidate instead of being
+ * read off the File. [path] is the RAW absolute path (the entry id, the
+ * watermark key input, and the transcriber's SAF-resolve key all
+ * consume exactly this string).
+ */
+internal data class SweepFile(
+    val path: String,
+    val lastModified: Long,
+) {
+    val name: String get() = path.substringAfterLast('/')
+}
+
+/**
  * Detection core for incoming WhatsApp voice notes (TASK-270 origin,
  * reworked 2026-10-13): [FileObserver]s over the WhatsApp Voice Notes
  * tree emit each new .opus file the moment WhatsApp finishes writing it.
@@ -74,6 +91,9 @@ class VoiceNoteDetector(
     // cancelled): the catch-up delay rides it instead of a private executor,
     // per the TASK-438 rule against hand-built concurrency owners.
     @ApplicationScope private val scope: CoroutineScope,
+    // TASK-906: for the SAF sweep lane's DocumentsContract queries (the
+    // raw java.io listing is denied to the app uid on scoped storage).
+    private val appContext: android.content.Context,
     // TASK-778: the persisted watermark this detector reads at arm and
     // advances on every emission.
     private val preferencesManager: PreferencesManager,
@@ -84,6 +104,16 @@ class VoiceNoteDetector(
 
     /** Every new voice note, already deduped; queue semantics, no loss. */
     val detections: Flow<VoiceNoteEntry> = _detections.receiveAsFlow()
+
+    /**
+     * TASK-906: the coordinator's live tree grant, handed over at every
+     * arm. Non-null flips the catch-up sweep onto the SAF listing lane:
+     * on scoped storage the app's raw java.io view of the shared tree is
+     * denied device-wide (listFiles returns null), while the grant's
+     * DocumentsContract queries demonstrably read the same tree (the
+     * transcription resolve path has always ridden them).
+     */
+    @Volatile private var grantedTreeUri: String? = null
 
     /**
      * TASK-889: the cold-start catch-up sweep's burst size, emitted once
@@ -127,7 +157,11 @@ class VoiceNoteDetector(
         get() = voiceNotesRoot(source)
 
     @Synchronized
-    fun subscribe() {
+    fun subscribe(treeUri: String? = null) {
+        // Before the idempotence early-return (review F5): a re-subscribe
+        // with a fresh grant must update the SAF lane even when watchers
+        // are already attached, and the URI survives until replaced.
+        if (treeUri != null) grantedTreeUri = treeUri
         if (observers.isNotEmpty()) return
         armWatchers()
         // TASK-831: a disarm inside a catch-up's delay window leaves its
@@ -138,7 +172,6 @@ class VoiceNoteDetector(
         pendingCatchUps.toList().forEach { launchCatchUp(File(it)) }
         Log.i(TAG, "subscribed ${source.name}: ${observers.size} watchers under ${root.absolutePath}")
         launchColdCatchUp()
-        Log.i(TAG, "subscribed: ${observers.size} watchers under ${root.absolutePath}")
     }
 
     /**
@@ -169,6 +202,7 @@ class VoiceNoteDetector(
 
     @Synchronized
     fun dispose() {
+        grantedTreeUri = null
         armed = false
         observers.forEach { it.stopWatching() }
         observers.clear()
@@ -190,8 +224,14 @@ class VoiceNoteDetector(
      * sweep this tick also fires ([launchColdCatchUp]).
      */
     @Synchronized
-    fun refresh() {
+    fun refresh(treeUri: String? = null) {
         if (!armed) return
+        // TASK-906 (review altitude pass): the tick must track the LIVE
+        // grant like the resolve path does: after a live-to-live re-pick
+        // the short-circuit path never re-subscribes, so the URI rides
+        // every refresh too or the SAF walk keeps dying on the released
+        // grant until a full re-arm. Null hand = no new information.
+        if (treeUri != null) grantedTreeUri = treeUri
         val oldObservers = observers
         observers = mutableListOf()
         watchedDirs = mutableSetOf()
@@ -253,7 +293,7 @@ class VoiceNoteDetector(
                 // KDoc): CREATE alone means WhatsApp is still writing.
                 if ((event and (FileObserver.CLOSE_WRITE or FileObserver.MOVED_TO)) == 0) return
                 if (!VoiceNoteFilter.isWhatsAppVoiceNoteName(path)) return
-                onDetection(entryFor(File(dir, path)))
+                onDetection(entryFor(File(dir, path).absolutePath))
             }
         }
         // A missing directory (WhatsApp cleared or reinstalled) must not
@@ -349,7 +389,7 @@ class VoiceNoteDetector(
         val ripe = notes.filter { now - it.lastModified() >= catchUpDelayMs }
         if (ripe.isNotEmpty()) {
             Log.i(TAG, "catch-up emitted ${ripe.size} note(s) from ${folder.name}")
-            ripe.forEach { file -> onDetection(entryFor(file)) }
+            ripe.forEach { file -> onDetection(entryFor(file.absolutePath)) }
         }
         if (ripe.size == notes.size) {
             clearCatchUp(folder)
@@ -361,14 +401,15 @@ class VoiceNoteDetector(
     }
 
     /**
-     * One queue entry from an observed file. The id derivation is the
+     * One queue entry from an observed file path. The id derivation is the
      * stable dedup key ([VoiceNoteEntry.id]); every construction site MUST
      * go through here, or a drifted key silently double-fires notes the
-     * seen filter was built to dedup.
+     * seen filter was built to dedup. TASK-906: keyed on the PATH STRING,
+     * not java.io (the SAF sweep lane synthesizes paths it never stats).
      */
-    private fun entryFor(file: File) = VoiceNoteEntry(
-        id = file.absolutePath.hashCode().toLong(),
-        path = file.absolutePath,
+    private fun entryFor(path: String) = VoiceNoteEntry(
+        id = path.hashCode().toLong(),
+        path = path,
         detectedAtMs = System.currentTimeMillis())
 
     /** True iff this entry passed the seen filter and was emitted (the
@@ -414,6 +455,18 @@ class VoiceNoteDetector(
     private suspend fun coldCatchUp() {
         Log.i(TAG, "cold catch-up running (armed=$armed)")
         if (!armed) return
+        val treeUri = grantedTreeUri
+        if (treeUri != null) {
+            // TASK-906: the SAF lane is the PRODUCTION lane. Measured on
+            // the RMX3853 (2026-10-26): the raw ROOT enumeration works
+            // (armWatchers attaches its watchers from it) but the child
+            // folders' raw listings come back EMPTY, so the sweep found
+            // nothing; the tree grant's DocumentsContract queries read
+            // those same children (the lane the transcription resolve
+            // path has always ridden).
+            coldCatchUpViaSaf(treeUri)
+            return
+        }
         val folders = root.listFiles()
             ?.filter { it.isDirectory && VoiceNoteFilter.isCounterFolderName(it.name) }
             .orEmpty()
@@ -421,10 +474,209 @@ class VoiceNoteDetector(
         coldCatchUpScan(folders)
     }
 
+    /** The SAF walk's result: per-folder files plus the folder docIds the
+     *  settle re-stat needs for its single-folder query. */
+    internal data class SafWalk(
+        val filesByFolder: Map<String, List<SweepFile>>,
+        val folderDocIds: Map<String, String>,
+    )
+
+    /** Test seam for the SAF lane: replaces the DocumentsContract walk
+     *  (Robolectric has no documents provider) while keeping the lane
+     *  selection and the core real. The floor mirrors the production
+     *  pre-walk prune so tests can exercise both shapes. */
+    internal var safWalkForTest:
+        (suspend (treeUri: String, watermarkFolder: Long?) -> SafWalk?)? = null
+
+    private suspend fun coldCatchUpViaSaf(treeUri: String) {
+        // Review F5: the settle round stats every fresh file; a per-folder
+        // cache turns N files in one folder into ONE children query. Keyed
+        // WITH the live URI (review F3): after a re-pick inside the settle
+        // window, the first stat under the new grant must not serve maps
+        // captured from the released one.
+        val statCache = HashMap<String, Map<String, Long>>()
+        fun statCacheKey(uri: String, folder: String) = "$uri|$folder"
+        // The floor (review efficiency pass): level-1 names are ONE query;
+        // only folders at or above the watermark's folder pay their
+        // (binder) level-2 query. Steady state walks root + one folder
+        // instead of the whole tree, at every arm and every rearm tick.
+        val watermark = preferencesManager.voiceNoteWatermark(source).first()
+        val floor = watermark?.substringBefore('/')?.toLongOrNull()
+        val walk = safWalkForTest?.invoke(treeUri, floor) ?: safWalkTree(treeUri, floor)
+        if (walk == null) {
+            Log.w(TAG, "cold catch-up (SAF): folder walk failed for ${source.name}")
+            return
+        }
+        val folders = walk.filesByFolder.keys.filter { VoiceNoteFilter.isCounterFolderName(it) }
+        Log.i(TAG, "cold catch-up (SAF lane) folders=${folders.size}")
+        scanCandidates(
+            folderNames = folders,
+            allowRetry = true,
+            listFiles = { folderName -> walk.filesByFolder[folderName] },
+            stat = { path ->
+                // The settle re-stat: ONE children query on the file's own
+                // folder (the walk's docIds), never a tree re-walk. The
+                // provider is the only stat authority on this lane, and the
+                // URI is read at STAT time (latest-wins: a re-pick inside
+                // the settle window must not query the released grant).
+                val folder = path.substringBeforeLast('/').substringAfterLast('/')
+                val name = path.substringAfterLast('/')
+                val docId = walk.folderDocIds[folder] ?: return@scanCandidates null
+                // Latest-wins URI (review F3): a re-pick inside the settle
+                // window released the captured grant; the LIVE one is the
+                // only URI the provider will answer for.
+                val liveUri = grantedTreeUri ?: treeUri
+                statCache.getOrPut(statCacheKey(liveUri, folder)) {
+                    safListFolderMtimes(liveUri, docId)
+                }[name]
+            })
+    }
+
+    /** One folder's current name-to-mtime map via a single children
+     *  query (the settle round's per-folder cache fills from this). */
+    private fun safListFolderMtimes(treeUri: String, folderDocId: String): Map<String, Long> =
+        runCatching {
+            val tree = Uri.parse(treeUri)
+            val out = mutableMapOf<String, Long>()
+            appContext.contentResolver.query(
+                DocumentsContract.buildChildDocumentsUriUsingTree(tree, folderDocId),
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_LAST_MODIFIED),
+                null, null, null)?.use { c ->
+                while (c.moveToNext()) {
+                    if (!c.isNull(1)) out[c.getString(0)] = c.getLong(1)
+                }
+            }
+            out
+        }.getOrDefault(emptyMap())
+
+    /**
+     * TASK-906: two-level DocumentsContract walk over the held tree
+     * grant (counter folders at level 1, their files at level 2), mapped
+     * back onto RAW absolute paths so the sweep core, the entry ids and
+     * the transcriber's grant-resolve key stay byte-identical to the raw
+     * lane's. Returns null when the walk itself fails (never an empty
+     * guess: an unreadable tree is a fact to log, not "no notes").
+     * [watermarkFolder] pre-prunes the level-2 queries (steady state
+     * walks root + one folder); when NO counter folder clears the floor
+     * the walk lists EVERYTHING so scanCandidates' reset branch can fire
+     * and recover in the same round (the raw lane's semantics).
+     * A row without COLUMN_LAST_MODIFIED is skipped and logged (an
+     * undatable file cannot pass the quiet gate; fabricating an mtime
+     * either bypassed the gate or died in the settle's re-stat).
+     */
+    private fun safWalkTree(
+        treeUri: String,
+        watermarkFolder: Long?,
+    ): SafWalk? = runCatching {
+        val tree = Uri.parse(treeUri)
+        val resolver = appContext.contentResolver
+        val folderDocIds = mutableMapOf<String, String>()
+        resolver.query(
+            DocumentsContract.buildChildDocumentsUriUsingTree(
+                tree, DocumentsContract.getTreeDocumentId(tree)),
+            arrayOf(
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE),
+            null, null, null)?.use { c ->
+            while (c.moveToNext()) {
+                if (c.getString(2) == DocumentsContract.Document.MIME_TYPE_DIR &&
+                    VoiceNoteFilter.isCounterFolderName(c.getString(1))
+                ) {
+                    folderDocIds[c.getString(1)] = c.getString(0)
+                }
+            }
+        } ?: return@runCatching null
+        val toWalk = if (watermarkFolder != null &&
+            folderDocIds.keys.any { (it.toLongOrNull() ?: -1L) >= watermarkFolder }
+        ) {
+            folderDocIds.filterKeys { (it.toLongOrNull() ?: -1L) >= watermarkFolder }
+        } else {
+            folderDocIds
+        }
+        val out = mutableMapOf<String, List<SweepFile>>()
+        toWalk.forEach { (folderName, docId) ->
+            val files = mutableListOf<SweepFile>()
+            val listed = resolver.query(
+                DocumentsContract.buildChildDocumentsUriUsingTree(tree, docId),
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_MIME_TYPE,
+                    DocumentsContract.Document.COLUMN_LAST_MODIFIED),
+                null, null, null)
+            if (listed == null) {
+                // Review F2: a failed folder query is a fact to log, never
+                // a silent "no notes" - the next tick retries the folder.
+                Log.w(TAG, "SAF walk: folder query failed for $folderName (${source.name})")
+                return@forEach
+            }
+            var undated = 0
+            listed.use { c ->
+                while (c.moveToNext()) {
+                    // Review F4: the raw lane filters isFile; a directory
+                    // whose name matches PTT-* must never become a note.
+                    if (c.getString(1) == DocumentsContract.Document.MIME_TYPE_DIR) continue
+                    // Review F1: a null mtime cannot be gated (the quiet
+                    // window is unknowable), so the row is SKIPPED and
+                    // logged, never fabricated: a made-up mtime either
+                    // bypassed the mid-write gate or was dropped by the
+                    // settle's re-stat. The next tick re-sees the row;
+                    // live writes still arrive via CLOSE_WRITE.
+                    if (c.isNull(2)) {
+                        undated++
+                        continue
+                    }
+                    files += SweepFile(
+                        path = "${root.absolutePath}/$folderName/${c.getString(0)}",
+                        lastModified = c.getLong(2))
+                }
+            }
+            if (undated > 0) {
+                Log.w(TAG, "SAF walk: $undated undated row(s) skipped in $folderName (${source.name})")
+            }
+            out[folderName] = files
+        }
+        SafWalk(out, folderDocIds)
+    }.getOrNull()
+
     /** Test seam: the scan body over explicit folders (Robolectric has no
      *  WhatsApp tree; the real-path resolver is [coldCatchUp]). */
     @VisibleForTesting
     internal suspend fun coldCatchUpScan(folders: List<File>, allowRetry: Boolean = true) {
+        // The raw lane: the no-grant shape, which in practice is the
+        // Robolectric seam (a production arm always carries the grant).
+        // The PASSED folders are
+        // the listing roots (the test seam hands in temp dirs; production
+        // coldCatchUp hands in root's children), so they close over here
+        // instead of being re-derived from root.
+        val foldersByName = folders.associateBy { it.name }
+        scanCandidates(
+            folderNames = folders.map { it.name },
+            allowRetry = allowRetry,
+            listFiles = { folderName ->
+                foldersByName[folderName]?.listFiles()
+                    ?.filter { it.isFile }
+                    ?.map { SweepFile(it.absolutePath, it.lastModified()) }
+            },
+            stat = { path -> File(path).lastModified() })
+    }
+
+    /**
+     * TASK-906: the sweep core, lane-agnostic. [listFiles] returns null
+     * on a listing failure (the SAF lane surfaces provider errors, the
+     * raw lane the FUSE denial); [stat] re-reads a single file's mtime
+     * for the settle round (raw stat on the raw lane, a re-query on the
+     * SAF lane; a provider that lost the row returns null and the
+     * candidate is dropped rather than guessed).
+     */
+    private suspend fun scanCandidates(
+        folderNames: List<String>,
+        allowRetry: Boolean,
+        listFiles: suspend (folderName: String) -> List<SweepFile>?,
+        stat: suspend (path: String) -> Long?,
+    ) {
         var watermark = preferencesManager.voiceNoteWatermark(source).first()
         // Review 2026-10-25: a WhatsApp counter reset (reinstall/clear-data
         // rebuilding the tree from low folder numbers) leaves a stale
@@ -433,8 +685,8 @@ class VoiceNoteDetector(
         // watermark, the key space regressed: reset and proceed unfiltered
         // (TTL and cap still bound the burst).
         val watermarkFolder = watermark?.substringBefore('/')?.toLongOrNull()
-        if (watermarkFolder != null && folders.isNotEmpty() &&
-            folders.none { (it.name.toLongOrNull() ?: -1L) >= watermarkFolder }
+        if (watermarkFolder != null && folderNames.isNotEmpty() &&
+            folderNames.none { (it.toLongOrNull() ?: -1L) >= watermarkFolder }
         ) {
             Log.w(TAG, "watermark folder $watermarkFolder is above every existing folder;" +
                 " WhatsApp counter regressed, resetting the watermark")
@@ -450,25 +702,26 @@ class VoiceNoteDetector(
         // post-reset value, not the stale pre-reset folder.
         val effectiveWatermarkFolder = watermark?.substringBefore('/')?.toLongOrNull()
         val liveFolders = if (effectiveWatermarkFolder != null) {
-            folders.filter { (it.name.toLongOrNull() ?: -1L) >= effectiveWatermarkFolder }
+            folderNames.filter { (it.toLongOrNull() ?: -1L) >= effectiveWatermarkFolder }
         } else {
-            folders
+            folderNames
         }
         // The watermark key is the ONE ordering definition: candidates are
         // keyed before any stat (the key is pure path work), so a steady
         // arm with nothing newer never pays a lastModified syscall.
-        val fresh = mutableListOf<File>()
+        val fresh = mutableListOf<SweepFile>()
         val candidates = liveFolders
-            .flatMap { folder ->
-                folder.listFiles().orEmpty()
-                    .filter { it.isFile && VoiceNoteFilter.isWhatsAppVoiceNoteName(it.name) }
+            .flatMap { folderName ->
+                listFiles(folderName).orEmpty()
+                    .filter { VoiceNoteFilter.isWhatsAppVoiceNoteName(it.name) }
             }
-            .mapNotNull { file ->
-                val key = VoiceNoteFilter.watermarkKeyOf(file)
-                if (key == null || (watermark != null && key <= watermark)) null else file to key
+            .mapNotNull { sweepFile ->
+                val key = VoiceNoteFilter.watermarkKeyOf(File(sweepFile.path))
+                if (key == null || (watermark != null && key <= watermark)) null
+                else sweepFile to key
             }
-            .mapNotNull { (file, key) ->
-                val lastModified = file.lastModified()
+            .mapNotNull { (sweepFile, key) ->
+                val lastModified = sweepFile.lastModified
                 when {
                     // The 831 quiet gate, same rationale: a note mid-write
                     // at arm time must not be emitted half-written (the
@@ -479,11 +732,11 @@ class VoiceNoteDetector(
                         // before the watcher attached), so dropping it here
                         // loses it until the next arm. Collected for the
                         // single settle round below.
-                        fresh += file
+                        fresh += sweepFile
                         null
                     }
                     now - lastModified > coldCatchUpTtlMs -> null // stale
-                    else -> Triple(file, key, lastModified)
+                    else -> Triple(sweepFile, key, lastModified)
                 }
             }
             .sortedByDescending { it.second }
@@ -500,13 +753,14 @@ class VoiceNoteDetector(
             // TASK-889: count what actually EMITS (the seen filter can
             // swallow a live-delivered twin), not what was found.
             var emitted = 0
-            candidates.forEach { (file, _, lastModified) ->
+            candidates.forEach { (sweepFile, _, lastModified) ->
                 // detectedAtMs is the note's OWN write time, not the scan
                 // time: the sender matcher's notification window must not
                 // pair an hours-old note with a live note's notification
                 // (review 2026-10-25; the TASK-833 wrong-name invariant).
                 if (onDetection(
-                        entryFor(file).copy(detectedAtMs = lastModified, catchup = true))) {
+                        entryFor(sweepFile.path)
+                            .copy(detectedAtMs = lastModified, catchup = true))) {
                     emitted++
                 }
             }
@@ -518,9 +772,10 @@ class VoiceNoteDetector(
         // settle delivers via its live CLOSE_WRITE (the watcher attached
         // at arm); the bound keeps a pathological folder from looping.
         if (fresh.isNotEmpty() && allowRetry) {
+            val toSettle = fresh.toList()
             scope.launch(Dispatchers.IO) {
                 delay(catchUpDelayMs)
-                if (armed) settleFreshNotes(fresh)
+                if (armed) settleFreshNotes(toSettle, stat)
             }
         }
     }
@@ -528,15 +783,20 @@ class VoiceNoteDetector(
     /** The settle round: quiet + TTL + watermark re-check on exactly the
      *  once-fresh files (a live event may have advanced this source's
      *  watermark in the delay window; the re-read filter drops it then). */
-    private suspend fun settleFreshNotes(files: List<File>) {
+    private suspend fun settleFreshNotes(
+        files: List<SweepFile>,
+        stat: suspend (path: String) -> Long?,
+    ) {
         val watermark = preferencesManager.voiceNoteWatermark(source).first()
         val now = System.currentTimeMillis()
-        val settled = files.mapNotNull { file ->
-            val key = VoiceNoteFilter.watermarkKeyOf(file) ?: return@mapNotNull null
+        val settled = files.mapNotNull { sweepFile ->
+            val key = VoiceNoteFilter.watermarkKeyOf(File(sweepFile.path)) ?: return@mapNotNull null
             if (watermark != null && key <= watermark) return@mapNotNull null
-            file to key
-        }.filter { (file, _) ->
-            val lm = file.lastModified()
+            sweepFile to key
+        }.filter { (sweepFile, _) ->
+            // Null stat (the provider lost the row): drop, never guess an
+            // mtime for a file we can no longer see.
+            val lm = stat(sweepFile.path) ?: return@filter false
             lm <= now - catchUpDelayMs && now - lm <= coldCatchUpTtlMs
         }.sortedByDescending { it.second }
             .distinctBy { it.second } // same key = same note (TASK-893)
@@ -544,12 +804,12 @@ class VoiceNoteDetector(
         if (settled.isNotEmpty()) {
             // TASK-889: these late recoveries are part of the same
             // cold-start burst (their result posts are suppressed via the
-            // catchup flag), so they count into the digest - again only
+            // catchup flag), so they count into the digest; again only
             // what actually emits (a live delivery during the settle
             // delay wins the note and the count stays honest).
             var emitted = 0
-            settled.forEach { (file, _) ->
-                if (onDetection(entryFor(file).copy(catchup = true))) emitted++
+            settled.forEach { (sweepFile, _) ->
+                if (onDetection(entryFor(sweepFile.path).copy(catchup = true))) emitted++
             }
             if (emitted > 0) _catchUpBursts.trySend(emitted)
         }

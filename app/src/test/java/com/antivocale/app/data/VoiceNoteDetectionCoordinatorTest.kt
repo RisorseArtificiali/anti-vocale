@@ -74,9 +74,10 @@ class VoiceNoteDetectionCoordinatorTest {
             every { treeGrant.holdsGrant(TREE_URI) } returns true
             every { detector.detections } returns detections
             every { detector.catchUpBursts } returns MutableSharedFlow()
-            every { detector.subscribe() } just Runs
+            every { detector.subscribe(any()) } just Runs
+            every { detector.subscribe(null) } just Runs
             every { detector.dispose() } just Runs
-            every { detector.refresh() } just Runs
+            every { detector.refresh(any()) } just Runs
         }
 
         /**
@@ -112,7 +113,9 @@ class VoiceNoteDetectionCoordinatorTest {
     fun `on with permission subscribes and enqueues one transcription`() = runBlocking {
         val h = Harness(permissionGranted = { true })
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
-        verify(exactly = 1) { h.detector.subscribe() }
+        // TASK-906: the arm hands the live tree uri to the detector's
+        // SAF sweep lane.
+        verify(exactly = 1) { h.detector.subscribe(TREE_URI) }
         h.untilEnqueued(entry())
         assertEquals(listOf("/voice/PTT-1.opus"), h.enqueued)
         // TASK-832: the LIVE uri travelled coordinator -> enqueue (a
@@ -132,7 +135,9 @@ class VoiceNoteDetectionCoordinatorTest {
         h.coordinator.reconcile(prefEnabled = true, treeUri = "content://tree/a")
         h.coordinator.reconcile(prefEnabled = true, treeUri = "content://tree/b")
         // No second subscribe: the short-circuit path.
-        verify(exactly = 1) { h.detector.subscribe() }
+        // Armed once on uri a; the swap must NOT re-subscribe (the
+        // short-circuit path) - the running collector just sees uri b.
+        verify(exactly = 1) { h.detector.subscribe("content://tree/a") }
         h.untilEnqueued(entry())
         assertEquals(listOf<String?>("content://tree/b"), h.enqueuedUris)
         h.scope.cancel()
@@ -246,7 +251,7 @@ class VoiceNoteDetectionCoordinatorTest {
     fun `a missing permission keeps the detector unsubscribed`() = runBlocking {
         val h = Harness(permissionGranted = { false })
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
-        verify(exactly = 0) { h.detector.subscribe() }
+        verify(exactly = 0) { h.detector.subscribe(any()) }
         h.scope.cancel()
     }
 
@@ -256,7 +261,7 @@ class VoiceNoteDetectionCoordinatorTest {
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
         h.coordinator.reconcile(prefEnabled = false, treeUri = TREE_URI)
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
-        verify(exactly = 2) { h.detector.subscribe() }
+        verify(exactly = 2) { h.detector.subscribe(any()) }
         verify(exactly = 1) { h.detector.dispose() }
         h.scope.cancel()
     }
@@ -268,7 +273,7 @@ class VoiceNoteDetectionCoordinatorTest {
         // the live-grant probe is what must disarm transcription.
         every { h.treeGrant.holdsGrant(TREE_URI) } returns false
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
-        verify(exactly = 0) { h.detector.subscribe() }
+        verify(exactly = 0) { h.detector.subscribe(any()) }
         h.scope.cancel()
     }
 
@@ -280,12 +285,12 @@ class VoiceNoteDetectionCoordinatorTest {
         // Before any collector: the permission is missing, so the gate
         // stays closed even with the preference on.
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
-        verify(exactly = 0) { h.detector.subscribe() }
+        verify(exactly = 0) { h.detector.subscribe(any()) }
         // The grant arrives with NO preference change; only the poke (here
         // the start-up one, which shares the re-evaluation path) re-arms.
         granted = true
         h.coordinator.start()
-        verify(timeout = 5_000) { h.detector.subscribe() }
+        verify(timeout = 5_000) { h.detector.subscribe(any()) }
         // And a mid-flight revoke via poke tears detection back down.
         granted = false
         h.coordinator.pokePermissionState()
@@ -302,11 +307,11 @@ class VoiceNoteDetectionCoordinatorTest {
         // without the grant every resolve would fail.
         h.preferences._voiceNoteTreeUri.value = null
         h.coordinator.start()
-        verify(exactly = 0) { h.detector.subscribe() }
+        verify(exactly = 0) { h.detector.subscribe(any()) }
         // The Settings pick saves the tree: the flow source re-arms with no
         // poke, the same shape as the preference flow.
         h.preferences._voiceNoteTreeUri.value = TREE_URI
-        verify(timeout = 5_000) { h.detector.subscribe() }
+        verify(timeout = 5_000) { h.detector.subscribe(any()) }
         // And removing the access (the card's Rimuovi accesso) tears
         // detection down.
         h.preferences._voiceNoteTreeUri.value = null
@@ -322,7 +327,7 @@ class VoiceNoteDetectionCoordinatorTest {
         h.coordinator.start()
         h.preferences._voiceNoteDetectionEnabled.value = true
         h.untilEnqueued(entry())
-        verify(atLeast = 1) { h.detector.subscribe() }
+        verify(atLeast = 1) { h.detector.subscribe(any()) }
         h.preferences._voiceNoteDetectionEnabled.value = false
         // Blocking verify: the collector runs on a real dispatcher.
         verify(timeout = 5_000) { h.detector.dispose() }
@@ -337,7 +342,7 @@ class VoiceNoteDetectionCoordinatorTest {
         // inside reconcile(false), so the post-disarm count is exact.
         var refreshes = 0
         val h = Harness({ true })
-        every { h.detector.refresh() } answers { refreshes++ }
+        every { h.detector.refresh(any()) } answers { refreshes++ }
         h.coordinator.rearmIntervalMs = 100L
         h.coordinator.reconcile(true, TREE_URI)
         delay(400)

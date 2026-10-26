@@ -45,9 +45,10 @@ class VoiceNoteBusinessCoordinatorTest {
         mockk<VoiceNoteDetector> {
             every { this@mockk.detections } returns this@VoiceNoteBusinessCoordinatorTest.detections.getValue(source)
             every { catchUpBursts } returns MutableSharedFlow()
-            every { subscribe() } just Runs
+            every { subscribe(any()) } just Runs
+            every { subscribe(null) } just Runs
             every { dispose() } just Runs
-            every { refresh() } just Runs
+            every { refresh(any()) } just Runs
         }
     }
     private val coordinators = VoiceNoteDetectionCoordinators(
@@ -95,8 +96,8 @@ class VoiceNoteBusinessCoordinatorTest {
         coordinators.start()
         preferences._voiceNoteBusinessDetectionEnabled.value = true
         until { business.armed }
-        verify(exactly = 1) { detectors.getValue(VoiceNoteSource.WHATSAPP_BUSINESS).subscribe() }
-        verify(exactly = 0) { detectors.getValue(VoiceNoteSource.WHATSAPP).subscribe() }
+        verify(exactly = 1) { detectors.getValue(VoiceNoteSource.WHATSAPP_BUSINESS).subscribe(any()) }
+        verify(exactly = 0) { detectors.getValue(VoiceNoteSource.WHATSAPP).subscribe(any()) }
         assertFalse("the WhatsApp gate must stay closed", whatsApp.armed)
         assertEquals(VoiceNoteGateState.Inactive, whatsApp.gateState.value)
         assertEquals(VoiceNoteGateState.Active, business.gateState.value)

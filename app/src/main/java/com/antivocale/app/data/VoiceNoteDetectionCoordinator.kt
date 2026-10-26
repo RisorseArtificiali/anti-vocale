@@ -244,7 +244,10 @@ class VoiceNoteDetectionCoordinator(
                 // next reconcile retries). The 889 bursts Channel buffers,
                 // so the sweep's emissions inside subscribe survive until
                 // the collector below attaches - no ordering constraint.
-                withContext(Dispatchers.IO) { detector.subscribe() }
+                // TASK-906: the live tree grant rides the subscribe: it
+                // flips the catch-up sweep onto the SAF listing lane (the
+                // raw listing is denied on scoped storage).
+                withContext(Dispatchers.IO) { detector.subscribe(liveTreeUri) }
                 active = true
                 collectJob = scope.launch(Dispatchers.IO) {
                     launch { collectSignals() }
@@ -281,7 +284,7 @@ class VoiceNoteDetectionCoordinator(
                         // control flow and rethrows.
                         try {
                             lifecycleMutex.withLock {
-                                if (active) detector.refresh()
+                                if (active) detector.refresh(liveTreeUri)
                             }
                         } catch (e: kotlinx.coroutines.CancellationException) {
                             throw e
