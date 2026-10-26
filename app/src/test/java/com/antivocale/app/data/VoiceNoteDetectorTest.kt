@@ -97,7 +97,7 @@ class VoiceNoteDetectorTest {
     fun `a decorated twin canonicalizes to its original's name`() {
         assertEquals("PTT-20261025-WA00001.opus",
             VoiceNoteFilter.canonicalNoteName("PTT-20261025-WA00001 (1).opus"))
-        assertEquals("PTT-20261025-WA12.opus".let { "PTT-20261025-WA00012.opus" },
+        assertEquals("PTT-20261025-WA00012.opus",
             VoiceNoteFilter.canonicalNoteName("PTT-20261025-WA12-copy.opus"))
         // Case-insensitive parse, canonical uppercase output.
         assertEquals("PTT-20261025-WA00001.opus",

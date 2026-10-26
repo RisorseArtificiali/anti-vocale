@@ -633,10 +633,7 @@ object VoiceNoteFilter {
         val match = PTT_NAME.find(name) ?: return name
         val (date, counter) = match.destructured
         val counterValue = counter.toLongOrNull() ?: return name
-        return if (counterValue >= 100_000) {
-            String.format(java.util.Locale.ROOT, "PTT-%s-WA%d.opus", date, counterValue)
-        } else {
-            String.format(java.util.Locale.ROOT, "PTT-%s-WA%05d.opus", date, counterValue)
-        }
+        // %05d is a MINIMUM width: a wider counter keeps its digits.
+        return String.format(java.util.Locale.ROOT, "PTT-%s-WA%05d.opus", date, counterValue)
     }
 }
