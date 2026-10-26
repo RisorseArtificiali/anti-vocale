@@ -206,6 +206,7 @@
     <string name="error_model_external_corrupt">Os arquivos do modelo importado estão corrompidos. Exclua-o na aba Modelos e importe-o novamente.</string>
     <string name="error_model_corrupt_healed">Alguns arquivos do modelo estavam corrompidos e foram removidos. Abra a aba Modelos e baixe o modelo de novo.</string>
     <string name="error_model_corrupt_sibling">Alguns arquivos do modelo estavam corrompidos: o app removeu essa variante e mudou para a cópia já presente no dispositivo. Não é preciso baixar de novo.</string>
+    <string name="history_variant_switched">Mudou para outra cópia instalada do modelo (a escolhida estava danificada)</string>
     <string name="error_model_missing_healed">Alguns arquivos do modelo estavam ausentes e foram removidos. Abra a aba Modelos e baixe o modelo de novo.</string>
     <string name="error_model_missing_sibling">Alguns arquivos do modelo estavam ausentes: o app removeu essa variante e mudou para a cópia já presente no dispositivo. Não é preciso baixar de novo.</string>
     <string name="error_native">Ocorreu um erro interno durante a transcrição. Se persistir, tente outro modelo.</string>

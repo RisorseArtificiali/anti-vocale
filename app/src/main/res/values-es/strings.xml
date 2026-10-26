@@ -206,6 +206,7 @@
     <string name="error_model_external_corrupt">Los archivos del modelo importado están dañados. Elimínalo de la pestaña Modelos e impórtalo de nuevo.</string>
     <string name="error_model_corrupt_healed">Algunos archivos del modelo estaban dañados y se han eliminado. Abre la pestaña Modelos y descarga el modelo de nuevo.</string>
     <string name="error_model_corrupt_sibling">Algunos archivos del modelo estaban dañados: la app eliminó esa variante y cambió a la copia ya presente en el dispositivo. No hace falta descargar de nuevo.</string>
+    <string name="history_variant_switched">Se cambió a otra copia instalada del modelo (la elegida estaba dañada)</string>
     <string name="error_model_missing_healed">Algunos archivos del modelo faltaban y se han eliminado. Abre la pestaña Modelos y descarga el modelo de nuevo.</string>
     <string name="error_model_missing_sibling">Algunos archivos del modelo faltaban: la app eliminó esa variante y cambió a la copia ya presente en el dispositivo. No hace falta descargar de nuevo.</string>
     <string name="error_native">Ocurrió un error interno durante la transcripción. Si persiste, prueba con otro modelo.</string>

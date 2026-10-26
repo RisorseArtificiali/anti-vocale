@@ -255,6 +255,7 @@
     <string name="error_model_external_corrupt">I file del modello importato sono danneggiati. Eliminalo dalla scheda Modelli e importalo di nuovo.</string>
     <string name="error_model_corrupt_healed">Alcuni file del modello erano danneggiati e sono stati rimossi. Apri la scheda Modelli e scarica di nuovo il modello.</string>
     <string name="error_model_corrupt_sibling">Alcuni file del modello erano danneggiati: l\'app ha rimosso quella variante ed è passata alla copia già presente sul dispositivo. Non serve scaricare di nuovo.</string>
+    <string name="history_variant_switched">Passati a un\'altra copia installata del modello (quella scelta era danneggiata)</string>
     <string name="error_model_missing_healed">Alcuni file del modello erano mancanti e sono stati rimossi. Apri la scheda Modelli e scarica di nuovo il modello.</string>
     <string name="error_model_missing_sibling">Alcuni file del modello erano mancanti: l\'app ha rimosso quella variante ed è passata alla copia già presente sul dispositivo. Non serve scaricare di nuovo.</string>
     <string name="error_native">Si è verificato un errore interno durante la trascrizione. Se persiste, prova un modello diverso.</string>

@@ -116,6 +116,9 @@ data class LogEntry(
     /** TASK-842: the intake content hash (the interactive duplicate
      *  guard's key); null on every producer that predates the guard. */
     val contentHash: String? = null,
+    /** TASK-909/904: the load retried on a sibling variant and succeeded;
+     *  the History row carries the localized note. */
+    val switchedToSibling: Boolean = false,
 ) {
     enum class Type { TEXT, AUDIO }
 

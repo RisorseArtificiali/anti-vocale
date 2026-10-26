@@ -434,7 +434,11 @@ class TranscriptionOrchestrator @Inject constructor(
             // the loader re-reads the preference itself (passing the resolved
             // phase2BackendId would freeze this line's earlier read and change
             // mid-run semantics after a Settings flip during phase 1).
-            val loadResult = ensureBackendLoaded(context, refineBackendOverride ?: backendOverride, languageOverride)
+            // TASK-909/904: a successful sibling switch is stamped on the
+            // request's row (the History note renders from this flag).
+            val loadResult = ensureBackendLoaded(
+                context, refineBackendOverride ?: backendOverride, languageOverride,
+                onSiblingSwitch = { runCatching { logDao.setSwitchedToSibling(taskId) } })
             // GH #45 / TASK-734/TASK-463: the credit writes AFTER the load's
             // path resolution (which persists the corrected variant path) and
             // BEFORE the decode: the failure row and the F4 arm keep the
@@ -1511,7 +1515,11 @@ class TranscriptionOrchestrator @Inject constructor(
         context: Context,
         backendOverride: String? = null,
         /** TASK-546 AC3: replaces the persisted language preference for this request's config. */
-        languageOverride: String? = null
+        languageOverride: String? = null,
+        /** TASK-909/904: invoked when the load healed onto a sibling
+         *  variant and the retry SUCCEEDED (the switch is then stamped on
+         *  the request's row). */
+        onSiblingSwitch: (suspend () -> Unit)? = null,
     ): Result<Unit> {
         val hasBackend = backendManager.hasActiveBackend()
         val activeBackend = backendManager.getActiveBackend()
@@ -1571,7 +1579,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 // through to the LLM loader below.
                 RemoteOmnivoiceBackend.BACKEND_ID -> loadRemoteBackend(context)
                 else -> backendRegistry.byBackendId(preferredBackendId)?.let { descriptor ->
-                    loadCatalogBackend(context, descriptor, languageOverride)
+                    loadCatalogBackend(context, descriptor, languageOverride, onSiblingSwitch)
                 } ?: loadLlmBackend(context)
             }
 
@@ -1771,7 +1779,9 @@ class TranscriptionOrchestrator @Inject constructor(
         context: Context,
         descriptor: BackendDescriptor,
         /** TASK-546 AC3: request-scoped language override; null reads the preference. */
-        languageOverride: String?
+        languageOverride: String?,
+        /** TASK-909/904: sibling-switch stamp (see ensureBackendLoaded). */
+        onSiblingSwitch: (suspend () -> Unit)? = null,
     ): Result<Unit> {
         val entry = BundledCatalog.byId(descriptor.backendId)
             ?: return Result.failure(TranscriptionException.NotInitialized())
@@ -1858,6 +1868,9 @@ class TranscriptionOrchestrator @Inject constructor(
                                 else -> retryFailure
                             })
                     }
+                    // TASK-909/904: stamp the switch on the row (the note
+                    // renders on the success History entry).
+                    onSiblingSwitch?.invoke()
                     return retry
                 }
                 HealOutcome.NoSibling -> return load

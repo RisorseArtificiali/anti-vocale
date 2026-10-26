@@ -258,6 +258,7 @@
     <string name="error_model_external_corrupt">İçe aktarılan modelin dosyaları bozuk. Modeller sekmesinden silin ve yeniden içe aktarın.</string>
     <string name="error_model_corrupt_healed">Modelin bazı dosyaları bozuktu ve kaldırıldı. Modeller sekmesini açıp modeli yeniden indirin.</string>
     <string name="error_model_corrupt_sibling">Modelin bazı dosyaları bozuktu, bu yüzden uygulama bu varyantı kaldırdı ve cihazda zaten bulunan kopyaya geçti. Yeniden indirmek gerekmiyor.</string>
+    <string name="history_variant_switched">Cihazda zaten bulunan sağlıklı kopyaya geçildi (seçilen kopya bozuktu)</string>
     <string name="error_model_missing_healed">Modelin bazı dosyaları eksikti ve kaldırıldı. Modeller sekmesini açıp modeli yeniden indirin.</string>
     <string name="error_model_missing_sibling">Modelin bazı dosyaları eksikti, bu yüzden uygulama bu varyantı kaldırdı ve cihazda zaten bulunan kopyaya geçti. Yeniden indirmek gerekmiyor.</string>
     <string name="error_native">Metin çıkarma sırasında bir iç hata oluştu. Sorun sürerse farklı bir model deneyin.</string>

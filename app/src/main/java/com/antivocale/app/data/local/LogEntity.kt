@@ -76,6 +76,14 @@ data class LogEntity(
      * duplicate guard matches hash + modelName.
      */
     val contentHash: String? = null,
+
+    /**
+     * TASK-909/904: the load retried on a sibling variant and SUCCEEDED
+     * (the user's chosen variant was damaged; the sibling took over).
+     * Rendered as a note on the success row; the localized text lives in
+     * the renderer, not here. False/absent on every ordinary row.
+     */
+    val switchedToSibling: Boolean = false,
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -111,6 +119,7 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     savedFileName = savedFileName,
     saveFailureReason = saveFailureReason,
     contentHash = contentHash,
+    switchedToSibling = switchedToSibling,
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -143,4 +152,5 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     savedFileName = savedFileName,
     saveFailureReason = saveFailureReason,
     contentHash = contentHash,
+    switchedToSibling = switchedToSibling,
 )

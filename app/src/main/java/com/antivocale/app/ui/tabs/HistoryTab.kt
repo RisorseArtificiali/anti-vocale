@@ -1928,6 +1928,17 @@ fun LogEntryItem(
                             // notification, so the ROW is the durable surface).
                             // The derivation is the factory's shared
                             // saveOutcomeLine: the two surfaces cannot drift.
+                            // TASK-909/904: the variant switch note (the
+                            // chosen variant was damaged; the load moved to
+                            // another installed copy). Rendered like the save
+                            // outcome: the row is the durable surface.
+                            if (log.switchedToSibling) {
+                                Text(
+                                    text = stringResource(R.string.history_variant_switched),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                             val outcomeMessage = ResultNotificationFactory.saveOutcomeMessage(
                                 log.savedFolderName, log.savedFileName, log.saveFailureReason)
                             ResultNotificationFactory.saveOutcomeLineSpec(outcomeMessage)?.let { (res, args) ->

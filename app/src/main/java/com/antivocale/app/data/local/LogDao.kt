@@ -85,7 +85,7 @@ interface LogDao {
      */
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason, contentHash FROM logs ORDER BY timestamp DESC LIMIT 500")
+        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason, contentHash, switchedToSibling FROM logs ORDER BY timestamp DESC LIMIT 500")
     fun getAll(): Flow<List<LogEntity>>
 
     // TASK-613: RAW query, ESCAPE-clause-aware. Room interfaces cannot give a
@@ -98,7 +98,7 @@ interface LogDao {
     // "%" matching the newest 500 rows regardless of the query).
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason, contentHash FROM logs WHERE result LIKE '%' || :query || '%' ESCAPE '\\' " +
+        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason, contentHash, switchedToSibling FROM logs WHERE result LIKE '%' || :query || '%' ESCAPE '\\' " +
         "ORDER BY timestamp DESC LIMIT 500")
     fun searchAllRaw(query: String): Flow<List<LogEntity>>
 
@@ -136,6 +136,11 @@ interface LogDao {
     /** Records which model handled a task (GH #45); written as soon as the backend is loaded. */
     @Query("UPDATE logs SET modelName = :modelName WHERE taskId = :taskId")
     suspend fun setModelName(taskId: String, modelName: String)
+
+    /** TASK-909/904: the load retried on a sibling variant and succeeded; the
+     *  row carries the note so the variant switch is visible in-app. */
+    @Query("UPDATE logs SET switchedToSibling = 1 WHERE taskId = :taskId")
+    suspend fun setSwitchedToSibling(taskId: String)
 
     // ---- GH #51 status transitions ----
     // The SQL IN-lists below are the single source for the non-terminal set,
