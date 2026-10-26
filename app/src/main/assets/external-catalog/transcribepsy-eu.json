@@ -29,8 +29,8 @@
     {
       "name": "encoder.onnx",
       "url": "https://huggingface.co/pantinor/transcribepsy-250m-eu-sherpa/resolve/main/encoder.onnx",
-      "sha256": "667d88a6cb772c81091f3c6560bcce6a68469e952480a880cbab594b2f9a668b",
-      "size": 269930694
+      "sha256": "b8bb98c98e0eaba9f7005abf0e30ec17aa386a8bbe1d6cd45c9ddb685a041cac",
+      "size": 269930725
     },
     {
       "name": "decoder.onnx",
