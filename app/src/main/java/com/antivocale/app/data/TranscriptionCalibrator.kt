@@ -13,8 +13,9 @@ import kotlinx.coroutines.flow.first
 import java.io.File
 
 private val Context.calibrationDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "transcription_calibration"
-)
+    name = "transcription_calibration",
+    // TASK-908: see reportingReplaceCorruptionHandler.
+    corruptionHandler = reportingReplaceCorruptionHandler("calibration"))
 
 /**
  * Manages per-model speed calibration profiles for estimating transcription progress.

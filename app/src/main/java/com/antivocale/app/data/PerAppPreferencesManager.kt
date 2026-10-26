@@ -32,7 +32,10 @@ import kotlinx.coroutines.flow.map
  * notification refresher constructs its own manager per page tap).
  */
 private val Context.perAppPreferencesDataStore: DataStore<Preferences> by
-    preferencesDataStore(name = "per_app_notification_preferences")
+    preferencesDataStore(
+        name = "per_app_notification_preferences",
+        // TASK-908: see reportingReplaceCorruptionHandler.
+        corruptionHandler = reportingReplaceCorruptionHandler("per-app"))
 
 /**
  * TASK-757: the ONE per-app-prefs-with-defaults read (postResult and the

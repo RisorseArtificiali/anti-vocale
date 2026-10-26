@@ -18,7 +18,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.runBlocking
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "localai_preferences")
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "localai_preferences",
+    // TASK-908: see reportingReplaceCorruptionHandler.
+    corruptionHandler = reportingReplaceCorruptionHandler("preferences"))
 
 class PreferencesManagerImpl(
     private val context: Context,
