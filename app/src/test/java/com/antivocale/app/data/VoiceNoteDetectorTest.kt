@@ -2,6 +2,7 @@ package com.antivocale.app.data
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
@@ -77,5 +78,40 @@ class VoiceNoteDetectorTest {
         assertTrue(wa.root.path.endsWith("/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes"))
         assertTrue(w4b.root.path.endsWith(
             "/com.whatsapp.w4b/WhatsApp Business/Media/WhatsApp Business Voice Notes"))
+    }
+
+    // ---- TASK-897: canonical note names ----
+
+    @Test
+    fun `an undecorated name canonicalizes to itself byte-identically`() {
+        // The id-contract precondition: every existing row's task id stays
+        // unchanged, so the canonical form of a real WhatsApp name (counter
+        // always 5-digit zero-padded) must be the name itself.
+        assertEquals("PTT-20261025-WA00001.opus",
+            VoiceNoteFilter.canonicalNoteName("PTT-20261025-WA00001.opus"))
+        assertEquals("PTT-20261022-WA00019.opus",
+            VoiceNoteFilter.canonicalNoteName("PTT-20261022-WA00019.opus"))
+    }
+
+    @Test
+    fun `a decorated twin canonicalizes to its original's name`() {
+        assertEquals("PTT-20261025-WA00001.opus",
+            VoiceNoteFilter.canonicalNoteName("PTT-20261025-WA00001 (1).opus"))
+        assertEquals("PTT-20261025-WA12.opus".let { "PTT-20261025-WA00012.opus" },
+            VoiceNoteFilter.canonicalNoteName("PTT-20261025-WA12-copy.opus"))
+        // Case-insensitive parse, canonical uppercase output.
+        assertEquals("PTT-20261025-WA00001.opus",
+            VoiceNoteFilter.canonicalNoteName("ptt-20261025-wa00001.opus"))
+    }
+
+    @Test
+    fun `non-parseable and wide-counter names pass through or keep their digits`() {
+        // Non-PTT names are not ours to canonicalize.
+        assertEquals("voice_memo.m4a", VoiceNoteFilter.canonicalNoteName("voice_memo.m4a"))
+        assertEquals("PTT-hello.opus", VoiceNoteFilter.canonicalNoteName("PTT-hello.opus"))
+        // A counter beyond the 5-digit convention keeps its full width (no
+        // truncation, no re-padding to 5).
+        assertEquals("PTT-20261025-WA123456.opus",
+            VoiceNoteFilter.canonicalNoteName("PTT-20261025-WA123456.opus"))
     }
 }

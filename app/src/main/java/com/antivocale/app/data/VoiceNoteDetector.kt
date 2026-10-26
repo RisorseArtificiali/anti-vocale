@@ -618,4 +618,25 @@ object VoiceNoteFilter {
      * counter is decoration and does not change the note's identity.
      */
     private val PTT_NAME = Regex("""(?i)^PTT-(\d{8})-WA(\d+)""")
+
+    /**
+     * TASK-897: the canonical form of a note's name, "PTT-YYYYMMDD-WANNNNN.opus"
+     * with the decoration stripped: a redelivered twin ("...WA1 (1).opus")
+     * rebuilds to its ORIGINAL's name, so every id or dedup key derived
+     * from it equals the original's. Undecorated names rebuild to
+     * themselves byte-identically (counter zero-padded to 5, the WhatsApp
+     * convention; a wider counter keeps its digits); names that do not
+     * parse pass through unchanged (the non-PTT class is not ours to
+     * canonicalize).
+     */
+    fun canonicalNoteName(name: String): String {
+        val match = PTT_NAME.find(name) ?: return name
+        val (date, counter) = match.destructured
+        val counterValue = counter.toLongOrNull() ?: return name
+        return if (counterValue >= 100_000) {
+            String.format(java.util.Locale.ROOT, "PTT-%s-WA%d.opus", date, counterValue)
+        } else {
+            String.format(java.util.Locale.ROOT, "PTT-%s-WA%05d.opus", date, counterValue)
+        }
+    }
 }

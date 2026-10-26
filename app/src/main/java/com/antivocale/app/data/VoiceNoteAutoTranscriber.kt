@@ -124,9 +124,17 @@ class VoiceNoteAutoTranscriber @Inject constructor(
      * double-runs with no error anywhere). The source namespace keeps the
      * two clients' independent PTT counters apart (empty for WhatsApp, so
      * existing ids are unchanged).
+     *
+     * TASK-897: the name is CANONICALIZED first (decorations like the
+     * redownload suffix collapse onto the original): a redelivered twin
+     * enqueues with the SAME id as its original, so the duplicate guard
+     * absorbs it instead of double-transcribing. Undecorated names
+     * rebuild to themselves byte-identically, so every existing row's id
+     * is unchanged.
      */
     private fun taskIdFor(whatsappPath: String, source: VoiceNoteSource): String =
-        "voicenote_${source.idNamespace}${whatsappPath.substringAfterLast('/')}"
+        "voicenote_${source.idNamespace}" +
+            VoiceNoteFilter.canonicalNoteName(whatsappPath.substringAfterLast('/'))
 
     private companion object {
         const val TAG = "VoiceNoteAuto"
