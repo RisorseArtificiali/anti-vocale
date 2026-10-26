@@ -77,6 +77,9 @@ class InferenceService : Service(), TranscriptionListener {
         // (the slot-band comment in InferenceEnqueue documents the same class).
 
         const val EXTRA_SOURCE = "source"
+        /** TASK-889: the cold-start catch-up sweep's flag (the per-note
+         *  SUCCESS notification is suppressed; the digest replaces it). */
+        const val EXTRA_CATCHUP = "catchup"
         const val EXTRA_SOURCE_PACKAGE = "source_package"
         /** TASK-736: the matched voice-note sender (share flow only). */
         const val EXTRA_SENDER_NAME = "sender_name"
@@ -109,9 +112,17 @@ class InferenceService : Service(), TranscriptionListener {
          * the user is not already looking at the app. Everything else
          * share-gated (auto-copy, partial saves, the filter seed) stays
          * share-only.
+         *
+         * TASK-889: a catch-up-sweep note suppresses its per-note SUCCESS
+         * post (the burst's digest replaces N posts on a 3-slot shade);
+         * the History row and the auto-save still happen, and a save
+         * failure still surfaces through the !postsResult notice.
          */
-        internal fun postsResultNotification(isShareRequest: Boolean, source: String?): Boolean =
-            isShareRequest || source == SOURCE_VOICE_NOTE
+        internal fun postsResultNotification(
+            isShareRequest: Boolean,
+            source: String?,
+            catchup: Boolean = false,
+        ): Boolean = (isShareRequest || source == SOURCE_VOICE_NOTE) && !catchup
 
         /** Sources that never get a Tasker-style reply broadcast: every
          *  in-app origin has no legitimate listener, so the reply would be
@@ -231,7 +242,10 @@ class InferenceService : Service(), TranscriptionListener {
         /** TASK-274(f): reply-sink pin (null = pre-34 sender, unpinned reply). */
         val requesterPackage: String? = null,
         /** TASK-842: the intake content hash, onto the row at enqueue. */
-        val contentHash: String? = null
+        val contentHash: String? = null,
+        /** TASK-889: the cold-start sweep origin (suppresses the per-note
+         *  SUCCESS result notification; the digest covers the burst). */
+        val catchup: Boolean = false
     )
 
     // ---- Android Lifecycle ----
@@ -281,7 +295,8 @@ class InferenceService : Service(), TranscriptionListener {
             backendOverride = intent?.getStringExtra(EXTRA_BACKEND_OVERRIDE),
             languageOverride = intent?.getStringExtra(EXTRA_LANGUAGE_OVERRIDE),
             trackIndex = intent?.getIntExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, -1) ?: -1,
-            contentHash = intent?.getStringExtra(EXTRA_CONTENT_HASH)
+            contentHash = intent?.getStringExtra(EXTRA_CONTENT_HASH),
+            catchup = intent?.getBooleanExtra(EXTRA_CATCHUP, false) ?: false
         )
         rememberRequester(request)
 
@@ -768,7 +783,8 @@ class InferenceService : Service(), TranscriptionListener {
         val annotatedResult = SubtitleFormatter.annotatedOrStored(resultText, segments)
         // Read before forgetRequester drops the request.
         val request = requesterByTask[taskId]
-        val postsResult = postsResultNotification(isShareRequest, request?.source)
+        val postsResult =
+            postsResultNotification(isShareRequest, request?.source, request?.catchup == true)
         val fromVoiceNote = request?.source == SOURCE_VOICE_NOTE
         sendSuccessReply(taskId, annotatedResult)
         forgetRequester(taskId)

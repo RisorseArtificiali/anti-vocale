@@ -1171,5 +1171,10 @@
     <string name="freeze_protection_title">Protection de la transcription en arrière-plan</string>
     <string name="freeze_protection_description">Garde un flux audio silencieux actif pendant la transcription pour que les économiseurs de batterie agressifs ne suspendent pas l\'app. Activez-la si la transcription s\'arrête écran éteint (certains Oppo, Realme, OnePlus et Vivo).</string>
     <string name="history_db_recovered">La base de données de l\'historique était endommagée et a été réinitialisée. Vos transcriptions précédentes ont été conservées dans un fichier de sauvegarde.</string>
+    <string name="catchup_digest_title">Messages vocaux de votre absence</string>
+    <plurals name="catchup_digest_text">
+        <item quantity="one">Transcription de %1$d message vocal arrivé pendant l\'absence de l\'application. Les résultats apparaîtront dans l\'historique.</item>
+        <item quantity="other">Transcription de %1$d messages vocaux arrivés pendant l\'absence de l\'application. Les résultats apparaîtront dans l\'historique.</item>
+    </plurals>
     <string name="history_db_recovered_unpreserved">La base de données de l\'historique était endommagée et a été réinitialisée. Les fichiers endommagés n\'ont pas pu être conservés.</string>
 </resources>

@@ -48,6 +48,9 @@ class VoiceNoteAutoTranscriber @Inject constructor(
         detectedAtMs: Long,
         treeUri: String?,
         source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
+        /** TASK-889: the cold-start sweep's flag, suppressing the per-note
+         *  result notification (the digest replaces the burst's N posts). */
+        catchup: Boolean = false,
     ) {
         // TASK-842: the completed-row silent dedup. The taskId derives from
         // the note's unique PTT name (see serviceIntent), so "same taskId"
@@ -77,7 +80,7 @@ class VoiceNoteAutoTranscriber @Inject constructor(
         // small; hashing here on the coordinator's IO dispatcher is safe.
         val contentHash = VoiceNoteDuplicateGuard.hashOf(localPath)
         when (val outcome = InferenceEnqueue.start(
-            context, serviceIntent(localPath, whatsappPath, senderName, contentHash, source))) {
+            context, serviceIntent(localPath, whatsappPath, senderName, contentHash, source, catchup))) {
             InferenceEnqueue.Outcome.Started,
             InferenceEnqueue.Outcome.FallbackNotificationPosted -> {
                 Log.i(TAG, "voice note auto-enqueued: $localPath")
@@ -101,6 +104,7 @@ class VoiceNoteAutoTranscriber @Inject constructor(
         senderName: String? = null,
         contentHash: String? = null,
         source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
+        catchup: Boolean = false,
     ): Intent =
         // TASK-776: the shared audio-request factory; the taskId stays
         // local because the PTT-name derivation is this transcriber's
@@ -116,7 +120,8 @@ class VoiceNoteAutoTranscriber @Inject constructor(
             localPath,
             sourcePackage = source.packageName,
             senderName = senderName,
-            contentHash = contentHash)
+            contentHash = contentHash,
+            catchup = catchup)
 
     /**
      * TASK-776 review F2: ONE derivation (the enqueue-side dedup check and

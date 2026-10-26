@@ -86,6 +86,13 @@ class VoiceNoteAutoTranscriberTest {
         assertEquals("com.whatsapp", serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE_PACKAGE))
         assertEquals(InferenceService.SOURCE_VOICE_NOTE, serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE))
         assertEquals(InferenceService::class.java.name, serviceIntent.component?.className)
+        // TASK-889: the default arm is a LIVE detection; the catch-up flag
+        // rides only when the sweep's transcriber passes it (the service
+        // suppresses the per-note result notification on it).
+        assertEquals(false, serviceIntent.getBooleanExtra(InferenceService.EXTRA_CATCHUP, false))
+        val sweepIntent = impl("/local/n.opus").serviceIntent(
+            "/local/n.opus", "/tree/202642/PTT-1.opus", catchup = true)
+        assertEquals(true, sweepIntent.getBooleanExtra(InferenceService.EXTRA_CATCHUP, false))
     }
 
     @Test

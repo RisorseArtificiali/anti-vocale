@@ -1303,5 +1303,9 @@
     <string name="freeze_protection_title">Arka plan transkripsiyon koruması</string>
     <string name="freeze_protection_description">Transkripsiyon sırasında sessiz bir ses akışını etkin tutar, böylece agresif pil tasarrufu araçları uygulamayı duraklatamaz. Ekran kapalıyken transkripsiyon duruyorsa açın (bazı Oppo, Realme, OnePlus ve Vivo telefonlar).</string>
     <string name="history_db_recovered">Geçmiş veritabanı hasarlıydı ve sıfırlandı. Önceki transkripsiyonlarınız bir yedek dosyasında saklandı.</string>
+    <string name="catchup_digest_title">Sen yokken gelen sesli notlar</string>
+    <plurals name="catchup_digest_text">
+        <item quantity="other">Uygulama kapalıyken gelen %1$d sesli not şu anda yazıya çevriliyor. Sonuçlar geçmişte görünecek.</item>
+    </plurals>
     <string name="history_db_recovered_unpreserved">Geçmiş veritabanı hasarlıydı ve sıfırlandı. Hasarlı dosyalar korunamadı.</string>
 </resources>

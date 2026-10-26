@@ -1139,6 +1139,11 @@
     <string name="freeze_protection_title">Taustatranskription suojaus</string>
     <string name="freeze_protection_description">Pitää hiljaisen äänivirran aktiivisena transkription aikana, jotta aggressiiviset virranhallintaominaisuudet eivät voi pysäyttää sovellusta. Ota tämä käyttöön, jos transkriptio pysähtyy näytön ollessa pois päältä (jotkin Oppo-, Realme-, OnePlus- ja Vivo-puhelimet).</string>
     <string name="history_db_recovered">Historiatietokanta oli vioittunut, joten se nollattiin. Aiemmat transkriptiosi säilytettiin varmuuskopiotiedostossa.</string>
+    <string name="catchup_digest_title">Puheviestit poissaolosi ajalta</string>
+    <plurals name="catchup_digest_text">
+        <item quantity="one">Kirjoitetaan nyt tekstiksi %1$d puheviesti, joka saapui sovelluksen ollessa poissa. Tulokset näkyvät historiatiedoissa.</item>
+        <item quantity="other">Kirjoitetaan nyt tekstiksi %1$d puheviestiä, jotka saapuivat sovelluksen ollessa poissa. Tulokset näkyvät historiatiedoissa.</item>
+    </plurals>
     <string name="history_db_recovered_unpreserved">Historiatietokanta oli vioittunut, joten se nollattiin. Vioittuneita tiedostoja ei voitu säilyttää.</string>
     <string name="voice_note_business_detection_description">Transkriboi uudet WhatsApp Business -ääniviestit niiden saapuessa, kun sovellus on käynnissä. Jos Android estää käynnistämisen taustalla, yhden napautuksen ilmoitus käynnistää sen. Ääniviesti luetaan vain transkriptiota varten ja vain tällä laitteella; kun ominaisuus on pois päältä, mitään ei lueta. Edellyttää äänen käyttöoikeutta.</string>
     <string name="voice_note_business_folder_grant_rejected">Tuo ei ole WhatsApp Business Voice Notes -kansio. Valitse kansio, jonka nimi on WhatsApp Business Voice Notes, ja yritä uudelleen.</string>

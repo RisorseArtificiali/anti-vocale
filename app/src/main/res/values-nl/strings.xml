@@ -1319,5 +1319,10 @@
     <string name="freeze_protection_title">Bescherming van achtergrondtranscriptie</string>
     <string name="freeze_protection_description">Houdt tijdens de transcriptie een stille audiostream actief zodat agressieve batterijbesparers de app niet pauzeren. Zet dit aan als de transcriptie stopt wanneer het scherm uit is (sommige Oppo-, Realme-, OnePlus- en Vivo-toestellen).</string>
     <string name="history_db_recovered">De geschiedenisdatabase was beschadigd en is opnieuw ingesteld. Je eerdere transcripties zijn bewaard in een back-upbestand.</string>
+    <string name="catchup_digest_title">Spraakberichten van terwijl je weg was</string>
+    <plurals name="catchup_digest_text">
+        <item quantity="one">%1$d spraakbericht dat binnenkwam terwijl de app afwezig was, wordt nu getranscribeerd. De resultaten verschijnen in de geschiedenis.</item>
+        <item quantity="other">%1$d spraakberichten die binnenkwamen terwijl de app afwezig was, worden nu getranscribeerd. De resultaten verschijnen in de geschiedenis.</item>
+    </plurals>
     <string name="history_db_recovered_unpreserved">De geschiedenisdatabase was beschadigd en is opnieuw ingesteld. De beschadigde bestanden konden niet worden bewaard.</string>
 </resources>

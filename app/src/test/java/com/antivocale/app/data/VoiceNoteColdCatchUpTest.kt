@@ -136,6 +136,63 @@ class VoiceNoteColdCatchUpTest {
         awaitWatermark(keyOf("202644", "PTT-20261025-WA00001.opus"))
     }
 
+    /**
+     * TASK-889: the digest's data source. Each sweep round reports its
+     * emission count on the burst channel (the coordinator folds the
+     * rounds into ONE cumulative digest notification); a round that
+     * emits nothing reports nothing (a 0-count digest would be noise).
+     */
+    @Test
+    fun `each sweep round reports its burst count and silence emits nothing`() {
+        val bursts = mutableListOf<Int>()
+        scope.launch { detector.catchUpBursts.collect { bursts += it } }
+
+        note("100", "PTT-20261025-WA00002.opus", ageMs = 5_000)
+        note("100", "PTT-20261025-WA00003.opus", ageMs = 5_000)
+        storedWatermarks[VoiceNoteSource.WHATSAPP] = keyOf("100", "PTT-20261025-WA00001.opus")
+
+        kotlinx.coroutines.runBlocking {
+            detector.coldCatchUpScan(listOf(File(tmp.root, "100")))
+        }
+
+        assertEquals("one burst carrying the round's count", listOf(2), bursts)
+        assertEquals("the entries carry the digest-side catchup flag",
+            2, entries.count { it.catchup })
+
+        // The first scan advanced the watermark past everything: a quiet
+        // re-sweep (the 830 rearm path) must not re-report.
+        kotlinx.coroutines.runBlocking {
+            detector.coldCatchUpScan(listOf(File(tmp.root, "100")))
+        }
+        assertEquals("a quiet sweep reports nothing", listOf(2), bursts)
+    }
+
+    @Test
+    fun `a settle-round recovery counts into the burst channel`() {
+        // Same scenario as the retry-round test, now asserting the burst
+        // side: the late recovery is part of the same cold-start burst
+        // (its result post is suppressed), so it must be counted.
+        detector.coldCatchUpTtlMs = Long.MAX_VALUE
+        note("100", "PTT-20261020-WA00001.opus", ageMs = 60_000) // settled history
+        val fresh = note("100", "PTT-20261025-WA00009.opus", ageMs = 0)
+        fresh.setLastModified(System.currentTimeMillis())
+        storedWatermarks[VoiceNoteSource.WHATSAPP] = keyOf("100", "PTT-20261020-WA00001.opus")
+
+        val bursts = mutableListOf<Int>()
+        scope.launch { detector.catchUpBursts.collect { bursts += it } }
+
+        kotlinx.coroutines.runBlocking {
+            detector.coldCatchUpScan(listOf(File(tmp.root, "100")))
+            withTimeout(5_000) {
+                while (entries.isEmpty()) kotlinx.coroutines.delay(25)
+            }
+        }
+
+        assertEquals("the settle round reports its own count", listOf(1), bursts)
+        assertEquals(1, entries.size)
+        assertTrue(entries.single().catchup)
+    }
+
     @Test
     fun `TTL excludes stale notes`() {
         detector.coldCatchUpTtlMs = 60_000

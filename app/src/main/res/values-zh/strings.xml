@@ -1131,5 +1131,9 @@
         <item quantity="other">每 %1$d 小时</item>
     </plurals>
     <string name="history_db_recovered">历史记录数据库已损坏并被重置。你之前的转写内容已保存在备份文件中。</string>
+    <string name="catchup_digest_title">你离开期间收到的语音消息</string>
+    <plurals name="catchup_digest_text">
+        <item quantity="other">正在转写在应用关闭期间收到的 %1$d 条语音消息。结果将显示在历史记录中。</item>
+    </plurals>
     <string name="history_db_recovered_unpreserved">历史记录数据库已损坏并被重置。损坏的文件无法保留。</string>
 </resources>

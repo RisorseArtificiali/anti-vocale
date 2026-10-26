@@ -1302,5 +1302,10 @@
     <string name="freeze_protection_title">बैकग्राउंड ट्रांस्क्रिप्शन सुरक्षा</string>
     <string name="freeze_protection_description">ट्रांस्क्रिप्शन के दौरान एक मौन ऑडियो स्ट्रीम सक्रिय रखता है ताकि आक्रामक बैटरी सेवर ऐप को निलंबित न कर सकें। यदि स्क्रीन बंद होने पर ट्रांस्क्रिप्शन रुकता है तो इसे चालू करें (कुछ Oppo, Realme, OnePlus और Vivo फ़ोन)।</string>
     <string name="history_db_recovered">इतिहास डेटाबेस क्षतिग्रस्त हो गया था और रीसेट कर दिया गया है। आपकी पिछली ट्रांसक्रिप्शन एक बैकअप फ़ाइल में सुरक्षित रखी गई हैं।</string>
+    <string name="catchup_digest_title">आपके दूर होने के दौरान की वॉइस नोट्स</string>
+    <plurals name="catchup_digest_text">
+        <item quantity="one">ऐप के बंद रहने के दौरान आई %1$d वॉइस नोट का ट्रांसक्रिप्शन जारी है। परिणाम इतिहास में दिखेंगे।</item>
+        <item quantity="other">ऐप के बंद रहने के दौरान आईं %1$d वॉइस नोट्स का ट्रांसक्रिप्शन जारी है। परिणाम इतिहास में दिखेंगे।</item>
+    </plurals>
     <string name="history_db_recovered_unpreserved">इतिहास डेटाबेस क्षतिग्रस्त हो गया था और रीसेट कर दिया गया है। क्षतिग्रस्त फ़ाइलों को सुरक्षित रखा नहीं जा सका।</string>
 </resources>

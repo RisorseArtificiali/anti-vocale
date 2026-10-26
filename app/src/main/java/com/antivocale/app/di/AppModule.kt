@@ -86,6 +86,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideVoiceNoteDetectionCoordinators(
+        @ApplicationContext context: android.content.Context,
         preferencesManager: PreferencesManager,
         treeGrant: com.antivocale.app.data.VoiceNoteTreeGrant,
         autoTranscriber: com.antivocale.app.data.VoiceNoteAutoTranscriber,
@@ -96,6 +97,7 @@ object AppModule {
             com.antivocale.app.data.VoiceNoteSource.entries.associateWith { source ->
                 com.antivocale.app.data.VoiceNoteDetectionCoordinator(
                     com.antivocale.app.data.VoiceNoteDetector(applicationScope, preferencesManager, source),
+                    context,
                     preferencesManager,
                     treeGrant,
                     autoTranscriber,

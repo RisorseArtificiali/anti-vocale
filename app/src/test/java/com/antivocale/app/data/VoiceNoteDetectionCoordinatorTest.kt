@@ -42,18 +42,24 @@ class VoiceNoteDetectionCoordinatorTest {
         val detections = MutableSharedFlow<VoiceNoteEntry>(extraBufferCapacity = 8)
         val detector = mockk<VoiceNoteDetector>()
         val enqueued = mutableListOf<String>()
+        val enqueuedCatchups = mutableListOf<Boolean>()
         val enqueuedUris = mutableListOf<String?>()
         val preferences = FakePreferencesManager()
         val treeGrant = mockk<VoiceNoteTreeGrant>()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val coordinator = VoiceNoteDetectionCoordinator(
             detector,
+            // TASK-889: the digest post target; relaxed because these
+            // tests never fire a burst (the burst emission itself is
+            // pinned in VoiceNoteColdCatchUpTest on the real detector).
+            mockk<android.content.Context>(relaxed = true),
             preferences,
             treeGrant,
             mockk<VoiceNoteAutoTranscriber> {
-                coEvery { enqueue(any(), any(), any()) } coAnswers {
+                coEvery { enqueue(any(), any(), any(), any(), any()) } coAnswers {
                     enqueued += firstArg<String>()
                     enqueuedUris += thirdArg<String?>()
+                    enqueuedCatchups += arg<Boolean>(4)
                 }
             },
             VoiceNotePermissionChecker { permissionGranted() },
@@ -67,6 +73,7 @@ class VoiceNoteDetectionCoordinatorTest {
             preferences._voiceNoteTreeUri.value = TREE_URI
             every { treeGrant.holdsGrant(TREE_URI) } returns true
             every { detector.detections } returns detections
+            every { detector.catchUpBursts } returns MutableSharedFlow()
             every { detector.subscribe() } just Runs
             every { detector.dispose() } just Runs
             every { detector.refresh() } just Runs
@@ -202,6 +209,27 @@ class VoiceNoteDetectionCoordinatorTest {
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
         h.emitAndSettle(entry(path = null))
         assertTrue(h.enqueued.isEmpty())
+        h.scope.cancel()
+    }
+
+    /**
+     * TASK-889: the suppression chain's middle hop. The entry's catchup
+     * flag must reach the transcriber's enqueue call (the service keys its
+     * per-note notification suppression on it): a live detection rides as
+     * false, a sweep entry as true.
+     */
+    @Test
+    fun `the entry's catchup flag rides the enqueue call unchanged`() = runBlocking {
+        val h = Harness(permissionGranted = { true })
+        h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)
+        withTimeout(5_000) {
+            h.emitAndSettle(entry("/voice/PTT-live.opus")) // live: flag off
+            while (h.enqueuedCatchups.size < 1) delay(10)
+            h.emitAndSettle(entry("/voice/PTT-sweep.opus").copy(catchup = true))
+            while (h.enqueuedCatchups.size < 2) delay(10)
+        }
+        assertEquals("live then sweep, flag unchanged end to end",
+            listOf(false, true), h.enqueuedCatchups)
         h.scope.cancel()
     }
 

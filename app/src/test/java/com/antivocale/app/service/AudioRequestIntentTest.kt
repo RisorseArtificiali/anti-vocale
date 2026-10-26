@@ -85,4 +85,20 @@ class AudioRequestIntentTest {
         assertNull(bare.getStringExtra(InferenceService.EXTRA_CONTENT_HASH))
         assertNull(bare.getStringExtra(InferenceService.EXTRA_BACKEND_OVERRIDE))
     }
+
+    /**
+     * TASK-889: only the cold-start sweep sets the catch-up flag; every
+     * live detection leaves it off, so the default arm must stay silent
+     * (a stray true would suppress the zero-tap result notification).
+     */
+    @Test
+    fun `the catch-up flag rides only when the sweep sets it`() {
+        val sweep = AudioRequestIntent.make(
+            context, InferenceService.SOURCE_VOICE_NOTE, "t6", "/local/d.opus", catchup = true)
+        assertEquals(true, sweep.getBooleanExtra(InferenceService.EXTRA_CATCHUP, false))
+
+        val live = AudioRequestIntent.make(
+            context, InferenceService.SOURCE_VOICE_NOTE, "t7", "/local/e.opus")
+        assertEquals(false, live.getBooleanExtra(InferenceService.EXTRA_CATCHUP, false))
+    }
 }

@@ -2,6 +2,7 @@ package com.antivocale.app.data
 
 import android.util.Log
 import com.antivocale.app.di.ApplicationScope
+import com.antivocale.app.service.ResultNotificationFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -90,6 +91,8 @@ sealed interface VoiceNoteGateState {
  */
 class VoiceNoteDetectionCoordinator(
     private val detector: VoiceNoteDetector,
+    /** TASK-889: the application context, for the burst digest post. */
+    private val appContext: android.content.Context,
     private val preferencesManager: PreferencesManager,
     private val voiceNoteTreeGrant: VoiceNoteTreeGrant,
     private val autoTranscriber: VoiceNoteAutoTranscriber,
@@ -144,6 +147,13 @@ class VoiceNoteDetectionCoordinator(
     val gateState: StateFlow<VoiceNoteGateState> = _gateState.asStateFlow()
     private var collectJob: Job? = null
     private var rearmJob: Job? = null
+
+    /** TASK-889: the digest post target, built once per coordinator on
+     *  first burst (the factory's init creates its channel; per-emission
+     *  construction would pay that IPC on every post). Lazy because
+     *  construction needs a working Context and a disarmed coordinator
+     *  never posts. */
+    private val notificationFactory by lazy { ResultNotificationFactory(appContext) }
 
     /**
      * TASK-830: the blind re-subscribe cadence. A var (not a constructor
@@ -229,9 +239,29 @@ class VoiceNoteDetectionCoordinator(
         lifecycleMutex.withLock {
             if (shouldRun == active) return
             if (shouldRun) {
+                // Subscribe FIRST: a throwing subscribe must leave active
+                // false (the gate-state KDoc's divergent-pair contract; the
+                // next reconcile retries). The 889 bursts Channel buffers,
+                // so the sweep's emissions inside subscribe survive until
+                // the collector below attaches - no ordering constraint.
                 withContext(Dispatchers.IO) { detector.subscribe() }
                 active = true
-                collectJob = scope.launch(Dispatchers.IO) { collectSignals() }
+                collectJob = scope.launch(Dispatchers.IO) {
+                    launch { collectSignals() }
+                    // TASK-889: the burst digest rides the same job as the
+                    // signal collector: one arm = one session, and the
+                    // cumulative total resets with it. The detector reports
+                    // each sweep round's actually-emitted count (the
+                    // immediate sweep plus the settle round's late
+                    // recoveries); ONE cumulative notification replaces the
+                    // burst's N per-note posts (suppressed at the service
+                    // via the request's catchup flag).
+                    var total = 0
+                    detector.catchUpBursts.collect { count ->
+                        total += count
+                        postCatchUpDigest(total)
+                    }
+                }
                 // TASK-830: the watches can die silently under storage churn
                 // while every internal read still says armed (the 2026-10-14
                 // overnight evidence), so while armed a blind re-subscribe
@@ -302,7 +332,23 @@ class VoiceNoteDetectionCoordinator(
      */
     private suspend fun transcribe(entry: VoiceNoteEntry) {
         val path = entry.path ?: return
-        autoTranscriber.enqueue(path, entry.detectedAtMs, liveTreeUri, source)
+        autoTranscriber.enqueue(path, entry.detectedAtMs, liveTreeUri, source, entry.catchup)
+    }
+
+    /**
+     * TASK-889: the one-per-burst digest, posted through the factory's
+     * guarded path ([ResultNotificationFactory.postIfPermitted] carries
+     * the POST_NOTIFICATIONS check every factory post honors); a failure
+     * logs, never throws into the collector.
+     */
+    private fun postCatchUpDigest(count: Int) {
+        runCatching {
+            notificationFactory.postIfPermitted(
+                ResultNotificationFactory.RESULT_CATCHUP_DIGEST_ID_BASE + source.ordinal,
+                notificationFactory.catchUpDigestNotification(count))
+        }.onFailure { e ->
+            Log.w(TAG, "Failed to post the catch-up digest for ${source.name}", e)
+        }
     }
 
     private companion object {

@@ -359,6 +359,23 @@ class ResultNotificationFactoryTest {
         assertTrue(oomText.contains("out of memory"))
     }
 
+    /**
+     * TASK-889: the cold-start burst's ONE digest. Quiet like the
+     * interrupted-runs summary (same channel and priority), count in the
+     * body, no actions, and the wording promises History, not per-note
+     * notifications.
+     */
+    @Test
+    fun `catch-up digest is a quiet count notification without actions`() {
+        val n = factory.catchUpDigestNotification(count = 3)
+        assertEquals("Voice notes from while you were away",
+            n.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertTrue(n.extras.getCharSequence(Notification.EXTRA_TEXT).toString().contains("3"))
+        assertNull("no actions: nothing is proven re-runnable", n.actions)
+        assertEquals(NotificationCompat.PRIORITY_DEFAULT, n.priority)
+        assertEquals(com.antivocale.app.util.AppNotificationChannel.INTERRUPTED_RUNS.id, n.channelId)
+    }
+
     @Test
     fun `an automatic voice note names its app and sender in the subText`() {
         // The sender is the title (an OEM header truncates long subTexts),

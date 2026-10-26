@@ -1309,5 +1309,10 @@
     <string name="freeze_protection_title">Protezione trascrizione in background</string>
     <string name="freeze_protection_description">Mantiene un flusso audio silenzioso attivo durante la trascrizione, così i risparmiatori di batteria aggressivi non possono sospendere l\'app. Attivala se la trascrizione si blocca a schermo spento (alcuni telefoni Oppo, Realme, OnePlus e Vivo).</string>
     <string name="history_db_recovered">Il database della cronologia era danneggiato ed è stato azzerato. Le trascrizioni precedenti sono state conservate in un file di backup.</string>
+    <string name="catchup_digest_title">Messaggi vocali di mentre eri via</string>
+    <plurals name="catchup_digest_text">
+        <item quantity="one">Trascrizione di %1$d messaggio vocale arrivato mentre l\'app era chiusa. I risultati compariranno nella cronologia.</item>
+        <item quantity="other">Trascrizione di %1$d messaggi vocali arrivati mentre l\'app era chiusa. I risultati compariranno nella cronologia.</item>
+    </plurals>
     <string name="history_db_recovered_unpreserved">Il database della cronologia era danneggiato ed è stato azzerato. Non è stato possibile conservare i file danneggiati.</string>
 </resources>

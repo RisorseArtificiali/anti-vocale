@@ -51,6 +51,10 @@ class ReservedNotificationIdContractTest {
         assertTrue(com.antivocale.app.util.MemoryKillStartupCheck.NOTIFICATION_ID < base)
         assertTrue(SubtitleChoiceTimeoutWorker.NOTIFICATION_ID < base)
         assertTrue(com.antivocale.app.receiver.ModelShortcutActivity.SWITCH_NOTIFICATION_ID < base)
+        // TASK-889: the cold-start catch-up burst digest band, one id per
+        // voice-note source.
+        assertTrue(ResultNotificationFactory.RESULT_CATCHUP_DIGEST_ID_BASE +
+            ResultNotificationFactory.RESULT_CATCHUP_DIGEST_ID_RANGE - 1 < base)
         assertTrue(ExtractionService.NOTIFICATION_ID_BASE + ExtractionService.NOTIFICATION_ID_RANGE - 1 < base)
         assertTrue(ShareReceiverActivity.CHOICE_ID_BAND_BASE + ShareReceiverActivity.CHOICE_ID_BAND_RANGE - 1 < base)
         assertTrue(ShareReceiverActivity.ERROR_ID_BAND_BASE + ShareReceiverActivity.ERROR_ID_BAND_RANGE - 1 < base)
@@ -97,6 +101,12 @@ class ReservedNotificationIdContractTest {
             // suspension id, same documented-headroom rule.
             "interrupted-runs-fixed" to (SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID..
                 SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID),
+            // TASK-889: the cold-start catch-up burst digest band (one id
+            // per voice-note source; both clients' cold sweeps fire at the
+            // same app start, so a shared id would lose one digest).
+            "catchup-digest-band" to (ResultNotificationFactory.RESULT_CATCHUP_DIGEST_ID_BASE until
+                ResultNotificationFactory.RESULT_CATCHUP_DIGEST_ID_BASE +
+                ResultNotificationFactory.RESULT_CATCHUP_DIGEST_ID_RANGE),
         )
         for (i in intervals.indices) for (j in i + 1 until intervals.size) {
             val (nameA, a) = intervals[i]
@@ -106,6 +116,20 @@ class ReservedNotificationIdContractTest {
                 a.first >= b.last + 1 || b.first >= a.last + 1,
             )
         }
+    }
+
+    /**
+     * TASK-889: the digest band is one id per voice-note source ordinal;
+     * a third source silently aliasing onto an occupied id is exactly the
+     * class this contract exists to prevent, so the band must grow with
+     * the enum.
+     */
+    @Test
+    fun `the catch-up digest band covers every voice-note source`() {
+        assertTrue(
+            "grow RESULT_CATCHUP_DIGEST_ID_RANGE with VoiceNoteSource",
+            com.antivocale.app.data.VoiceNoteSource.entries.size <=
+                ResultNotificationFactory.RESULT_CATCHUP_DIGEST_ID_RANGE)
     }
 
     @Test

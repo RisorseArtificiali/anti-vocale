@@ -1323,5 +1323,10 @@
     <!-- TASK-886: shown once on the History tab after the DB corruption
          recovery preserved the damaged files aside and reinitialized. -->
     <string name="history_db_recovered">The history database was damaged and has been reset. Your previous transcripts were kept in a backup file.</string>
+    <string name="catchup_digest_title">Voice notes from while you were away</string>
+    <plurals name="catchup_digest_text">
+        <item quantity="one">Transcribing %1$d voice note that arrived while the app was away. Results will appear in History.</item>
+        <item quantity="other">Transcribing %1$d voice notes that arrived while the app was away. Results will appear in History.</item>
+    </plurals>
     <string name="history_db_recovered_unpreserved">The history database was damaged and has been reset. The damaged files could not be preserved.</string>
 </resources>

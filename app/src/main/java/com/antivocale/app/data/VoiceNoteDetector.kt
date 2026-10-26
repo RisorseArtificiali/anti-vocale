@@ -85,6 +85,18 @@ class VoiceNoteDetector(
     /** Every new voice note, already deduped; queue semantics, no loss. */
     val detections: Flow<VoiceNoteEntry> = _detections.receiveAsFlow()
 
+    /**
+     * TASK-889: the cold-start catch-up sweep's burst size, emitted once
+     * per sweep round that found candidates (the count the digest
+     * notification names). The detector reports the fact; the coordinator
+     * owns the presentation. A Channel like [detections] above: the value
+     * must survive from emission to the coordinator's collector whatever
+     * the subscribe ordering, which a replay-0 SharedFlow cannot promise
+     * (tryEmit drops when no subscriber is attached yet).
+     */
+    private val _catchUpBursts = Channel<Int>(Channel.BUFFERED)
+    val catchUpBursts: Flow<Int> = _catchUpBursts.receiveAsFlow()
+
     private val seen = VoiceNoteFilter.IncrementalFilter()
     // vars: refresh() swaps in fresh collections gap-free (review F2)
     private var observers = mutableListOf<FileObserver>()
@@ -359,12 +371,17 @@ class VoiceNoteDetector(
         path = file.absolutePath,
         detectedAtMs = System.currentTimeMillis())
 
-    private fun onDetection(entry: VoiceNoteEntry) {
+    /** True iff this entry passed the seen filter and was emitted (the
+     *  sweep burst counts these, so a live-delivered or deduped note never
+     *  inflates the digest; TASK-889). */
+    private fun onDetection(entry: VoiceNoteEntry): Boolean {
         val isNew = synchronized(this@VoiceNoteDetector) { seen.observe(entry) }
         if (isNew) {
             _detections.trySend(entry)
             advanceWatermark(entry)
+            return true
         }
+        return false
     }
 
     /**
@@ -480,14 +497,20 @@ class VoiceNoteDetector(
             " (fresh=${fresh.size}, watermark=$watermark)")
         if (candidates.isNotEmpty()) {
             Log.i(TAG, "cold-start catch-up: ${candidates.size} note(s) newer than watermark $watermark")
+            // TASK-889: count what actually EMITS (the seen filter can
+            // swallow a live-delivered twin), not what was found.
+            var emitted = 0
             candidates.forEach { (file, _, lastModified) ->
                 // detectedAtMs is the note's OWN write time, not the scan
                 // time: the sender matcher's notification window must not
                 // pair an hours-old note with a live note's notification
                 // (review 2026-10-25; the TASK-833 wrong-name invariant).
-                onDetection(
-                    entryFor(file).copy(detectedAtMs = lastModified, catchup = true))
+                if (onDetection(
+                        entryFor(file).copy(detectedAtMs = lastModified, catchup = true))) {
+                    emitted++
+                }
             }
+            if (emitted > 0) _catchUpBursts.trySend(emitted)
         }
         // ONE settle round for the quiet-gate exclusions, re-statting only
         // the collected files (no re-listing of the FUSE tree, which the
@@ -508,7 +531,7 @@ class VoiceNoteDetector(
     private suspend fun settleFreshNotes(files: List<File>) {
         val watermark = preferencesManager.voiceNoteWatermark(source).first()
         val now = System.currentTimeMillis()
-        files.mapNotNull { file ->
+        val settled = files.mapNotNull { file ->
             val key = VoiceNoteFilter.watermarkKeyOf(file) ?: return@mapNotNull null
             if (watermark != null && key <= watermark) return@mapNotNull null
             file to key
@@ -518,7 +541,18 @@ class VoiceNoteDetector(
         }.sortedByDescending { it.second }
             .distinctBy { it.second } // same key = same note (TASK-893)
             .take(coldCatchUpCap)
-            .forEach { (file, _) -> onDetection(entryFor(file).copy(catchup = true)) }
+        if (settled.isNotEmpty()) {
+            // TASK-889: these late recoveries are part of the same
+            // cold-start burst (their result posts are suppressed via the
+            // catchup flag), so they count into the digest - again only
+            // what actually emits (a live delivery during the settle
+            // delay wins the note and the count stays honest).
+            var emitted = 0
+            settled.forEach { (file, _) ->
+                if (onDetection(entryFor(file).copy(catchup = true))) emitted++
+            }
+            if (emitted > 0) _catchUpBursts.trySend(emitted)
+        }
     }
 
     private companion object {

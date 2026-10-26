@@ -34,7 +34,7 @@ class VoiceNoteBusinessCoordinatorTest {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
     private val enqueued = mutableListOf<Pair<String, VoiceNoteSource>>()
     private val autoTranscriber = mockk<VoiceNoteAutoTranscriber> {
-        coEvery { enqueue(any(), any(), any(), any()) } coAnswers {
+        coEvery { enqueue(any(), any(), any(), any(), any()) } coAnswers {
             synchronized(enqueued) { enqueued += firstArg<String>() to arg<VoiceNoteSource>(3) }
         }
     }
@@ -44,6 +44,7 @@ class VoiceNoteBusinessCoordinatorTest {
     private val detectors = VoiceNoteSource.entries.associateWith { source ->
         mockk<VoiceNoteDetector> {
             every { this@mockk.detections } returns this@VoiceNoteBusinessCoordinatorTest.detections.getValue(source)
+            every { catchUpBursts } returns MutableSharedFlow()
             every { subscribe() } just Runs
             every { dispose() } just Runs
             every { refresh() } just Runs
@@ -52,7 +53,11 @@ class VoiceNoteBusinessCoordinatorTest {
     private val coordinators = VoiceNoteDetectionCoordinators(
         VoiceNoteSource.entries.associateWith { source ->
             VoiceNoteDetectionCoordinator(
-                detectors.getValue(source), preferences, treeGrant, autoTranscriber,
+                detectors.getValue(source),
+                // TASK-889: the digest post target; never fires in these
+                // lifecycle tests.
+                mockk<android.content.Context>(relaxed = true),
+                preferences, treeGrant, autoTranscriber,
                 VoiceNotePermissionChecker { true }, scope, source)
         })
 
@@ -75,7 +80,9 @@ class VoiceNoteBusinessCoordinatorTest {
     @Test
     fun `the holder requires exactly one coordinator per source`() {
         val only = VoiceNoteDetectionCoordinator(
-            detectors.getValue(VoiceNoteSource.WHATSAPP), preferences, treeGrant, autoTranscriber,
+            detectors.getValue(VoiceNoteSource.WHATSAPP),
+            mockk<android.content.Context>(relaxed = true),
+            preferences, treeGrant, autoTranscriber,
             VoiceNotePermissionChecker { true }, scope)
         val failure = runCatching { VoiceNoteDetectionCoordinators(mapOf(VoiceNoteSource.WHATSAPP to only)) }
         assertTrue("a missing source must fail at construction", failure.isFailure)
@@ -162,7 +169,9 @@ class VoiceNoteBusinessCoordinatorTest {
         val gated = VoiceNoteDetectionCoordinators(
             VoiceNoteSource.entries.associateWith { source ->
                 VoiceNoteDetectionCoordinator(
-                    detectors.getValue(source), preferences, treeGrant, autoTranscriber,
+                    detectors.getValue(source),
+                    mockk<android.content.Context>(relaxed = true),
+                    preferences, treeGrant, autoTranscriber,
                     VoiceNotePermissionChecker { granted }, scope, source)
             })
         preferences._voiceNoteDetectionEnabled.value = true

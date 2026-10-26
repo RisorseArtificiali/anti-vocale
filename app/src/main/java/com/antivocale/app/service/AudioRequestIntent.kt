@@ -44,13 +44,17 @@ object AudioRequestIntent {
         senderName: String? = null,
         contentHash: String? = null,
         backendOverride: String? = null,
+        /** TASK-889: the request came from the cold-start catch-up sweep
+         *  (the per-note result notification is suppressed for it). */
+        catchup: Boolean = false,
     ): Intent = make(
         context, source, taskId, filePath,
         requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO,
         sourcePackage = sourcePackage,
         senderName = senderName,
         contentHash = contentHash,
-        backendOverride = backendOverride)
+        backendOverride = backendOverride,
+        catchup = catchup)
 
     /**
      * Review F1: the subtitle-import arm as its OWN entry point. An open
@@ -79,6 +83,7 @@ object AudioRequestIntent {
         senderName: String? = null,
         contentHash: String? = null,
         backendOverride: String? = null,
+        catchup: Boolean = false,
     ): Intent = Intent(context, InferenceService::class.java).apply {
         putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, requestType)
         putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
@@ -90,5 +95,6 @@ object AudioRequestIntent {
         senderName?.let { putExtra(InferenceService.EXTRA_SENDER_NAME, it) }
         contentHash?.let { putExtra(InferenceService.EXTRA_CONTENT_HASH, it) }
         backendOverride?.let { putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, it) }
+        if (catchup) putExtra(InferenceService.EXTRA_CATCHUP, true)
     }
 }

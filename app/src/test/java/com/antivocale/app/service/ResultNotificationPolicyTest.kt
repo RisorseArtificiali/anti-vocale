@@ -31,4 +31,19 @@ class ResultNotificationPolicyTest {
             assertFalse("source=$source", InferenceService.postsResultNotification(isShareRequest = false, source))
         }
     }
+
+    /**
+     * TASK-889: a cold-start sweep note is one of a burst; the per-note
+     * SUCCESS post would stack N notifications on a 3-slot shade, so the
+     * sweep's digest replaces them. The History row and auto-save are not
+     * gated by this policy; only the notification is.
+     */
+    @Test
+    fun `a catch-up sweep note suppresses the per-note result notification`() {
+        assertFalse(InferenceService.postsResultNotification(
+            isShareRequest = false, InferenceService.SOURCE_VOICE_NOTE, catchup = true))
+        // The flag off (every live detection) keeps the zero-tap promise.
+        assertTrue(InferenceService.postsResultNotification(
+            isShareRequest = false, InferenceService.SOURCE_VOICE_NOTE, catchup = false))
+    }
 }

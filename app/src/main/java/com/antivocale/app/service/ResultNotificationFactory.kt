@@ -171,6 +171,10 @@ class ResultNotificationFactory(private val context: Context) {
         text: String,
         priority: Int = NotificationCompat.PRIORITY_HIGH,
         channel: AppNotificationChannel = AppNotificationChannel.TRANSCRIPTION_RESULT,
+        /** TASK-889: set on builders whose id re-posts in place (the
+         *  catch-up digest's settle update); the first post sounds, the
+         *  update must not. */
+        onlyAlertOnce: Boolean = false,
     ): Notification =
         NotificationCompat.Builder(context, channel.id)
             .setContentTitle(title)
@@ -178,6 +182,7 @@ class ResultNotificationFactory(private val context: Context) {
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
             .setPriority(priority)
             .setContentIntent(plainLaunchPendingIntent())
+            .setOnlyAlertOnce(onlyAlertOnce)
             .setAutoCancel(true)
             .build()
 
@@ -205,6 +210,29 @@ class ResultNotificationFactory(private val context: Context) {
             text = context.resources.getQuantityString(textRes, count, count),
             priority = NotificationCompat.PRIORITY_DEFAULT,
             channel = AppNotificationChannel.INTERRUPTED_RUNS,
+        )
+    }
+
+    /**
+     * TASK-889: the cold-start catch-up burst's ONE digest (the sweep's N
+     * per-note SUCCESS notifications are suppressed; this replaces them).
+     * Posted at sweep time, in place-updated once if the settle round
+     * recovers more (same id); the count is what the sweep rounds FOUND
+     * (the enqueue-side dedup can still drop a redelivered twin), and the
+     * wording promises History, not per-note notifications. Same channel
+     * and register as the interrupted-runs summary (the batch-summary
+     * family, one step below the result channel's heads-up).
+     */
+    fun catchUpDigestNotification(count: Int): Notification {
+        AppNotificationChannel.INTERRUPTED_RUNS.create(context)
+        return alertNotification(
+            title = context.getString(R.string.catchup_digest_title),
+            text = context.resources.getQuantityString(R.plurals.catchup_digest_text, count, count),
+            priority = NotificationCompat.PRIORITY_DEFAULT,
+            channel = AppNotificationChannel.INTERRUPTED_RUNS,
+            // The settle round re-posts the same id with a grown count;
+            // only the first post may sound.
+            onlyAlertOnce = true,
         )
     }
 
@@ -724,11 +752,24 @@ class ResultNotificationFactory(private val context: Context) {
          *   suspension outcome)
          * - 2503: SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID (TASK-684
          *   generic interrupted-runs summary)
+         * - 2601..2602: RESULT_CATCHUP_DIGEST_ID_BASE..+RANGE (TASK-889
+         *   cold-start burst digest, one id per voice-note source; 2601
+         *   was the voice-note offer slot until the offer mode was
+         *   removed, TASK-272, then reclaimed here)
          * New fixed ids or bands go under the base; 2301..2400 and 2504..2999
-         * are free headroom (2601 was the voice-note offer slot until the
-         * offer mode was removed, TASK-272).
+         * are free headroom.
          */
         const val RESULT_NOTIFICATION_ID_BASE = 3000
+
+        /**
+         * TASK-889: the catch-up burst digest band, inside the
+         * reserved-range contract. One id per voice-note source ordinal:
+         * the two clients' cold sweeps fire at the same app start, and a
+         * single shared id would have the second source's digest silently
+         * replace the first's. A third source must grow the range.
+         */
+        const val RESULT_CATCHUP_DIGEST_ID_BASE = 2601
+        const val RESULT_CATCHUP_DIGEST_ID_RANGE = 2
 
         /**
          * Shared derivation for per-key notification ids: folds an arbitrary
