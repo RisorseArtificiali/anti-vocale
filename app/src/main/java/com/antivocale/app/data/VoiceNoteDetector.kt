@@ -383,9 +383,17 @@ class VoiceNoteDetector(
         // holding the monitor would block every observer callback plus
         // subscribe/dispose/refresh for the whole listing. Emission and
         // bookkeeping re-take it (onDetection, clearCatchUp).
-        val notes = folder.listFiles()
-            ?.filter { it.isFile && VoiceNoteFilter.isWhatsAppVoiceNoteName(it.name) }
-            .orEmpty()
+        val listing = folder.listFiles()
+        if (listing == null) {
+            // TASK-907: a DENIED listing is not an empty folder. The note
+            // stays pending; with a grant the re-fire serves from SAF
+            // (the lane the sweep proved), never "cleared" on a guess.
+            Log.w(TAG, "831 re-fire: raw listing denied for ${folder.name} (${source.name})")
+            if (grantedTreeUri != null) catchUpScanViaSaf(folder, now)
+            return
+        }
+        val notes = listing
+            .filter { it.isFile && VoiceNoteFilter.isWhatsAppVoiceNoteName(it.name) }
         val ripe = notes.filter { now - it.lastModified() >= catchUpDelayMs }
         if (ripe.isNotEmpty()) {
             Log.i(TAG, "catch-up emitted ${ripe.size} note(s) from ${folder.name}")
@@ -400,6 +408,51 @@ class VoiceNoteDetector(
         }
     }
 
+    /**
+     * TASK-907: the 831 re-fire served through the SAF grant (the raw
+     * listing was denied). Same quiet-gate and emission semantics as the
+     * raw arm; the walk is the grant's, so the folder's children are
+     * readable whatever the raw view says.
+     */
+    private fun catchUpScanViaSaf(folder: File, now: Long) {
+        val treeUri = grantedTreeUri ?: return
+        if (safRefireForTest != null) {
+            // Test seam: stands in for the level-1 + level-2 walk.
+            val files = safRefireForTest!!.invoke(folder.name)
+            if (files == null) {
+                Log.w(TAG, "831 SAF re-fire: walk failed for ${folder.name} (${source.name})")
+                return
+            }
+            serveRipe(files, folder, now)
+            return
+        }
+        val docId = safListFolders(treeUri)?.get(folder.name) ?: run {
+            Log.w(TAG, "831 SAF re-fire: folder ${folder.name} not in the grant (${source.name})")
+            return
+        }
+        serveRipe(safListFolderMtimes(treeUri, docId).map { (name, mtime) ->
+            SweepFile("${folder.absolutePath}/$name", mtime)
+        }, folder, now)
+    }
+
+    /** Shared tail of both 831 re-fire arms: quiet gate, emission, and the
+     *  clear-vs-relaunch decision on the pending entry. */
+    private fun serveRipe(files: List<SweepFile>, folder: File, now: Long) {
+        val ripe = files
+            .filter { VoiceNoteFilter.isWhatsAppVoiceNoteName(it.name) }
+            .filter { now - it.lastModified >= catchUpDelayMs }
+        if (ripe.isNotEmpty()) {
+            Log.i(TAG, "831 re-fire emitted ${ripe.size} note(s) from ${folder.name}")
+            ripe.forEach { f ->
+                onDetection(entryFor(f.path).copy(detectedAtMs = f.lastModified))
+            }
+        }
+        if (ripe.size == files.size) {
+            clearCatchUp(folder)
+        } else {
+            launchCatchUp(folder)
+        }
+    }
     /**
      * One queue entry from an observed file path. The id derivation is the
      * stable dedup key ([VoiceNoteEntry.id]); every construction site MUST
@@ -480,6 +533,10 @@ class VoiceNoteDetector(
         val filesByFolder: Map<String, List<SweepFile>>,
         val folderDocIds: Map<String, String>,
     )
+
+    /** TASK-907 test seam: the 831 denied-branch SAF re-fire (Robolectric
+     *  has no documents provider). Null restores the real walk. */
+    internal var safRefireForTest: ((folderName: String) -> List<SweepFile>?)? = null
 
     /** Test seam for the SAF lane: replaces the DocumentsContract walk
      *  (Robolectric has no documents provider) while keeping the lane
@@ -566,14 +623,12 @@ class VoiceNoteDetector(
      * undatable file cannot pass the quiet gate; fabricating an mtime
      * either bypassed the gate or died in the settle's re-stat).
      */
-    private fun safWalkTree(
-        treeUri: String,
-        watermarkFolder: Long?,
-    ): SafWalk? = runCatching {
+    /** TASK-907: level-1 of the walk (name to docId, counter folders only),
+     *  shared by the sweep and the 831 re-fire. Null on query failure. */
+    private fun safListFolders(treeUri: String): Map<String, String>? = runCatching {
         val tree = Uri.parse(treeUri)
-        val resolver = appContext.contentResolver
         val folderDocIds = mutableMapOf<String, String>()
-        resolver.query(
+        appContext.contentResolver.query(
             DocumentsContract.buildChildDocumentsUriUsingTree(
                 tree, DocumentsContract.getTreeDocumentId(tree)),
             arrayOf(
@@ -589,6 +644,16 @@ class VoiceNoteDetector(
                 }
             }
         } ?: return@runCatching null
+        folderDocIds
+    }.getOrNull()
+
+    private fun safWalkTree(
+        treeUri: String,
+        watermarkFolder: Long?,
+    ): SafWalk? = runCatching {
+        val tree = Uri.parse(treeUri)
+        val resolver = appContext.contentResolver
+        val folderDocIds = safListFolders(treeUri) ?: return@runCatching null
         val toWalk = if (watermarkFolder != null &&
             folderDocIds.keys.any { (it.toLongOrNull() ?: -1L) >= watermarkFolder }
         ) {
