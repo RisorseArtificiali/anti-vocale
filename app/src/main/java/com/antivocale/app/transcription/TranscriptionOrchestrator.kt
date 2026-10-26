@@ -583,6 +583,16 @@ class TranscriptionOrchestrator @Inject constructor(
                     if (asrBackendId == null) result
                     else result
                         .map { applyRepetitionCollapse(it) }
+                        // TASK-910: BEFORE the punctuation pass (review:
+                        // the pass rewords the text without updating the
+                        // cues, so a post-pass alignment gate would fail on
+                        // the mainstream polished path and the feature would
+                        // silently no-op). Here text and cues still agree;
+                        // the punctuation pass then chunks at the breaks and
+                        // rejoins with its own \n\n (fenced), preserving
+                        // them, and its per-chunk word-acceptance guards the
+                        // words on either side.
+                        .map { applyParagraphBreaks(it) }
                         .map { applyPunctuationPass(context, asrBackendId, it, listener) }
                         .map { applySummaryPass(context, it, listener) }
                 } else result
@@ -1138,6 +1148,28 @@ class TranscriptionOrchestrator @Inject constructor(
         runCatching { collapseRepetition(result) }.fold(
             onSuccess = { it },
             onFailure = { degradeTo(result, "RepetitionCollapse", it) },
+        )
+
+    /**
+     * TASK-910: long pauses become paragraph breaks (a gap between sentence
+     * cues >= [ParagraphBreaks.PARAGRAPH_GAP_MS] renders as a double
+     * newline). A pure whitespace reshaping with the siblings' contract: any
+     * failure degrades to the unbroken result (degradeTo logs it), and the
+     * rawTranscript seam stays untouched (a whitespace-only diff is noise:
+     * the pass that next alters CONTENT records the raw, per the
+     * first-alterer rule).
+     */
+    private fun applyParagraphBreaks(result: TranscriptionResult): TranscriptionResult =
+        runCatching {
+            val broken = ParagraphBreaks.apply(result.segments, result.text)
+            if (broken == result.text) result
+            else {
+                Log.i(TAG, "Paragraph breaks applied (${result.segments.size} cues)")
+                result.copy(text = broken)
+            }
+        }.fold(
+            onSuccess = { it },
+            onFailure = { degradeTo(result, "ParagraphBreaks", it) },
         )
 
     private fun collapseRepetition(result: TranscriptionResult): TranscriptionResult {
