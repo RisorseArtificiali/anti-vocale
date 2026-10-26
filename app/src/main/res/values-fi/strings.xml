@@ -227,7 +227,9 @@
     <string name="error_model_load">Mallitiedosto voi olla vioittunut tai väärässä muodossa. Lataa se uudelleen Mallit-välilehdeltä.</string>
     <string name="error_model_external_corrupt">Tuodun mallin tiedostot ovat vioittuneet. Poista malli Mallit-välilehdeltä ja tuo se uudelleen.</string>
     <string name="error_model_corrupt_healed">Osa mallitiedostoista oli vioittunut, joten sovellus poisti ne. Avaa Mallit-välilehti ja lataa malli uudelleen.</string>
+    <string name="error_model_corrupt_sibling">Osa mallitiedostoista oli vioittunut, joten sovellus poisti sen variantin ja vaihtoi laitteella jo olevaan kopioon. Uudelleenlatausta ei tarvita.</string>
     <string name="error_model_missing_healed">Osa mallitiedostoista puuttui, joten sovellus poisti ne. Avaa Mallit-välilehti ja lataa malli uudelleen.</string>
+    <string name="error_model_missing_sibling">Osa mallitiedostoista puuttui, joten sovellus poisti sen variantin ja vaihtoi laitteella jo olevaan kopioon. Uudelleenlatausta ei tarvita.</string>
     <string name="error_native">Transkription aikana tapahtui sisäinen virhe. Jos virhe toistuu, kokeile toista mallia.</string>
     <string name="error_not_initialized">Mallia ei ole ladattu. Avaa Mallit-välilehti ja lataa tai valitse malli.</string>
     <string name="error_model_unavailable">Valittua mallia ei ole enää saatavilla. Avaa Mallit-välilehti ja valitse toinen malli.</string>

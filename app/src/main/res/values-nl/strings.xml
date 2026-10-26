@@ -260,7 +260,9 @@
     <string name="error_model_load">Het modelbestand is mogelijk beschadigd of heeft het verkeerde formaat. Download het opnieuw via het tabblad Modellen.</string>
     <string name="error_model_external_corrupt">De bestanden van het geïmporteerde model zijn beschadigd. Verwijder het via het tabblad Modellen en importeer het opnieuw.</string>
     <string name="error_model_corrupt_healed">Sommige modelbestanden waren beschadigd en zijn door de app verwijderd. Open het tabblad Modellen en download het model opnieuw.</string>
+    <string name="error_model_corrupt_sibling">Sommige modelbestanden waren beschadigd, dus de app heeft die variant verwijderd en is overgeschakeld naar de kopie die al op het apparaat staat. Opnieuw downloaden is niet nodig.</string>
     <string name="error_model_missing_healed">Sommige modelbestanden ontbraken en zijn door de app verwijderd. Open het tabblad Modellen en download het model opnieuw.</string>
+    <string name="error_model_missing_sibling">Sommige modelbestanden ontbraken, dus de app heeft die variant verwijderd en is overgeschakeld naar de kopie die al op het apparaat staat. Opnieuw downloaden is niet nodig.</string>
     <string name="error_native">Er trad een interne fout op tijdens de transcriptie. Blijft dit gebeuren, probeer dan een ander model.</string>
     <string name="error_not_initialized">Er is geen model geladen. Open het tabblad Modellen om er een te downloaden of te selecteren.</string>
     <string name="error_model_unavailable">Het geselecteerde model is niet meer beschikbaar. Open het tabblad Modellen en kies een ander.</string>

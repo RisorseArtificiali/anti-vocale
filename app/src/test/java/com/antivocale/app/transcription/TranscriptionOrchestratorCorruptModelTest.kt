@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -124,6 +125,10 @@ class TranscriptionOrchestratorCorruptModelTest : TranscriptionOrchestratorTestB
         val error = result.exceptionOrNull()
         assertTrue("expected CorruptModelFiles, got $error",
             error is TranscriptionException.CorruptModelFiles)
+        // TASK-887: the no-sibling heal keeps the flag off (the re-download
+        // copy stays honest for the entry that has nothing to switch to).
+        assertFalse("no sibling: the flag must stay off",
+            (error as TranscriptionException.CorruptModelFiles).switchedToSibling)
         assertTrue("the message must name the failing file",
             error!!.message!!.contains("turbo-encoder.int8.onnx"))
         assertTrue("the message must say corrupted",
@@ -180,6 +185,14 @@ class TranscriptionOrchestratorCorruptModelTest : TranscriptionOrchestratorTestB
         val result = runTextRequest(context, this)
 
         assertTrue(result.exceptionOrNull() is TranscriptionException.CorruptModelFiles)
+        // TASK-887: the sibling heal re-raises the typed verdict WITH the
+        // flag, so the History row says the switch, not a re-download.
+        assertTrue("the sibling heal must set the flag",
+            (result.exceptionOrNull() as TranscriptionException.CorruptModelFiles).switchedToSibling)
+        // TASK-887 review: the re-raise carries the stored DETAIL, so the
+        // "Model load failed:" prefix appears exactly once.
+        assertEquals(1, Regex("Model load failed:")
+            .findAll(result.exceptionOrNull()!!.message!!).count())
         assertFalse("the corrupt turbo dir must be gone", turboDir.exists())
         assertTrue("the healthy sibling dir must stay", smallDir.exists())
         coVerify { preferencesManager.saveSherpaModelPath(BuiltInBackendIds.WHISPER, smallDir.absolutePath) }

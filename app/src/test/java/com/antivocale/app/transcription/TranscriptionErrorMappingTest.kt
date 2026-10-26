@@ -54,6 +54,30 @@ class TranscriptionErrorMappingTest {
         assertEquals(context.getString(R.string.error_model_missing_healed), msg)
     }
 
+    /**
+     * TASK-887: the sibling-heal arms. When the heal landed on a healthy
+     * sibling variant (flag set by the orchestrator), the row says the
+     * switch; the re-download copy would point at a download that is not
+     * needed.
+     */
+    @Test
+    fun `sibling-flagged verdicts map to the switched-variant strings`() {
+        val corrupt = TranscriptionOrchestrator.userFacingErrorMessage(
+            context, TranscriptionException.CorruptModelFiles("detail", switchedToSibling = true))
+        assertEquals(context.getString(R.string.error_model_corrupt_sibling), corrupt)
+
+        val missing = TranscriptionOrchestrator.userFacingErrorMessage(
+            context, TranscriptionException.MissingModelFiles("detail", switchedToSibling = true))
+        assertEquals(context.getString(R.string.error_model_missing_sibling), missing)
+
+        // The sibling copy must not leak into the plain no-sibling verdicts
+        // (pinned above) or equal their re-download wording, in either arm.
+        org.junit.Assert.assertNotEquals(
+            context.getString(R.string.error_model_corrupt_healed), corrupt)
+        org.junit.Assert.assertNotEquals(
+            context.getString(R.string.error_model_missing_healed), missing)
+    }
+
     @Test
     fun `MissingModelFiles message differs from the corrupt and generic messages`() {
         // The three verdicts must stay distinguishable in user-facing copy.

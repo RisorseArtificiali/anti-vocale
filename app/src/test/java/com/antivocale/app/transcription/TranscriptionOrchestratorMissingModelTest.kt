@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -121,6 +122,9 @@ class TranscriptionOrchestratorMissingModelTest : TranscriptionOrchestratorTestB
         val error = result.exceptionOrNull()
         assertTrue("expected MissingModelFiles, got $error",
             error is TranscriptionException.MissingModelFiles)
+        // TASK-887: no sibling here; the re-download copy stays.
+        assertFalse("no sibling: the flag must stay off",
+            (error as TranscriptionException.MissingModelFiles).switchedToSibling)
         assertTrue("the message must name the vanished file",
             error!!.message!!.contains("turbo-decoder.int8.onnx"))
         assertFalse("the message must name ONLY the absent file (the subset, not the whole catalog)",
@@ -267,6 +271,13 @@ class TranscriptionOrchestratorMissingModelTest : TranscriptionOrchestratorTestB
         val result = runTextRequest(context, this)
 
         assertTrue(result.exceptionOrNull() is TranscriptionException.MissingModelFiles)
+        // TASK-887: sibling twin of the corrupt arm; the flag rides the
+        // re-raised verdict.
+        assertTrue("the sibling heal must set the flag",
+            (result.exceptionOrNull() as TranscriptionException.MissingModelFiles).switchedToSibling)
+        assertEquals("the prefix rides once (the re-raise carries the detail)",
+            1, Regex("Model load failed:")
+                .findAll(result.exceptionOrNull()!!.message!!).count())
         assertFalse("the gutted turbo dir must be gone", turboDir.exists())
         assertTrue("the healthy sibling dir must stay", smallDir.exists())
         coVerify { preferencesManager.saveSherpaModelPath(BuiltInBackendIds.WHISPER, smallDir.absolutePath) }

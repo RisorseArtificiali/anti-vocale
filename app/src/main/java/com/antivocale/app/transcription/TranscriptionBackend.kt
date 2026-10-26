@@ -306,7 +306,14 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
      * gate stays regardless (the typed verdict drives the catalog
      * dir-heal; a raw Ort::Exception does not).
      */
-    class CorruptModelFiles(detail: String) : ModelLoadError(detail)
+    class CorruptModelFiles(
+        val detail: String,
+        /** TASK-887: set on the re-raise when the orchestrator's heal
+         *  landed on a sibling variant (the saved path switched to it; no
+         *  re-download exists to offer). The History row's copy keys on
+         *  it. */
+        val switchedToSibling: Boolean = false,
+    ) : ModelLoadError(detail)
 
     /**
      * TASK-885: catalog-listed files are ABSENT at load time (vanished after
@@ -325,7 +332,11 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
      * Still a [ModelLoadError] subtype so every existing generic-error
      * consumer (mapping, benchmark) keeps working unchanged.
      */
-    class MissingModelFiles(detail: String) : ModelLoadError(detail)
+    class MissingModelFiles(
+        val detail: String,
+        /** TASK-887: [CorruptModelFiles.switchedToSibling]'s twin. */
+        val switchedToSibling: Boolean = false,
+    ) : ModelLoadError(detail)
 
     /**
      * TASK-482: the same pre-native content gate as [CorruptModelFiles], but
