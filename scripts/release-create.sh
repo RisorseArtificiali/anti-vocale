@@ -150,9 +150,14 @@ RECIPE_GUARD_OK=$(echo "$RUN_JSON" | jq -r '
 # dispatch input; a stale run of a DIFFERENT build-first dispatch would
 # pass that alone. Bind materially: the run's own log must contain the
 # expected commit SHA at the guard step (the comparison prints both SHAs).
+# Two log shapes: the step's own lines when GitHub resolves the step name
+# in the log, and (seen live on run 40549418911) the same OK line under
+# "UNKNOWN STEP" when it does not, so the comparison line itself is the
+# stable anchor.
 if [ "$RECIPE_GUARD_OK" = "true" ]; then
   if ! gh run view "$RUN_ID" -R "$REPO" --log 2>/dev/null |
-      grep -A 3 "Verify recipe commit" | grep -q "$COMMIT"; then
+      grep -E -A 3 "Verify recipe commit|recipe commit $COMMIT matches" |
+      grep -q "$COMMIT"; then
     RECIPE_GUARD_OK=false
   fi
 fi
