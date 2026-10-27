@@ -84,6 +84,7 @@
     <string name="logs_search_placeholder">البحث في العناصر…</string>
     <string name="logs_search_no_results">لا توجد عناصر مطابقة</string>
     <string name="logs_search_no_results_hint">جرّب مصطلح بحث مختلفًا</string>
+    <string name="logs_search_mode_similar">تضمين كلمات مشابهة</string>
     <string name="browse_audio_content_description">اختر ملفًا صوتيًا لتحويله إلى نص</string>
     <string name="settings_search_hint">البحث في الإعدادات…</string>
     <string name="settings_search_no_results">لا توجد إعدادات مطابقة</string>

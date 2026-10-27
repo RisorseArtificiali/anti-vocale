@@ -88,6 +88,7 @@
     <string name="logs_search_placeholder">Hae merkintöjä…</string>
     <string name="logs_search_no_results">Ei täsmääviä merkintöjä</string>
     <string name="logs_search_no_results_hint">Kokeile toista hakusanaa</string>
+    <string name="logs_search_mode_similar">Sisällytä samankaltaiset sanat</string>
     <string name="browse_audio_content_description">Valitse transkriboitava äänitiedosto</string>
     <string name="settings_search_hint">Hae asetuksia…</string>
     <plurals name="settings_search_matches">

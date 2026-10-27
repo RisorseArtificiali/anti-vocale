@@ -35,6 +35,7 @@ import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionOrchestrator
+import com.antivocale.app.transcription.TranscriptFuzzySearch
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.transcription.variantAwareDisplayName
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -213,15 +215,45 @@ class LogsViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    // Search hits the DAO (SQL LIKE over FULL history, TASK-340 review note): the
-    // in-memory list is now a bounded window, so filtering it in place would have
-    // silently limited search to the newest 500 entries.
+    /**
+     * TASK-911: the History search has two modes. LITERAL is the SQL LIKE
+     * search (exact substring, TASK-613 escaping contract). SIMILAR scores
+     * the same recent window with [TranscriptFuzzySearch] so a keyword the
+     * recognizer mis-heard (gemination, vowel shift, voicing) still lands:
+     * both DAO queries are the same recent-first LIMIT 500 over `result`,
+     * so the fuzzy arm sees exactly the rows the literal one can.
+     */
+    enum class SearchMode { LITERAL, SIMILAR }
+
+    private val _searchMode = MutableStateFlow(SearchMode.LITERAL)
+    val searchMode: StateFlow<SearchMode> = _searchMode.asStateFlow()
+
+    fun toggleSearchMode() {
+        _searchMode.value =
+            if (_searchMode.value == SearchMode.LITERAL) SearchMode.SIMILAR else SearchMode.LITERAL
+    }
+
     val filteredLogs: StateFlow<List<LogEntry>> =
-        _searchQuery.flatMapLatest { query ->
-            if (query.isBlank()) logDao.getAll()
-            else logDao.searchAll(query)
-        }.map { entities -> entities.map { it.toLogEntry() } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        combine(_searchQuery, _searchMode) { query, mode -> query to mode }
+            .flatMapLatest { (query, mode) ->
+                when {
+                    query.isBlank() -> logDao.getAll()
+                    mode == SearchMode.LITERAL -> logDao.searchAll(query)
+                    // One scoring pass per row feeds both the filter and the
+                    // best-first ranking; Default because scoring 500 rows
+                    // is real CPU and stateIn collects on the main thread.
+                    else -> logDao.getAll()
+                        .map { rows ->
+                            rows.mapNotNull { row ->
+                                TranscriptFuzzySearch.scoreIfMatches(row.result, query)
+                                    ?.let { score -> score to row }
+                            }.sortedByDescending { it.first }
+                                .map { it.second }
+                        }
+                        .flowOn(Dispatchers.Default)
+                }
+            }.map { entities -> entities.map { it.toLogEntry() } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /**
      * The currently active transcription entry (PROCESSING, falling back to QUEUED).
@@ -547,6 +579,10 @@ class LogsViewModel @Inject constructor(
         // a forgotten active query on an empty list would hand the next
         // arrival a no-results view with a stale query in the field.
         _searchQuery.value = ""
+        // TASK-911 review: the mode's only affordance is the chip, which
+        // hides with the query; a surviving SIMILAR state would silently
+        // run the next search in a different semantics.
+        _searchMode.value = SearchMode.LITERAL
         annotatedByRow.clear()
         firstPassByRow.clear()
         segmentsByRow.clear()
@@ -625,6 +661,9 @@ class LogsViewModel @Inject constructor(
 
     fun clearSearch() {
         _searchQuery.value = ""
+        // Same reasoning as clearLogs: the chip hides with the query, so
+        // the mode resets with it.
+        _searchMode.value = SearchMode.LITERAL
     }
 
     val swipeActionMode: StateFlow<String> = preferencesManager.swipeActionMode

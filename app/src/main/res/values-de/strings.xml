@@ -83,6 +83,7 @@
     <string name="logs_search_placeholder">Einträge suchen…</string>
     <string name="logs_search_no_results">Keine passenden Einträge</string>
     <string name="logs_search_no_results_hint">Versuche einen anderen Suchbegriff</string>
+    <string name="logs_search_mode_similar">Ähnliche Wörter einbeziehen</string>
     <string name="browse_audio_content_description">Audiodatei zum Transkribieren auswählen</string>
     <string name="settings_replay_tour">Willkommenstour wiederholen</string>
     <string name="tour_done">Verstanden</string>

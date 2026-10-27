@@ -82,6 +82,7 @@
     <string name="logs_search_placeholder">एंट्री खोजें…</string>
     <string name="logs_search_no_results">कोई मिलती-जुलती एंट्री नहीं</string>
     <string name="logs_search_no_results_hint">कोई दूसरा खोज शब्द आज़माएं</string>
+    <string name="logs_search_mode_similar">समान शब्द शामिल करें</string>
     <string name="browse_audio_content_description">ट्रांसक्रिप्शन के लिए ऑडियो फ़ाइल चुनें</string>
     <string name="settings_replay_tour">स्वागत टूर फिर से चलाएँ</string>
     <string name="tour_done">समझ गया</string>

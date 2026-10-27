@@ -102,6 +102,7 @@
     <string name="logs_search_placeholder">חיפוש רשומות…</string>
     <string name="logs_search_no_results">אין רשומות תואמות</string>
     <string name="logs_search_no_results_hint">נסה מונח חיפוש אחר</string>
+    <string name="logs_search_mode_similar">כלול מילים דומות</string>
     <string name="browse_audio_content_description">בחירת קובץ אודיו לתמלול</string>
     <string name="settings_replay_tour">הפעלה חוזרת של סיור הפתיחה</string>
     <string name="tour_done">הבנתי</string>

@@ -72,6 +72,7 @@
     <string name="logs_search_placeholder">Buscar entradas…</string>
     <string name="logs_search_no_results">Sin entradas coincidentes</string>
     <string name="logs_search_no_results_hint">Prueba con otro término de búsqueda</string>
+    <string name="logs_search_mode_similar">Incluir palabras similares</string>
     <string name="browse_audio_content_description">Elegir un archivo de audio para transcribir</string>
     <string name="settings_replay_tour">Repetir el tour de bienvenida</string>
     <string name="tour_done">Entendido</string>

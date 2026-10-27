@@ -69,8 +69,9 @@ interface LogDao {
      * Bounded recent-first query for the Logs UI (TASK-340 Fix 2a): the previous
      * unbounded getAll let the whole history pile into the 256MB heap, and the
      * ViewModel remaps the full list into new objects on every interim Room write.
-     * 500 = the bounded UI window; the search query below reaches FULL history
-     * (SQL LIKE) so the bound does not silently hide older transcripts from search.
+     * 500 = the bounded UI window, and the search query below carries the SAME
+     * bound, so both arms see the same recent window (parity pinned by the
+     * TASK-911 search-mode note in LogsViewModel).
      */
     /**
      * The two queries below list every [LogEntity] column EXCEPT the lean

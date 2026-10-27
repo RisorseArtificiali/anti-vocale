@@ -90,6 +90,7 @@
     <string name="logs_search_placeholder">Поиск записей…</string>
     <string name="logs_search_no_results">Подходящих записей нет</string>
     <string name="logs_search_no_results_hint">Попробуйте другой поисковый запрос</string>
+    <string name="logs_search_mode_similar">Учитывать похожие слова</string>
     <string name="browse_audio_content_description">Выбрать аудиофайл для расшифровки</string>
     <string name="settings_replay_tour">Пройти приветственный тур снова</string>
     <string name="tour_done">Понятно</string>

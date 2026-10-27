@@ -739,6 +739,7 @@ fun HistoryTab(
     val logs by viewModel.logs.collectAsStateWithLifecycle()
     val filteredLogs by viewModel.filteredLogs.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val searchMode by viewModel.searchMode.collectAsState()
     val context = LocalContext.current
     val swipeActionMode by viewModel.swipeActionMode
         .collectAsState(initial = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE)
@@ -1048,6 +1049,18 @@ fun HistoryTab(
                     },
                     singleLine = true
                 )
+                // TASK-911: the similar-words mode is offered only while a
+                // query is active; with an empty field there is nothing to
+                // widen yet, and the chip would sit next to the clear-all
+                // icon implying it wipes something.
+                if (searchQuery.isNotEmpty()) {
+                    FilterChip(
+                        selected = searchMode == LogsViewModel.SearchMode.SIMILAR,
+                        onClick = viewModel::toggleSearchMode,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+                        label = { Text(stringResource(R.string.logs_search_mode_similar)) },
+                    )
+                }
                 if (filteredLogs.isEmpty()) {
                 // Search yielded no results
                 Box(

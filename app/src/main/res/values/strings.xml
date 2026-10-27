@@ -102,6 +102,7 @@
     <string name="logs_search_placeholder">Search entries…</string>
     <string name="logs_search_no_results">No matching entries</string>
     <string name="logs_search_no_results_hint">Try a different search term</string>
+    <string name="logs_search_mode_similar">Include similar words</string>
     <string name="browse_audio_content_description">Pick an audio file to transcribe</string>
     <string name="settings_search_hint">Search settings…</string>
     <plurals name="settings_search_matches">

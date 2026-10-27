@@ -101,6 +101,7 @@
     <string name="logs_search_placeholder">جستجوی ورودی‌ها…</string>
     <string name="logs_search_no_results">ورودی‌ای پیدا نشد</string>
     <string name="logs_search_no_results_hint">عبارت جستجوی دیگری را امتحان کنید</string>
+    <string name="logs_search_mode_similar">گنجاندن کلمات مشابه</string>
     <string name="browse_audio_content_description">انتخاب یک فایل صوتی برای رونویسی</string>
     <string name="settings_replay_tour">پخش دوباره تور خوش‌آمدگویی</string>
     <string name="tour_done">متوجه شدم</string>

@@ -108,6 +108,7 @@
     <string name="logs_search_placeholder">Пошук записів…</string>
     <string name="logs_search_no_results">Немає відповідних записів</string>
     <string name="logs_search_no_results_hint">Спробуйте інший пошуковий запит</string>
+    <string name="logs_search_mode_similar">Враховувати схожі слова</string>
     <string name="browse_audio_content_description">Вибрати аудіофайл для розшифрування</string>
     <string name="settings_replay_tour">Пройти вітальний тур ще раз</string>
     <string name="tour_done">Зрозуміло</string>

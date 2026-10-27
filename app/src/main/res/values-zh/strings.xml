@@ -84,6 +84,7 @@
     <string name="logs_search_placeholder">搜索条目…</string>
     <string name="logs_search_no_results">没有匹配的条目</string>
     <string name="logs_search_no_results_hint">请尝试其他搜索词</string>
+    <string name="logs_search_mode_similar">包含相似词语</string>
     <string name="browse_audio_content_description">选取要转写的音频文件</string>
     <string name="settings_search_hint">搜索设置…</string>
     <string name="settings_search_no_results">没有匹配的设置</string>

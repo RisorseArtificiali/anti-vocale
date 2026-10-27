@@ -101,6 +101,7 @@
     <string name="logs_search_placeholder">Items zoeken…</string>
     <string name="logs_search_no_results">Geen overeenkomende items</string>
     <string name="logs_search_no_results_hint">Probeer een andere zoekterm</string>
+    <string name="logs_search_mode_similar">Vergelijkbare woorden opnemen</string>
     <string name="browse_audio_content_description">Kies een audiobestand om te transcriberen</string>
     <string name="settings_search_hint">Instellingen zoeken…</string>
     <plurals name="settings_search_matches">
