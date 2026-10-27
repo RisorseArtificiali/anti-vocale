@@ -611,7 +611,7 @@ jobs:
           NDK_PINS=$(grep -E '^[[:space:]]+ndk: ' "$RECIPE" | awk '{print $2}' | sort -u)
           [ -n "$NDK_PINS" ] || { echo "::error::no ndk: pins found in $RECIPE"; exit 1; }
 
-          NDK_MAP="r27c=27.2.12479018 r28c=28.2.13676358"
+          NDK_MAP="r27=27.0.12077973 r27c=27.2.12479018 r28c=28.2.13676358"
           UNMAPPED=""
           PACKAGES=""
           for PIN in $NDK_PINS; do
