@@ -896,7 +896,7 @@
     <string name="voice_note_identity_grant_hint">O acesso às notificações está desativado. Toque para abrir a configuração do sistema e ativá-lo para este app.</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">Transcrição de notas de voz</string>
-    <string name="voice_note_detection_description">Transcreve as mensagens de voz do WhatsApp assim que chegam, com o app em execução. Se o Android bloquear o início em segundo plano, uma notificação inicia com um toque. Uma mensagem só é lida para transcrever, neste dispositivo; desligado nada é lido. Requer acesso ao áudio.</string>
+    <string name="voice_note_detection_description">Modo automático, uma alternativa a compartilhar cada mensagem à mão: configure uma vez (ative e escolha a pasta de mensagens de voz do WhatsApp) e daí em diante as novas mensagens são transcritas assim que chegam, sem outros toques. Uma mensagem só é lida para transcrever, neste dispositivo; desligado nada é lido. Requer acesso ao áudio.</string>
     <string name="voice_note_detection_grant_hint">O acesso ao áudio está desligado. Toque para abrir as configurações do app e ativá-lo; a transcrição começa assim que for concedido.</string>
     <string name="voice_note_folder_grant_rejected">Esta não é a pasta de notas de voz do WhatsApp. Escolha a pasta chamada WhatsApp Voice Notes e tente novamente.</string>
     <string name="voice_note_folder_card_title">Pasta de notas de voz</string>

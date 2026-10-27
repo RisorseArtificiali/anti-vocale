@@ -1041,7 +1041,7 @@
     <string name="voice_note_identity_grant_hint">Bildirim erişimi kapalı. Sistem ayarını açıp bu uygulama için etkinleştirmek üzere dokunun.</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">Sesli not transkripsiyonu</string>
-    <string name="voice_note_detection_description">Yeni WhatsApp sesli mesajlarını uygulama çalışırken geldikçe yazıya çevirir. Android arka plan başlatmayı engellerse tek dokunuşlu bir bildirimle başlar. Bir mesaj yalnızca yazıya çevirmek için okunur, bu cihazda; kapalıyken hiçbir şey okunmaz. Ses erişimi gerekir.</string>
+    <string name="voice_note_detection_description">Otomatik mod, her mesajı elle paylaşmaya alternatif: bir kez ayarlayın (açın ve WhatsApp sesli mesajlar klasörünü seçin); o andan itibaren yeni mesajlar geldikçe, başka dokunuş gerekmeden yazıya çevrilir. Bir mesaj yalnızca yazıya çevirmek için okunur, bu cihazda; kapalıyken hiçbir şey okunmaz. Ses erişimi gerekir.</string>
     <string name="voice_note_detection_grant_hint">Ses erişimi kapalı. Uygulama ayarlarını açıp etkinleştirmek için dokunun; transkripsiyon izin verilir verilmez başlar.</string>
     <string name="voice_note_folder_grant_rejected">Bu, WhatsApp sesli notları klasörü değil. WhatsApp Voice Notes adlı klasörü seçin ve tekrar deneyin.</string>
     <string name="voice_note_folder_card_title">Sesli notlar klasörü</string>
