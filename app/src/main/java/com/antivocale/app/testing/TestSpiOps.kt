@@ -14,6 +14,7 @@ import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.RemoteOmnivoiceBackend
+import com.antivocale.app.transcription.TranscriptFuzzySearch
 import com.antivocale.app.ui.theme.ThemeMode
 import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType
@@ -62,6 +63,10 @@ internal class TestSpiOps(
      *  coordinator's KDoc names (gateState=Active with armed=false after a
      *  failed subscribe); same null-under-fakes story. */
     private val detectionGateState: ((com.antivocale.app.data.VoiceNoteSource) -> com.antivocale.app.data.VoiceNoteGateState)? = null,
+    /** TASK-911: the search and log ops run the History queries without UI.
+     *  Debug receiver passes the real dao; the shared unit fakes answer the
+     *  error envelope (same null-under-fakes story as the params above). */
+    private val logDao: com.antivocale.app.data.local.LogDao? = null,
 ) {
 
     suspend fun handle(
@@ -72,6 +77,7 @@ internal class TestSpiOps(
         url: String? = null,
         family: String? = null,
         modelType: String? = null,
+        mode: String? = null,
     ): String = runCatching {
         when (op) {
             OP_GET -> get()
@@ -86,6 +92,8 @@ internal class TestSpiOps(
             OP_VOICE_NOTE_STATE -> voiceNoteState(value)
             OP_MODEL_DOWNLOAD -> modelDownload(entry, value)
             OP_CLEAR_ORPHANED -> clearOrphaned(entry, value)
+            OP_SEARCH -> search(value, mode)
+            OP_LOG -> insertLog(value)
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -600,6 +608,78 @@ internal class TestSpiOps(
         return JSONObject().put("op", OP_UNLOAD).put("unloaded", true).toString()
     }
 
+    /** Both history ops share the same null-under-fakes guard. */
+    private val dao: com.antivocale.app.data.local.LogDao
+        get() = requireNotNull(logDao) {
+            "history ops require the log dao; this construction is debug-only"
+        }
+
+    /** One rendered search hit: the full result rides so the preview can cap. */
+    private data class SearchHit(val id: String, val score: Double?, val result: String)
+
+    /**
+     * TASK-911: run the History search the way the ViewModel does, no UI.
+     * mode=literal (default) is the DAO's SQL LIKE arm; mode=similar scores
+     * the same recent window with [TranscriptFuzzySearch], best-first.
+     * Rows carry an 80-char result preview so a device test can verify a
+     * hit without pulling the database; at most [SEARCH_ROW_CAP] rows are
+     * rendered, with the full match count beside them.
+     */
+    private suspend fun search(query: String?, mode: String?): String {
+        if (query.isNullOrBlank()) throw IllegalArgumentException("missing 'value' extra (the query)")
+        val arm = mode?.lowercase().orEmpty()
+        if (arm !in listOf("", "literal", "similar")) {
+            throw IllegalArgumentException("unknown mode '$mode' (use literal or similar)")
+        }
+        val rows = if (arm == "similar") {
+            dao.getAll().first()
+                .mapNotNull { row ->
+                    TranscriptFuzzySearch.scoreIfMatches(row.result, query)
+                        ?.let { score -> SearchHit(row.id, score, row.result) }
+                }
+                .sortedByDescending { it.score }
+        } else {
+            dao.searchAll(query).first().map { row -> SearchHit(row.id, null, row.result) }
+        }
+        val rendered = JSONArray()
+        for (hit in rows.take(SEARCH_ROW_CAP)) {
+            val entry = JSONObject().put("id", hit.id)
+            hit.score?.let { entry.put("score", Math.round(it * 1000.0) / 1000.0) }
+            entry.put("preview", hit.result.take(80))
+            rendered.put(entry)
+        }
+        return JSONObject()
+            .put("op", OP_SEARCH)
+            .put("mode", if (arm == "similar") "similar" else "literal")
+            .put("query", query)
+            .put("count", rows.size)
+            .put("rows", rendered)
+            .toString()
+    }
+
+    /**
+     * TASK-911: plant a SUCCESS history row without real audio, so a
+     * search or history trial can stage arbitrary transcript text (a
+     * deliberately mis-heard word, a repetition loop, a paragraph gap).
+     * value = the result text. The row carries modelName=spi-planted so a
+     * later cleanup can tell it apart from real transcripts.
+     */
+    private suspend fun insertLog(text: String?): String {
+        if (text.isNullOrBlank()) throw IllegalArgumentException("missing 'value' extra (the result text)")
+        val now = System.currentTimeMillis()
+        val row = com.antivocale.app.data.local.LogEntity(
+            id = java.util.UUID.randomUUID().toString(),
+            timestamp = now,
+            taskId = "spi-log-$now",
+            type = "AUDIO",
+            status = "SUCCESS",
+            result = text,
+            modelName = "spi-planted",
+        )
+        dao.insert(row)
+        return JSONObject().put("op", OP_LOG).put("id", row.id).toString()
+    }
+
     /**
      * The catalog entry/variant validation trio model_download and
      * clear_orphaned share (TASK-668's gate round: the two copies had
@@ -890,7 +970,15 @@ internal class TestSpiOps(
          *  arg shape: entry=<catalog id> value=<variant name>. */
         const val OP_CLEAR_ORPHANED = "clear_orphaned"
         const val OP_VOICE_NOTE_STATE = "voice_note_state"
+        /** TASK-911: value=<query> mode=literal|similar, the History search
+         *  without UI (similar is the TranscriptFuzzySearch arm). */
+        const val OP_SEARCH = "search"
+        /** TASK-911: value=<result text>, plant a SUCCESS history row. */
+        const val OP_LOG = "log"
         const val OP_HELP = "help"
+
+        /** search op rendered-row cap (full count rides beside it). */
+        const val SEARCH_ROW_CAP = 20
 
         /**
          * Every op handle() dispatches; help() renders the array and the
@@ -899,7 +987,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_SEARCH, OP_LOG, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024

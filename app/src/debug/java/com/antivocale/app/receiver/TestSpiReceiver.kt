@@ -53,6 +53,8 @@ class TestSpiReceiver : BroadcastReceiver() {
     @Inject lateinit var backendManager: com.antivocale.app.transcription.TranscriptionBackendManager
     // TASK-826: the armed flag behind op=voice_note_state.
     @Inject lateinit var voiceNoteDetectionCoordinators: com.antivocale.app.data.VoiceNoteDetectionCoordinators
+    // TASK-911: the search and log ops run the History queries without UI.
+    @Inject lateinit var logDao: com.antivocale.app.data.local.LogDao
 
     companion object {
         const val TAG = "TestSpi"
@@ -67,6 +69,8 @@ class TestSpiReceiver : BroadcastReceiver() {
         const val EXTRA_ENTRY = "entry"
         const val EXTRA_URL = "url"
         const val EXTRA_FAMILY = "family"
+        /** TASK-911: op=search arm, literal (default) or similar. */
+        const val EXTRA_MODE = "mode"
         const val EXTRA_MODEL_TYPE = "model_type"
 
         /** TASK-486: navigation destination; required by op=nav. */
@@ -205,7 +209,8 @@ class TestSpiReceiver : BroadcastReceiver() {
             // TASK-827 adds the gate state beside it (the divergence of the
             // two is a catchable signal, not an invariant).
             { source -> voiceNoteDetectionCoordinators.forSource(source).armed },
-            { source -> voiceNoteDetectionCoordinators.forSource(source).gateState.value })
+            { source -> voiceNoteDetectionCoordinators.forSource(source).gateState.value },
+            logDao)
         val op = intent.getStringExtra(EXTRA_OP)
         val key = intent.getStringExtra(EXTRA_KEY)
         val value = intent.getStringExtra(EXTRA_VALUE)
@@ -233,7 +238,7 @@ class TestSpiReceiver : BroadcastReceiver() {
                     handleVoiceNoteGrantOpen(context, intent.getStringExtra(EXTRA_VALUE))
                 } else {
                     // handle() answers every request with JSON, errors included.
-                    ops.handle(op, key, value, entry, url, family, modelType)
+                    ops.handle(op, key, value, entry, url, family, modelType, intent.getStringExtra(EXTRA_MODE))
                 }
                 // PendingResult setters, the goAsync-sanctioned API for this
                 // async window: onReceive has already returned and we are on IO.

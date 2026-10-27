@@ -452,7 +452,7 @@ class TestSpiOpsTest {
         // help is a known op: it must NOT carry the unknown-op error (device
         // verification 2026-09-03 caught the dispatch bug this pins).
         assertFalse(json.has("error"))
-        assertEquals(listOf("get", "set", "records", "identity_cache", "import", "notify_memory_error", "clipboard", "notifications", "unload", "voice_note_state", "model_download", "clear_orphaned", "help"), json.getJSONArray("ops").optStringList())
+        assertEquals(listOf("get", "set", "records", "identity_cache", "import", "notify_memory_error", "clipboard", "notifications", "unload", "voice_note_state", "model_download", "clear_orphaned", "search", "log", "help"), json.getJSONArray("ops").optStringList())
         assertEquals(ops.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))
         assertTrue(json.getString("transcription").contains("com.antivocale.app.PROCESS_REQUEST"))
@@ -662,6 +662,34 @@ class TestSpiOpsTest {
         // would still be silently dropped by the entry.
         val json = JSONObject(ops.handle("import", url = "http://x/entry.json", family = "TRANSDUCER"))
         assertTrue(json.getString("error").contains("entry JSON"))
+    }
+
+    @Test
+    fun `search op without the dao answers the error envelope, not a crash`() = runTest {
+        val reply = JSONObject(ops.handle(TestSpiOps.OP_SEARCH, value = "castellazzo"))
+        assertEquals(TestSpiOps.OP_SEARCH, reply.getString("op"))
+        assertTrue(reply.getString("error").contains("debug-only"))
+    }
+
+    @Test
+    fun `search op validates query and mode before the dao`() = runTest {
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_SEARCH)).getString("error").contains("missing 'value'"),
+        )
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_SEARCH, value = "q", mode = "soundex"))
+                .getString("error").contains("literal or similar"),
+        )
+    }
+
+    @Test
+    fun `log op without the dao or text answers the error envelope, not a crash`() = runTest {
+        val withoutDao = JSONObject(ops.handle(TestSpiOps.OP_LOG, value = "testo di prova"))
+        assertEquals(TestSpiOps.OP_LOG, withoutDao.getString("op"))
+        assertTrue(withoutDao.getString("error").contains("debug-only"))
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_LOG)).getString("error").contains("missing 'value'"),
+        )
     }
 }
 
