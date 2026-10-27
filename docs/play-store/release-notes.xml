@@ -1,4 +1,11 @@
 <en-US>
+What's new in 1.15.0:
+• New: WhatsApp voice notes transcribe themselves as they arrive (opt-in, on-device)
+• New: History search finds words the model mis-heard ("include similar words")
+• New: long pauses become paragraph breaks
+• New: other apps can use Anti-Vocale as their transcriber (Open Transcribe)
+• Improved: damaged models self-heal; missed notes return as one digest
+• Fixed: a corrupted History database recovers instead of crashing
 What's new in 1.14.1:
 • New: watched folders auto-transcribe new audio; remote offload (experimental)
 • New: share as timed text, SRT or VTT; export models as offline bundles
@@ -42,6 +49,13 @@ What's new in 1.12.0:
 • Fixed: clearer low-memory and corrupt-model errors</en-US>
 
 <it-IT>
+Novità della versione 1.15.0:
+• Nuovo: i vocali WhatsApp si trascrivono da soli (opt-in, sul dispositivo)
+• Nuovo: la ricerca trova le parole sentite male dal modello ("parole simili")
+• Nuovo: le pause lunghe diventano a capo di paragrafo
+• Nuovo: altre app possono usare Anti-Vocale come trascrittore (Open Transcribe)
+• Migliorato: modelli danneggiati autoriparati; riepilogo dei vocali persi
+• Corretto: database della Cronologia corrotto recuperato senza blocchi
 Novità della versione 1.14.1:
 • Nuovo: le cartelle osservate trascrivono i nuovi audio; offload remoto (sperimentale)
 • Nuovo: condividi come testo con tempi, SRT o VTT; esporta modelli come bundle offline
@@ -291,6 +305,13 @@ Novità dalla versione 1.0.3:
 • Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)</it-IT>
 
 <de-DE>
+Neuigkeiten in Version 1.15.0:
+• Neu: WhatsApp-Sprachnachrichten werden selbst transkribiert (Opt-in, auf dem Gerät)
+• Neu: die Suche findet vom Modell falsch gehörte Wörter („ähnliche Wörter“)
+• Neu: lange Pausen werden zu Absatzumbrüchen
+• Neu: andere Apps können Anti-Vocale als Transkriptor nutzen (Open Transcribe)
+• Verbessert: beschädigte Modelle heilen selbst; verpasste Nachrichten als Zusammenfassung
+• Behoben: eine beschädigte Verlaufsdatenbank erholt sich statt abzustürzen
 Neuigkeiten in Version 1.14.1:
 • Neu: beobachtete Ordner transkribieren neue Audio automatisch; Remote-Offload (experimentell)
 • Neu: Teilen als Text mit Zeitmarken, SRT oder VTT; Modelle als Offline-Bündel exportieren
@@ -305,6 +326,13 @@ Neuigkeiten in Version 1.14.0:
 • Verbessert: kompakter Erweitert-Bereich, Gemma-Downloads auf eigener Seite</de-DE>
 
 <es-ES>
+Novedades de la versión 1.15.0:
+• Nuevo: las notas de voz de WhatsApp se transcriben solas (opcional, local)
+• Nuevo: la búsqueda encuentra palabras que el modelo escuchó mal («palabras similares»)
+• Nuevo: las pausas largas se vuelven saltos de párrafo
+• Nuevo: otras apps pueden usar Anti-Vocale como transcriptor (Open Transcribe)
+• Mejorado: los modelos dañados se reparan solos; notas perdidas en un resumen
+• Corregido: una base del Historial corrupta se recupera en vez de fallar
 Novedades de la versión 1.14.1:
 • Nuevo: las carpetas vigiladas transcriben audio nuevo; offload remoto (experimental)
 • Nuevo: comparte como texto con tiempos, SRT o VTT; exporta modelos como paquetes offline
@@ -319,6 +347,13 @@ Novedades de la versión 1.14.0:
 • Mejorado: sección Avanzado compacta, descargas de Gemma en su propia página</es-ES>
 
 <fr-FR>
+Nouveautés de la version 1.15.0 :
+• Nouveau : les messages vocaux WhatsApp se transcrivent seuls (opt-in, local)
+• Nouveau : la recherche trouve les mots mal entendus (« mots similaires »)
+• Nouveau : les longues pauses deviennent des sauts de paragraphe
+• Nouveau : d'autres applis peuvent employer Anti-Vocale comme transcripteur
+• Amélioré : les modèles endommagés se réparent seuls ; messages manqués en un résumé
+• Corrigé : une base Historique corrompue se rétablit sans planter
 Nouveautés de la version 1.14.1 :
 • Nouveau : les dossiers surveillés transcrivent le nouvel audio ; déport distant (expérimental)
 • Nouveau : partage en texte horodaté, SRT ou VTT ; export des modèles hors ligne
@@ -333,6 +368,13 @@ Nouveautés de la version 1.14.0 :
 • Amélioré : section Avancé compacte, téléchargements Gemma sur leur propre page</fr-FR>
 
 <pt-BR>
+Novidades da versão 1.15.0:
+• Novo: as mensagens de voz do WhatsApp se transcrevem sozinhas (opcional, local)
+• Novo: a busca encontra palavras que o modelo ouviu errado («palavras semelhantes»)
+• Novo: pausas longas viram quebras de parágrafo
+• Novo: outros apps podem usar o Anti-Vocale como transcritor (Open Transcribe)
+• Melhorado: modelos danificados se recuperam sozinhos; notas perdidas num resumo
+• Corrigido: um banco de dados do Histórico corrompido se recupera em vez de travar
 Novidades da versão 1.14.1:
 • Novo: pastas assistidas transcrevem o novo áudio; offload remoto (experimental)
 • Novo: compartilhe como texto com tempos, SRT ou VTT; exporte modelos como pacotes offline
@@ -347,6 +389,13 @@ Novidades da versão 1.14.0:
 • Melhorado: seção Avançada compacta, downloads do Gemma em página própria</pt-BR>
 
 <ru-RU>
+Что нового в версии 1.15.0:
+• Новое: голосовые WhatsApp расшифровываются сами (по желанию, на устройстве)
+• Новое: поиск находит слова, расслышанные моделью неверно («похожие слова»)
+• Новое: длинные паузы становятся абзацами
+• Новое: другие приложения могут использовать Anti-Vocale как транскрайбер (Open Transcribe)
+• Улучшено: повреждённые модели восстанавливаются сами; пропущенные сообщения одним дайджестом
+• Исправлено: повреждённая база Истории восстанавливается, а не ломается
 Что нового в версии 1.14.1:
 • Новое: наблюдаемые папки сами расшифровывают новый звук; удалённая разгрузка (экспериментально)
 • Новое: отправка как текст с таймкодами, SRT или VTT; экспорт моделей как офлайн-пакетов
@@ -361,6 +410,13 @@ Novidades da versão 1.14.0:
 • Улучшено: компактный раздел «Дополнительно», загрузки Gemma на отдельной странице</ru-RU>
 
 <tr-TR>
+Sürüm 1.15.0'daki yenilikler:
+• Yeni: WhatsApp sesli mesajları kendiliğinden yazıya dökülür (isteğe bağlı, cihazda)
+• Yeni: arama, modelin yanlış duyduğu kelimeleri bulur («benzer kelimeler»)
+• Yeni: uzun duraklamalar paragraf sonu olur
+• Yeni: diğer uygulamalar Anti-Vocale'i transkriptör olarak kullanabilir (Open Transcribe)
+• İyileştirildi: bozuk modeller kendini onarır; kaçırılan mesajlar tek özetle döner
+• Düzeltildi: bozuk Geçmiş veritabanı çökmek yerine kurtulur
 Sürüm 1.14.1'daki yenilikler:
 • Yeni: izlenen klasörler yeni sesi kendiliğinden yazıya çevirir; uzak aktarım (deneysel)
 • Yeni: zaman damgalı metin, SRT veya VTT olarak paylaşın; modelleri çevrimdışı paket olarak dışa aktarın
@@ -375,6 +431,13 @@ Sürüm 1.14.0'daki yenilikler:
 • İyileştirildi: kompakt Gelişmiş bölümü, Gemma indirmeleri kendi sayfasında</tr-TR>
 
 <pl-PL>
+Nowości w wersji 1.15.0:
+• Nowość: notatki głosowe WhatsApp transkrybują się same (opcjonalnie, lokalnie)
+• Nowość: wyszukiwanie znajduje słowa źle usłyszane przez model („podobne słowa”)
+• Nowość: długie pauzy stają się podziałami akapitów
+• Nowość: inne aplikacje mogą używać Anti-Vocale jako transkrybenta (Open Transcribe)
+• Lepiej: uszkodzone modele naprawiają się same; pominięte wiadomości w jednym podsumowaniu
+• Poprawiono: uszkodzona baza Historii odzyskuje się zamiast wysypać
 Nowości w wersji 1.14.1:
 • Nowość: obserwowane foldery same transkrybują nowe audio; zdalny offload (eksperymentalny)
 • Nowość: udostępniaj jako tekst z czasami, SRT lub VTT; eksportuj modele jako pakiety offline
@@ -389,6 +452,13 @@ Nowości w wersji 1.14.0:
 • Ulepszone: kompaktowa sekcja Zaawansowane, pobieranie Gemma na osobnej stronie</pl-PL>
 
 <hi-IN>
+संस्करण 1.15.0 में नया क्या है:
+• नया: WhatsApp वॉइस नोट्स अपने आप ट्रांसक्राइब होते हैं (स्वेच्छा से, डिवाइस पर)
+• नया: खोज मॉडल के गलत सुने शब्द ढूंढती है («समान शब्द»)
+• नया: लंबे ठहराव पैराग्राफ ब्रेक बनते हैं
+• नया: दूसरे ऐप Anti-Vocale को ट्रांसक्राइबर मानकर इस्तेमाल कर सकते हैं (Open Transcribe)
+• बेहतर: खराब मॉडल खुद ठीक होते हैं; छूटे संदेश एक सारांश में
+• ठीक: इतिहास का खराब डेटाबेस ठीक हो जाता है, क्रैश नहीं
 संस्करण 1.14.1 में नया क्या है:
 • नया: चुनी फ़ोल्डर नए ऑडियो को अपने आप लिखते हैं; रिमोट ऑफ़लोड (प्रयोगात्मक)
 • नया: टाइमस्टैम्प टेक्स्ट, SRT या VTT के रूप में साझा करें; मॉडल ऑफ़लाइन बंडल के रूप में निर्यात करें
@@ -403,6 +473,13 @@ Nowości w wersji 1.14.0:
 • बेहतर: कॉम्पैक्ट एडवांस्ड सेक्शन, Gemma डाउनलोड अलग पेज पर</hi-IN>
 
 <uk>
+Новинки версії 1.15.0:
+• Нове: голосові WhatsApp розшифровуються самі (за бажанням, на пристрої)
+• Нове: пошук знаходить слова, почуті моделлю неправильно («схожі слова»)
+• Нове: довгі паузи стають абзацами
+• Нове: інші програми можуть використовувати Anti-Vocale як транскрайбер (Open Transcribe)
+• Краще: пошкоджені моделі відновлюються самі; пропущені повідомлення одним дайджестом
+• Виправлено: пошкоджена база Історії відновлюється, а не ламається
 Новинки версії 1.14.1:
 • Нове: відстежувані теки самі розшифровують нове аудіо; віддалене розвантаження (експериментально)
 • Нове: поділіться як текст із таймкодами, SRT або VTT; експортуйте моделі як офлайн-пакети
@@ -416,6 +493,13 @@ Nowości w wersji 1.14.0:
 • Нове: інтерфейс китайською; каталог спільноти понад 30 моделей з фільтром мови
 • Покращено: компактний розділ «Додатково», завантаження Gemma на окремій сторінці</uk>
 <he-IL>
+מה חדש בגרסה 1.15.0:
+• חדש: הודעות קוליות ב־WhatsApp מתועתקות אוטומטית (בבחירה, על המכשיר)
+• חדש: החיפוש מוצא מילים שהמודל שמע לא נכון («מילים דומות»)
+• חדש: הפסקות ארוכות הופכות למעברי פסקה
+• חדש: אפליקציות אחרות יכולות להשתמש ב־Anti-Vocale כמתעתק (Open Transcribe)
+• משופר: מודלים פגומים מתקנים את עצמם; הודעות שהוחמצו בתמצית אחת
+• תוקן: מסד נתונים פגום של ההיסטוריה מתאושש במקום לקרוס
 מה חדש בגרסה 1.14.1:
 • חדש: תיקיות מעקב מתמללות אודיו חדש בעצמן; העברה מרחוק (ניסיוני)
 • חדש: שיתוף כטקסט עם חותמות זמן, SRT או VTT; ייצוא מודלים כחבילות לא-מקוונות
@@ -429,6 +513,13 @@ Nowości w wersji 1.14.0:
 • חדש: ממשק בסינית; קטלוג הקהילה מעל 30 מודלים, מסונן לפי שפה
 • שופר: מקטע מתקדם קומפקטי, הורדות Gemma בעמוד משלהן</he-IL>
 <fa-IR>
+چه چیز جدید‌های نسخه 1.15.0:
+• جدید: پیام‌های صوتی واتس‌اپ خودکار پیاده‌سازی می‌شوند (اختیاری، روی دستگاه)
+• جدید: جست‌وجو واژه‌های اشتباه‌شنیده مدل را پیدا می‌کند («واژه‌های مشابه»)
+• جدید: مکث‌های طولانی به شکست پاراگراف تبدیل می‌شوند
+• جدید: برنامه‌های دیگر می‌توانند Anti-Vocale را پیاده‌نویس خود کنند (Open Transcribe)
+• بهبود: مدل‌های آسیب‌دیده خودترمیم؛ پیام‌های از دست‌رفته در یک خلاصه
+• رفع اشکال: پایگاه‌داده خراب تاریخچه ترمیم می‌شود، فرونمی‌پاشد
 چه چیز جدید‌های نسخه 1.14.1:
 • جدید: پوشه‌های تحت نظر صدهای جدید را خودکار رو‌نویسی می‌کنند؛ آف‌لود از راه دور (آزمایشی)
 • جدید: اشتراک به‌صورت متن زمان‌دار، SRT یا VTT؛ برون‌بری مدل‌ها به‌صورت بسته‌ی آفلاین
@@ -442,6 +533,13 @@ Nowości w wersji 1.14.0:
 • جدید: رابط چینی؛ کاتالوگ جامعه بالای 30 مدل، فیلتر زبان
 • بهبود: بخش پیشرفته فشرده، دانلودهای Gemma در صفحه خودشان</fa-IR>
 <zh-CN>
+1.15.0 版本更新：
+• 新增：WhatsApp 语音消息自动转写（可选择开启，仅在设备上）
+• 新增：搜索能找到模型听错的词（“包含相似词语”）
+• 新增：较长的停顿变成段落换行
+• 新增：其他应用可将 Anti-Vocale 用作转写器（Open Transcribe）
+• 改进：损坏的模型自我修复；错过的话语汇总为一条摘要
+• 修复：历史记录数据库损坏时可恢复，不再崩溃
 1.14.1 版本更新：
 • 新增：关注的文件夹自动转写新音频；远程卸载（实验性）
 • 新增：以带时间码文本、SRT 或 VTT 分享；模型可导出为离线包

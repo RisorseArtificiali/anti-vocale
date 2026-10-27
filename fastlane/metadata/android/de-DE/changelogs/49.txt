@@ -1,0 +1,6 @@
+Neu: WhatsApp-Sprachnachrichten werden selbst transkribiert (Opt-in, auf dem Gerät)
+Neu: die Suche findet vom Modell falsch gehörte Wörter („ähnliche Wörter“)
+Neu: lange Pausen werden zu Absatzumbrüchen
+Neu: andere Apps können Anti-Vocale als Transkriptor nutzen (Open Transcribe)
+Verbessert: beschädigte Modelle heilen selbst; verpasste Nachrichten als Zusammenfassung
+Behoben: eine beschädigte Verlaufsdatenbank erholt sich statt abzustürzen

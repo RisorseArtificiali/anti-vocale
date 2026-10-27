@@ -1,0 +1,6 @@
+Novo: as mensagens de voz do WhatsApp se transcrevem sozinhas (opcional, local)
+Novo: a busca encontra palavras que o modelo ouviu errado («palavras semelhantes»)
+Novo: pausas longas viram quebras de parágrafo
+Novo: outros apps podem usar o Anti-Vocale como transcritor (Open Transcribe)
+Melhorado: modelos danificados se recuperam sozinhos; notas perdidas num resumo
+Corrigido: um banco de dados do Histórico corrompido se recupera em vez de travar

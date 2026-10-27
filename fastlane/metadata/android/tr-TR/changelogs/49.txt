@@ -1,0 +1,6 @@
+Yeni: WhatsApp sesli mesajları kendiliğinden yazıya dökülür (isteğe bağlı, cihazda)
+Yeni: arama, modelin yanlış duyduğu kelimeleri bulur («benzer kelimeler»)
+Yeni: uzun duraklamalar paragraf sonu olur
+Yeni: diğer uygulamalar Anti-Vocale'i transkriptör olarak kullanabilir (Open Transcribe)
+İyileştirildi: bozuk modeller kendini onarır; kaçırılan mesajlar tek özetle döner
+Düzeltildi: bozuk Geçmiş veritabanı çökmek yerine kurtulur

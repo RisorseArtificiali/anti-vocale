@@ -1,0 +1,6 @@
+Uutta: WhatsApp-ääniviestit kirjoitetaan automaattisesti niiden saapuessa (valinnainen, laitteella)
+Uutta: haku löytää sanat, jotka malli kuuli väärin (»samankaltaiset sanat«)
+Uutta: pitkät tauot muuttuvat kappaleenvaihdoiksi
+Uutta: muut sovellukset voivat käyttää Anti-Vocalea transkriptorinaan (Open Transcribe)
+Parannettu: vaurioituneet mallit korjaavat itsensä; ohitetut viestit palaavat yhtenä tiivistelmänä
+Korjattu: vahingoittunut Historiatietokanta palautuu kaatumisen sijaan
