@@ -369,7 +369,7 @@ dependencies {
     // AppAuth for OAuth authentication (HuggingFace)
     implementation(libs.appauth)
 
-    // sherpa-onnx v2.0.0 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR, Nemotron).
+    // sherpa-onnx v2.0.1 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR, Nemotron).
     // v2.0.0 (TASK-668): JNI C++ exceptions in recognizer/punctuation
     // constructors now surface as Java exceptions (our #3988; re-audit the
     // TranscriptionException flow), whisper byte-level-BPE character-loss fix
@@ -378,7 +378,7 @@ dependencies {
     // #4079), NeMo mel log-zero guard (#3999), omnilingual short-input abort
     // (#4043), JNI BMP strings (#4064), espeak-ng/piper-phonemize removed
     // (#4055; AAR contents change).
-    // SRCLIB PIN: k2-fsa/sherpa-onnx v2.0.0 = commit 8abb7c8f87eae85b2e75f9a4115236c978980add
+    // SRCLIB PIN: k2-fsa/sherpa-onnx v2.0.1 = commit af2d8d81dbfa61c4cea4c568da78f3982edca005
     // (for the F-Droid recipe; keep in sync with scripts/fetch-sherpa-aar.sh).
     // Stock prebuilt AAR (all 4 ABIs).
     implementation(files("libs/sherpa-onnx.aar"))
