@@ -55,6 +55,8 @@ class TestSpiReceiver : BroadcastReceiver() {
     @Inject lateinit var voiceNoteDetectionCoordinators: com.antivocale.app.data.VoiceNoteDetectionCoordinators
     // TASK-911: the search and log ops run the History queries without UI.
     @Inject lateinit var logDao: com.antivocale.app.data.local.LogDao
+    // TASK-912: the voice_note_simulate op drives the auto-transcriber.
+    @Inject lateinit var voiceNoteAutoTranscriber: com.antivocale.app.data.VoiceNoteAutoTranscriber
 
     companion object {
         const val TAG = "TestSpi"
@@ -82,6 +84,15 @@ class TestSpiReceiver : BroadcastReceiver() {
         /** TASK-826: op=voice_note_grant_open (no extras; the activity
          *  opens the same folder picker the Settings row uses). */
         const val OP_VOICE_NOTE_GRANT_OPEN = "voice_note_grant_open"
+
+        /** TASK-912: op=notify_action value=<action> fires a
+         *  NotificationActionReceiver action (see handleNotifyAction for
+         *  the name table); the other broadcast extras ride along. */
+        const val OP_NOTIFY_ACTION = "notify_action"
+
+        /** TASK-912: op=share_open value=<file uri> mode=<mime, default
+         *  audio/ogg> starts the share-target flow on a staged file. */
+        const val OP_SHARE_OPEN = "share_open"
 
         /**
          * The receiver-side ops' one JSON envelope builder (the ops engine
@@ -131,6 +142,87 @@ class TestSpiReceiver : BroadcastReceiver() {
         }.getOrElse { e ->
             ack(OP_VOICE_NOTE_GRANT_OPEN) {
                 put("error", "grant picker failed to launch: ${e.message ?: e.javaClass.simpleName}")
+            }
+        }
+
+    /**
+     * TASK-912: op=notify_action value=<action> forwards to
+     * [NotificationActionReceiver] the same broadcast a notification
+     * button's PendingIntent delivers (value names the action: copy,
+     * share, share_back, use_subtitles, transcribe_audio, dismiss_choice,
+     * rerun_suspended, page_prev, page_next). Every OTHER extra on the
+     * incoming intent rides verbatim, so a script supplies task_id,
+     * file_path or transcription_text exactly as the factory baked them
+     * (op=notifications reads the live ones back). Receiver-side: a
+     * broadcast send is beyond the JVM-pure ops engine, like nav.
+     */
+    private fun handleNotifyAction(context: Context, intent: Intent): String {
+        val name = intent.getStringExtra(EXTRA_VALUE)?.lowercase()
+        val action = when (name) {
+            "copy" -> NotificationActionReceiver.ACTION_COPY_TRANSCRIPTION
+            "share" -> NotificationActionReceiver.ACTION_SHARE_TRANSCRIPTION
+            "share_back" -> NotificationActionReceiver.ACTION_SHARE_BACK
+            "use_subtitles" -> NotificationActionReceiver.ACTION_USE_SUBTITLES
+            "transcribe_audio" -> NotificationActionReceiver.ACTION_TRANSCRIBE_AUDIO
+            "dismiss_choice" -> NotificationActionReceiver.ACTION_DISMISS_CHOICE
+            "rerun_suspended" -> NotificationActionReceiver.ACTION_RERUN_SUSPENDED
+            "page_prev" -> NotificationActionReceiver.ACTION_PAGE_PREV
+            "page_next" -> NotificationActionReceiver.ACTION_PAGE_NEXT
+            else -> null
+        }
+        if (action == null) {
+            return ack(OP_NOTIFY_ACTION) {
+                put("error", "unknown action '$name' (use copy, share, share_back, " +
+                    "use_subtitles, transcribe_audio, dismiss_choice, rerun_suspended, " +
+                    "page_prev, page_next)")
+            }
+        }
+        val forwarded = Intent(action).setClass(context, NotificationActionReceiver::class.java)
+        // Whole-bundle copy, then drop the SPI's own bookkeeping keys (all
+        // nine: a leftover colliding with a future action extra would hand
+        // the receiver bookkeeping data; the typed putExtra overloads
+        // cannot take an untyped Any, so copy-then-remove).
+        intent.extras?.let { forwarded.putExtras(it) }
+        for (bookkeeping in arrayOf(
+            EXTRA_OP, EXTRA_KEY, EXTRA_VALUE, EXTRA_ENTRY, EXTRA_URL, EXTRA_FAMILY,
+            EXTRA_MODEL_TYPE, EXTRA_DEST, EXTRA_SCROLL,
+        )) {
+            forwarded.removeExtra(bookkeeping)
+        }
+        context.sendBroadcast(forwarded)
+        return ack(OP_NOTIFY_ACTION) { put("fired", name) }
+    }
+
+    /**
+     * TASK-912: op=share_open value=<file uri> mode=<mime, default
+     * audio/ogg> starts [ShareReceiverActivity] on a staged file, the same
+     * intent shape another app's share sheet delivers. Receiver-side like
+     * nav: an activity start is beyond the ops engine.
+     */
+    private fun handleShareOpen(context: Context, uriText: String?, mime: String?): String =
+        runCatching {
+            if (uriText.isNullOrBlank()) {
+                return ack(OP_SHARE_OPEN) { put("error", "missing 'value' extra (the file uri)") }
+            }
+            context.startActivity(
+                Intent(Intent.ACTION_SEND).apply {
+                    type = if (mime.isNullOrBlank()) "audio/ogg" else mime
+                    putExtra(Intent.EXTRA_STREAM, android.net.Uri.parse(uriText))
+                    // The grant flag a real share sheet delivers: without it
+                    // a content:// uri the app holds no grant for fails
+                    // inside the activity after the ack already said
+                    // launched=true.
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                    setClass(context, ShareReceiverActivity::class.java)
+                }
+            )
+            ack(OP_SHARE_OPEN) { put("launched", true); put("uri", uriText) }
+        }.getOrElse { e ->
+            ack(OP_SHARE_OPEN) {
+                put("error", "share open failed: ${e.message ?: e.javaClass.simpleName}")
             }
         }
 
@@ -210,7 +302,8 @@ class TestSpiReceiver : BroadcastReceiver() {
             // two is a catchable signal, not an invariant).
             { source -> voiceNoteDetectionCoordinators.forSource(source).armed },
             { source -> voiceNoteDetectionCoordinators.forSource(source).gateState.value },
-            logDao)
+            logDao,
+            voiceNoteAutoTranscriber)
         val op = intent.getStringExtra(EXTRA_OP)
         val key = intent.getStringExtra(EXTRA_KEY)
         val value = intent.getStringExtra(EXTRA_VALUE)
@@ -236,6 +329,10 @@ class TestSpiReceiver : BroadcastReceiver() {
                     handleNav(context, dest, scroll)
                 } else if (op == OP_VOICE_NOTE_GRANT_OPEN) {
                     handleVoiceNoteGrantOpen(context, intent.getStringExtra(EXTRA_VALUE))
+                } else if (op == OP_NOTIFY_ACTION) {
+                    handleNotifyAction(context, intent)
+                } else if (op == OP_SHARE_OPEN) {
+                    handleShareOpen(context, intent.getStringExtra(EXTRA_VALUE), intent.getStringExtra(EXTRA_MODE))
                 } else {
                     // handle() answers every request with JSON, errors included.
                     ops.handle(op, key, value, entry, url, family, modelType, intent.getStringExtra(EXTRA_MODE))

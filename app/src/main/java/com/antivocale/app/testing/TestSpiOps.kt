@@ -7,6 +7,8 @@ import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.transcription.ModelFamilySupport
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.prefsOrDefault
+import com.antivocale.app.data.resetVoiceNoteWatermark
 import com.antivocale.app.data.voiceNoteDetectionEnabled
 import com.antivocale.app.data.voiceNoteTreeUri
 import com.antivocale.app.transcription.BuiltInBackendIds
@@ -67,6 +69,9 @@ internal class TestSpiOps(
      *  Debug receiver passes the real dao; the shared unit fakes answer the
      *  error envelope (same null-under-fakes story as the params above). */
     private val logDao: com.antivocale.app.data.local.LogDao? = null,
+    /** TASK-912: the voice_note_simulate op drives the auto-transcriber.
+     *  Same null-under-fakes story. */
+    private val voiceNoteAutoTranscriber: com.antivocale.app.data.VoiceNoteAutoTranscriber? = null,
 ) {
 
     suspend fun handle(
@@ -96,6 +101,9 @@ internal class TestSpiOps(
             OP_LOG -> insertLog(value)
             OP_LOG_READ -> readLog(value)
             OP_LOG_DELETE -> deleteLog(value)
+            OP_VOICE_NOTE_WATERMARK_RESET -> resetWatermark(value)
+            OP_VOICE_NOTE_SIMULATE -> simulateVoiceNote(value, entry)
+            OP_NOTIFY_TEXT -> notifyText(value, entry)
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -634,12 +642,10 @@ internal class TestSpiOps(
             throw IllegalArgumentException("unknown mode '$mode' (use literal or similar)")
         }
         val rows = if (arm == "similar") {
-            dao.getAll().first()
-                .mapNotNull { row ->
-                    TranscriptFuzzySearch.scoreIfMatches(row.result, query)
-                        ?.let { score -> SearchHit(row.id, score, row.result) }
-                }
-                .sortedByDescending { it.score }
+            // The SAME ranking pipeline the ViewModel uses, so the op is a
+            // faithful trial oracle, not a parallel implementation.
+            TranscriptFuzzySearch.scoreRanked(dao.getAll().first(), query) { it.result }
+                .map { (score, row) -> SearchHit(row.id, score, row.result) }
         } else {
             dao.searchAll(query).first().map { row -> SearchHit(row.id, null, row.result) }
         }
@@ -742,6 +748,90 @@ internal class TestSpiOps(
             dao.deleteById(value)
         }
         return JSONObject().put("op", OP_LOG_DELETE).put("deleted", deleted).toString()
+    }
+
+    /**
+     * The whatsapp|whatsapp_business selector the voice-note ops share:
+     * null or blank keeps the WhatsApp default, anything else must name a
+     * [com.antivocale.app.data.VoiceNoteSource] (case-insensitive; the
+     * error lists the valid tokens so a script self-corrects).
+     */
+    private fun parseVoiceNoteSource(token: String?): com.antivocale.app.data.VoiceNoteSource {
+        if (token.isNullOrBlank()) return com.antivocale.app.data.VoiceNoteSource.WHATSAPP
+        return com.antivocale.app.data.VoiceNoteSource.entries
+            .firstOrNull { it.name.equals(token, ignoreCase = true) }
+            ?: throw IllegalArgumentException(
+                "unknown source '$token' (valid: " +
+                    com.antivocale.app.data.VoiceNoteSource.entries.joinToString { it.name.lowercase() } + ")")
+    }
+
+    /**
+     * TASK-912: reset the voice-note watermark through the production
+     * reset path. A scripted catch-up trial starts from a CLEAN watermark
+     * instead of backdating one: an arbitrary setter is deliberately
+     * absent (the persisted format's counter-tree invariants are subtle;
+     * reset is the designed way back to a known state).
+     */
+    private suspend fun resetWatermark(source: String?): String {
+        val src = parseVoiceNoteSource(source)
+        preferences.resetVoiceNoteWatermark(src)
+        return JSONObject()
+            .put("op", OP_VOICE_NOTE_WATERMARK_RESET)
+            .put("source", src.name)
+            .toString()
+    }
+
+    /**
+     * TASK-912: run the voice-note pipeline on a staged note WITHOUT a
+     * real WhatsApp arrival. value = the note's path relative to the
+     * granted tree ("WhatsApp Voice Notes/msg-0001.opus"), entry = source.
+     * Calls the auto-transcriber's enqueue with the LIVE tree URI, exactly
+     * what the coordinator does on a real CLOSE_WRITE/MOVED_TO.
+     */
+    private suspend fun simulateVoiceNote(path: String?, source: String?): String {
+        if (path.isNullOrBlank()) throw IllegalArgumentException("missing 'value' extra (the note path inside the tree)")
+        val src = parseVoiceNoteSource(source)
+        val transcriber = requireNotNull(voiceNoteAutoTranscriber) {
+            "voice_note_simulate requires the auto transcriber; this construction is debug-only"
+        }
+        val treeUri = preferences.voiceNoteTreeUri(src).first()
+            ?: throw IllegalArgumentException(
+                "no tree grant for ${src.name}; run voice_note_grant_open once first")
+        val outcome = transcriber.enqueue(path, System.currentTimeMillis(), treeUri, src)
+        return JSONObject()
+            .put("op", OP_VOICE_NOTE_SIMULATE)
+            .put("path", path)
+            .put("source", src.name)
+            // The outcome tells a replayed note (DEDUPED) or an unresolvable
+            // path (UNRESOLVABLE) apart from a real dispatch: without it a
+            // scripted trial would wait for a history row that never comes.
+            .put("outcome", outcome.name)
+            .toString()
+    }
+
+    /**
+     * TASK-912: post a result notification for arbitrary text through the
+     * production factory (build + postIfPermitted + the reserved-band id
+     * allocator), so notification-layout trials run without a transcript.
+     * value = text; entry = sourcePackage (optional; selects per-app prefs).
+     */
+    private suspend fun notifyText(text: String?, sourcePackage: String?): String {
+        if (text.isNullOrBlank()) throw IllegalArgumentException("missing 'value' extra (the notification text)")
+        val context = requireContext(OP_NOTIFY_TEXT)
+        val prefs = com.antivocale.app.data.PerAppPreferencesManager(context)
+            .prefsOrDefault(sourcePackage)
+        val factory = com.antivocale.app.service.ResultNotificationFactory(context)
+        val id = com.antivocale.app.service.ResultNotificationFactory.nextNotificationId()
+        val spec = com.antivocale.app.service.ResultNotificationSpec(
+            transcriptionText = text,
+            taskId = "spi-notify",
+            sourcePackage = sourcePackage,
+            confidence = null,
+            detectedLanguage = null,
+            notificationId = id,
+        )
+        factory.postIfPermitted(id, factory.build(spec, prefs))
+        return JSONObject().put("op", OP_NOTIFY_TEXT).put("id", id).toString()
     }
 
     /**
@@ -942,15 +1032,7 @@ internal class TestSpiOps(
     private suspend fun voiceNoteState(sourceToken: String?): String {
         // WhatsApp Business support: value=whatsapp_business selects the
         // Business coordinator; no value keeps the original WhatsApp answer.
-        val source = if (sourceToken == null) {
-            com.antivocale.app.data.VoiceNoteSource.WHATSAPP
-        } else {
-            com.antivocale.app.data.VoiceNoteSource.entries
-                .firstOrNull { it.name.equals(sourceToken, ignoreCase = true) }
-                ?: throw IllegalArgumentException(
-                    "unknown source '$sourceToken' (valid: " +
-                        com.antivocale.app.data.VoiceNoteSource.entries.joinToString { it.name.lowercase() } + ")")
-        }
+        val source = parseVoiceNoteSource(sourceToken)
         val enabled = preferences.voiceNoteDetectionEnabled(source).first()
         val uri = preferences.voiceNoteTreeUri(source).first()
         val audioGranted = appContext?.let {
@@ -1043,6 +1125,16 @@ internal class TestSpiOps(
         const val OP_LOG_READ = "log_read"
         /** TASK-912: value=<row id> or "planted" to sweep the SPI rows. */
         const val OP_LOG_DELETE = "log_delete"
+        /** TASK-912: value=<whatsapp default or whatsapp_business>; resets
+         *  through the detector's own production path (no raw setter, by
+         *  design: the format invariants are subtle). */
+        const val OP_VOICE_NOTE_WATERMARK_RESET = "voice_note_watermark_reset"
+        /** TASK-912: value=<note path inside the tree>, entry=<source>; the
+         *  auto-transcriber path without a real WhatsApp arrival. */
+        const val OP_VOICE_NOTE_SIMULATE = "voice_note_simulate"
+        /** TASK-912: value=<text>, entry=<sourcePackage optional>; a result
+         *  notification through the production factory. */
+        const val OP_NOTIFY_TEXT = "notify_text"
         const val OP_HELP = "help"
 
         /** search op rendered-row cap (full count rides beside it). */
@@ -1069,7 +1161,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024

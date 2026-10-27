@@ -14,31 +14,37 @@ import org.junit.Test
  */
 class TranscriptFuzzySearchTest {
 
+    private fun matches(text: String, query: String): Boolean =
+        TranscriptFuzzySearch.scoreIfMatches(text, query) != null
+
+    private fun rowScore(text: String, query: String): Double =
+        TranscriptFuzzySearch.scoreIfMatches(text, query) ?: 0.0
+
     @Test
     fun `gemination errors match in both directions`() {
-        assertTrue(TranscriptFuzzySearch.matches("Domani visitiamo il castelazo", "castellazzo"))
-        assertTrue(TranscriptFuzzySearch.matches("Domani visitiamo il castellazzo", "castelazo"))
-        assertTrue(TranscriptFuzzySearch.matches("Ci vediamo domatina alle nove", "mattina"))
+        assertTrue(matches("Domani visitiamo il castelazo", "castellazzo"))
+        assertTrue(matches("Domani visitiamo il castellazzo", "castelazo"))
+        assertTrue(matches("Ci vediamo domatina alle nove", "mattina"))
     }
 
     @Test
     fun `vowel shifts and diacritic loss match`() {
-        assertTrue(TranscriptFuzzySearch.matches("Devo andare in uspedale", "ospedale"))
-        assertTrue(TranscriptFuzzySearch.matches("non capisco piu niente", "più"))
-        assertTrue(TranscriptFuzzySearch.matches("la citta e bella", "città"))
-        assertTrue(TranscriptFuzzySearch.matches("il treno parte per Bolonia", "Bologna"))
+        assertTrue(matches("Devo andare in uspedale", "ospedale"))
+        assertTrue(matches("non capisco piu niente", "più"))
+        assertTrue(matches("la citta e bella", "città"))
+        assertTrue(matches("il treno parte per Bolonia", "Bologna"))
     }
 
     @Test
     fun `voicing confusion matches`() {
-        assertTrue(TranscriptFuzzySearch.matches("pronto chi parla", "bronto"))
-        assertTrue(TranscriptFuzzySearch.matches("ho bronto il libro", "pronto"))
+        assertTrue(matches("pronto chi parla", "bronto"))
+        assertTrue(matches("ho bronto il libro", "pronto"))
     }
 
     @Test
     fun `clitics split so the inner word matches exactly`() {
-        assertTrue(TranscriptFuzzySearch.matches("ho bevuto l'acqua", "acqua"))
-        assertTrue(TranscriptFuzzySearch.matches("c'est fantastique", "est"))
+        assertTrue(matches("ho bevuto l'acqua", "acqua"))
+        assertTrue(matches("c'est fantastique", "est"))
     }
 
     @Test
@@ -46,12 +52,12 @@ class TranscriptFuzzySearchTest {
         // Review round: the query used to keep its apostrophe through
         // normalization while row words did not, so "l'acqua" could never
         // fuzzy-match a transcript whose inner word the model mis-heard.
-        assertTrue(TranscriptFuzzySearch.matches("ho bevuto l'acgua", "l'acqua"))
+        assertTrue(matches("ho bevuto l'acgua", "l'acqua"))
     }
 
     @Test
     fun `cyrillic vowel errors match`() {
-        assertTrue(TranscriptFuzzySearch.matches("привет как дела", "превет"))
+        assertTrue(matches("привет как дела", "превет"))
     }
 
     @Test
@@ -59,7 +65,7 @@ class TranscriptFuzzySearchTest {
         // CJK has no spaces: the whole query is one term and the whole
         // transcript chunk one word, so edit distance works over the
         // phrase and a single wrong character still matches.
-        assertTrue(TranscriptFuzzySearch.matches("今天天起很好", "今天天气很好"))
+        assertTrue(matches("今天天起很好", "今天天气很好"))
     }
 
     @Test
@@ -67,8 +73,8 @@ class TranscriptFuzzySearchTest {
         // Prefix queries and CJK words inside an unspaced sentence are
         // verbatim substrings; the widening floor keeps them hits even
         // though the whole-word length gate would reject them.
-        assertTrue(TranscriptFuzzySearch.matches("Domani visitiamo il castellazzo", "castel"))
-        assertTrue(TranscriptFuzzySearch.matches("今天天气很好", "天气"))
+        assertTrue(matches("Domani visitiamo il castellazzo", "castel"))
+        assertTrue(matches("今天天气很好", "天气"))
     }
 
     @Test
@@ -76,8 +82,8 @@ class TranscriptFuzzySearchTest {
         // Tokenization keeps letters and digits only, so a pasted
         // mark-only fragment never becomes a term: no match, no crash, no
         // match-everything.
-        assertFalse(TranscriptFuzzySearch.matches("caf\u0301e italiano", "\u0301"))
-        assertFalse(TranscriptFuzzySearch.matches("caffe italiano", "\u0301"))
+        assertFalse(matches("caf\u0301e italiano", "\u0301"))
+        assertFalse(matches("caffe italiano", "\u0301"))
     }
 
     @Test
@@ -90,34 +96,34 @@ class TranscriptFuzzySearchTest {
     @Test
     fun `every query term must be found`() {
         val transcript = "L'appuntamento dal dentesta e domani"
-        assertTrue(TranscriptFuzzySearch.matches(transcript, "appuntamento dentista"))
-        assertFalse(TranscriptFuzzySearch.matches(transcript, "appuntamento parrucchiere"))
+        assertTrue(matches(transcript, "appuntamento dentista"))
+        assertFalse(matches(transcript, "appuntamento parrucchiere"))
     }
 
     @Test
     fun `unrelated words do not match`() {
-        assertFalse(TranscriptFuzzySearch.matches("il computer e nuovo", "tramonto"))
-        assertFalse(TranscriptFuzzySearch.matches("andiamo al mare", "ospedale"))
+        assertFalse(matches("il computer e nuovo", "tramonto"))
+        assertFalse(matches("andiamo al mare", "ospedale"))
     }
 
     @Test
     fun `short homophones stay below the bar`() {
         // era/ora differ by one vowel in three letters: admitting them
         // would make the mode return noise on every common short word.
-        assertFalse(TranscriptFuzzySearch.matches("c'era una volta", "ora"))
+        assertFalse(matches("c'era una volta", "ora"))
     }
 
     @Test
     fun `a much longer or shorter word never matches`() {
-        assertFalse(TranscriptFuzzySearch.matches("la casa in collina", "castellazzo"))
-        assertFalse(TranscriptFuzzySearch.matches("il castellazzo e antico", "casa"))
+        assertFalse(matches("la casa in collina", "castellazzo"))
+        assertFalse(matches("il castellazzo e antico", "casa"))
     }
 
     @Test
     fun `blank queries and empty text never match`() {
-        assertFalse(TranscriptFuzzySearch.matches("qualunque testo", "   "))
-        assertFalse(TranscriptFuzzySearch.matches("", "parola"))
-        assertFalse(TranscriptFuzzySearch.matches("... --- ...", "parola"))
+        assertFalse(matches("qualunque testo", "   "))
+        assertFalse(matches("", "parola"))
+        assertFalse(matches("... --- ...", "parola"))
     }
 
     @Test
@@ -125,8 +131,8 @@ class TranscriptFuzzySearchTest {
         // castelazo/castellazzo normalize identically (gemination collapse),
         // so the ranking pair uses a confusion the collapse does NOT
         // erase: Bologna heard as Bolonia.
-        val exact = TranscriptFuzzySearch.rowScore("il treno per Bologna", "Bologna")
-        val fuzzy = TranscriptFuzzySearch.rowScore("il treno per Bolonia", "Bologna")
+        val exact = rowScore("il treno per Bologna", "Bologna")
+        val fuzzy = rowScore("il treno per Bolonia", "Bologna")
         assertTrue(exact > fuzzy)
         assertTrue(fuzzy >= TranscriptFuzzySearch.THRESHOLD)
     }

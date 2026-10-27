@@ -239,22 +239,22 @@ class LogsViewModel @Inject constructor(
         combine(_searchQuery, _searchMode) { query, mode -> query to mode }
             // Before flatMapLatest, so a keystroke storm neither starts the
             // DAO query nor the scoring pass (cancellation alone would only
-            // cut them mid-flight).
-            .debounce(150)
+            // cut them mid-flight). The blank arm skips the delay: debounce
+            // defers first values too, and the default list must not flash
+            // the no-results state on every fresh subscription.
+            .debounce { if (it.first.isBlank()) 0L else 150L }
             .flatMapLatest { (query, mode) ->
                 when {
                     query.isBlank() -> logDao.getAll()
                     mode == SearchMode.LITERAL -> logDao.searchAll(query)
                     // One scoring pass per row feeds both the filter and the
-                    // best-first ranking; Default because scoring 500 rows
-                    // is real CPU and stateIn collects on the main thread.
+                    // best-first ranking (the shared scoreRanked helper, so
+                    // the SPI search op cannot diverge from this ordering);
+                    // Default because scoring 500 rows is real CPU and
+                    // stateIn collects on the main thread.
                     else -> logDao.getAll()
                         .map { rows ->
-                            rows.mapNotNull { row ->
-                                TranscriptFuzzySearch.scoreIfMatches(row.result, query)
-                                    ?.let { score -> score to row }
-                            }.sortedByDescending { it.first }
-                                .map { it.second }
+                            TranscriptFuzzySearch.scoreRanked(rows, query) { it.result }.map { it.second }
                         }
                         .flowOn(Dispatchers.Default)
                 }

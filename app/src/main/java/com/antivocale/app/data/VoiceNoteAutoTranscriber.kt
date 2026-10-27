@@ -43,6 +43,10 @@ class VoiceNoteAutoTranscriber @Inject constructor(
      * zero preference-flow collections per note, and the same source the
      * arming gate drew from (latest-wins; see VoiceNoteTreeGrant.resolve).
      */
+    /** TASK-912: enqueue's observable outcome, so a scripted trial (and a
+     *  future caller) can tell a dispatched note from a silent no-op. */
+    enum class EnqueueOutcome { ENQUEUED, DEDUPED, UNRESOLVABLE, FAILED }
+
     suspend fun enqueue(
         whatsappPath: String,
         detectedAtMs: Long,
@@ -51,7 +55,7 @@ class VoiceNoteAutoTranscriber @Inject constructor(
         /** TASK-889: the cold-start sweep's flag, suppressing the per-note
          *  result notification (the digest replaces the burst's N posts). */
         catchup: Boolean = false,
-    ) {
+    ): EnqueueOutcome {
         // TASK-842: the completed-row silent dedup. The taskId derives from
         // the note's unique PTT name (see serviceIntent), so "same taskId"
         // IS "same note"; WhatsApp re-delivering an already-transcribed
@@ -59,14 +63,14 @@ class VoiceNoteAutoTranscriber @Inject constructor(
         val taskId = taskIdFor(whatsappPath, source)
         if (duplicateGuard.alreadyTranscribed(taskId)) {
             Log.i(TAG, "note already transcribed, deduped: $whatsappPath")
-            return
+            return EnqueueOutcome.DEDUPED
         }
         // Runs on the coordinator's IO dispatcher; resolve is suspend all
         // the way down (SAF queries + copy), never a blocking bridge.
         val localPath = treeGrant.resolve(treeUri, whatsappPath, source)
         if (localPath == null) {
             Log.i(TAG, "note unresolvable through the grant, skipped: $whatsappPath")
-            return
+            return EnqueueOutcome.UNRESOLVABLE
         }
         // The source's OWN package: the cache is filtered by exact package,
         // so a notification from the other WhatsApp client can never label
@@ -79,14 +83,16 @@ class VoiceNoteAutoTranscriber @Inject constructor(
         // null hashes never match by construction). The file is local and
         // small; hashing here on the coordinator's IO dispatcher is safe.
         val contentHash = VoiceNoteDuplicateGuard.hashOf(localPath)
-        when (val outcome = InferenceEnqueue.start(
+        return when (val outcome = InferenceEnqueue.start(
             context, serviceIntent(localPath, whatsappPath, senderName, contentHash, source, catchup))) {
             InferenceEnqueue.Outcome.Started,
             InferenceEnqueue.Outcome.FallbackNotificationPosted -> {
                 Log.i(TAG, "voice note auto-enqueued: $localPath")
+                EnqueueOutcome.ENQUEUED
             }
             is InferenceEnqueue.Outcome.Failed -> {
                 Log.e(TAG, "voice note enqueue failed", outcome.exception)
+                EnqueueOutcome.FAILED
             }
         }
     }

@@ -44,15 +44,17 @@ object TranscriptFuzzySearch {
     private val QUERY_SPLIT = Regex("\\s+")
     private val WORD_SPLIT = Regex("[^\\p{L}\\p{N}]+")
 
-    /** A row matches when every query term finds a close-enough word. */
-    internal fun matches(text: String, query: String): Boolean = scoreIfMatches(text, query) != null
-
     /**
-     * The row's relevance (higher first) for ranking matched rows: the mean
-     * over terms of the best word score. Only meaningful for rows that
-     * already pass [matches]; unmatched rows read 0.
+     * The one ranking pipeline both search consumers use (the History
+     * ViewModel and the SPI search op): matching items with their scores,
+     * best-first, from a single scoring pass per item. Sharing it keeps a
+     * device-trial oracle and the shipped ranking from diverging by
+     * construction.
      */
-    internal fun rowScore(text: String, query: String): Double = scoreIfMatches(text, query) ?: 0.0
+    fun <T> scoreRanked(items: List<T>, query: String, textOf: (T) -> String): List<Pair<Double, T>> =
+        items.mapNotNull { item ->
+            scoreIfMatches(textOf(item), query)?.let { score -> score to item }
+        }.sortedByDescending { it.first }
 
     /**
      * The single scoring pass the search pipeline calls: the row's

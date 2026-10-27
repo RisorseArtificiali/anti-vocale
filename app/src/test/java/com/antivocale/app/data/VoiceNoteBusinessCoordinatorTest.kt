@@ -36,6 +36,7 @@ class VoiceNoteBusinessCoordinatorTest {
     private val autoTranscriber = mockk<VoiceNoteAutoTranscriber> {
         coEvery { enqueue(any(), any(), any(), any(), any()) } coAnswers {
             synchronized(enqueued) { enqueued += firstArg<String>() to arg<VoiceNoteSource>(3) }
+            VoiceNoteAutoTranscriber.EnqueueOutcome.ENQUEUED
         }
     }
     private val detections = VoiceNoteSource.entries.associateWith {

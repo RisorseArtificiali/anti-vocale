@@ -60,6 +60,7 @@ class VoiceNoteDetectionCoordinatorTest {
                     enqueued += firstArg<String>()
                     enqueuedUris += thirdArg<String?>()
                     enqueuedCatchups += arg<Boolean>(4)
+                    VoiceNoteAutoTranscriber.EnqueueOutcome.ENQUEUED
                 }
             },
             VoiceNotePermissionChecker { permissionGranted() },

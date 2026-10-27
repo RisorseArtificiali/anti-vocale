@@ -452,7 +452,7 @@ class TestSpiOpsTest {
         // help is a known op: it must NOT carry the unknown-op error (device
         // verification 2026-09-03 caught the dispatch bug this pins).
         assertFalse(json.has("error"))
-        assertEquals(listOf("get", "set", "records", "identity_cache", "import", "notify_memory_error", "clipboard", "notifications", "unload", "voice_note_state", "model_download", "clear_orphaned", "search", "log", "log_read", "log_delete", "help"), json.getJSONArray("ops").optStringList())
+        assertEquals(listOf("get", "set", "records", "identity_cache", "import", "notify_memory_error", "clipboard", "notifications", "unload", "voice_note_state", "model_download", "clear_orphaned", "search", "log", "log_read", "log_delete", "voice_note_watermark_reset", "voice_note_simulate", "notify_text", "help"), json.getJSONArray("ops").optStringList())
         assertEquals(ops.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))
         assertTrue(json.getString("transcription").contains("com.antivocale.app.PROCESS_REQUEST"))
@@ -708,6 +708,35 @@ class TestSpiOpsTest {
         assertTrue(
             JSONObject(ops.handle(TestSpiOps.OP_LOG_DELETE, value = "planted")).getString("error")
                 .contains("debug-only"),
+        )
+    }
+
+    @Test
+    fun `the voice-note ops validate their source selector`() = runTest {
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_VOICE_NOTE_WATERMARK_RESET, value = "telegram"))
+                .getString("error").contains("valid:"),
+        )
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_VOICE_NOTE_SIMULATE, value = "msg.opus", entry = "nope"))
+                .getString("error").contains("valid:"),
+        )
+    }
+
+    @Test
+    fun `voice_note_simulate and notify_text answer the missing-dep envelopes`() = runTest {
+        // No tree grant under the fakes would come AFTER the transcriber
+        // guard; the transcriber itself is the null-under-fakes boundary.
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_VOICE_NOTE_SIMULATE, value = "msg.opus"))
+                .getString("error").contains("debug-only"),
+        )
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_NOTIFY_TEXT)).getString("error").contains("missing 'value'"),
+        )
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_NOTIFY_TEXT, value = "testo")).getString("error")
+                .contains("Context"),
         )
     }
 }
