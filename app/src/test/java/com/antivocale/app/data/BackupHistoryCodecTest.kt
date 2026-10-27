@@ -2,6 +2,7 @@ package com.antivocale.app.data
 
 import com.antivocale.app.data.local.LogEntity
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -46,6 +47,8 @@ class BackupHistoryCodecTest {
         // TASK-842's column rides the full-fidelity rule (non-default, so a
         // dropped key fails the round-trip assert).
         contentHash = "deadbeef00",
+        // TASK-904/913: same rule; the codec shipped without it once.
+        switchedToSibling = true,
     )
 
     @Test
@@ -82,6 +85,9 @@ class BackupHistoryCodecTest {
         assertNull("a missing key reads the entity's own default (null), never a silent value",
             row.errorMessage)
         assertEquals("", row.result)
+        // TASK-913: pre-904 backups carry no switchedToSibling key; false
+        // is the entity default and the correct restore.
+        assertFalse(row.switchedToSibling)
     }
 
     @Test

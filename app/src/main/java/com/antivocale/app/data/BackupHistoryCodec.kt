@@ -161,6 +161,10 @@ object BackupHistoryCodec {
         // TASK-842's column joined after the format shipped; a missing key
         // on import reads null (backwards compatible, no version bump).
         .put("contentHash", row.contentHash ?: JSONObject.NULL)
+        // TASK-904's column joined later still (filed as TASK-913 when the
+        // review caught it missing here); same backwards-compat story: a
+        // missing key on import reads false.
+        .put("switchedToSibling", row.switchedToSibling)
 
     /** The inverse: a missing key reads the entity's own default (never a silent 0-vs-null swap). */
     internal fun rowFromJson(o: JSONObject): LogEntity = LogEntity(
@@ -193,5 +197,6 @@ object BackupHistoryCodec {
         savedFileName = if (o.isNull("savedFileName")) null else o.optString("savedFileName"),
         saveFailureReason = if (o.isNull("saveFailureReason")) null else o.optString("saveFailureReason"),
         contentHash = if (o.isNull("contentHash")) null else o.optString("contentHash"),
+        switchedToSibling = o.optBoolean("switchedToSibling", false),
     )
 }
