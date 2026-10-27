@@ -998,7 +998,7 @@
     <string name="voice_note_identity_grant_hint">Benachrichtigungszugriff ist aus. Tippe, um die Systemeinstellung zu öffnen und ihn für diese App zu aktivieren.</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">Transkription von Sprachnachrichten</string>
-    <string name="voice_note_detection_description">Automatischer Modus, eine Alternative zum Teilen jeder Nachricht von Hand: einmal einrichten (einschalten und den Ordner mit den WhatsApp-Sprachnachrichten wählen), danach werden neue Nachrichten direkt bei ihrem Eintreffen transkribiert, ohne weitere Tipps. Eine Nachricht wird nur zum Transkribieren gelesen, auf diesem Gerät; ausgeschaltet wird nichts gelesen. Benötigt Audiozugriff.</string>
+    <string name="voice_note_detection_description">Automatischer Modus, eine Alternative zum Teilen jeder Nachricht von Hand: einmal einrichten (einschalten und den Ordner mit den WhatsApp-Sprachnachrichten wählen), danach werden neue Nachrichten direkt bei ihrem Eintreffen transkribiert, ohne weitere Tipps. Jede Nachricht wird nur zum Transkribieren gelesen, und nur auf diesem Gerät; bei ausgeschalteter Funktion wird nichts gelesen. Benötigt Audiozugriff.</string>
     <string name="voice_note_detection_grant_hint">Audiozugriff ist aus. Tippe, um die App-Einstellungen zu öffnen und ihn zu aktivieren; die Transkription startet, sobald er erteilt ist.</string>
     <string name="voice_note_folder_grant_rejected">Das ist nicht der Ordner für WhatsApp-Sprachnachrichten. Wähle den Ordner mit dem Namen WhatsApp Voice Notes und versuche es erneut.</string>
     <string name="voice_note_folder_card_title">Ordner für Sprachnachrichten</string>

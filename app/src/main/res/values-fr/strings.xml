@@ -896,7 +896,7 @@
     <string name="voice_note_identity_grant_hint">L\'accès aux notifications est désactivé. Touchez pour ouvrir le réglage système et l\'activer pour cette app.</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">Transcription des notes vocales</string>
-    <string name="voice_note_detection_description">Mode automatique, une alternative au partage manuel de chaque note : configurez une fois (activez et choisissez le dossier des notes vocales WhatsApp) ; ensuite les nouvelles notes sont transcrites dès leur arrivée, sans autre geste. Une note n\'est lue que pour être transcrite, sur cet appareil ; désactivé, rien n\'est lu. Nécessite l\'accès à l\'audio.</string>
+    <string name="voice_note_detection_description">Mode automatique, une alternative au partage manuel de chaque note : configurez une fois (activez et choisissez le dossier des notes vocales WhatsApp) ; ensuite les nouvelles notes sont transcrites dès leur arrivée, sans autre geste. Chaque note n\'est lue que pour être transcrite, et uniquement sur cet appareil ; fonction désactivée, rien n\'est lu. Nécessite l\'accès à l\'audio.</string>
     <string name="voice_note_detection_grant_hint">L\'accès audio est désactivé. Touchez pour ouvrir les paramètres de l\'application et l\'activer; la transcription démarre dès qu\'il est accordé.</string>
     <string name="voice_note_folder_grant_rejected">Ce n\'est pas le dossier des notes vocales WhatsApp. Choisissez le dossier nommé WhatsApp Voice Notes et réessayez.</string>
     <string name="voice_note_folder_card_title">Dossier des notes vocales</string>

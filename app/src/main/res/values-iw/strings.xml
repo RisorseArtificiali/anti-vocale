@@ -1047,7 +1047,7 @@
     <string name="voice_note_identity_grant_hint">גישה להתראות כבויה. הקש כדי לפתוח את הגדרת המערכת ולהפעיל אותה ליישום הזה.</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">תמלול הודעות קוליות</string>
-    <string name="voice_note_detection_description">מצב אוטומטי, חלופה לשיתוף כל הודעה באופן ידני: מגדירים פעם אחת (מפעילים ובוחרים את תיקיית הודעות הקול של וואטסאפ), ומרגע זה הודעות חדשות מתומללות עם הגעתן בלי נגיעות נוספות. הודעה נקראת רק לצורך התמלול, במכשיר זה; כשזה כבוי לא נקרא דבר. דורש הרשאת גישה לשמע.</string>
+    <string name="voice_note_detection_description">מצב אוטומטי, חלופה לשיתוף כל הודעה באופן ידני: מגדירים פעם אחת (מפעילים ובוחרים את תיקיית הודעות הקול של וואטסאפ), ומרגע זה הודעות חדשות מתומללות עם הגעתן בלי נגיעות נוספות. כל הודעה נקראת רק לצורך התמלול, ורק במכשיר זה; כשהתכונה כבויה לא נקרא דבר. דורש הרשאת גישה לשמע.</string>
     <string name="voice_note_detection_grant_hint">גישת האודיו כבויה. הקישו כדי לפתוח את הגדרות האפליקציה ולהפעיל אותה; התמלול מתחיל ברגע שהיא תינתן.</string>
     <string name="voice_note_folder_grant_rejected">זו אינה תיקיית ההודעות הקוליות של WhatsApp. בחרו את התיקייה בשם WhatsApp Voice Notes ונסו שוב.</string>
     <string name="voice_note_folder_card_title">תיקיית ההודעות הקוליות</string>

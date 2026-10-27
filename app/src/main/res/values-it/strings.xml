@@ -1005,7 +1005,7 @@
     <string name="voice_note_identity_grant_hint">L\'accesso alle notifiche è disattivato. Tocca per aprire l\'impostazione di sistema e attivarlo per questa app.</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">Trascrizione note vocali</string>
-    <string name="voice_note_detection_description">Modalità automatica, un\'alternativa al condividere ogni nota a mano: si configura una volta sola (attivala e scegli la cartella delle note vocali WhatsApp) e da quel momento le nuove note vengono trascritte appena arrivano, senza ulteriori tocchi. Una nota viene letta solo per trascriverla, su questo dispositivo; da spenta non si legge nulla. Richiede l\'accesso all\'audio.</string>
+    <string name="voice_note_detection_description">Modalità automatica, un\'alternativa al condividere ogni nota a mano: si configura una volta sola (attivala e scegli la cartella delle note vocali WhatsApp) e da quel momento le nuove note vengono trascritte appena arrivano, senza ulteriori tocchi. Ogni nota viene letta soltanto per trascriverla, e soltanto su questo dispositivo; con la funzione spenta non viene letto nulla. Richiede l\'accesso all\'audio.</string>
     <string name="voice_note_detection_grant_hint">L\'accesso all\'audio è spento. Tocca per aprire le impostazioni dell\'app e attivarlo; la trascrizione parte appena è concesso.</string>
     <string name="voice_note_folder_grant_rejected">Questa non è la cartella delle note vocali WhatsApp. Scegli la cartella chiamata WhatsApp Voice Notes e riprova.</string>
     <string name="voice_note_folder_card_title">Cartella note vocali</string>

@@ -1059,7 +1059,7 @@
     <string name="voice_note_identity_grant_hint">Dostęp do powiadomień jest wyłączony. Dotknij, aby otworzyć ustawienie systemu i włączyć go dla tej aplikacji.</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">Transkrypcja notatek głosowych</string>
-    <string name="voice_note_detection_description">Tryb automatyczny, alternatywa dla ręcznego udostępniania każdej notatki: skonfiguruj raz (włącz i wybierz folder notatek głosowych WhatsApp), a od tej pory nowe notatki są transkrybowane po nadejściu, bez dalszych dotknięć. Notatka jest czytana tylko do transkrypcji, na tym urządzeniu; wyłączone, nic nie jest czytane. Wymaga dostępu do audio.</string>
+    <string name="voice_note_detection_description">Tryb automatyczny, alternatywa dla ręcznego udostępniania każdej notatki: skonfiguruj raz (włącz i wybierz folder notatek głosowych WhatsApp), a od tej pory nowe notatki są transkrybowane po nadejściu, bez dalszych dotknięć. Każda notatka jest czytana wyłącznie do transkrypcji i tylko na tym urządzeniu; przy wyłączonej funkcji nic nie jest czytane. Wymaga dostępu do audio.</string>
     <string name="voice_note_detection_grant_hint">Dostęp do audio jest wyłączony. Dotknij, aby otworzyć ustawienia aplikacji i go włączyć; transkrypcja wystartuje po jego przyznaniu.</string>
     <string name="voice_note_folder_grant_rejected">To nie jest folder notatek głosowych WhatsApp. Wybierz folder o nazwie WhatsApp Voice Notes i spróbuj ponownie.</string>
     <string name="voice_note_folder_card_title">Folder notatek głosowych</string>

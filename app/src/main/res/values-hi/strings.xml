@@ -997,7 +997,7 @@
     <string name="voice_note_identity_grant_hint">सूचना एक्सेस बंद है। सिस्टम सेटिंग खोलने और इस ऐप के लिए इसे चालू करने के लिए टैप करें।</string>
     <!-- TASK-272: automatic voice-note transcription + folder grant -->
     <string name="voice_note_detection_title">वॉइस नोट ट्रांसक्रिप्शन</string>
-    <string name="voice_note_detection_description">हर नोट को हाथ से साझा करने का विकल्प, स्वचालित मोड: एक बार सेट करें (चालू करें और WhatsApp वॉइस नोट फ़ोल्डर चुनें), उसके बाद नई नोट आते ही बिना किसी और टैप के ट्रांसक्राइब होती हैं। नोट केवल ट्रांसक्रिप्शन के लिए पढ़ा जाता है, इसी डिवाइस पर; बंद होने पर कुछ नहीं पढ़ा जाता। ऑडियो एक्सेस चाहिए।</string>
+    <string name="voice_note_detection_description">हर नोट को हाथ से साझा करने का विकल्प, स्वचालित मोड: एक बार सेट करें (चालू करें और WhatsApp वॉइस नोट फ़ोल्डर चुनें), उसके बाद नई नोट आते ही बिना किसी और टैप के ट्रांसक्राइब होती हैं। हर नोट केवल ट्रांसक्रिप्शन के लिए और केवल इसी डिवाइस पर पढ़ा जाता है; सुविधा बंद होने पर कुछ नहीं पढ़ा जाता। ऑडियो एक्सेस चाहिए।</string>
     <string name="voice_note_detection_grant_hint">ऑडियो एक्सेस बंद है। ऐप सेटिंग्स खोलकर सक्षम करने के लिए टैप करें; अनुमति मिलते ही ट्रांसक्रिप्शन शुरू हो जाता है।</string>
     <string name="voice_note_folder_grant_rejected">यह WhatsApp Voice Notes फ़ोल्डर नहीं है। WhatsApp Voice Notes नाम का फ़ोल्डर चुनकर फिर से प्रयास करें।</string>
     <string name="voice_note_folder_card_title">वॉइस नोट फ़ोल्डर</string>
