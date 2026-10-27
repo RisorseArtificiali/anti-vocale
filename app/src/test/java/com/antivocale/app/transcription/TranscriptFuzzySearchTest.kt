@@ -64,6 +64,15 @@ class TranscriptFuzzySearchTest {
     }
 
     @Test
+    fun `a term that normalizes to nothing rides its substring floor`() {
+        // A combining-mark-only fragment pasted from another app has no
+        // fuzzy form: present verbatim it matches through the floor;
+        // absent it fails the row like any other miss.
+        assertTrue(TranscriptFuzzySearch.matches("caf\u0301e italiano", "\u0301"))
+        assertFalse(TranscriptFuzzySearch.matches("caffe italiano", "\u0301"))
+    }
+
+    @Test
     fun `combining spacing marks fold too`() {
         // Devanagari matras are COMBINING_SPACING (Mc), not NON_SPACING:
         // they must fold like Latin diacritics or Indic never normalizes.

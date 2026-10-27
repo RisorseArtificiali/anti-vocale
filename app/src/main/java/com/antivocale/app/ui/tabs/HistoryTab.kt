@@ -1050,10 +1050,13 @@ fun HistoryTab(
                     singleLine = true
                 )
                 // TASK-911: the similar-words mode is offered only while a
-                // query is active; with an empty field there is nothing to
+                // query is active. isBlank, not isNotEmpty: the ViewModel's
+                // blank arm serves the unfiltered list regardless of mode,
+                // so a whitespace-only query would show a chip that does
+                // nothing. With an empty field there is also nothing to
                 // widen yet, and the chip would sit next to the clear-all
                 // icon implying it wipes something.
-                if (searchQuery.isNotEmpty()) {
+                if (!searchQuery.isBlank()) {
                     FilterChip(
                         selected = searchMode == LogsViewModel.SearchMode.SIMILAR,
                         onClick = viewModel::toggleSearchMode,

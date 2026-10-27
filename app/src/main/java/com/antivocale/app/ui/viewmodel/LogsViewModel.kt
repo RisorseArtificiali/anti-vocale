@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.first
@@ -233,6 +234,7 @@ class LogsViewModel @Inject constructor(
             if (_searchMode.value == SearchMode.LITERAL) SearchMode.SIMILAR else SearchMode.LITERAL
     }
 
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
     val filteredLogs: StateFlow<List<LogEntry>> =
         combine(_searchQuery, _searchMode) { query, mode -> query to mode }
             .flatMapLatest { (query, mode) ->
@@ -242,7 +244,10 @@ class LogsViewModel @Inject constructor(
                     // One scoring pass per row feeds both the filter and the
                     // best-first ranking; Default because scoring 500 rows
                     // is real CPU and stateIn collects on the main thread.
+                    // The debounce keeps per-keystroke rescans from starting
+                    // at all (flatmapLatest only cancels them mid-flight).
                     else -> logDao.getAll()
+                        .debounce(150)
                         .map { rows ->
                             rows.mapNotNull { row ->
                                 TranscriptFuzzySearch.scoreIfMatches(row.result, query)
@@ -657,6 +662,11 @@ class LogsViewModel @Inject constructor(
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
+        // TASK-911 review: the chip is the mode's only affordance and it
+        // hides when the field empties, however it empties. Backspacing to
+        // blank must reset the mode like the explicit clears do, or the
+        // next search silently runs fuzzy.
+        if (query.isBlank()) _searchMode.value = SearchMode.LITERAL
     }
 
     fun clearSearch() {

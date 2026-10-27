@@ -72,8 +72,7 @@ interface LogDao {
      * 500 = the bounded UI window, and the search query below carries the SAME
      * bound, so both arms see the same recent window (parity pinned by the
      * TASK-911 search-mode note in LogsViewModel).
-     */
-    /**
+     *
      * The two queries below list every [LogEntity] column EXCEPT the lean
      * per-row pair `segments` and `firstPassTranscript`: the cues JSON
      * re-copies the transcript per timed row (GH #92) and the first pass

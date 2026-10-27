@@ -16,8 +16,9 @@ import java.text.Normalizer
  *     diacritics stripped, doubled letters collapsed), vowels dropped, then
  *     bigram-Dice on the skeletons. Catches vowel errors and homophone-ish
  *     confusions, the transcription-error signature.
- *  2. DAMERAU-LEVENSHTEIN similarity on the normalized full forms:
- *     catches one-segment substitutions and adjacent transpositions.
+ *  2. RESTRICTED DAMERAU-LEVENSHTEIN (optimal string alignment) similarity
+ *     on the normalized full forms: catches one-segment substitutions and
+ *     adjacent transpositions, no re-editing through a transposed pair.
  *
  * Per-term score is the MAX of the two signals; a term matches a row when
  * some word in the row scores at or above [THRESHOLD]; a row matches when
@@ -69,17 +70,25 @@ object TranscriptFuzzySearch {
         if (rowWords.isEmpty()) return null
         var sum = 0.0
         for (rawTerm in rawTerms) {
+            // Widening floor, checked FIRST because maxOf evaluates both
+            // arms eagerly and a verbatim hit must not pay for the
+            // whole-word scan. Without this floor SIMILAR would NARROW the
+            // literal search: a partial-word query ("castel") or a CJK word
+            // inside an unspaced sentence fails the whole-word length gate
+            // even though the transcript contains it.
+            if (text.contains(rawTerm, ignoreCase = true)) {
+                sum += 1.0
+                continue
+            }
             val term = normalize(rawTerm)
-            if (term.isEmpty()) return null
-            val best = maxOf(
-                rowWords.maxOfOrNull { termScoreNormalized(it, term) } ?: 0.0,
-                // Widening floor: verbatim substring presence is a perfect
-                // hit. Without it SIMILAR would NARROW the literal search,
-                // because a partial-word query ("castel") or a CJK word
-                // inside an unspaced sentence fails the whole-word length
-                // gate even though the transcript contains it.
-                if (text.contains(rawTerm, ignoreCase = true)) 1.0 else 0.0,
-            )
+            if (term.isEmpty()) {
+                // An unnormalizable term (combining marks only) has no
+                // fuzzy form: present verbatim it already took the floor
+                // above; absent it matched NOWHERE, so the row fails like
+                // any other miss instead of slipping through at 0.
+                return null
+            }
+            val best = rowWords.maxOfOrNull { termScoreNormalized(it, term) } ?: 0.0
             if (best < THRESHOLD) return null
             sum += best
         }
@@ -159,7 +168,11 @@ object TranscriptFuzzySearch {
         return 2.0 * shared / (a.length - 1 + b.length - 1)
     }
 
-    /** Damerau-Levenshtein distance (transpositions included). */
+    /**
+     * Restricted Damerau-Levenshtein (optimal string alignment):
+     * substitutions, insertions, deletions and adjacent transpositions,
+     * where a transposed pair cannot be re-edited through.
+     */
     private fun damerau(a: String, b: String): Int {
         if (a == b) return 0
         val la = a.length
