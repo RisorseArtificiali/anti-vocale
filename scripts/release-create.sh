@@ -1,4 +1,18 @@
 #!/usr/bin/env bash
+# Bash >= 5 required (mapfile; macOS /usr/bin/env bash can resolve to the
+# 3.2 system shell). Re-exec under a real bash 5 when caught there; the
+# v1.14.1 and v1.15.0 releases both died on `mapfile: command not found`
+# before this guard existed (documented in the play-store release memory).
+if ((BASH_VERSINFO[0] < 5)); then
+  for _B5 in /opt/homebrew/bin/bash /usr/local/bin/bash; do
+    if [ -x "$_B5" ]; then
+      echo "note: re-exec under bash 5 ($_B5); found ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}" >&2
+      exec "$_B5" "$0" "$@"
+    fi
+  done
+  echo "ERROR: $0 needs bash >= 5 (found ${BASH_VERSION}) and none exists in /opt/homebrew/bin or /usr/local/bin" >&2
+  exit 1
+fi
 # Build-first publish act (TASK-446): creates tag + release + ALL release
 # assets in ONE command, from the artifacts of a `-f commit=<sha>` dispatch.
 #

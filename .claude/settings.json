@@ -32,6 +32,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/release-ops-gate.py",
+            "timeout": 10000
+          }
+        ]
       }
     ]
   }

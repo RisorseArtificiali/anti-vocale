@@ -284,6 +284,19 @@ REMOTE_SHA="$(git -C "$FORK_CHECKOUT" rev-parse -q --verify "origin/$BR" || true
 if [ -n "$REMOTE_SHA" ] && [ "$LOCAL_SHA" = "$REMOTE_SHA" ]; then
   say "fork branch $BR already pushed, nothing to do"
 else
+  # 2026-10-27 (v1.15.0, re-committed from v1.14.1): the Mac has NO GitLab
+  # SSH key and NO token, so the push below fails after this phase already
+  # did its work. Probe the credential BEFORE pushing and hand back the
+  # exact bird route instead of a bare "Permission denied (publickey)".
+  # Note: git@gitlab.com exits nonzero even on SUCCESS (no shell is
+  # allocated); the welcome line is the real signal.
+  if ! ssh -T -o BatchMode=yes -o ConnectTimeout=8 git@gitlab.com 2>&1 | grep -q "Welcome to GitLab"; then
+    fail "no GitLab credentials on this host (SSH probe failed): push the lane from bird instead
+  git -C $FORK_CHECKOUT bundle create /tmp/rel.bundle $BR
+  scp -q /tmp/rel.bundle bird:/tmp/
+  ssh bird 'cd ~/data/repo/personal/fdroid-data && git fetch -q /tmp/rel.bundle $BR:$BR && git checkout -q $BR && git push --force-with-lease origin $BR'
+then re-run this script's finalize (phase 2 will see the branch as already pushed)"
+  fi
   # The recipe branch is reset onto fdroid/master every release (runbook
   # Step 4), and fdroiddata SQUASH-merges MRs, so origin's tip is never an
   # ancestor of the rebuilt branch: this push is NON-FF by design and needs
