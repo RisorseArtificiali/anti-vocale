@@ -42,6 +42,14 @@ class TranscriptFuzzySearchTest {
     }
 
     @Test
+    fun `a clitic QUERY splits too, so a mis-heard inner word is findable`() {
+        // Review round: the query used to keep its apostrophe through
+        // normalization while row words did not, so "l'acqua" could never
+        // fuzzy-match a transcript whose inner word the model mis-heard.
+        assertTrue(TranscriptFuzzySearch.matches("ho bevuto l'acgua", "l'acqua"))
+    }
+
+    @Test
     fun `cyrillic vowel errors match`() {
         assertTrue(TranscriptFuzzySearch.matches("привет как дела", "превет"))
     }
@@ -64,11 +72,11 @@ class TranscriptFuzzySearchTest {
     }
 
     @Test
-    fun `a term that normalizes to nothing rides its substring floor`() {
-        // A combining-mark-only fragment pasted from another app has no
-        // fuzzy form: present verbatim it matches through the floor;
-        // absent it fails the row like any other miss.
-        assertTrue(TranscriptFuzzySearch.matches("caf\u0301e italiano", "\u0301"))
+    fun `a query of only combining marks finds nothing, cleanly`() {
+        // Tokenization keeps letters and digits only, so a pasted
+        // mark-only fragment never becomes a term: no match, no crash, no
+        // match-everything.
+        assertFalse(TranscriptFuzzySearch.matches("caf\u0301e italiano", "\u0301"))
         assertFalse(TranscriptFuzzySearch.matches("caffe italiano", "\u0301"))
     }
 

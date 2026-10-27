@@ -62,7 +62,14 @@ object TranscriptFuzzySearch {
      * once per row per query.
      */
     fun scoreIfMatches(text: String, query: String): Double? {
-        val rawTerms = query.trim().lowercase().split(QUERY_SPLIT).filter { it.isNotEmpty() }
+        // Terms go through the SAME token rules as row words: whitespace
+        // first, then non-letter/digit splits, so an Italian clitic query
+        // ("l'acqua") becomes its inner words exactly like the row side
+        // does and a mis-heard inner word stays findable.
+        val rawTerms = query.trim().lowercase().split(QUERY_SPLIT)
+            .filter { it.isNotEmpty() }
+            .flatMap { it.split(WORD_SPLIT) }
+            .filter { it.isNotEmpty() }
         if (rawTerms.isEmpty()) return null
         val rowWords = text.lowercase().split(WORD_SPLIT)
             .map { normalize(it) }
@@ -80,14 +87,9 @@ object TranscriptFuzzySearch {
                 sum += 1.0
                 continue
             }
+            // rawTerm is a letters-and-digits token (the split above), so
+            // normalize() can never empty it: no empty-term arm exists.
             val term = normalize(rawTerm)
-            if (term.isEmpty()) {
-                // An unnormalizable term (combining marks only) has no
-                // fuzzy form: present verbatim it already took the floor
-                // above; absent it matched NOWHERE, so the row fails like
-                // any other miss instead of slipping through at 0.
-                return null
-            }
             val best = rowWords.maxOfOrNull { termScoreNormalized(it, term) } ?: 0.0
             if (best < THRESHOLD) return null
             sum += best

@@ -1029,8 +1029,11 @@ fun HistoryTab(
                     shape = MaterialTheme.shapes.medium,
                     trailingIcon = {
                         // Search-clear when a query is active; history-clear
-                        // otherwise, sharing the trailing slot.
-                        if (searchQuery.isNotEmpty()) {
+                        // otherwise, sharing the trailing slot. isBlank like
+                        // the chip below: a whitespace-only query is still a
+                        // query, and offering the destructive sweep under it
+                        // is the affordance mismatch TASK-911 review named.
+                        if (!searchQuery.isBlank()) {
                             IconButton(onClick = { viewModel.clearSearch() }) {
                                 Icon(
                                     Icons.Default.Clear,

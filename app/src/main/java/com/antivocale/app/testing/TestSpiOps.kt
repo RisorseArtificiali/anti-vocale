@@ -94,6 +94,8 @@ internal class TestSpiOps(
             OP_CLEAR_ORPHANED -> clearOrphaned(entry, value)
             OP_SEARCH -> search(value, mode)
             OP_LOG -> insertLog(value)
+            OP_LOG_READ -> readLog(value)
+            OP_LOG_DELETE -> deleteLog(value)
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -674,10 +676,72 @@ internal class TestSpiOps(
             type = "AUDIO",
             status = "SUCCESS",
             result = text,
-            modelName = "spi-planted",
+            modelName = PLANTED_MARKER,
         )
         dao.insert(row)
         return JSONObject().put("op", OP_LOG).put("id", row.id).toString()
+    }
+
+    /**
+     * TASK-912: one history row by id, no run-as DB pull. Every column the
+     * lean projection carries is rendered, each string capped at
+     * [LOG_READ_FIELD_CAP] so the whole reply stays far under the binder
+     * limit even for repetition-loop rows (the TASK-506 class); only the
+     * heavy blobs (segments, firstPassTranscript) are absent by design,
+     * because getById's projection leaves them out.
+     */
+    private suspend fun readLog(id: String?): String {
+        if (id.isNullOrBlank()) throw IllegalArgumentException("missing 'value' extra (the row id)")
+        val row = dao.getById(id) ?: throw IllegalArgumentException("no row with id '$id'")
+        fun capped(value: String?): Any = value?.take(LOG_READ_FIELD_CAP) ?: JSONObject.NULL
+        return JSONObject()
+            .put("op", OP_LOG_READ)
+            .put("id", row.id)
+            .put("timestamp", row.timestamp)
+            .put("taskId", row.taskId)
+            .put("type", row.type)
+            .put("status", row.status)
+            .put("prompt", capped(row.prompt))
+            .put("result", capped(row.result))
+            .put("errorMessage", capped(row.errorMessage))
+            .put("durationMs", row.durationMs)
+            .put("filePath", capped(row.filePath))
+            .put("audioDurationSeconds", row.audioDurationSeconds)
+            .put("sourcePackageName", capped(row.sourcePackageName))
+            .put("senderName", capped(row.senderName))
+            .put("isPartial", row.isPartial)
+            .put("failedChunkCount", row.failedChunkCount)
+            .put("modelName", capped(row.modelName))
+            .put("rawTranscript", capped(row.rawTranscript))
+            .put("summary", capped(row.summary))
+            .put("summarySkipReason", capped(row.summarySkipReason))
+            .put("failureContext", capped(row.failureContext))
+            .put("processingContext", capped(row.processingContext))
+            .put("detectedLanguage", capped(row.detectedLanguage))
+            .put("languagePin", capped(row.languagePin))
+            .put("savedFolderName", capped(row.savedFolderName))
+            .put("savedFileName", capped(row.savedFileName))
+            .put("saveFailureReason", capped(row.saveFailureReason))
+            .put("contentHash", capped(row.contentHash))
+            .put("switchedToSibling", row.switchedToSibling)
+            .toString()
+    }
+
+    /**
+     * TASK-912: delete one row by id, or value="planted" to sweep every
+     * SPI-planted trial row (the marker the log op writes), so a scripted
+     * trial can restore clean state without touching real transcripts.
+     */
+    private suspend fun deleteLog(value: String?): String {
+        if (value.isNullOrBlank()) {
+            throw IllegalArgumentException("missing 'value' extra (a row id, or 'planted')")
+        }
+        val deleted = if (value.equals("planted", ignoreCase = true)) {
+            dao.deleteByModelName(PLANTED_MARKER)
+        } else {
+            dao.deleteById(value)
+        }
+        return JSONObject().put("op", OP_LOG_DELETE).put("deleted", deleted).toString()
     }
 
     /**
@@ -975,10 +1039,28 @@ internal class TestSpiOps(
         const val OP_SEARCH = "search"
         /** TASK-911: value=<result text>, plant a SUCCESS history row. */
         const val OP_LOG = "log"
+        /** TASK-912: value=<row id>, the FULL row (no run-as DB pull). */
+        const val OP_LOG_READ = "log_read"
+        /** TASK-912: value=<row id> or "planted" to sweep the SPI rows. */
+        const val OP_LOG_DELETE = "log_delete"
         const val OP_HELP = "help"
 
         /** search op rendered-row cap (full count rides beside it). */
         const val SEARCH_ROW_CAP = 20
+
+        /**
+         * log_read per-field cap: ~30 fields at 16K keeps the whole reply
+         * far under the binder limit even on repetition-loop rows
+         * (CLIPBOARD_TEXT_CAP's rationale, applied per field).
+         */
+        const val LOG_READ_FIELD_CAP = 16 * 1024
+
+        /**
+         * Single source of the planted-row marker: the log op writes it,
+         * the log_delete sweep keys on it (parameterized into the DAO, so
+         * the literal lives HERE only).
+         */
+        const val PLANTED_MARKER = "spi-planted"
 
         /**
          * Every op handle() dispatches; help() renders the array and the
@@ -987,7 +1069,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_SEARCH, OP_LOG, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024

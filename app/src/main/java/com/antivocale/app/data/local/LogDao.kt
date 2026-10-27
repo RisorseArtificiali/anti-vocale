@@ -18,7 +18,7 @@ interface LogDao {
     suspend fun update(log: LogEntity)
 
     @Query("DELETE FROM logs WHERE id = :id")
-    suspend fun deleteById(id: String)
+    suspend fun deleteById(id: String): Int
 
     @Query("DELETE FROM logs")
     suspend fun deleteAll()
@@ -132,6 +132,19 @@ interface LogDao {
 
     @Query("SELECT * FROM logs WHERE taskId = :taskId LIMIT 1")
     suspend fun getByTaskId(taskId: String): LogEntity?
+
+    /** TASK-912: the SPI log_read op reads one row without a run-as DB pull.
+     *  Same lean projection as the list queries: the heavy segments and
+     *  firstPassTranscript blobs stay out of the row (Room reads them as
+     *  their null defaults; the partial-entity column list is compile-checked). */
+    @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
+        "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
+        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason, contentHash, switchedToSibling FROM logs WHERE id = :id LIMIT 1")
+    suspend fun getById(id: String): LogEntity?
+
+    /** TASK-912: the SPI log_delete sweep (marker parameterized; the SPI owns the literal). */
+    @Query("DELETE FROM logs WHERE modelName = :modelName")
+    suspend fun deleteByModelName(modelName: String): Int
 
     /** Records which model handled a task (GH #45); written as soon as the backend is loaded. */
     @Query("UPDATE logs SET modelName = :modelName WHERE taskId = :taskId")

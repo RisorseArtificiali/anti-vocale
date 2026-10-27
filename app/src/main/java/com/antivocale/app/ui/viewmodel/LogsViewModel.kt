@@ -237,6 +237,10 @@ class LogsViewModel @Inject constructor(
     @OptIn(kotlinx.coroutines.FlowPreview::class)
     val filteredLogs: StateFlow<List<LogEntry>> =
         combine(_searchQuery, _searchMode) { query, mode -> query to mode }
+            // Before flatMapLatest, so a keystroke storm neither starts the
+            // DAO query nor the scoring pass (cancellation alone would only
+            // cut them mid-flight).
+            .debounce(150)
             .flatMapLatest { (query, mode) ->
                 when {
                     query.isBlank() -> logDao.getAll()
@@ -244,10 +248,7 @@ class LogsViewModel @Inject constructor(
                     // One scoring pass per row feeds both the filter and the
                     // best-first ranking; Default because scoring 500 rows
                     // is real CPU and stateIn collects on the main thread.
-                    // The debounce keeps per-keystroke rescans from starting
-                    // at all (flatmapLatest only cancels them mid-flight).
                     else -> logDao.getAll()
-                        .debounce(150)
                         .map { rows ->
                             rows.mapNotNull { row ->
                                 TranscriptFuzzySearch.scoreIfMatches(row.result, query)
@@ -582,12 +583,9 @@ class LogsViewModel @Inject constructor(
     fun clearLogs() {
         // TASK-662 review: the query must not survive the history it searched;
         // a forgotten active query on an empty list would hand the next
-        // arrival a no-results view with a stale query in the field.
-        _searchQuery.value = ""
-        // TASK-911 review: the mode's only affordance is the chip, which
-        // hides with the query; a surviving SIMILAR state would silently
-        // run the next search in a different semantics.
-        _searchMode.value = SearchMode.LITERAL
+        // arrival a no-results view with a stale query in the field. The
+        // mode reset rides in applySearchQuery (TASK-911).
+        applySearchQuery("")
         annotatedByRow.clear()
         firstPassByRow.clear()
         segmentsByRow.clear()
@@ -660,20 +658,23 @@ class LogsViewModel @Inject constructor(
         logDao.failNonTerminal(taskId, errorMessage, durationMs)
     }
 
-    fun onSearchQueryChanged(query: String) {
+    /**
+     * TASK-911: the ONE writer of the search query. The chip is the mode's
+     * only affordance and it hides when the field empties, so blanking the
+     * query in ANY way (typed, backspaced, cleared) resets the mode here;
+     * paths writing _searchQuery directly re-open the stale-mode bug.
+     */
+    private fun applySearchQuery(query: String) {
         _searchQuery.value = query
-        // TASK-911 review: the chip is the mode's only affordance and it
-        // hides when the field empties, however it empties. Backspacing to
-        // blank must reset the mode like the explicit clears do, or the
-        // next search silently runs fuzzy.
         if (query.isBlank()) _searchMode.value = SearchMode.LITERAL
     }
 
+    fun onSearchQueryChanged(query: String) {
+        applySearchQuery(query)
+    }
+
     fun clearSearch() {
-        _searchQuery.value = ""
-        // Same reasoning as clearLogs: the chip hides with the query, so
-        // the mode resets with it.
-        _searchMode.value = SearchMode.LITERAL
+        applySearchQuery("")
     }
 
     val swipeActionMode: StateFlow<String> = preferencesManager.swipeActionMode
