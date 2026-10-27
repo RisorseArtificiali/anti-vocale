@@ -1020,7 +1020,7 @@
     <string name="voice_note_folder_sheet_step2">در مسیر تا پوشه پیام‌های صوتی پایین بروید:</string>
     <string name="voice_note_folder_sheet_step3">با انتخاب پوشه WhatsApp Voice Notes (بدون باز کردن آن)، روی استفاده از این پوشه و سپس اجازه بزنید.</string>
     <string name="voice_note_folder_sheet_open">باز کردن انتخابگر</string>
-    <string name="voice_note_business_detection_description">تا زمانی که برنامه در حال اجراست، پیام‌های صوتی جدید WhatsApp Business را به‌محض رسیدن به متن تبدیل می‌کند. اگر اندروید شروع در پس‌زمینه را مسدود کند، یک نوتیفیکیشن تک‌لمسی آن را آغاز می‌کند. پیام فقط برای تبدیل خوانده می‌شود، روی همین دستگاه؛ خاموش باشد هیچ‌چیز خوانده نمی‌شود. نیاز به دسترسی صدا دارد.</string>
+    <string name="voice_note_business_detection_description">حالت خودکار، جایگزینی برای اشتراک‌گذاری دستی هر پیام: یک بار راه‌اندازی کنید (فعالش کنید و پوشه پیام‌های صوتی واتس‌اپ بیزینس را انتخاب کنید)؛ از آن پس پیام‌های جدید به‌محض رسیدن و بدون لمس اضافی به متن تبدیل می‌شوند. هر پیام فقط برای تبدیل به متن و فقط روی همین دستگاه خوانده می‌شود؛ با خاموش بودن این قابلیت هیچ‌چیز خوانده نمی‌شود. نیاز به دسترسی صدا دارد.</string>
     <string name="voice_note_business_folder_grant_rejected">این پوشه پیام‌های صوتی WhatsApp Business نیست. پوشه‌ای به نام WhatsApp Business Voice Notes را انتخاب کنید و دوباره امتحان کنید.</string>
     <string name="voice_note_business_folder_card_desc">برای خواندن پیام‌ها، یک بار به پوشه‌ای که WhatsApp Business آن‌ها را ذخیره می‌کند دسترسی دهید:</string>
     <string name="voice_note_business_folder_sheet_step3">با انتخاب پوشه WhatsApp Business Voice Notes (بدون باز کردن آن)، روی استفاده از این پوشه و سپس اجازه بزنید.</string>

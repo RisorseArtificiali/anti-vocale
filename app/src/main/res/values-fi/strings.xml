@@ -1148,7 +1148,7 @@
         <item quantity="other">Kirjoitetaan nyt tekstiksi %1$d puheviestiä, jotka saapuivat sovelluksen ollessa poissa. Tulokset näkyvät historiatiedoissa.</item>
     </plurals>
     <string name="history_db_recovered_unpreserved">Historiatietokanta oli vioittunut, joten se nollattiin. Vioittuneita tiedostoja ei voitu säilyttää.</string>
-    <string name="voice_note_business_detection_description">Transkriboi uudet WhatsApp Business -ääniviestit niiden saapuessa, kun sovellus on käynnissä. Jos Android estää käynnistämisen taustalla, yhden napautuksen ilmoitus käynnistää sen. Ääniviesti luetaan vain transkriptiota varten ja vain tällä laitteella; kun ominaisuus on pois päältä, mitään ei lueta. Edellyttää äänen käyttöoikeutta.</string>
+    <string name="voice_note_business_detection_description">Automaattinen tila, vaihtoehto jokaisen viestin jakamiselle käsin: määritä kerran (ota käyttöön ja valitse WhatsApp Business -ääniviestikansio), jonka jälkeen uudet viestit kirjoitetaan tekstiksi niiden saapuessa ilman lisänapautuksia. Jokainen ääniviesti luetaan vain transkriptiota varten ja vain tällä laitteella; kun ominaisuus on pois päältä, mitään ei lueta. Edellyttää äänen käyttöoikeutta.</string>
     <string name="voice_note_business_folder_grant_rejected">Tuo ei ole WhatsApp Business Voice Notes -kansio. Valitse kansio, jonka nimi on WhatsApp Business Voice Notes, ja yritä uudelleen.</string>
     <string name="voice_note_business_folder_card_desc">Jotta viestit voidaan lukea, myönnä kerran käyttöoikeus kansioon, johon WhatsApp Business tallentaa ne:</string>
     <string name="voice_note_business_folder_sheet_step3">Kun WhatsApp Business Voice Notes -kansio on valittuna (älä avaa sitä), napauta KÄYTÄ TÄTÄ KANSIOTA ja sitten SALLI.</string>

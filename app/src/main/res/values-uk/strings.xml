@@ -1077,7 +1077,7 @@
     <string name="voice_note_folder_sheet_step2">Пройдіть шляхом до папки голосових повідомлень:</string>
     <string name="voice_note_folder_sheet_step3">Вибравши папку WhatsApp Voice Notes (не відкриваючи), торкніться ВИКОРИСТАТИ ЦЮ ПАПКУ, а потім ДОЗВОЛИТИ.</string>
     <string name="voice_note_folder_sheet_open">Відкрити вибір</string>
-    <string name="voice_note_business_detection_description">Розшифровує нові голосові повідомлення WhatsApp Business у міру надходження, поки застосунок працює. Якщо Android блокує фоновий запуск, один дотик до сповіщення продовжить роботу. Повідомлення читається лише для розшифровки, на цьому пристрої; вимкнено, нічого не читається. Потрібен доступ до аудіо.</string>
+    <string name="voice_note_business_detection_description">Автоматичний режим, альтернатива надсиланню кожного повідомлення вручну: налаштуйте один раз (увімкніть і оберіть папку голосових повідомлень WhatsApp Business), і надалі нові повідомлення розшифровуються в міру надходження без додаткових дотиків. Кожне повідомлення читається лише для розшифровки та лише на цьому пристрої; при вимкненій функції нічого не читається. Потрібен доступ до аудіо.</string>
     <string name="voice_note_business_folder_grant_rejected">Це не папка голосових повідомлень WhatsApp Business. Виберіть папку з назвою WhatsApp Business Voice Notes і спробуйте ще раз.</string>
     <string name="voice_note_business_folder_card_desc">Щоб читати повідомлення, один раз надайте доступ до папки, куди WhatsApp Business їх зберігає:</string>
     <string name="voice_note_business_folder_sheet_step3">Вибравши папку WhatsApp Business Voice Notes (не відкриваючи), торкніться ВИКОРИСТАТИ ЦЮ ПАПКУ, а потім ДОЗВОЛИТИ.</string>
