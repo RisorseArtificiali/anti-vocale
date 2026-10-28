@@ -24,6 +24,7 @@ FEATURES
 - Real-time progressive text with streaming models
 - Per-app notification preferences
 - Transcription log with search and swipe actions
+- In-row audio playback: replay a recent transcription's audio right from its history row, with speed control and an optional skip-silences mode
 - Silence stripping and parallel chunk processing for speed
 - Neural acceleration (NNAPI) on supported devices, with automatic CPU fallback
 - Tasker integration for automation

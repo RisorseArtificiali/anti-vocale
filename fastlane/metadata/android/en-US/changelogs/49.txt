@@ -1,5 +1,6 @@
 New: WhatsApp voice notes transcribe themselves as they arrive (opt-in, on-device)
-New: History search finds words the model mis-heard ("include similar words")
+New: play recent audio in its history row (speed, skip silences)
+New: History search finds words the model mis-heard
 New: long pauses become paragraph breaks
 New: other apps can use Anti-Vocale as their transcriber (Open Transcribe)
 Improved: damaged models self-heal; missed notes return as one digest

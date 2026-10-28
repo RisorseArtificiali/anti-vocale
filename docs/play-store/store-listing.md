@@ -32,6 +32,7 @@ UNDERSTAND IT, NOT JUST READ IT
 EVERYDAY COMFORTS
 - Smart notifications: page through long transcripts without opening the app, one-tap copy or send back
 - History with search: find any sentence again, retry with a different model
+- Audio playback: replay a recent transcription's audio right from its history row, with speed control and an optional skip-silences mode
 - Auto-copy and auto-save to a folder you pick (Drive, Syncthing)
 - Video files too: the audio track is extracted and transcribed
 - Faster by design: silence stripping, parallel processing, and automatic use of your phone's AI chip when available
@@ -83,6 +84,7 @@ CAPISCI, NON SOLO LEGGI
 COMFORT QUOTIDIANI
 - Notifiche smart: sfoglia le trascrizioni lunghe senza aprire l'app, copia o rimanda con un tocco
 - Cronologia con ricerca: ritrova qualsiasi frase, riprova con un altro modello
+- Riproduzione audio: riascolta l'audio di una trascrizione recente direttamente dalla sua riga nella cronologia, con controllo della velocità e opzione per saltare i silenzi
 - Copia automatica e salvataggio in una cartella a scelta (Drive, Syncthing)
 - Anche i video: la traccia audio viene estratta e trascritta
 - Veloce per progetto: silenzi rimossi, elaborazione in parallelo, e uso automatico del chip AI del telefono quando disponibile
@@ -133,6 +135,7 @@ VERSTEHEN, NICHT NUR LESEN
 ALLTAGSKOMFORT
 - Clevere Benachrichtigungen: lange Transkripte durchblättern, ohne die App zu öffnen; kopieren oder zurücksenden mit einem Tippen
 - Verlauf mit Suche: jeden Satz wiederfinden, mit einem anderen Modell erneut versuchen
+- Audiowiedergabe: spiele das Audio einer aktuellen Transkription direkt in ihrer Verlaufszeile ab, mit einstellbarer Wiedergabegeschwindigkeit und optional übersprungenen Pausen
 - Auto-Kopieren und Auto-Speichern in einen Ordner deiner Wahl (Drive, Syncthing)
 - Auch Videos: die Tonspur wird extrahiert und transkribiert
 - Schnell von Haus aus: Stille wird entfernt, parallel verarbeitet, und der KI-Chip deines Telefons wird automatisch genutzt, wo verfügbar
@@ -183,6 +186,7 @@ COMPRENDRE, PAS SEULEMENT LIRE
 CONFORT QUOTIDIEN
 - Notifications intelligentes : parcourez les longues transcriptions sans ouvrir l'application, copiez ou renvoyez en un geste
 - Historique avec recherche : retrouvez n'importe quelle phrase, réessayez avec un autre modèle
+- Lecture audio : réécoutez l'audio d'une transcription récente directement dans sa ligne d'historique, avec vitesse de lecture réglable et option pour ignorer les silences
 - Copie automatique et enregistrement dans le dossier de votre choix (Drive, Syncthing)
 - Les vidéos aussi : la piste audio est extraite et transcrite
 - Rapide par conception : silences supprimés, traitement parallèle, et la puce IA de votre téléphone est utilisée automatiquement quand elle existe
@@ -233,6 +237,7 @@ ENTENDER, NO SOLO LEER
 COMODIDADES DIARIAS
 - Notificaciones inteligentes: hojea transcripciones largas sin abrir la app, copia o reenvía con un toque
 - Historial con búsqueda: reencuentra cualquier frase, reintenta con otro modelo
+- Reproducción de audio: escucha el audio de una transcripción reciente desde su propia fila del Historial, con velocidad de reproducción y opción para saltar silencios
 - Copia automática y guardado en la carpeta que elijas (Drive, Syncthing)
 - También vídeos: la pista de audio se extrae y se transcribe
 - Rápido por diseño: silencios eliminados, procesamiento en paralelo, y el chip de IA de tu teléfono se usa automáticamente cuando está disponible
@@ -283,6 +288,7 @@ ENTENDER, NÃO SÓ LER
 COMODIDADES DO DIA A DIA
 - Notificações inteligentes: folheie transcrições longas sem abrir o app, copie ou reenvie com um toque
 - Histórico com busca: reencontre qualquer frase, tente novamente com outro modelo
+- Reprodução de áudio: ouça o áudio de uma transcrição recente na própria linha do Histórico, com velocidade de reprodução e opção de pular silêncios
 - Cópia automática e salvamento na pasta que você escolher (Drive, Syncthing)
 - Vídeos também: a faixa de áudio é extraída e transcrita
 - Rápido por projeto: silêncios removidos, processamento em paralelo, e o chip de IA do seu telefone é usado automaticamente quando disponível
@@ -333,6 +339,7 @@ Anti-Vocaleは、WhatsAppやTelegramなどあらゆるアプリのボイスメ�
 毎日の快適さ
 - スマート通知：アプリを開かずに長文をページめくり、ワンタップでコピー・返信
 - 検索付き履歴：どんな一文も再検索、別モデルで再試行
+- 音声再生：最近の文字起こしの音声を、履歴の行からそのまま再生。再生速度の調節と、無音をスキップするモードも選べます
 - 自動コピーと任意のフォルダへの自動保存（Drive、Syncthing）
 - 動画もOK：音声トラックを抽出して文字に
 - 設計からして速い：無音のカット、並列処理、AIチップがあれば自動活用
@@ -383,6 +390,7 @@ Anti-Vocale은 WhatsApp, Telegram 등 모든 앱의 음성 메시지를 휴대�
 일상의 편의
 - 스마트 알림: 앱을 열지 않고 긴 텍스트를 넘겨 보고, 한 번의 탭으로 복사하거나 되보내기
 - 검색 가능한 기록: 어떤 문장이든 다시 찾고, 다른 모델로 다시 시도
+- 오디오 재생: 최근에 만든 전사의 음성을 기록 행에서 바로 재생합니다. 재생 속도 조절과 무음 건너뛰기 옵션도 있습니다
 - 자동 복사와 원하는 폴더에 자동 저장(Drive, Syncthing)
 - 동영상도 가능: 오디오 트랙을 추출해 텍스트로
 - 설계부터 빠르게: 무음 제거, 병렬 처리, AI 칩이 있으면 자동 활용
@@ -433,6 +441,7 @@ Anti-Vocale 在手机本地直接把 WhatsApp、Telegram 等任何应用的语�
 日常便利
 - 智能通知：不用打开应用就能翻阅长文，一键复制或发回
 - 带搜索的历史：找回任何一句话，换一个模型重试
+- 音频播放：在历史记录的条目行中直接回放最近一次转写的音频，支持播放速度调节和跳过静音
 - 自动复制、自动保存到你选择的文件夹（Drive、Syncthing）
 - 视频也行：提取音轨后转写
 - 天生就快：静音裁剪、并行处理，手机有 AI 芯片时自动启用
@@ -484,6 +493,7 @@ Anti-Vocale расшифровывает голосовые сообщения �
 ПОВСЕДНЕВНЫЕ УДОБСТВА
 - Умные уведомления: листайте длинные расшифровки, не открывая приложение; копирование или отправка одним касанием
 - История с поиском: найдите любую фразу, повторите другой моделью
+- Воспроизведение аудио: прослушайте аудио недавней расшифровки прямо в строке Истории, со сменой скорости воспроизведения и опцией пропускать тишину
 - Автокопирование и автосохранение в выбранную папку (Drive, Syncthing)
 - Видео тоже: звуковая дорожка извлекается и расшифровывается
 - Быстро по конструкции: тишина вырезается, обработка параллельная, ИИ-чип телефона используется автоматически, если есть
@@ -534,6 +544,7 @@ BEGRIP, NIET ALLEEN LEZEN
 DAGELIJKS COMFORT
 - Slimme meldingen: blader door lange transcripties zonder de app te openen, kopieer of stuur terug met één tik
 - Geschiedenis met zoekfunctie: vind elke zin terug, probeer opnieuw met een ander model
+- Audio afspelen: beluister de audio van een recente transcriptie rechtstreeks in de bijbehorende rij van de geschiedenis, met afspeelsnelheid en optie om stiltes over te slaan
 - Automatisch kopiëren en opslaan in de map die jij kiest (Drive, Syncthing)
 - Ook video: het audiospoor wordt geëxtraheerd en getranscribeerd
 - Snel van ontwerp: stilte verwijderd, parallelle verwerking, en de AI-chip van je telefoon wordt automatisch gebruikt waar beschikbaar
@@ -584,6 +595,7 @@ ROZUMIEJ, A NIE TYLKO CZYTAJ
 CODZIENNA WYGODA
 - Inteligentne powiadomienia: przewijaj długie transkrypcje bez otwierania aplikacji, kopiuj lub odsyłaj jednym dotknięciem
 - Historia z wyszukiwaniem: znajdź każde zdanie, spróbuj ponownie innym modelem
+- Odtwarzanie audio: posłuchaj nagrania niedawnej transkrypcji bezpośrednio w jej wierszu historii, z regulacją prędkości odtwarzania i opcją pomijania ciszy
 - Automatyczne kopiowanie i zapisywanie do wybranego folderu (Drive, Syncthing)
 - Też wideo: ścieżka audio jest wyodrębniana i transkrybowana
 - Szyki z założenia: cisza usuwana, przetwarzanie równoległe, a chip AI telefonu używany automatycznie tam, gdzie dostępny
@@ -634,6 +646,7 @@ ANLAMAK, SADECE OKUMAK DEĞİL
 GÜNLÜK KOLAYLIKLAR
 - Akıllı bildirimler: uygulamayı açmadan uzun metinleri sayfalayın, tek dokunuşla kopyalayın veya geri gönderin
 - Aramalı geçmiş: her cümleyi yeniden bulun, başka bir modelle tekrar deneyin
+- Ses çalma: yakın bir transkripsiyonun sesini doğrudan geçmiş satırından dinleyin; oynatma hızını ayarlayın ve isteğe bağlı olarak sessizlikleri atlayın
 - Otomatik kopyalama ve seçtiğiniz klasöre kaydetme (Drive, Syncthing)
 - Videolar da olur: ses parçası çıkarılır ve metne çevrilir
 - Tasarımdan hızlı: sessizlik atılır, paralel işleme, ve telefonunuzun yapay zekâ çipi varsa otomatik kullanılır
@@ -684,6 +697,7 @@ Android 8.0+ | 4 GB+ RAM önerilir | Modele göre 326 MB ile 4,2 GB depolama
 راحات يومية
 - إشعارات ذكية: تصفّح النصوص الطويلة دون فتح التطبيق، انسخ أو أعد الإرسال بلمسة
 - سجل مع بحث: أعد العثور على أي جملة، وأعد المحاولة بنموذج آخر
+- تشغيل الصوت: استمع إلى صوت نسخة حديثة مباشرة من صفها في السجل، مع تحكم في سرعة التشغيل وخيار لتخطي فترات الصمت
 - نسخ تلقائي وحفظ في مجلد تختاره (Drive، Syncthing)
 - الفيديو أيضًا: يُستخرج المسار الصوتي ويحوَّل إلى نص
 - سريع بالتصميم: حذف الصمت، معالجة متوازية، واستخدام شريحة الذكاء الاصطناعي في هاتفك تلقائيًا عند توفرها
@@ -734,6 +748,7 @@ Anti-Vocale व्हाट्सएप, टेलीग्राम और ह�
 रोज़मर्रा की सुविधाएं
 - स्मार्ट नोटिफ़िकेशन: ऐप खोले बिना लंबे टेक्स्ट पलटिए, एक टैप में कॉपी या वापस भेजें
 - सर्च वाला इतिहास: कोई भी वाक्य दोबारा ढूंढें, दूसरे मॉडल से दोबारा कोशिश करें
+- ऑडियो प्लेबैक: हाल की ट्रांसक्रिप्शन का ऑडियो उसकी इतिहास पंक्ति से ही सुनें, साथ में प्लेबैक गति का नियंत्रण और वैकल्पिक मौन छोड़ने का विकल्प
 - ऑटो-कॉपी और अपनी चुनी फ़ोल्डर में ऑटो-सेव (Drive, Syncthing)
 - वीडियो भी: ऑडियो ट्रैक निकालकर टेक्स्ट बनाया जाता है
 - डिज़ाइन से ही तेज़: मौन हटाया जाता है, समानांतर प्रोसेसिंग, और आपके फ़ोन का AI चिप उपलब्ध होने पर अपने आप उपयोग होता है

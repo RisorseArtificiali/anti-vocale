@@ -1,6 +1,7 @@
-Nowość: notatki głosowe WhatsApp transkrybują się same (opcjonalnie, lokalnie)
-Nowość: wyszukiwanie znajduje słowa źle usłyszane przez model („podobne słowa”)
+Nowość: notatki głosowe WhatsApp transkrybują się same
+Nowość: odsłuchaj nagranie niedawnej transkrypcji w jej wierszu (prędkość)
+Nowość: wyszukiwanie znajduje słowa źle usłyszane przez model
 Nowość: długie pauzy stają się podziałami akapitów
-Nowość: inne aplikacje mogą używać Anti-Vocale jako transkrybenta (Open Transcribe)
-Lepiej: uszkodzone modele naprawiają się same; pominięte wiadomości w jednym podsumowaniu
+Nowość: inne aplikacje używają Anti-Vocale jako transkrybenta
+Lepiej: uszkodzone modele naprawiają się same; pominięte w jednym podsumowaniu
 Poprawiono: uszkodzona baza Historii odzyskuje się zamiast wysypać

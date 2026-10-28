@@ -1,7 +1,8 @@
 <en-US>
 What's new in 1.15.0:
 • New: WhatsApp voice notes transcribe themselves as they arrive (opt-in, on-device)
-• New: History search finds words the model mis-heard ("include similar words")
+• New: play recent audio in its history row (speed, skip silences)
+• New: History search finds words the model mis-heard
 • New: long pauses become paragraph breaks
 • New: other apps can use Anti-Vocale as their transcriber (Open Transcribe)
 • Improved: damaged models self-heal; missed notes return as one digest
@@ -50,10 +51,11 @@ What's new in 1.12.0:
 
 <it-IT>
 Novità della versione 1.15.0:
-• Nuovo: i vocali WhatsApp si trascrivono da soli (opt-in, sul dispositivo)
-• Nuovo: la ricerca trova le parole sentite male dal modello ("parole simili")
-• Nuovo: le pause lunghe diventano a capo di paragrafo
-• Nuovo: altre app possono usare Anti-Vocale come trascrittore (Open Transcribe)
+• Nuovo: i vocali WhatsApp si trascrivono da soli
+• Nuovo: riproduci l'audio recente in Cronologia (velocità, salta i silenzi)
+• Nuovo: la ricerca trova le parole sentite male dal modello
+• Nuovo: le pause lunghe diventano paragrafi
+• Nuovo: altre app usano Anti-Vocale come trascrittore (Open Transcribe)
 • Migliorato: modelli danneggiati autoriparati; riepilogo dei vocali persi
 • Corretto: database della Cronologia corrotto recuperato senza blocchi
 Novità della versione 1.14.1:
@@ -306,11 +308,12 @@ Novità dalla versione 1.0.3:
 
 <de-DE>
 Neuigkeiten in Version 1.15.0:
-• Neu: WhatsApp-Sprachnachrichten werden selbst transkribiert (Opt-in, auf dem Gerät)
-• Neu: die Suche findet vom Modell falsch gehörte Wörter („ähnliche Wörter“)
+• Neu: WhatsApp-Sprachnachrichten werden selbst transkribiert
+• Neu: Audio in der Verlaufszeile abspielen (Geschwindigkeit, Pausen überspringen)
+• Neu: die Suche findet vom Modell falsch gehörte Wörter
 • Neu: lange Pausen werden zu Absatzumbrüchen
-• Neu: andere Apps können Anti-Vocale als Transkriptor nutzen (Open Transcribe)
-• Verbessert: beschädigte Modelle heilen selbst; verpasste Nachrichten als Zusammenfassung
+• Neu: andere Apps nutzen Anti-Vocale als Transkriptor
+• Verbessert: beschädigte Modelle heilen selbst; Verpasstes als Zusammenfassung
 • Behoben: eine beschädigte Verlaufsdatenbank erholt sich statt abzustürzen
 Neuigkeiten in Version 1.14.1:
 • Neu: beobachtete Ordner transkribieren neue Audio automatisch; Remote-Offload (experimentell)
@@ -327,12 +330,13 @@ Neuigkeiten in Version 1.14.0:
 
 <es-ES>
 Novedades de la versión 1.15.0:
-• Nuevo: las notas de voz de WhatsApp se transcriben solas (opcional, local)
-• Nuevo: la búsqueda encuentra palabras que el modelo escuchó mal («palabras similares»)
+• Nuevo: las notas de voz de WhatsApp se transcriben solas
+• Nuevo: reproduce el audio reciente en su fila del Historial (velocidad)
+• Nuevo: la búsqueda encuentra palabras que el modelo escuchó mal
 • Nuevo: las pausas largas se vuelven saltos de párrafo
-• Nuevo: otras apps pueden usar Anti-Vocale como transcriptor (Open Transcribe)
-• Mejorado: los modelos dañados se reparan solos; notas perdidas en un resumen
-• Corregido: una base del Historial corrupta se recupera en vez de fallar
+• Nuevo: otras apps usan Anti-Vocale como transcriptor
+• Mejorado: los modelos dañados se reparan solos; lo perdido en un resumen
+• Corregido: una base del Historial corrupta se recupera sin fallar
 Novedades de la versión 1.14.1:
 • Nuevo: las carpetas vigiladas transcriben audio nuevo; offload remoto (experimental)
 • Nuevo: comparte como texto con tiempos, SRT o VTT; exporta modelos como paquetes offline
@@ -348,11 +352,12 @@ Novedades de la versión 1.14.0:
 
 <fr-FR>
 Nouveautés de la version 1.15.0 :
-• Nouveau : les messages vocaux WhatsApp se transcrivent seuls (opt-in, local)
-• Nouveau : la recherche trouve les mots mal entendus (« mots similaires »)
-• Nouveau : les longues pauses deviennent des sauts de paragraphe
-• Nouveau : d'autres applis peuvent employer Anti-Vocale comme transcripteur
-• Amélioré : les modèles endommagés se réparent seuls ; messages manqués en un résumé
+• Nouveau : les vocaux WhatsApp se transcrivent seuls
+• Nouveau : écoutez l'audio récent dans sa ligne d'historique (vitesse)
+• Nouveau : la recherche trouve les mots mal entendus
+• Nouveau : les longues pauses deviennent des paragraphes
+• Nouveau : d'autres applis utilisent Anti-Vocale comme transcripteur
+• Amélioré : les modèles endommagés se réparent seuls ; manqués en un résumé
 • Corrigé : une base Historique corrompue se rétablit sans planter
 Nouveautés de la version 1.14.1 :
 • Nouveau : les dossiers surveillés transcrivent le nouvel audio ; déport distant (expérimental)
@@ -369,12 +374,13 @@ Nouveautés de la version 1.14.0 :
 
 <pt-BR>
 Novidades da versão 1.15.0:
-• Novo: as mensagens de voz do WhatsApp se transcrevem sozinhas (opcional, local)
-• Novo: a busca encontra palavras que o modelo ouviu errado («palavras semelhantes»)
+• Novo: as mensagens de voz do WhatsApp se transcrevem sozinhas
+• Novo: ouça o áudio recente na própria linha do Histórico (velocidade)
+• Novo: a busca encontra palavras que o modelo ouviu errado
 • Novo: pausas longas viram quebras de parágrafo
-• Novo: outros apps podem usar o Anti-Vocale como transcritor (Open Transcribe)
+• Novo: outros apps usam o Anti-Vocale como transcritor
 • Melhorado: modelos danificados se recuperam sozinhos; notas perdidas num resumo
-• Corrigido: um banco de dados do Histórico corrompido se recupera em vez de travar
+• Corrigido: um banco do Histórico corrompido se recupera em vez de travar
 Novidades da versão 1.14.1:
 • Novo: pastas assistidas transcrevem o novo áudio; offload remoto (experimental)
 • Novo: compartilhe como texto com tempos, SRT ou VTT; exporte modelos como pacotes offline
@@ -390,11 +396,12 @@ Novidades da versão 1.14.0:
 
 <ru-RU>
 Что нового в версии 1.15.0:
-• Новое: голосовые WhatsApp расшифровываются сами (по желанию, на устройстве)
-• Новое: поиск находит слова, расслышанные моделью неверно («похожие слова»)
+• Новое: голосовые WhatsApp расшифровываются сами
+• Новое: прослушайте недавнюю запись в строке Истории (скорость, пропуск тишины)
+• Новое: поиск находит слова, расслышанные моделью неверно
 • Новое: длинные паузы становятся абзацами
-• Новое: другие приложения могут использовать Anti-Vocale как транскрайбер (Open Transcribe)
-• Улучшено: повреждённые модели восстанавливаются сами; пропущенные сообщения одним дайджестом
+• Новое: другие приложения используют Anti-Vocale как транскрайбер
+• Улучшено: повреждённые модели восстанавливаются сами; пропущенное одним дайджестом
 • Исправлено: повреждённая база Истории восстанавливается, а не ломается
 Что нового в версии 1.14.1:
 • Новое: наблюдаемые папки сами расшифровывают новый звук; удалённая разгрузка (экспериментально)
@@ -411,10 +418,11 @@ Novidades da versão 1.14.0:
 
 <tr-TR>
 Sürüm 1.15.0'daki yenilikler:
-• Yeni: WhatsApp sesli mesajları kendiliğinden yazıya dökülür (isteğe bağlı, cihazda)
-• Yeni: arama, modelin yanlış duyduğu kelimeleri bulur («benzer kelimeler»)
+• Yeni: WhatsApp sesli mesajları kendiliğinden yazıya dökülür
+• Yeni: son kaydın sesini geçmiş satırından dinleyin (hız, sessizlik atlama)
+• Yeni: arama, modelin yanlış duyduğu kelimeleri bulur
 • Yeni: uzun duraklamalar paragraf sonu olur
-• Yeni: diğer uygulamalar Anti-Vocale'i transkriptör olarak kullanabilir (Open Transcribe)
+• Yeni: diğer uygulamalar Anti-Vocale'i transkriptör olarak kullanabilir
 • İyileştirildi: bozuk modeller kendini onarır; kaçırılan mesajlar tek özetle döner
 • Düzeltildi: bozuk Geçmiş veritabanı çökmek yerine kurtulur
 Sürüm 1.14.1'daki yenilikler:
@@ -432,11 +440,12 @@ Sürüm 1.14.0'daki yenilikler:
 
 <pl-PL>
 Nowości w wersji 1.15.0:
-• Nowość: notatki głosowe WhatsApp transkrybują się same (opcjonalnie, lokalnie)
-• Nowość: wyszukiwanie znajduje słowa źle usłyszane przez model („podobne słowa”)
+• Nowość: notatki głosowe WhatsApp transkrybują się same
+• Nowość: odsłuchaj nagranie niedawnej transkrypcji w jej wierszu (prędkość)
+• Nowość: wyszukiwanie znajduje słowa źle usłyszane przez model
 • Nowość: długie pauzy stają się podziałami akapitów
-• Nowość: inne aplikacje mogą używać Anti-Vocale jako transkrybenta (Open Transcribe)
-• Lepiej: uszkodzone modele naprawiają się same; pominięte wiadomości w jednym podsumowaniu
+• Nowość: inne aplikacje używają Anti-Vocale jako transkrybenta
+• Lepiej: uszkodzone modele naprawiają się same; pominięte w jednym podsumowaniu
 • Poprawiono: uszkodzona baza Historii odzyskuje się zamiast wysypać
 Nowości w wersji 1.14.1:
 • Nowość: obserwowane foldery same transkrybują nowe audio; zdalny offload (eksperymentalny)
@@ -454,7 +463,8 @@ Nowości w wersji 1.14.0:
 <hi-IN>
 संस्करण 1.15.0 में नया क्या है:
 • नया: WhatsApp वॉइस नोट्स अपने आप ट्रांसक्राइब होते हैं (स्वेच्छा से, डिवाइस पर)
-• नया: खोज मॉडल के गलत सुने शब्द ढूंढती है («समान शब्द»)
+• नया: हाल की रिकॉर्डिंग का ऑडियो उसकी पंक्ति में सुनें (प्लेबैक गति, मौन छोड़ें)
+• नया: खोज मॉडल के गलत सुने शब्द ढूंढती है
 • नया: लंबे ठहराव पैराग्राफ ब्रेक बनते हैं
 • नया: दूसरे ऐप Anti-Vocale को ट्रांसक्राइबर मानकर इस्तेमाल कर सकते हैं (Open Transcribe)
 • बेहतर: खराब मॉडल खुद ठीक होते हैं; छूटे संदेश एक सारांश में
@@ -475,6 +485,7 @@ Nowości w wersji 1.14.0:
 <uk>
 Новинки версії 1.15.0:
 • Нове: голосові WhatsApp розшифровуються самі (за бажанням, на пристрої)
+• Нове: слухайте запис просто в рядку Історії (швидкість, пропуск тиші)
 • Нове: пошук знаходить слова, почуті моделлю неправильно («схожі слова»)
 • Нове: довгі паузи стають абзацами
 • Нове: інші програми можуть використовувати Anti-Vocale як транскрайбер (Open Transcribe)
@@ -495,6 +506,7 @@ Nowości w wersji 1.14.0:
 <he-IL>
 מה חדש בגרסה 1.15.0:
 • חדש: הודעות קוליות ב־WhatsApp מתועתקות אוטומטית (בבחירה, על המכשיר)
+• חדש: השמיעו את האודיו של תעתיק אחרון בשורת ההיסטוריה שלו (מהירות, דילוג על שקט)
 • חדש: החיפוש מוצא מילים שהמודל שמע לא נכון («מילים דומות»)
 • חדש: הפסקות ארוכות הופכות למעברי פסקה
 • חדש: אפליקציות אחרות יכולות להשתמש ב־Anti-Vocale כמתעתק (Open Transcribe)
@@ -514,10 +526,11 @@ Nowości w wersji 1.14.0:
 • שופר: מקטע מתקדם קומפקטי, הורדות Gemma בעמוד משלהן</he-IL>
 <fa-IR>
 چه چیز جدید‌های نسخه 1.15.0:
-• جدید: پیام‌های صوتی واتس‌اپ خودکار پیاده‌سازی می‌شوند (اختیاری، روی دستگاه)
-• جدید: جست‌وجو واژه‌های اشتباه‌شنیده مدل را پیدا می‌کند («واژه‌های مشابه»)
+• جدید: پیام‌های صوتی واتس‌اپ خودکار پیاده‌سازی می‌شوند
+• جدید: صدای پیام‌های اخیر را در ردیف تاریخچه پخش کنید (سرعت پخش، رد کردن سکوت‌ها)
+• جدید: جست‌وجو واژه‌های اشتباه‌شنیده مدل را پیدا می‌کند
 • جدید: مکث‌های طولانی به شکست پاراگراف تبدیل می‌شوند
-• جدید: برنامه‌های دیگر می‌توانند Anti-Vocale را پیاده‌نویس خود کنند (Open Transcribe)
+• جدید: برنامه‌های دیگر می‌توانند Anti-Vocale را پیاده‌نویس خود کنند
 • بهبود: مدل‌های آسیب‌دیده خودترمیم؛ پیام‌های از دست‌رفته در یک خلاصه
 • رفع اشکال: پایگاه‌داده خراب تاریخچه ترمیم می‌شود، فرونمی‌پاشد
 چه چیز جدید‌های نسخه 1.14.1:
@@ -535,6 +548,7 @@ Nowości w wersji 1.14.0:
 <zh-CN>
 1.15.0 版本更新：
 • 新增：WhatsApp 语音消息自动转写（可选择开启，仅在设备上）
+• 新增：在历史记录条目中直接回放最近的录音（支持播放速度和跳过静音）
 • 新增：搜索能找到模型听错的词（“包含相似词语”）
 • 新增：较长的停顿变成段落换行
 • 新增：其他应用可将 Anti-Vocale 用作转写器（Open Transcribe）

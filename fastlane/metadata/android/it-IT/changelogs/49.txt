@@ -1,6 +1,7 @@
-Nuovo: i vocali WhatsApp si trascrivono da soli (opt-in, sul dispositivo)
-Nuovo: la ricerca trova le parole sentite male dal modello ("parole simili")
-Nuovo: le pause lunghe diventano a capo di paragrafo
-Nuovo: altre app possono usare Anti-Vocale come trascrittore (Open Transcribe)
+Nuovo: i vocali WhatsApp si trascrivono da soli
+Nuovo: riproduci l'audio recente in Cronologia (velocità, salta i silenzi)
+Nuovo: la ricerca trova le parole sentite male dal modello
+Nuovo: le pause lunghe diventano paragrafi
+Nuovo: altre app usano Anti-Vocale come trascrittore (Open Transcribe)
 Migliorato: modelli danneggiati autoriparati; riepilogo dei vocali persi
 Corretto: database della Cronologia corrotto recuperato senza blocchi

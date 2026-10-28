@@ -1,6 +1,7 @@
-Nieuw: WhatsApp-spraakberichten worden automatisch uitgeschreven bij aankomst (optioneel, lokaal)
-Nieuw: zoeken vindt woorden die het model verkeerd hoorde („vergelijkbare woorden“)
+Nieuw: WhatsApp-spraakberichten worden automatisch uitgeschreven bij aankomst
+Nieuw: speel de audio af in de rij van de geschiedenis (snelheid)
+Nieuw: zoeken vindt woorden die het model verkeerd hoorde
 Nieuw: lange pauzes worden alineaeinden
-Nieuw: andere apps kunnen Anti-Vocale als hun transcriptor gebruiken (Open Transcribe)
-Verbeterd: beschadigde modellen herstellen zichzelf; gemiste berichten komen terug als één samenvatting
+Nieuw: andere apps kunnen Anti-Vocale als transcriptor gebruiken
+Verbeterd: beschadigde modellen herstellen zichzelf; gemiste berichten in één samenvatting
 Opgelost: een beschadigde Geschiedenis-database herstelt zich, crasht niet

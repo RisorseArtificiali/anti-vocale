@@ -1,6 +1,7 @@
-Nuevo: las notas de voz de WhatsApp se transcriben solas (opcional, local)
-Nuevo: la búsqueda encuentra palabras que el modelo escuchó mal («palabras similares»)
+Nuevo: las notas de voz de WhatsApp se transcriben solas
+Nuevo: reproduce el audio reciente en su fila del Historial (velocidad)
+Nuevo: la búsqueda encuentra palabras que el modelo escuchó mal
 Nuevo: las pausas largas se vuelven saltos de párrafo
-Nuevo: otras apps pueden usar Anti-Vocale como transcriptor (Open Transcribe)
-Mejorado: los modelos dañados se reparan solos; notas perdidas en un resumen
-Corregido: una base del Historial corrupta se recupera en vez de fallar
+Nuevo: otras apps usan Anti-Vocale como transcriptor
+Mejorado: los modelos dañados se reparan solos; lo perdido en un resumen
+Corregido: una base del Historial corrupta se recupera sin fallar

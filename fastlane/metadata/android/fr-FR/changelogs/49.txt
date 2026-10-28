@@ -1,6 +1,7 @@
-Nouveau : les messages vocaux WhatsApp se transcrivent seuls (opt-in, local)
-Nouveau : la recherche trouve les mots mal entendus (« mots similaires »)
-Nouveau : les longues pauses deviennent des sauts de paragraphe
-Nouveau : d'autres applis peuvent employer Anti-Vocale comme transcripteur
-Amélioré : les modèles endommagés se réparent seuls ; messages manqués en un résumé
+Nouveau : les vocaux WhatsApp se transcrivent seuls
+Nouveau : écoutez l'audio récent dans sa ligne d'historique (vitesse)
+Nouveau : la recherche trouve les mots mal entendus
+Nouveau : les longues pauses deviennent des paragraphes
+Nouveau : d'autres applis utilisent Anti-Vocale comme transcripteur
+Amélioré : les modèles endommagés se réparent seuls ; manqués en un résumé
 Corrigé : une base Historique corrompue se rétablit sans planter
