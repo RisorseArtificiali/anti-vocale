@@ -42,6 +42,33 @@ LISTING_LOCALE_ALIASES: dict[str, str] = {
     "ar-SA": "ar",
 }
 
+
+def api_locale(locale: str) -> str:
+    """Map a markdown locale name to the Play API language code."""
+    return LISTING_LOCALE_ALIASES.get(locale, locale)
+
+
+# Locales the Publishing API rejects outright ("The requested language is not
+# currently supported", seen live on run 40754187344). The store-listing.md
+# keeps these sections as full alternative listings (de-CH is a complete
+# Swiss text; de-DE serves Switzerland on Play, which has no de-CH listing
+# language), so parse_store_listing drops them with a warning instead of
+# handing the upload a key that fails the edit mid-way; every run also
+# reports them under skipped_locales so the narrowed contract stays visible.
+UNSUPPORTED_LISTING_LOCALES: dict[str, str] = {
+    "de-CH": "Play has no de-CH listing language; de-DE serves Switzerland",
+}
+
+
+def unsupported_sections_in(path: str) -> list[str]:
+    """Locale names present in the listing file that Play cannot host."""
+    text = Path(path).read_text(encoding="utf-8")
+    return [
+        m.group(1)
+        for m in re.finditer(r"^### ([a-z]{2}-[A-Z]{2})\s+\(", text, re.MULTILINE)
+        if m.group(1) in UNSUPPORTED_LISTING_LOCALES
+    ]
+
 IMAGE_TYPES = ["phoneScreenshots"]
 
 
@@ -113,6 +140,14 @@ def parse_store_listing(path: str) -> dict[str, dict[str, str]]:
         if locale is None:
             continue
 
+        if locale in UNSUPPORTED_LISTING_LOCALES:
+            print(
+                f"Warning: skipping {locale} section: "
+                f"{UNSUPPORTED_LISTING_LOCALES[locale]}",
+                file=sys.stderr,
+            )
+            continue
+
         # Extract short description from the first code block
         code_block = re.search(r"```\n(.*?)\n```", section, re.DOTALL)
         if not code_block:
@@ -132,8 +167,7 @@ def parse_store_listing(path: str) -> dict[str, dict[str, str]]:
         full_desc = re.sub(r"^Italiano\s*/\s*Italian:\s*\n", "", after_code.lstrip("\n"))
         full_desc = full_desc.strip()
 
-        api_locale = LISTING_LOCALE_ALIASES.get(locale, locale)
-        listings[api_locale] = {"short": short_desc, "full": full_desc}
+        listings[api_locale(locale)] = {"short": short_desc, "full": full_desc}
 
     return listings
 
@@ -362,16 +396,36 @@ def main(argv: list[str] | None = None) -> int:
     # Discover screenshots
     screenshots = discover_screenshots(args.screenshots_dir)
 
-    # Parse --locales filter
+    # Parse --locales filter (run 40754187344: requested names are normalized
+    # through the alias map so "ar-SA" selects the parsed "ar" section; before
+    # this the raw-vs-aliased comparison silently skipped Arabic). Unsupported
+    # names are dropped with their specific reason, and a request that leaves
+    # nothing uploadable fails instead of committing an empty edit.
     locales: list[str] | None = None
     if args.locales:
-        locales = [l.strip() for l in args.locales.split(",") if l.strip()]
+        locales = []
+        for l in (x.strip() for x in args.locales.split(",")):
+            if not l:
+                continue
+            if l in UNSUPPORTED_LISTING_LOCALES:
+                print(
+                    f"Warning: skipping {l}: {UNSUPPORTED_LISTING_LOCALES[l]}",
+                    file=sys.stderr,
+                )
+                continue
+            locales.append(api_locale(l))
         unknown = [l for l in locales if l not in listings]
         if unknown:
             print(
                 f"Warning: requested locales not found in listing file: {unknown}",
                 file=sys.stderr,
             )
+        if not locales:
+            print(
+                "Error: no supported locales requested; nothing to upload",
+                file=sys.stderr,
+            )
+            return 1
 
     if not args.output_json:
         print(f"Parsed {len(listings)} locale(s) from {args.listing_file}")
@@ -406,6 +460,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.output_json:
+        result["skipped_locales"] = unsupported_sections_in(args.listing_file)
         print(json.dumps(result, indent=2))
     else:
         if args.dry_run:
@@ -421,6 +476,11 @@ def main(argv: list[str] | None = None) -> int:
                 img_info = f", {n_img} screenshot(s)" if n_img else ""
                 print(f"  {loc}: uploaded (short={short_len} chars{img_info})")
             print(f"Done: {len(result['locales_uploaded'])} locale(s) committed")
+        for loc in unsupported_sections_in(args.listing_file):
+            print(
+                f"  skipped {loc} (in the listing file, not a Play language): "
+                f"{UNSUPPORTED_LISTING_LOCALES[loc]}"
+            )
 
     return 0
 

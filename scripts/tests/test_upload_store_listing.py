@@ -87,6 +87,26 @@ SAMPLE_LISTING = textwrap.dedent("""\
     **FONCTIONNALITÉS**
 
     - Partagez des messages vocaux
+
+    ---
+
+    ### ar-SA (Arabic)
+    ## الوصف المختصر (80 حرفًا كحد أقصى)
+    ```
+    انسخ الرسائل الصوتية دون اتصال بالإنترنت.
+    ```
+
+    ينسخ Anti-Vocale الرسائل الصوتية من WhatsApp و Telegram.
+
+    ---
+
+    ### de-CH (German, Switzerland)
+    ## Kurzbeschreibung (80 Zeichen max)
+    ```
+    Sprachnachrichten offline umwandeln. Kein Internet nötig.
+    ```
+
+    Anti-Vocale wandelt Sprachnachrichten in Text um (Schweizer Variante).
 """)
 
 
@@ -146,7 +166,9 @@ class TestParseStoreListing:
 
     def test_locale_count(self, listing_file: Path):
         listings = parse_store_listing(str(listing_file))
-        assert len(listings) == 4
+        # 5 supported sections parsed (ar-SA arrives as "ar"); de-CH is
+        # skipped at parse altitude, so it never counts.
+        assert len(listings) == 5
 
     def test_full_description_has_features(self, listing_file: Path):
         listings = parse_store_listing(str(listing_file))
@@ -302,3 +324,73 @@ class TestMainIntegration:
         mock_upload.assert_called_once()
         call_kwargs = mock_upload.call_args
         assert call_kwargs[1]["dry_run"] is True
+
+
+# ---------------------------------------------------------------------------
+# Locale-filter normalization + unsupported-locale skip (run 40754187344:
+# ar-SA was silently skipped by the filter, de-CH failed the edit with a 400).
+# The parametrized cases pin the locales list actually handed to the upload:
+# reverting either script fix turns the corresponding case red.
+# ---------------------------------------------------------------------------
+
+
+class TestLocaleFilterNormalization:
+    @patch("upload_store_listing.upload_listings")
+    @patch("upload_store_listing.load_credentials")
+    @patch("upload_store_listing.resolve_key_source")
+    @pytest.mark.parametrize(
+        "locales_arg,expected_locales",
+        [
+            ("ar-SA", ["ar"]),  # alias: "ar-SA" selects the parsed "ar" key
+            ("en-US,de-CH", ["en-US"]),  # de-CH dropped with its reason
+            ("en-US,it-IT,ar-SA,de-CH", ["en-US", "it-IT", "ar"]),
+            (None, None),  # no filter
+        ],
+        ids=["alias", "skip-unsupported", "mixed", "no-filter"],
+    )
+    def test_upload_receives_normalized_locales(
+        self, mock_resolve: MagicMock, mock_creds: MagicMock,
+        mock_upload: MagicMock, listing_file: Path,
+        locales_arg, expected_locales,
+    ):
+        mock_resolve.return_value = ("key.json", False)
+        mock_upload.return_value = {
+            "locales_uploaded": ["en-US"],
+            "screenshots_uploaded": {},
+            "dry_run": True,
+        }
+        argv = [
+            "--dry-run",
+            "--listing-file", str(listing_file),
+            "--screenshots-dir", str(listing_file.parent / "screenshots"),
+        ]
+        if locales_arg is not None:
+            argv += ["--locales", locales_arg]
+        rc = main(argv + ["key.json"])
+        assert rc == 0
+        assert mock_upload.call_args[1]["locales"] == expected_locales
+        # The unsupported locale is dropped at parse altitude: the upload
+        # never receives a de-CH key, with or without a --locales filter.
+        # listings is passed positionally (args[2]); locales is a kwarg.
+        listings_arg = mock_upload.call_args[0][2]
+        assert "de-CH" not in listings_arg
+        assert set(listings_arg) == {"en-US", "it-IT", "de-DE", "fr-FR", "ar"}
+
+    @patch("upload_store_listing.upload_listings")
+    @patch("upload_store_listing.load_credentials")
+    @patch("upload_store_listing.resolve_key_source")
+    def test_request_of_only_unsupported_locales_fails(
+        self, mock_resolve: MagicMock, mock_creds: MagicMock,
+        mock_upload: MagicMock, listing_file: Path,
+    ):
+        """--locales de-CH must fail, not commit an empty edit as success."""
+        mock_resolve.return_value = ("key.json", False)
+        rc = main([
+            "--dry-run",
+            "--listing-file", str(listing_file),
+            "--screenshots-dir", str(listing_file.parent / "screenshots"),
+            "--locales", "de-CH",
+            "key.json",
+        ])
+        assert rc == 1
+        mock_upload.assert_not_called()
