@@ -30,11 +30,14 @@ Android application written in Kotlin for transcribing voice messages locally on
     - `SherpaBackend` (ONE sherpa-onnx engine; all built-in models are bundled-catalog entries: Parakeet TDT via OfflineRecognizer, Whisper via OfflineRecognizer, Qwen3-ASR via OfflineRecognizer, Nemotron 3.5 via OnlineRecognizer — the only streaming backend, GigaAM v3 Russian via OfflineRecognizer; per-entry `SherpaModelManager`/`SherpaModelDownloader` handle discovery + download)
     - `ExternalSherpaBackend` (user-imported external models, via OfflineRecognizer; dynamic BackendRegistry descriptors, `external:` prefix routing; ShareExternal family alias with chooser; families: Transducer/Whisper/CTC/SenseVoice/Canary)
     - `ModelFamilySupport` (per-family copy plans, metadata validation, sherpa config shared by external imports)
-    - `LlmTranscriptionBackend` (Gemma via LiteRT-LM; VibeVoice `.litertlm` imports route to the TASK-872 multi-turn 3.47s-window loop, filename-gated)
+    - `LlmTranscriptionBackend` (Gemma via LiteRT-LM; VibeVoice `.litertlm` imports route to the TASK-872 multi-turn 3.47s-window loop, filename-gated); whistle via `WhistleNative` (TASK-853)
+    - `TranscriptFuzzySearch` (TASK-911): the History search's similar-words scorer; `scoreIfMatches`/`scoreRanked` are its only public surface (the ViewModel and the SPI search op share the ranking so they cannot diverge)
     - `OrphanedModelDirCleaner` reclaims stranded old-version built-in dirs AND orphaned external-import dirs at startup (records-keyed live set, never the community-catalog index; 2h mtime grace for fresh dirs, TASK-657).
+  - `service/`: `InferenceService` (foreground engine), `InferenceEnqueue` (the ONE enqueue path), `ResultNotificationFactory`, `OpenTranscribeProviderService`
+  - `testing/`: `TestSpiOps` (the debug SPI engine; see the gotcha below)
   - `ui/` — Compose UI screens and view models
   - `receiver/` — Broadcast receivers + share-target aliases (ShareReceiverActivity)
-  - `data/` — Preferences, ShareTargetManager, download infrastructure
+  - `data/` — Preferences, ShareTargetManager, download infrastructure, `BackupArchiveCodec`/`BackupHistoryCodec`/`BackupSettingsKeys` (the Settings "Backup and transfer" archive, TASK-843/844)
   - `util/` — `CrashReporter` (flavor-split), `TranscriptFileSaver` (SAF auto-save), `AppNotificationChannel`, etc.
 - `app/src/playStore/` — playStore-flavor source set: `CrashReporter` (Firebase-backed), `AndroidManifest.xml` (Firebase service suppression)
 - `app/src/fdroid/` — fdroid-flavor source set: `CrashReporter` (logcat-only no-op). Firebase-free build for F-Droid.
@@ -92,11 +95,13 @@ Gotchas:
 
 **Transcript text on diarized rows → the SubtitleFormatter entry pair (`annotatedOrStored`/`nullableAnnotated`, TASK-598).** Every surface that shows transcript text (History rows and preview, TXT export arms, result notification body/copy/share, auto-copy) derives the SPEAKER-annotated form through the pair; a new surface reading raw `result` re-opens the inconsistency class the task closed. The polish/cue reconciliation (`alignPolishedText`) is strictly per-cue validated; never loosen it to total word count alone (a compensating merge+split silently shifts words between speakers, review F1).
 
+**A new LogEntity column must reach the backup codec too.** `BackupHistoryCodec` claims column-completeness by construction; TASK-913 caught `switchedToSibling` shipped without its codec row, so backups silently dropped the flag. When Room gains a column, four places move together: `LogEntity` + the DAO projections (getAll AND searchAllRaw list every column explicitly) + `BackupHistoryCodec.rowToJson`/`rowFromJson` + the full-fidelity round-trip test (which pins the new column non-default).
+
 **Process-lifetime coroutines use the injected `@ApplicationScope`** (`di/ApplicationScope.kt`, no dispatcher on the scope: launch sites pass their own). Never hand-build a scope for process-lifetime work; the four hand-built ones drifted (one lost the CrashReporter handler) and were consolidated in TASK-438.
 
 **Language wiring is catalog data with a named owner:** `TranscriptionLanguagePolicy` maps the preference to what the recognizer consumes, dispatched on the catalog flags (`languageOption` streams per-stream, `passLanguage` offline, everything else gets ""). Since TASK-457 there is NO app-locale pin: the untouched default ("system" or "auto", both mean the same) keeps model-side detection, and only an explicitly pinned language reaches the model (Whisper forced decoding; single-language variants stay forced via `SherpaBackend.forcedLanguage`). The Settings picker derives its offered set from the same flags via `offeredLanguages` (installed variant's catalog languages, or the entry's own for streaming), and the benchmark site resolves through the same policy: change the mapping there, never at a call site.
 
-**Debug-build test SPI:** the `TEST_SPI` broadcast reads/writes app state for device-driven tests (`docs/testing-spi.md`; ops get/set/records/help). Always invoke with `-n` (implicit shell broadcasts are silently dropped on the RMX3853) and launch the app once after a fresh install. Release builds contain no receiver.
+**Debug-build test SPI:** the `TEST_SPI` broadcast reads/writes app state for device-driven tests (`docs/testing-spi.md` is the single op table: 20+ ops across preferences, models, history search/rows, notifications, clipboard, voice-note pipeline, navigation). Always invoke with `-n` (implicit shell broadcasts are silently dropped on the RMX3853) and launch the app once after a fresh install. Multi-word `--es` values need inner quotes (`--es value "'a b c'"`; adb re-parses on device and drops the tail). Release builds contain no receiver.
 
 ## Advanced integrations (WhatsApp, Open Transcribe)
 
@@ -126,7 +131,7 @@ Never encode priority, milestone, or issue links in labels (dedicated fields exi
 
 ## GitHub issue triage
 
-External issue reports get answered on GitHub; anything we commit to goes into a tracking issue first, then a Backlog task. Live threads (2026-08-30): #69 (SenseVoice + Omnilingual catalog candidates), #70 (curated Model-tab profiles, community input). FAQ.md at the root mirrors the public answers; keep it in sync when these land.
+External issue reports get answered on GitHub; anything we commit to goes into a tracking issue first, then a Backlog task. FAQ.md at the root mirrors the public answers; keep it in sync when these land. (Handled through #161, 2026-10-28: answers about import paths get verified against the SHIPPED tag's UI before posting, and correct any earlier comment that named a label that does not exist.)
 
 ## Release Checklist: New Models / Native Libraries / Architectures
 
