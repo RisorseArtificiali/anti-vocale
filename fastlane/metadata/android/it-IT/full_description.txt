@@ -27,6 +27,8 @@ FUNZIONALITÀ
 - Rimozione dei silenzi ed elaborazione a blocchi in parallelo per la velocità
 - Accelerazione neurale (NNAPI) sui dispositivi supportati, con ritorno automatico su CPU
 - Integrazione Tasker per l'automazione
+- I vocali di WhatsApp si trascrivono da soli: i nuovi vocali di WhatsApp e WhatsApp Business diventano trascrizioni appena arrivano, zero tocchi, e la riga puo portare il nome del mittente
+- Pensata per i risparmi energetici aggressivi: una protezione opzionale in background tiene viva la trascrizione a schermo spento (Realme, Oppo, OnePlus, Vivo), e l'app si riprende da sola dopo un crash o un modello corrotto
 - Provider Open Transcribe (sperimentale): le app che parlano il contratto aperto, come Forkgram, trasformano Anti-Vocale nel loro trascrittore vocale integrato
 - Sorveglianza cartella programmata: trascrivi automaticamente i nuovi file audio nelle cartelle che scegli (su Android 11+, anche la cartella media di un'app di messaggistica)
 - Offload remoto (sperimentale, spento di default): delega le trascrizioni lunghe al tuo server compatibile OpenAI
@@ -43,4 +45,4 @@ REQUISITI
 
 Android 8.0+ | 4GB+ di RAM consigliati | 326MB-1GB di spazio per modello
 
-NOTA: su alcuni telefoni con gestori batteria aggressivi (Realme, OnePlus, Vivo), apri l'app una volta dopo la condivisione dell'audio per consentire il completamento della trascrizione.
+NOTA: su alcuni telefoni con gestori batteria aggressivi (Realme, OnePlus, Vivo), apri l'app una volta dopo la condivisione dell'audio per consentire il completamento della trascrizione; l'impostazione di protezione della trascrizione in background aiuta a portare a termine le esecuzioni lunghe a schermo spento.

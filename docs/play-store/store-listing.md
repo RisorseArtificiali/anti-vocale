@@ -36,6 +36,8 @@ EVERYDAY COMFORTS
 - Video files too: the audio track is extracted and transcribed
 - Faster by design: silence stripping, parallel processing, and automatic use of your phone's AI chip when available
 - Per-app settings and Tasker automation
+- WhatsApp voice notes transcribe themselves: new voice notes in WhatsApp and WhatsApp Business become transcripts as they arrive, zero taps, with the sender's name when it can be confirmed
+- Built for aggressive battery savers: an opt-in background protection keeps transcription running with the screen off (Realme, Oppo, OnePlus, Vivo and similar), and the app recovers on its own from crashes and corrupted models
 - Voice transcription inside other apps: apps that support the Open Transcribe contract, like Forkgram, use Anti-Vocale as their transcriber (experimental)
 
 PRIVACY, FOR REAL
@@ -85,6 +87,8 @@ COMFORT QUOTIDIANI
 - Anche i video: la traccia audio viene estratta e trascritta
 - Veloce per progetto: silenzi rimossi, elaborazione in parallelo, e uso automatico del chip AI del telefono quando disponibile
 - Impostazioni per singola app e automazione con Tasker
+- I vocali di WhatsApp si trascrivono da soli: i nuovi vocali di WhatsApp e WhatsApp Business diventano trascrizioni appena arrivano, zero tocchi, e la riga puo portare il nome del mittente
+- Pensata per i risparmi energetici aggressivi: una protezione opzionale in background tiene viva la trascrizione a schermo spento (Realme, Oppo, OnePlus, Vivo e simili), e l'app si riprende da sola dopo un crash o un modello corrotto
 - Trascrizione vocale dentro altre app: le app che supportano il contratto Open Transcribe, come Forkgram, usano Anti-Vocale come loro trascrittore (sperimentale)
 
 PRIVACY, SUL SERIO
@@ -133,6 +137,8 @@ ALLTAGSKOMFORT
 - Auch Videos: die Tonspur wird extrahiert und transkribiert
 - Schnell von Haus aus: Stille wird entfernt, parallel verarbeitet, und der KI-Chip deines Telefons wird automatisch genutzt, wo verfügbar
 - Einstellungen pro App und Tasker-Automatisierung
+- WhatsApp-Sprachnachrichten transkribieren sich selbst: neue Sprachnachrichten in WhatsApp und WhatsApp Business werden beim Eintreffen automatisch zu Text, ganz ohne Tippen, optional mit dem Namen des Absenders
+- Gebaut fuer aggressive Akkusparer: ein optionaler Hintergrundschutz haelt die Transkription auch bei ausgeschaltetem Bildschirm am Laufen (Realme, Oppo, OnePlus, Vivo und aehnliche), und die App erholt sich selbst nach einem Absturz oder einem beschaedigten Modell
 - Sprachtranskription in anderen Apps: Apps, die den Open-Transcribe-Vertrag unterstützen, wie Forkgram, nutzen Anti-Vocale als ihren Transkriptor (experimentell)
 
 DATENSCHUTZ, ERNST GEMEINT
@@ -173,6 +179,8 @@ ALLTAGSKOMFORT
 - Verlauf mit Suche, Auto-Kopieren und Auto-Speichern (Drive, Syncthing), auch Videos
 - Stille entfernen, parallel verarbeiten, KI-Chip automatisch nutzen, wo verfügbar
 - Einstellungen pro App und Tasker-Automatisierung
+- WhatsApp-Sprachnachrichten transkribieren sich selbst: neue Sprachnachrichten in WhatsApp und WhatsApp Business werden beim Eintreffen automatisch zu Text, ganz ohne Tippen, optional mit dem Namen des Absenders
+- Gebaut fuer aggressive Akkusparer: ein optionaler Hintergrundschutz haelt die Transkription auch bei ausgeschaltetem Bildschirm am Laufen (Realme, Oppo, OnePlus, Vivo und aehnliche), und die App erholt sich selbst nach einem Absturz oder einem beschaedigten Modell
 - Sprachtranskription in anderen Apps: Apps, die den Open-Transcribe-Vertrag unterstützen, wie Forkgram, nutzen Anti-Vocale als ihren Transkriptor (experimentell)
 
 DATENSCHUTZ, ERNST GEMEINT
@@ -221,6 +229,8 @@ CONFORT QUOTIDIEN
 - Les vidéos aussi : la piste audio est extraite et transcrite
 - Rapide par conception : silences supprimés, traitement parallèle, et la puce IA de votre téléphone est utilisée automatiquement quand elle existe
 - Réglages par application et automatisation Tasker
+- Les notes vocales WhatsApp se transcrivent toutes seules : les nouvelles notes vocales de WhatsApp et WhatsApp Business deviennent des transcriptions des leur arrivee, sans aucun geste, avec en option le nom de l'expediteur
+- Concue pour les economiseurs de batterie agressifs : une protection en arriere-plan optionnelle maintient la transcription active ecran eteint (Realme, Oppo, OnePlus, Vivo et similaires), et l'application se retablit seule apres un plantage ou un modele corrompu
 - Transcription vocale dans d'autres applications : les apps qui prennent en charge le contrat Open Transcribe, comme Forkgram, utilisent Anti-Vocale comme transcripteur (expérimental)
 
 CONFIDENTIALITÉ, VRAIMENT
@@ -269,6 +279,8 @@ COMODIDADES DIARIAS
 - También vídeos: la pista de audio se extrae y se transcribe
 - Rápido por diseño: silencios eliminados, procesamiento en paralelo, y el chip de IA de tu teléfono se usa automáticamente cuando está disponible
 - Ajustes por aplicación y automatización con Tasker
+- Las notas de voz de WhatsApp se transcriben solas: las nuevas notas de voz de WhatsApp y WhatsApp Business se convierten en transcripciones en cuanto llegan, sin tocar nada, y pueden llevar el nombre del remitente
+- Pensada para los ahorradores de bateria agresivos: una proteccion en segundo plano opcional mantiene la transcripcion activa con la pantalla apagada (Realme, Oppo, OnePlus, Vivo y similares), y la app se recupera sola tras un fallo o un modelo danado
 - Transcripción de voz dentro de otras apps: las apps compatibles con el contrato Open Transcribe, como Forkgram, usan Anti-Vocale como su transcriptor (experimental)
 
 PRIVACIDAD DE VERDAD
@@ -317,6 +329,8 @@ COMODIDADES DO DIA A DIA
 - Vídeos também: a faixa de áudio é extraída e transcrita
 - Rápido por projeto: silêncios removidos, processamento em paralelo, e o chip de IA do seu telefone é usado automaticamente quando disponível
 - Configurações por app e automação com Tasker
+- As mensagens de voz do WhatsApp se transcrevem sozinhas: novas mensagens de voz do WhatsApp e do WhatsApp Business viram transcricoes assim que chegam, sem tocar em nada, e podem trazer o nome de quem enviou
+- Feita para os economizadores de bateria agressivos: uma protecao em segundo plano opcional mantem a transcricao ativa com a tela apagada (Realme, Oppo, OnePlus, Vivo e similares), e o app se recupera sozinho apos uma falha ou um modelo corrompido
 - Transcrição de voz dentro de outros apps: apps compatíveis com o contrato Open Transcribe, como o Forkgram, usam o Anti-Vocale como transcritor (experimental)
 
 PRIVACIDADE DE VERDADE
@@ -365,6 +379,8 @@ Anti-Vocaleは、WhatsAppやTelegramなどあらゆるアプリのボイスメ�
 - 動画もOK：音声トラックを抽出して文字に
 - 設計からして速い：無音のカット、並列処理、AIチップがあれば自動活用
 - アプリごとの設定とTasker自動化
+- WhatsAppのボイスメッセージを自動で文字起こし：WhatsAppとWhatsApp Businessに届いたボイスメッセージを、操作なしで自動的にテキスト化し、送信者の名前も表示できます
+- 厳しいバッテリー節約にも対応：オプションのバックグラウンド保護で、画面が消えていても文字起こしを継続します（Realme、Oppo、OnePlus、Vivoなど）。クラッシュやモデル破損からも自動で復旧します
 - 他のアプリの中での音声書き起こし：Open Transcribe 規約に対応したアプリ（Forkgram など）は、Anti-Vocale を書き起こしエンジンとして使えます（実験的）
 
 本物のプライバシー
@@ -413,6 +429,8 @@ Anti-Vocale은 WhatsApp, Telegram 등 모든 앱의 음성 메시지를 휴대�
 - 동영상도 가능: 오디오 트랙을 추출해 텍스트로
 - 설계부터 빠르게: 무음 제거, 병렬 처리, AI 칩이 있으면 자동 활용
 - 앱별 설정과 Tasker 자동화
+- WhatsApp 음성 메시지 자동 전사: WhatsApp과 WhatsApp Business에 도착한 음성 메시지를 아무 조작 없이 자동으로 텍스트로 바꾸고, 보낸 사람 이름도 표시할 수 있습니다
+- 공격적인 배터리 절약 기능에도 대응: 선택적인 백그라운드 보호로 화면이 꺼진 상태에서도 전사가 계속됩니다(Realme, Oppo, OnePlus, Vivo 등). 오류나 손상된 모델에서도 자동으로 복구합니다
 - 다른 앱 안에서 음성 전사: Open Transcribe 계약을 지원하는 앱(Forkgram 등)이 Anti-Vocale를 전사기로 사용합니다(실험적)
 
 진짜 프라이버시
@@ -461,6 +479,8 @@ Anti-Vocale 在手机本地直接把 WhatsApp、Telegram 等任何应用的语�
 - 视频也行：提取音轨后转写
 - 天生就快：静音裁剪、并行处理，手机有 AI 芯片时自动启用
 - 按应用单独设置，支持 Tasker 自动化
+- WhatsApp 语音消息自动转写：WhatsApp 和 WhatsApp Business 收到的新语音消息无需任何操作即可自动转为文字，还可显示发送者姓名
+- 为激进的省电机制而生：可选的后台保护让转写在熄屏状态下继续运行（Realme、Oppo、OnePlus、Vivo 等），应用还能从崩溃和损坏的模型中自动恢复
 - 在其他应用内转录语音：支持 Open Transcribe 契约的应用（如 Forkgram）可将 Anti-Vocale 用作其转录器（实验性）
 
 真正的隐私
@@ -510,6 +530,8 @@ Anti-Vocale расшифровывает голосовые сообщения �
 - Видео тоже: звуковая дорожка извлекается и расшифровывается
 - Быстро по конструкции: тишина вырезается, обработка параллельная, ИИ-чип телефона используется автоматически, если есть
 - Настройки для каждого приложения и автоматизация Tasker
+- Голосовые сообщения WhatsApp расшифровываются сами: новые сообщения в WhatsApp и WhatsApp Business превращаются в текст сразу по приходу, без единого касания, с именем отправителя по желанию
+- Создано для агрессивных энергосберегателей: дополнительная защита фонового режима держит расшифровку работающей при выключенном экране (Realme, Oppo, OnePlus, Vivo и подобные), а приложение само восстанавливается после сбоя или повреждённой модели
 - Расшифровка голосовых внутри других приложений: приложения с поддержкой контракта Open Transcribe, такие как Forkgram, используют Anti-Vocale как транскрибатор (экспериментально)
 
 ПРИВАТНОСТЬ ВСЕРЬЁЗ
@@ -558,6 +580,8 @@ DAGELIJKS COMFORT
 - Ook video: het audiospoor wordt geëxtraheerd en getranscribeerd
 - Snel van ontwerp: stilte verwijderd, parallelle verwerking, en de AI-chip van je telefoon wordt automatisch gebruikt waar beschikbaar
 - Instellingen per app en Tasker-automatisering
+- Voice notes van WhatsApp transcriberen zichzelf: nieuwe voice notes in WhatsApp en WhatsApp Business worden direct bij ontvangst tekst, zonder een tik, eventueel met de naam van de afzender
+- Gebouwd voor agressieve batterijbesparers: een optionele achtergrondbescherming houdt de transcriptie draaiende met het scherm uit (Realme, Oppo, OnePlus, Vivo en vergelijkbaar), en de app herstelt zichzelf na een crash of een beschadigd model
 - Spraaktranscriptie binnen andere apps: apps die het Open Transcribe-contract ondersteunen, zoals Forkgram, gebruiken Anti-Vocale als transcripteur (experimenteel)
 
 PRIVACY, ECHT
@@ -606,6 +630,8 @@ CODZIENNA WYGODA
 - Też wideo: ścieżka audio jest wyodrębniana i transkrybowana
 - Szyki z założenia: cisza usuwana, przetwarzanie równoległe, a chip AI telefonu używany automatycznie tam, gdzie dostępny
 - Ustawienia dla każdej aplikacji i automatyzacja Tasker
+- Notatki głosowe WhatsApp transkrybują się same: nowe notatki w WhatsApp i WhatsApp Business zamieniają się w tekst od razu po przyjściu, bez żadnego dotknięcia, opcjonalnie z imieniem nadawcy
+- Stworzone na agresywne oszczędzanie baterii: opcjonalna ochrona w tle utrzymuje transkrypcję przy wyłączonym ekranie (Realme, Oppo, OnePlus, Vivo i podobne), a aplikacja sama dochodzi do siebie po awarii lub uszkodzonym modelu
 - Transkrypcja głosu wewnątrz innych aplikacji: aplikacje obsługujące kontrakt Open Transcribe, jak Forkgram, używają Anti-Vocale jako transkrybatora (eksperymentalnie)
 
 PRYWATNOŚĆ NA SERIO
@@ -654,6 +680,8 @@ GÜNLÜK KOLAYLIKLAR
 - Videolar da olur: ses parçası çıkarılır ve metne çevrilir
 - Tasarımdan hızlı: sessizlik atılır, paralel işleme, ve telefonunuzun yapay zekâ çipi varsa otomatik kullanılır
 - Uygulama başına ayarlar ve Tasker otomasyonu
+- WhatsApp sesli mesajları kendiliğinden yazıya dökülür: WhatsApp ve WhatsApp Business'a gelen yeni sesli mesajlar hiç dokunmadan otomatik metne dönüşür, isterseniz gönderenin adıyla
+- Agresif pil tasarruflarına dayanıklı: isteğe bağlı arka plan koruması, ekran kapalıyken transkripsiyonu sürdürür (Realme, Oppo, OnePlus, Vivo ve benzeri); uygulama bir çökme veya bozuk modelden sonra kendini toparlar
 - Diğer uygulamaların içinde ses transkripsiyonu: Open Transcribe sözleşmesini destekleyen uygulamalar (örneğin Forkgram) Anti-Vocale'i transkripter olarak kullanır (deneysel)
 
 GERÇEK GİZLİLİK
@@ -702,6 +730,8 @@ Android 8.0+ | 4 GB+ RAM önerilir | Modele göre 326 MB ile 4,2 GB depolama
 - الفيديو أيضًا: يُستخرج المسار الصوتي ويحوَّل إلى نص
 - سريع بالتصميم: حذف الصمت، معالجة متوازية، واستخدام شريحة الذكاء الاصطناعي في هاتفك تلقائيًا عند توفرها
 - إعدادات لكل تطبيق وأتمتة عبر Tasker
+- الرسائل الصوتية في واتساب تُنسخ تلقائيًا: الرسائل الجديدة في واتساب وواتساب بزنس تتحول إلى نص لحظة وصولها دون أي لمسة، مع اسم المُرسل إن رغبت
+- مصمم لأدوات توفير الطاقة العدوانية: حماية اختيارية في الخلفية تُبقي النسخ مستمرًا حتى مع إطفاء الشاشة (ريلمي وأوبو وون بلس وفيڤو وما شابه)، ويتعافى التطبيق وحده بعد الأعطال أو تلف النموذج
 - تفريغ صوتي داخل تطبيقات أخرى: التطبيقات التي تدعم عقد Open Transcribe، مثل Forkgram، تستخدم Anti-Vocale كمفرِّغ لها (تجريبي)
 
 خصوصية حقيقية
@@ -750,6 +780,8 @@ Anti-Vocale व्हाट्सएप, टेलीग्राम और ह�
 - वीडियो भी: ऑडियो ट्रैक निकालकर टेक्स्ट बनाया जाता है
 - डिज़ाइन से ही तेज़: मौन हटाया जाता है, समानांतर प्रोसेसिंग, और आपके फ़ोन का AI चिप उपलब्ध होने पर अपने आप उपयोग होता है
 - हर ऐप के लिए अलग सेटिंग और Tasker ऑटोमेशन
+- WhatsApp के वॉयस नोट अपने आप ट्रांसक्राइब होते हैं: WhatsApp और WhatsApp Business में आने वाले नए वॉयस नोट बिना किसी टैप के तुरंत टेक्स्ट बन जाते हैं, और भेजने वाले का नाम भी दिख सकता है
+- कड़े बैटरी सेवर के लिए बना: वैकल्पिक बैकग्राउंड सुरक्षा स्क्रीन बंद होने पर भी ट्रांसक्रिप्शन चालू रखती है (Realme, Oppo, OnePlus, Vivo और जैसे), और ऐप क्रैश या खराब मॉडल से खुद उबर जाता है
 - दूसरे ऐप्स के अंदर वॉयस ट्रांस्क्रिप्शन: Open Transcribe अनुबंध को सपोर्ट करने वाले ऐप्स (जैसे Forkgram) Anti-Vocale को अपना ट्रांस्क्राइबर इस्तेमाल करते हैं (प्रयोगात्मक)
 
 प्राइवेसी, सच में
