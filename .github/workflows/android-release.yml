@@ -105,6 +105,20 @@ jobs:
       - name: Run unit tests (fdroid debug)
         run: ./gradlew :app:testFdroidDebugUnitTest --console=plain
 
+      # TASK-920: scripts/tests rides with the JVM suite in this job because
+      # the job gates publish. Deps come from scripts/requirements-test.txt
+      # (pinned; shared with store-listing.yml so the suite and the shipped
+      # uploader validate the same import surface). Feedback-latency and
+      # attribution trade-offs of hosting here are recorded in TASK-920.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Scripts unit tests
+        run: |
+          python3 -m pip install --quiet -r scripts/requirements-test.txt
+          python3 -m pytest scripts/tests -q
+
       - name: Android Lint (errors fatal; warnings baseline-pinned, TASK-251)
         run: ./gradlew :app:lintFdroidDebug --console=plain
 

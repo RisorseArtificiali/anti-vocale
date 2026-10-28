@@ -105,14 +105,19 @@ def extract_notes(
     xml_path: str,
     output_dir: str,
     fallback: str | None = None,
+    xml: str | None = None,
 ) -> int:
-    """Main extraction logic. Returns exit code."""
-    path = Path(xml_path)
-    if not path.is_file():
-        print(f"Error: XML file not found: {xml_path}", file=sys.stderr)
-        return 1
+    """Main extraction logic. Returns exit code.
 
-    xml = path.read_text(encoding="utf-8")
+    `xml` passes pre-read file content (main reads once for the version pin
+    and reuses the text here); when omitted the file is read from xml_path.
+    """
+    if xml is None:
+        path = Path(xml_path)
+        if not path.is_file():
+            print(f"Error: XML file not found: {xml_path}", file=sys.stderr)
+            return 1
+        xml = path.read_text(encoding="utf-8")
     sections = parse_locale_sections(xml)
     if not sections:
         print("Error: No locale sections found in XML", file=sys.stderr)
@@ -187,10 +192,23 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 1
-    sections = parse_locale_sections(Path(args.xml_path).read_text(encoding="utf-8"))
+    try:
+        xml = Path(args.xml_path).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        print(f"Error: cannot read release-notes XML {args.xml_path}: {exc}", file=sys.stderr)
+        return 1
+    sections = parse_locale_sections(xml)
     for locale, content in sorted(sections.items()):
         latest = extract_latest_version(content)
-        first_line = latest.splitlines()[0] if latest else ""
+        if not latest:
+            print(
+                f"Error: locale {locale}: no content section found in the XML "
+                f"(an empty or untranslated block?); nothing to pin against "
+                f"version {expected!r}",
+                file=sys.stderr,
+            )
+            return 1
+        first_line = latest.splitlines()[0]
         if expected not in first_line:
             print(
                 f"Error: locale {locale}: the latest section's heading "
@@ -203,7 +221,9 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 1
-    return extract_notes(args.xml_path, args.output_dir, args.fallback)
+    return extract_notes(
+        args.xml_path, args.output_dir, args.fallback, xml=xml
+    )
 
 
 if __name__ == "__main__":

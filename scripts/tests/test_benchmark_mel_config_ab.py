@@ -6,8 +6,14 @@ Verifies WER computation, audio loading, and recognizer creation logic.
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
+
+# These two belong to the eval/ venv stack; outside it (CI's scripts-tests
+# step, plain checkouts) this module skips itself instead of failing import.
+pytest.importorskip("numpy")
+pytest.importorskip("soundfile")
+pytest.importorskip("sherpa_onnx")
+import numpy as np  # noqa: E402
 import soundfile as sf
 
 import sys

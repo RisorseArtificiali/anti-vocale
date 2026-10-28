@@ -152,48 +152,6 @@ Android 8.0+ | 4 GB+ RAM empfohlen | 326 MB bis 4,2 GB Speicher je nach Modell
 
 ---
 
-### de-CH (German, Switzerland)
-## Kurzbeschreibung (80 Zeichen max)
-```
-Sprachnachrichten offline transkribieren. Auch Schweizerdeutsch. Ohne Internet.
-```
-
-Schweizerdeutsch in Sprachnachrichten? Die meisten Transkriptions-Apps scheitern daran. Anti-Vocale hat dafür ein eigenes Modell.
-
-Anti-Vocale transkribiert Sprachnachrichten aus WhatsApp, Telegram und jeder anderen App direkt auf deinem Telefon. Alles läuft auf dem Gerät: Deine Audios verlassen dein Telefon nie.
-
-FÜR DIE SCHWEIZ
-- Schweizerdeutsch extra: ein von der Community fein abgestimmtes Modell speziell für Schwiizertüütsch, in zwei Tipps installiert
-- Standarddeutsch inklusive: Parakeet TDT (empfohlen), schnell und leicht, Deutsch ist eine seiner 25 europäischen Sprachen (862 MB oder 640 MB)
-- Französisch, Italienisch, Rätoromanisch? Französisch und Italienisch sind abgedeckt (Whisper Turbo: 99 Sprachen; Parakeet: 25 europäische); Community-Modelle ergänzen weitere
-- Text in Echtzeit (Nemotron 3.5, 45 Sprachen) und eigene ModellDateien per Link oder Ordner, beim Import geprüft
-
-VERSTEHEN, NICHT NUR LESEN
-- KI-Zusammenfassungen: lange Transkripte werden zu einer kurzen, lesbaren Zusammenfassung (benötigt ein Gemma-Modell; der Prompt ist anpassbar)
-- Wer hat gesprochen: Sprecher-Labels (SPEAKER 1 / SPEAKER 2) im Text und in jedem Export
-- Jede Länge: lange Audios werden automatisch geteilt und zusammengesetzt; bei einem Abbruch bleibt der erzeugte Text erhalten
-- Export als Untertitel (SRT, VTT) oder Text mit Zeitstempeln
-
-ALLTAGSKOMFORT
-- Clevere Benachrichtigungen: Transkripte durchblättern ohne die App zu öffnen, mit einem Tippen kopieren oder zurücksenden
-- Verlauf mit Suche, Auto-Kopieren und Auto-Speichern (Drive, Syncthing), auch Videos
-- Stille entfernen, parallel verarbeiten, KI-Chip automatisch nutzen, wo verfügbar
-- Einstellungen pro App und Tasker-Automatisierung
-- WhatsApp-Sprachnachrichten transkribieren sich selbst: neue Sprachnachrichten in WhatsApp und WhatsApp Business werden beim Eintreffen automatisch zu Text, ganz ohne Tippen, optional mit dem Namen des Absenders
-- Gebaut fuer aggressive Akkusparer: ein optionaler Hintergrundschutz haelt die Transkription auch bei ausgeschaltetem Bildschirm am Laufen (Realme, Oppo, OnePlus, Vivo und aehnliche), und die App erholt sich selbst nach einem Absturz oder einem beschaedigten Modell
-- Sprachtranskription in anderen Apps: Apps, die den Open-Transcribe-Vertrag unterstützen, wie Forkgram, nutzen Anti-Vocale als ihren Transkriptor (experimentell)
-
-DATENSCHUTZ, ERNST GEMEINT
-Kein Konto, keine Werbung, kein Tracking, keine Datensammlung. Nach dem Modell-Download läuft alles offline. Deine Audios bleiben immer auf deinem Telefon.
-
-OPEN SOURCE
-Apache 2.0. Quellcode: https://github.com/RisorseArtificiali/anti-vocale
-
-VORAUSSETZUNGEN
-Android 8.0+ | 4 GB+ RAM empfohlen | 326 MB bis 4,2 GB Speicher je nach Modell
-
----
-
 ### fr-FR (French)
 ## Description courte (80 caractères max)
 ```

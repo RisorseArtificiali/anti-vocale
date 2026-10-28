@@ -1,0 +1,9 @@
+# Python deps for scripts/tests (consumed by android-release.yml's Unit tests
+# job and store-listing.yml, so the suite and the shipped uploader always
+# validate the same import surface). Pinned: an unpinned pip dep already broke
+# this workflow once (cactus-needle 3.2.7, android-release.yml TASK-853 note),
+# and this job gates releases. The mel-config benchmark test needs the eval
+# venv stack (numpy/soundfile) and skips itself outside it (importorskip).
+google-api-python-client==2.201.0
+google-auth==2.62.0
+pytest==9.2.0

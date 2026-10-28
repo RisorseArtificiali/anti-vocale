@@ -30,7 +30,8 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install google-api-python-client google-auth
+        # Shared with android-release.yml's scripts-tests step, pinned there.
+        run: pip install -r scripts/requirements-test.txt
 
       - name: Dry-run validation (nothing is committed)
         env:

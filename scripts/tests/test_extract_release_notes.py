@@ -270,16 +270,68 @@ class TestMainCLI(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
 
-    def test_main_with_defaults(self):
+    def test_main_with_explicit_version(self):
         xml_path = _write_xml(self.tmpdir)
         out = os.path.join(self.tmpdir, "out")
-        exit_code = mod.main(["--xml-path", xml_path, "--output-dir", out])
+        exit_code = mod.main([
+            "--xml-path", xml_path, "--output-dir", out,
+            "--expect-version", "1.4.0",
+        ])
         self.assertEqual(exit_code, 0)
 
-    def test_main_missing_xml_returns_1(self):
-        exit_code = mod.main(
-            ["--xml-path", "/nonexistent.xml", "--output-dir", self.tmpdir]
+    def test_main_default_version_resolution(self):
+        """The production path (no --expect-version) reads the version from
+        app/build.gradle.kts; hermetic via a patched read_version_name."""
+        xml_path = _write_xml(self.tmpdir)
+        out = os.path.join(self.tmpdir, "out")
+        with patch.object(mod, "read_version_name", return_value="1.4.0"):
+            exit_code = mod.main(["--xml-path", xml_path, "--output-dir", out])
+        self.assertEqual(exit_code, 0)
+
+    def test_main_default_version_unresolvable_returns_1(self):
+        xml_path = _write_xml(self.tmpdir)
+        out = os.path.join(self.tmpdir, "out")
+        with patch.object(mod, "read_version_name", return_value=None):
+            exit_code = mod.main(["--xml-path", xml_path, "--output-dir", out])
+        self.assertEqual(exit_code, 1)
+
+    def test_read_version_name_parses_gradle(self):
+        """Direct coverage of the production version source (cwd-relative)."""
+        cwd = os.getcwd()
+        try:
+            os.chdir(self.tmpdir)
+            self.assertIsNone(mod.read_version_name())  # no gradle file
+            os.makedirs(os.path.join(self.tmpdir, "app"), exist_ok=True)
+            with open(
+                os.path.join(self.tmpdir, "app", "build.gradle.kts"),
+                "w", encoding="utf-8",
+            ) as fh:
+                fh.write('versionName = "1.16.0-SNAPSHOT"\n')
+            self.assertEqual(mod.read_version_name(), "1.16.0-SNAPSHOT")
+        finally:
+            os.chdir(cwd)
+
+    def test_main_empty_locale_block_returns_1(self):
+        """An empty <it-IT> block fails with the empty-block message, not the
+        heading-wording one."""
+        xml_path = _write_xml(self.tmpdir)
+        with open(xml_path, "r", encoding="utf-8") as fh:
+            xml = fh.read()
+        xml = xml.replace("<it-IT>", "<it-IT>   ").replace(
+            "Novità della versione 1.4.0:", "", 1
         )
+        with open(xml_path, "w", encoding="utf-8") as fh:
+            fh.write(xml)
+        out = os.path.join(self.tmpdir, "out")
+        with patch.object(mod, "read_version_name", return_value="1.4.0"):
+            exit_code = mod.main(["--xml-path", xml_path, "--output-dir", out])
+        self.assertEqual(exit_code, 1)
+
+    def test_main_missing_xml_returns_1(self):
+        exit_code = mod.main([
+            "--xml-path", "/nonexistent.xml", "--output-dir", self.tmpdir,
+            "--expect-version", "1.4.0",
+        ])
         self.assertEqual(exit_code, 1)
 
 
