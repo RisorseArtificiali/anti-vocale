@@ -42,11 +42,12 @@ object ModelBundleCodec {
 
     /** Writes the bundle for [modelDir] to [out]; the caller owns closing. */
     fun export(modelDir: File, out: OutputStream, metadata: BundleMetadata) {
-        val files = mutableListOf<Pair<File, String>>()
+        // An unreadable dir throws (the old walk's contract); an empty one
+        // produces a manifest-only bundle, as before.
         if (modelDir.listFiles() == null) {
             throw IllegalArgumentException("empty model dir: $modelDir")
         }
-        collectModelFiles(modelDir, "", files)
+        val files = buildList { collectModelFiles(modelDir, "", this) }
         ZipOutputStream(out).use { zip ->
             // NO_COMPRESSION deflate: zip STORED would need size+crc up
             // front (a full extra pass over up-to-640MB files), while

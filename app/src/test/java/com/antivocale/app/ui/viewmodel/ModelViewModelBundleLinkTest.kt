@@ -252,7 +252,7 @@ class ModelViewModelBundleLinkTest {
     fun `a byte-identical bundle restores onto the built-in dir instead of linking`() = runTest {
         // TASK-924: the fixture pins match this device's patched catalog, so
         // the bundle no longer becomes a linked external twin (the #124
-        // reopen complaint) - it lands on the built-in dir and the card
+        // reopen complaint). It lands on the built-in dir and the card
         // derives presence from DISK. The LINK arm below still covers every
         // bundle the restore cannot claim (mismatched pins/types/entries).
         importBundle(entryId = "gigaam", variantDir = "gigaam-v3")

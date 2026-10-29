@@ -1794,8 +1794,8 @@ class ModelViewModel @Inject constructor(
     /** Shared import scaffolding: progress state, IO dispatching, and the failure tail.
      *  [onProgress] is handed to the block so URL imports can stream download telemetry
      *  into the state (TASK-398); null for the folder path (nothing to report).
-     *  TASK-924: the success payload is the [ExternalImportOutcome] pair - an
-     *  external record, or a builtin restore that wrote no record. */
+     *  TASK-924: the success payload is the [ExternalImportOutcome] pair:
+     *  an external record, or a builtin restore that wrote no record. */
     private fun runExternalImport(
         label: String,
         onProgress: ((Int, Int, String, Long, Long) -> Unit)?,
