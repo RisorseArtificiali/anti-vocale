@@ -58,7 +58,13 @@ object ResumeDownloadHelper {
 
     private const val TAG = "ResumeDownloadHelper"
     private const val BUFFER_SIZE = 8192
-    private const val SIZE_SIDECAR_SUFFIX = ".size"
+
+    /**
+     * The sidecar suffix, public so bundle export can exclude the sidecars a
+     * completed download leaves in the model dir (the catalog never names
+     * them; a bundle carrying one could never match the catalog pins).
+     */
+    const val SIZE_SIDECAR_SUFFIX = ".size"
 
     /** Returns the `.size` sidecar file path for a given tar/temp file. */
     fun sizeSidecar(tarFile: File): File = File("${tarFile.path}$SIZE_SIDECAR_SUFFIX")

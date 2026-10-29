@@ -32,7 +32,11 @@ class ModelBundleCodecTest {
 
     private fun modelDir(vararg files: Pair<String, String>): File {
         val dir = tmp.newFolder()
-        files.forEach { (name, content) -> File(dir, name).writeText(content) }
+        files.forEach { (name, content) ->
+            val file = File(dir, name)
+            file.parentFile?.mkdirs()
+            file.writeText(content)
+        }
         return dir
     }
 
@@ -196,6 +200,78 @@ class ModelBundleCodecTest {
             fail("unknown family must throw")
         } catch (e: IllegalArgumentException) {
             assertTrue(e.message!!.contains("TELEPATHY"))
+        }
+    }
+
+    @Test
+    fun `a model dir with a subdirectory round-trips`() {
+        // TASK-924: the qwen3 layout (files + a tokenizer/ tree) must survive
+        // the transfer; the flat walk silently dropped the subdirectory.
+        val dir = modelDir(
+            "encoder.int8.onnx" to "enc",
+            "tokenizer/vocab.json" to "{\"t\":1}",
+            "tokenizer/merges.txt" to "merge lines",
+        )
+        val out = ByteArrayOutputStream()
+        ModelBundleCodec.export(dir, out, metadata())
+
+        val target = File(tmp.newFolder(), "imported")
+        val manifest = ModelBundleCodec.import(ByteArrayInputStream(out.toByteArray()), target)
+
+        assertEquals("enc", File(target, "encoder.int8.onnx").readText())
+        assertEquals("{\"t\":1}", File(target, "tokenizer/vocab.json").readText())
+        assertEquals("merge lines", File(target, "tokenizer/merges.txt").readText())
+        // The pins key on the catalog's relative-path names.
+        val pins = manifest.getJSONObject("files")
+        assertEquals(3, pins.length())
+        assertEquals(
+            ModelBundleCodec.sha256Of(File(target, "tokenizer/merges.txt")),
+            pins.getString("tokenizer/merges.txt"))
+    }
+
+    @Test
+    fun `download sidecar files are not exported`() {
+        val dir = modelDir("encoder.int8.onnx" to "enc")
+        // The sidecar a completed download leaves beside its file.
+        File(dir, "encoder.int8.onnx.size").writeText("3")
+        val out = ByteArrayOutputStream()
+        ModelBundleCodec.export(dir, out, metadata())
+
+        val target = File(tmp.newFolder(), "imported")
+        val manifest = ModelBundleCodec.import(ByteArrayInputStream(out.toByteArray()), target)
+        assertEquals(1, manifest.getJSONObject("files").length())
+        assertTrue(!File(target, "encoder.int8.onnx.size").exists())
+    }
+
+    @Test
+    fun `a traversal entry is rejected and cleans the target`() {
+        val dir = modelDir("m.onnx" to "x")
+        val out = ByteArrayOutputStream()
+        ModelBundleCodec.export(dir, out, metadata())
+        // A hand-made bundle whose entry escapes the target dir: the path is
+        // refused at the boundary, nothing lands on disk.
+        val hostile = ByteArrayOutputStream()
+        java.util.zip.ZipOutputStream(hostile).use { zip ->
+            java.util.zip.ZipInputStream(ByteArrayInputStream(out.toByteArray())).use { src ->
+                var e = src.nextEntry
+                while (e != null) {
+                    zip.putNextEntry(java.util.zip.ZipEntry(e.name))
+                    src.copyTo(zip)
+                    zip.closeEntry()
+                    e = src.nextEntry
+                }
+            }
+            zip.putNextEntry(java.util.zip.ZipEntry("files/../evil.txt"))
+            zip.write("evil".toByteArray())
+            zip.closeEntry()
+        }
+        val target = File(tmp.newFolder(), "imported")
+        try {
+            ModelBundleCodec.import(ByteArrayInputStream(hostile.toByteArray()), target)
+            fail("traversal entry must throw")
+        } catch (e: Exception) {
+            assertTrue(!target.exists())
+            assertTrue(!File(target.parentFile, "evil.txt").exists())
         }
     }
 

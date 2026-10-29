@@ -1,6 +1,7 @@
 package com.antivocale.app.data
 
 import android.util.Log
+import com.antivocale.app.data.download.ResumeDownloadHelper
 import org.json.JSONObject
 import java.io.File
 import java.io.OutputStream
@@ -18,11 +19,12 @@ import java.util.zip.ZipOutputStream
  * the existing validator, not a new trust mechanism.
  *
  * FORMAT (stable, versioned):
- *   manifest.json          { formatVersion, appVersion, name, family,
+ *   manifest.json          { formatVersion, appVersion, name, family?,
  *                            modelType, languages, files: {name: sha256},
  *                            streaming, options, catalogEntryId?,
  *                            catalogVariantDir? }
- *   files/<original name>  the model's files verbatim
+ *   files/<relative path>  the model's files verbatim (subdirectories
+ *                          preserved since TASK-924: qwen3's tokenizer/ tree)
  *
  * WHAT IT DOES NOT DO (deliberate):
  *  - no compression beyond zip STORE (the models are int8 ONNX, already
@@ -40,8 +42,11 @@ object ModelBundleCodec {
 
     /** Writes the bundle for [modelDir] to [out]; the caller owns closing. */
     fun export(modelDir: File, out: OutputStream, metadata: BundleMetadata) {
-        val files = modelDir.listFiles()?.sortedBy { it.name }
-            ?: throw IllegalArgumentException("empty model dir: $modelDir")
+        val files = mutableListOf<Pair<File, String>>()
+        if (modelDir.listFiles() == null) {
+            throw IllegalArgumentException("empty model dir: $modelDir")
+        }
+        collectModelFiles(modelDir, "", files)
         ZipOutputStream(out).use { zip ->
             // NO_COMPRESSION deflate: zip STORED would need size+crc up
             // front (a full extra pass over up-to-640MB files), while
@@ -49,9 +54,9 @@ object ModelBundleCodec {
             // cost as STORE - the models are dense int8 ONNX anyway.
             zip.setLevel(java.util.zip.Deflater.NO_COMPRESSION)
             val pins = JSONObject()
-            files.filter { it.isFile }.forEach { file ->
+            files.forEach { (file, relPath) ->
                 val digest = MessageDigest.getInstance("SHA-256")
-                zip.putNextEntry(ZipEntry(FILES_PREFIX + file.name))
+                zip.putNextEntry(ZipEntry(FILES_PREFIX + relPath))
                 file.inputStream().use { input ->
                     val buffer = ByteArray(COPY_BUFFER)
                     while (true) {
@@ -62,7 +67,7 @@ object ModelBundleCodec {
                     }
                 }
                 zip.closeEntry()
-                pins.put(file.name, digest.digest().joinToString("") { "%02x".format(it) })
+                pins.put(relPath, digest.digest().joinToString("") { "%02x".format(it) })
             }
             val manifest = JSONObject()
                 .put("formatVersion", FORMAT_VERSION)
@@ -83,6 +88,26 @@ object ModelBundleCodec {
             zip.putNextEntry(ZipEntry(MANIFEST_ENTRY))
             zip.write(manifest.toString().toByteArray())
             zip.closeEntry()
+        }
+    }
+
+    /**
+     * TASK-924: depth-first walk preserving relative paths (qwen3 ships a
+     * tokenizer/ tree the old flat walk silently dropped). Sorted per level
+     * for stable bundles. The .size sidecars a completed download leaves
+     * beside its files are excluded: they are download bookkeeping
+     * ([ResumeDownloadHelper.SIZE_SIDECAR_SUFFIX]) the catalog never names,
+     * so a bundle carrying one could never match the catalog pins on the
+     * restore path.
+     */
+    private fun collectModelFiles(dir: File, prefix: String, out: MutableList<Pair<File, String>>) {
+        for (child in dir.listFiles()?.sortedBy { it.name } ?: return) {
+            val relPath = if (prefix.isEmpty()) child.name else "$prefix/${child.name}"
+            when {
+                child.isDirectory -> collectModelFiles(child, relPath, out)
+                child.name.endsWith(ResumeDownloadHelper.SIZE_SIDECAR_SUFFIX) -> {}
+                else -> out += child to relPath
+            }
         }
     }
 
@@ -108,10 +133,12 @@ object ModelBundleCodec {
                             manifest = zip.readBytes().toString(Charsets.UTF_8).let(::JSONObject)
                         }
                         entry.name.startsWith(FILES_PREFIX) && !entry.isDirectory -> {
-                            val name = entry.name.removePrefix(FILES_PREFIX)
-                                .replace("..", "").replace('/', '_')
+                            val name = validRelPath(entry.name.removePrefix(FILES_PREFIX))
                             val target = File(targetDir, name)
-                            File(target.parentFile, name).outputStream().use { out ->
+                            // Subdirectory entries recreate the tree (the
+                            // qwen3 tokenizer/ layout).
+                            target.parentFile?.mkdirs()
+                            target.outputStream().use { out ->
                                 val buffer = ByteArray(COPY_BUFFER)
                                 while (true) {
                                     val read = zip.read(buffer)
@@ -161,6 +188,20 @@ object ModelBundleCodec {
             }
         }
         return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    /**
+     * TASK-924: bundle entry names are filesystem paths now (they recreate
+     * the model tree), so the traversal forms are rejected outright at the
+     * boundary instead of the old flat-name mangling. Old bundles carry
+     * flat names only, so nothing legal changes.
+     */
+    private fun validRelPath(name: String): String {
+        require(name.isNotEmpty() && !name.startsWith('/')) { "unsafe bundle path: '$name'" }
+        require(name.split('/').none { it.isEmpty() || it == "." || it == ".." }) {
+            "unsafe bundle path: '$name'"
+        }
+        return name
     }
 
     /**
