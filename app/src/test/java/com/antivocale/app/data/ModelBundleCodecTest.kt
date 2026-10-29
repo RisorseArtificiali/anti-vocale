@@ -124,7 +124,7 @@ class ModelBundleCodecTest {
         val params = ModelBundleCodec.recordParams(manifest)
 
         assertEquals("Nemotron 3.5", params.displayName)
-        assertEquals("WHISPER", params.family.name)
+        assertEquals(ModelFamily.WHISPER, params.family)
         assertEquals(listOf("he"), params.languages)
         assertEquals("he", params.options["whisper.language"])
     }
@@ -273,6 +273,36 @@ class ModelBundleCodecTest {
             assertTrue(!target.exists())
             assertTrue(!File(target.parentFile, "evil.txt").exists())
         }
+    }
+
+    @Test
+    fun `a builtin-origin bundle may omit the family`() {
+        // TASK-924: qwen3/streaming/LLM have no import family; the manifest
+        // carries the catalog identity and NO family key (JSONObject.put
+        // drops null), and the restore routing decides on the receiver.
+        val dir = modelDir("m.onnx" to "x")
+        val out = ByteArrayOutputStream()
+        ModelBundleCodec.export(dir, out, metadata().copy(
+            family = null, modelType = "qwen3_asr",
+            catalogEntryId = "qwen3-asr", catalogVariantDir = "sherpa-onnx-qwen3-asr-0.6b-int8"))
+        val target = File(tmp.newFolder(), "imported")
+        val manifest = ModelBundleCodec.import(ByteArrayInputStream(out.toByteArray()), target)
+
+        assertTrue(!manifest.has("family"))
+        val params = ModelBundleCodec.recordParams(manifest)
+        assertEquals(null, params.family)
+        assertEquals("qwen3-asr", params.catalogEntryId)
+        assertEquals("qwen3_asr", params.modelType)
+    }
+
+    @Test
+    fun `an old-style bundle without a family still defaults to transducer`() {
+        // Bundles WITHOUT a catalog identity keep the pre-924 blank-family
+        // default (the hand-made manifest precedent): no behavior change.
+        val manifest = org.json.JSONObject()
+            .put("modelType", "nemo_transducer")
+            .put("files", org.json.JSONObject())
+        assertEquals(ModelFamily.TRANSDUCER, ModelBundleCodec.recordParams(manifest).family)
     }
 
     @Test

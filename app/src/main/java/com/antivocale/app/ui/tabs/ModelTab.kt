@@ -1498,15 +1498,12 @@ private fun CatalogModelSection(
                         }
                         }
                     },
-                    // TASK-742: offer the bundle share only for a present dir
-                    onExportClick = onExportBundle?.takeIf {
-                        // Only TRANSFERABLE entries offer the bundle: a
-                        // modelType with no import family (qwen3, the
-                        // online Nemotron, the LLM) cannot land as an
-                        // external import on the receiving device.
-                        com.antivocale.app.data.ModelBundleCodec
-                            .importFamilyForModelType(entry.modelType) != null
-                    }?.let { hook ->
+                    // TASK-742: offer the bundle share only for a present dir.
+                    // TASK-924: the import-family gate is gone. A bundle whose
+                    // bytes match the receiving device's catalog restores onto
+                    // the built-in card directly, so every PRESENT variant
+                    // exports (entryDirFor null = absent or incomplete).
+                    onExportClick = onExportBundle?.let { hook ->
                         entryDirFor(context, entry.id, variant.variantName)?.let { dir ->
                             { hook(dir, entry, variant) }
                         }

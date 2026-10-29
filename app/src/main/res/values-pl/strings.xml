@@ -1009,6 +1009,9 @@
     <string name="external_importing_file">Importowanie %1$s (%2$d z %3$d)…</string>
     <string name="external_import_failed">Import nie powiódł się: %1$s</string>
     <string name="external_imported">Zaimportowano %1$s</string>
+    <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
+    <string name="bundle_restored_builtin">Przywrócono %1$s</string>
+    <string name="bundle_restore_unsupported">Model tego pakietu pochodzi z nowszej wersji aplikacji i nie można go przywrócić na tym urządzeniu.</string>
     <string name="external_delete_confirm">Usunąć model zewnętrzny %1$s?</string>
     <string name="external_deleted">Usunięto %1$s</string>
         <string name="external_catalog_all">Wszystkie języki</string>

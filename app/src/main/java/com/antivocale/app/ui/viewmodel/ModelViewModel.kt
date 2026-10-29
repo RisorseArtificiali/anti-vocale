@@ -1563,10 +1563,17 @@ class ModelViewModel @Inject constructor(
                     ModelBundleCodec.import(input, staging)
                 } ?: error("cannot open the selected bundle")
                 val params = ModelBundleCodec.recordParams(manifest)
+                // TASK-924: a family-less builtin-origin manifest re-derives
+                // the family from the modelType; a type with no slot fails
+                // here with the honest string (such a model cannot land as
+                // an external import either).
+                val family = params.family
+                    ?: ModelBundleCodec.importFamilyForModelType(params.modelType.orEmpty())
+                    ?: error(ctx.getString(R.string.bundle_restore_unsupported))
                 val record = externalModelImporter.importFromDirectory(
                     src = staging,
                     modelType = params.modelType,
-                    family = params.family,
+                    family = family,
                     options = params.options,
                     languages = params.languages,
                     streaming = params.streaming,
@@ -1638,14 +1645,13 @@ class ModelViewModel @Inject constructor(
             val metadata = ModelBundleCodec.BundleMetadata(
                 displayName = ctx.getString(variant.titleResId),
                 // The IMPORT family (the sherpa import taxonomy), NOT the
-                // entry's architecture string: the manifest round-trips into
-                // ModelFamily on the receiving device.
-                family = ModelBundleCodec
-                    .importFamilyForModelType(entry.modelType)?.name
-                    // Unreachable for the button (it is gated on the same
-                    // predicate); the loud fallback if a future call site
-                    // forgets the gate.
-                    ?: error("model type '${entry.modelType}' is not bundle-transferable"),
+                // entry's architecture string, when the modelType has an
+                // external slot. TASK-924: null (omitted from the manifest)
+                // for the builtin-only types (qwen3, the streaming Nemotron,
+                // the LLM): the receiving restore arm needs no family, and
+                // the external fallback re-derives one from the modelType
+                // when it can.
+                family = ModelBundleCodec.importFamilyForModelType(entry.modelType)?.name,
                 modelType = entry.modelType,
                 languages = BundledCatalog.byId(entry.id)?.let { catalogEntry ->
                     // The UI variantName is the catalog variant NAME ("v3"),

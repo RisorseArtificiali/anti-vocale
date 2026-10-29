@@ -848,6 +848,9 @@
     <string name="external_importing_file">Importation de %1$s (%2$d sur %3$d)…</string>
     <string name="external_import_failed">Échec de l\'importation : %1$s</string>
     <string name="external_imported">%1$s importé</string>
+    <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
+    <string name="bundle_restored_builtin">%1$s restauré</string>
+    <string name="bundle_restore_unsupported">Le modèle de ce paquet provient d\'une version plus récente de l\'application et ne peut pas être restauré sur cet appareil.</string>
     <string name="external_delete_confirm">Supprimer le modèle externe %1$s ?</string>
     <string name="external_deleted">%1$s supprimé</string>
         <string name="external_catalog_all">Toutes les langues</string>

@@ -947,6 +947,9 @@
     <string name="external_importing_file">%1$s इंपोर्ट हो रहा है (%2$d/%3$d)…</string>
     <string name="external_import_failed">इंपोर्ट विफल: %1$s</string>
     <string name="external_imported">%1$s इंपोर्ट हुआ</string>
+    <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
+    <string name="bundle_restored_builtin">%1$s पुनर्स्थापित हुआ</string>
+    <string name="bundle_restore_unsupported">इस बंडल का मॉडल किसी नए ऐप वर्शन से है और इसे इस डिवाइस पर पुनर्स्थापित नहीं किया जा सकता।</string>
     <string name="external_delete_confirm">बाहरी मॉडल %1$s मिटाएं?</string>
     <string name="external_deleted">%1$s मिटाया गया</string>
         <string name="external_catalog_all">सभी भाषाएँ</string>

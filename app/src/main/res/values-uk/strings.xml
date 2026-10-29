@@ -1011,6 +1011,9 @@
     <string name="external_importing_file">Імпортування %1$s (%2$d з %3$d)…</string>
     <string name="external_import_failed">Не вдалося імпортувати: %1$s</string>
     <string name="external_imported">Імпортовано %1$s</string>
+    <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
+    <string name="bundle_restored_builtin">Відновлено %1$s</string>
+    <string name="bundle_restore_unsupported">Модель із цього пакета походить із новішої версії застосунку і не може бути відновлена на цьому пристрої.</string>
     <string name="external_delete_confirm">Видалити зовнішню модель %1$s?</string>
     <string name="external_deleted">%1$s видалено</string>
         <string name="external_catalog_all">Усі мови</string>

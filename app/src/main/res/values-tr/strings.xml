@@ -991,6 +991,9 @@
     <string name="external_importing_file">%1$s içe aktarılıyor (%2$d/%3$d)…</string>
     <string name="external_import_failed">İçe aktarma başarısız: %1$s</string>
     <string name="external_imported">%1$s içe aktarıldı</string>
+    <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
+    <string name="bundle_restored_builtin">%1$s geri yüklendi</string>
+    <string name="bundle_restore_unsupported">Bu paketteki model daha yeni bir uygulama sürümünden geliyor ve bu cihazda geri yüklenemiyor.</string>
     <string name="external_delete_confirm">%1$s harici modeli silinsin mi?</string>
     <string name="external_deleted">%1$s silindi</string>
         <string name="external_catalog_all">Tüm diller</string>

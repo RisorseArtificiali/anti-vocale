@@ -840,6 +840,9 @@
     <string name="external_importing_file">正在导入 %1$s（第 %2$d 个，共 %3$d 个）…</string>
     <string name="external_import_failed">导入失败：%1$s</string>
     <string name="external_imported">已导入 %1$s</string>
+    <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
+    <string name="bundle_restored_builtin">已还原 %1$s</string>
+    <string name="bundle_restore_unsupported">此模型包来自更新的应用版本，无法在此设备上还原。</string>
     <string name="external_delete_confirm">要删除外部模型 %1$s 吗？</string>
     <string name="external_deleted">%1$s 已删除</string>
     <string name="external_catalog_all">所有语言</string>

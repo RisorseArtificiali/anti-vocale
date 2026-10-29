@@ -840,6 +840,9 @@
     <string name="external_importing_file">جارٍ استيراد %1$s (%2$d من %3$d)…</string>
     <string name="external_import_failed">فشل الاستيراد: %1$s</string>
     <string name="external_imported">تم استيراد %1$s</string>
+    <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
+    <string name="bundle_restored_builtin">تم استعادة %1$s</string>
+    <string name="bundle_restore_unsupported">نموذج هذه الحزمة من إصدار أحدث من التطبيق ولا يمكن استعادته على هذا الجهاز.</string>
     <string name="external_delete_confirm">حذف النموذج الخارجي %1$s؟</string>
     <string name="external_deleted">تم حذف %1$s</string>
     <string name="external_catalog_all">كل اللغات</string>

@@ -224,9 +224,9 @@ object ModelBundleCodec {
      * The IMPORT family for a catalog modelType, or null when the type has
      * NO slot in the external-import taxonomy (qwen3_asr, the online
      * Nemotron's "", and the LLM are catalog/online-only architectures
-     * whose sherpa configs the ExternalSherpaBackend cannot build). The
-     * export button hides those; a hand-made bundle of one fails loudly
-     * here instead of dying at a misleading CTC subtype error.
+     * whose sherpa configs the ExternalSherpaBackend cannot build). TASK-924:
+     * such a bundle no longer stops at export; it rides the restore path and
+     * only the external fallback fails loudly here when nothing can land it.
      */
     fun importFamilyForModelType(modelType: String): ModelFamily? = when (modelType) {
         "whisper" -> ModelFamily.WHISPER
@@ -240,18 +240,29 @@ object ModelBundleCodec {
     }
 
     fun recordParams(manifest: JSONObject): RecordParams {
-        val familyName = manifest.optString("family").ifBlank { ModelFamily.TRANSDUCER.name }
-        val family = ModelFamily.entries.firstOrNull { it.name == familyName }
-            // Pre-fix bundles carry the catalog ARCHITECTURE vocabulary
-            // ("ENCODER_ONLY_CTC" etc); ONLY those known strings bridge by
-            // modelType (the round-trip device trial caught this) - a
-            // genuinely foreign family still fails loudly.
-            ?: if (familyName in ARCHITECTURE_FAMILIES) {
-                importFamilyForModelType(manifest.optString("modelType"))
-                    ?: throw IllegalArgumentException(
-                        "model type '${manifest.optString("modelType")}' has no import family; " +
-                            "this model cannot be transferred as an external import")
-            } else throw IllegalArgumentException("unknown model family '$familyName' in bundle")
+        val familyName = manifest.optString("family")
+        val family: ModelFamily? = when {
+            // TASK-924: a builtin-origin bundle may omit the family (the
+            // qwen3/streaming/LLM modelTypes have no import slot); the
+            // restore routing decides, the external fallback re-derives one
+            // from the modelType. Bundles WITHOUT a catalogEntryId keep the
+            // old blank->TRANSDUCER default (the hand-made manifest
+            // precedent).
+            familyName.isBlank() ->
+                if (manifest.optString("catalogEntryId").isBlank()) ModelFamily.TRANSDUCER
+                else null
+            else -> ModelFamily.entries.firstOrNull { it.name == familyName }
+                // Pre-fix bundles carry the catalog ARCHITECTURE vocabulary
+                // ("ENCODER_ONLY_CTC" etc); ONLY those known strings bridge by
+                // modelType (the round-trip device trial caught this) - a
+                // genuinely foreign family still fails loudly.
+                ?: if (familyName in ARCHITECTURE_FAMILIES) {
+                    importFamilyForModelType(manifest.optString("modelType"))
+                        ?: throw IllegalArgumentException(
+                            "model type '${manifest.optString("modelType")}' has no import family; " +
+                                "this model cannot be transferred as an external import")
+                } else throw IllegalArgumentException("unknown model family '$familyName' in bundle")
+        }
         val optionsJson = manifest.optJSONObject("options")
         val languagesJson = manifest.optJSONArray("languages")
         return RecordParams(
@@ -277,7 +288,10 @@ object ModelBundleCodec {
     data class RecordParams(
         val displayName: String?,
         val modelType: String?,
-        val family: ModelFamily,
+        /** Null only for a builtin-origin manifest that omits the family
+         *  (TASK-924): the restore arm needs none; the external fallback
+         *  re-derives one from the modelType or fails. */
+        val family: ModelFamily?,
         /** TASK-797: the built-in entry the bundle came from, when any. */
         val catalogEntryId: String? = null,
         /** TASK-801: the exporting variant's catalog dirName, when any
@@ -293,7 +307,10 @@ object ModelBundleCodec {
     /** The export-side metadata, from the registry descriptor or record. */
     data class BundleMetadata(
         val displayName: String,
-        val family: String,
+        /** The IMPORT family when the modelType has an external slot; null
+         *  (omitted from the manifest) for a builtin origin whose type has
+         *  none (TASK-924): the receiving restore arm needs no family. */
+        val family: String?,
         val modelType: String,
         val languages: List<String>,
         val streaming: Boolean,

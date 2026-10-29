@@ -957,6 +957,9 @@
     <string name="external_importing_file">Importazione %1$s (%2$d di %3$d)…</string>
     <string name="external_import_failed">Importazione non riuscita: %1$s</string>
     <string name="external_imported">Importato %1$s</string>
+    <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
+    <string name="bundle_restored_builtin">Ripristinato %1$s</string>
+    <string name="bundle_restore_unsupported">Il modello di questo bundle proviene da una versione più recente dell\'app e non può essere ripristinato su questo dispositivo.</string>
     <string name="external_delete_confirm">Eliminare il modello esterno %1$s?</string>
     <string name="external_deleted">%1$s eliminato</string>
         <string name="external_catalog_all">Tutte le lingue</string>

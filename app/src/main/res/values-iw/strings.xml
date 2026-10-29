@@ -997,6 +997,9 @@
     <string name="external_importing_file">מייבא את %1$s (%2$d מתוך %3$d)…</string>
     <string name="external_import_failed">הייבוא נכשל: %1$s</string>
     <string name="external_imported">יובא %1$s</string>
+    <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
+    <string name="bundle_restored_builtin">שוחזר %1$s</string>
+    <string name="bundle_restore_unsupported">המודל שבחבילה הזאת מגיע מגרסת אפליקציה חדשה יותר ולא ניתן לשחזר אותו במכשיר הזה.</string>
     <string name="external_delete_confirm">למחוק את המודל החיצוני %1$s?</string>
     <string name="external_deleted">%1$s נמחק</string>
         <string name="external_catalog_all">כל השפות</string>

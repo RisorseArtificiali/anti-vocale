@@ -991,6 +991,9 @@
     <string name="external_importing_file">Импорт %1$s (%2$d из %3$d)…</string>
     <string name="external_import_failed">Не удалось импортировать: %1$s</string>
     <string name="external_imported">Импортировано: %1$s</string>
+    <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
+    <string name="bundle_restored_builtin">Восстановлено: %1$s</string>
+    <string name="bundle_restore_unsupported">Модель из этого пакета создана в более новой версии приложения и не может быть восстановлена на этом устройстве.</string>
     <string name="external_delete_confirm">Удалить внешнюю модель %1$s?</string>
     <string name="external_deleted">%1$s удалена</string>
         <string name="external_catalog_all">Все языки</string>

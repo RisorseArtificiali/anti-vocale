@@ -880,6 +880,9 @@
     <string name="external_importing_file">Tuodaan %1$s (%2$d/%3$d)…</string>
     <string name="external_import_failed">Tuonti epäonnistui: %1$s</string>
     <string name="external_imported">Tuotu: %1$s</string>
+    <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
+    <string name="bundle_restored_builtin">Palautettu: %1$s</string>
+    <string name="bundle_restore_unsupported">Tämän paketin malli on peräisin uudemmasta sovellusversiosta, eikä sitä voi palauttaa tällä laitteella.</string>
     <string name="external_delete_confirm">Poistetaanko ulkoinen malli %1$s?</string>
     <string name="external_deleted">%1$s poistettu</string>
     <string name="external_catalog_all">Kaikki kielet</string>
