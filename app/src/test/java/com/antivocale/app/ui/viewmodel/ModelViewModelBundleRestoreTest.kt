@@ -1,0 +1,323 @@
+package com.antivocale.app.ui.viewmodel
+
+import com.antivocale.app.testing.RepoFiles
+import android.app.Application
+import android.content.Context
+import android.net.Uri
+import com.antivocale.app.data.ActiveModelRepository
+import com.antivocale.app.data.ExternalModelImporter
+import com.antivocale.app.data.ExternalModelStore
+import com.antivocale.app.data.FakeExternalRecordsProvider
+import com.antivocale.app.data.FakePreferencesManager
+import com.antivocale.app.data.ModelBundleCodec
+import com.antivocale.app.data.ModelFamily
+import com.antivocale.app.transcription.SherpaModelDownloader
+import com.antivocale.app.transcription.SherpaModelManager
+import com.antivocale.app.transcription.staticRegistry
+import io.mockk.every
+import io.mockk.mockk
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.nio.file.Files
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+/**
+ * TASK-924 (GH #124 reopen): the builtin-restore routing of the bundle
+ * import. A bundle whose bytes are this device's catalog variant's bytes
+ * lands on the built-in card (dir at the downloader path, NO external
+ * record); a builtin-origin bundle the catalog cannot resolve falls back
+ * to the external arm when the modelType has a slot, and fails with the
+ * honest error when it has none (a newer app version's model must not
+ * become a broken external twin).
+ *
+ * Construction follows ModelViewModelBundleLinkTest (real bundled catalog
+ * via a mocked AssetManager, fixture bytes re-pinned into the served
+ * catalog; preferences ride the fake).
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], application = Application::class)
+class ModelViewModelBundleRestoreTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+    private lateinit var fakePrefs: FakePreferencesManager
+    private lateinit var store: ExternalModelStore
+    private lateinit var viewModel: ModelViewModel
+    private lateinit var mockContext: Context
+    private lateinit var importerRoot: File
+    private lateinit var appFilesDir: File
+
+    /** Served by the mocked ContentResolver for the next bundle import. */
+    private var nextBundle: ByteArray = ByteArray(0)
+
+    /** Served by the mocked AssetManager; per-test override re-pins the catalog. */
+    private var nextCatalogJson: String = ""
+
+    /** The qwen3-shaped fixture the restore test pins the catalog onto. */
+    private lateinit var qwen3SourceDir: File
+
+    private fun hashFile(f: File): String =
+        java.security.MessageDigest.getInstance("SHA-256").digest(f.readBytes())
+            .joinToString("") { "%02x".format(it) }
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+        fakePrefs = FakePreferencesManager()
+        store = ExternalModelStore(fakePrefs)
+        importerRoot = Files.createTempDirectory("bundle-restore-ext").toFile()
+        appFilesDir = Files.createTempDirectory("bundle-restore-files").toFile()
+        val appCacheDir = Files.createTempDirectory("bundle-restore-cache").toFile()
+
+        // The served catalog re-pins the qwen3-asr files onto the fixture
+        // bytes (the real pins hash the real weights no test can ship);
+        // pin names are the catalog's relative paths (tokenizer/ tree).
+        qwen3SourceDir = qwen3SourceDir()
+        val realCatalogJson = RepoFiles.readText("src/main/assets/models_catalog.json")
+        nextCatalogJson = patchCatalogPins(realCatalogJson, "qwen3-asr", pinsOf(qwen3SourceDir))
+        val assetManager = mockk<android.content.res.AssetManager>(relaxed = true)
+        every { assetManager.open(any()) } answers {
+            ByteArrayInputStream(nextCatalogJson.toByteArray(Charsets.UTF_8))
+        }
+        val resolver = mockk<android.content.ContentResolver>(relaxed = true)
+        every { resolver.openInputStream(any()) } answers { ByteArrayInputStream(nextBundle) }
+        mockContext = mockk<Context>(relaxed = true) {
+            every { filesDir } returns appFilesDir
+            every { cacheDir } returns appCacheDir
+            every { assets } returns assetManager
+            every { contentResolver } returns resolver
+            every { getString(any()) } answers { "str:${args[0]}" }
+            every { getString(any(), *anyVararg()) } answers {
+                val formatArgs = (args.getOrNull(1) as? Array<*>)?.joinToString(",") ?: ""
+                "str:${args[0]}:$formatArgs"
+            }
+        }
+        every { mockContext.applicationContext } returns mockContext
+        com.antivocale.app.data.catalog.BundledCatalog.attach(mockContext)
+
+        val sharedDemoter = com.antivocale.app.transcription.SilentModelDemoter(fakePrefs)
+        viewModel = ModelViewModel(
+            preferencesManager = fakePrefs,
+            activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry(), FakeExternalRecordsProvider()),
+            tokenManager = mockk(relaxed = true),
+            backendManager = mockk(relaxed = true),
+            llmManager = mockk(relaxed = true),
+            shareTargetManager = mockk(relaxed = true),
+            shareShortcutManager = mockk(relaxed = true),
+            ctx = mockContext,
+            backendRegistry = staticRegistry(),
+            externalModelStore = store,
+            recordsProvider = com.antivocale.app.data.DefaultExternalModelRecordsProvider(
+                store = store,
+                scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+            ),
+            externalModelImporter = ExternalModelImporter(store = store, filesRoot = { importerRoot }),
+            litertLmUrlImporter = mockk(relaxed = true),
+            externalCatalogRepository = mockk(relaxed = true),
+            applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+            silentModelDemoter = sharedDemoter,
+            modelActivator = com.antivocale.app.transcription.ModelActivator(
+                fakePrefs, sharedDemoter, store, staticRegistry()),
+        )
+        // LAST: the registry helpers above seed the catalog singleton with
+        // the REAL entries; re-seed with the patched ones so the identity
+        // guard sees the fixture pins (BundledCatalog caches per process).
+        com.antivocale.app.data.catalog.BundledCatalog.seed(
+            com.antivocale.app.data.catalog.ModelCatalogJson.parseCatalog(nextCatalogJson))
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+        // The patched seed must not leak into later classes sharing this
+        // worker JVM (the catalog singleton caches per process).
+        com.antivocale.app.data.catalog.BundledCatalog.seed(
+            com.antivocale.app.transcription.bundledCatalogEntriesForTest())
+    }
+
+    /** The real download path's qwen3 directory shape: files + tokenizer/ tree. */
+    private fun qwen3SourceDir(): File {
+        val dir = Files.createTempDirectory("qwen3-src").toFile()
+        File(dir, "conv_frontend.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 1 })
+        File(dir, "encoder.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 2 })
+        File(dir, "decoder.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 3 })
+        File(dir, "tokenizer").mkdirs()
+        File(dir, "tokenizer/vocab.json").writeText("""{"t":1}""")
+        File(dir, "tokenizer/merges.txt").writeText((0..99).joinToString("\n") { "m$it" })
+        File(dir, "tokenizer/tokenizer_config.json").writeText("""{"m":1}""")
+        return dir
+    }
+
+    /** relative-path -> sha256 over the fixture tree (catalog pin vocabulary). */
+    private fun pinsOf(dir: File): Map<String, String> = buildMap {
+        dir.walkTopDown().filter { it.isFile }.forEach {
+            put(it.relativeTo(dir).path, hashFile(it))
+        }
+    }
+
+    /** Re-pins every file of [entryId]'s variants onto [pins] (fixture bytes). */
+    private fun patchCatalogPins(catalogJson: String, entryId: String, pins: Map<String, String>): String {
+        val catalog = org.json.JSONObject(catalogJson)
+        val entry = catalog.getJSONArray("models")
+            .let { arr -> (0 until arr.length()).map { arr.getJSONObject(it) } }
+            .first { it.optString("id") == entryId }
+        entry.getJSONArray("variants").let { variants ->
+            (0 until variants.length()).forEach { v ->
+                val files = variants.getJSONObject(v).getJSONArray("files")
+                (0 until files.length()).forEach { i ->
+                    val file = files.optJSONObject(i)
+                    val name = file?.optString("name") ?: files.optString(i)
+                    pins[name]?.let { pin ->
+                        if (file != null) file.put("sha256", pin)
+                        else files.put(i, org.json.JSONObject().put("name", name).put("sha256", pin))
+                    }
+                }
+            }
+        }
+        return catalog.toString()
+    }
+
+    /** A bundle zip of [dir], family-less (the TASK-924 builtin shape). */
+    private fun bundleFrom(
+        dir: File,
+        modelType: String,
+        entryId: String?,
+        variantDir: String?,
+    ): ByteArray {
+        val out = ByteArrayOutputStream()
+        ModelBundleCodec.export(
+            dir, out,
+            ModelBundleCodec.BundleMetadata(
+                displayName = "Qwen3 0.6B", family = null, modelType = modelType,
+                languages = listOf("en"), streaming = false, options = emptyMap(),
+                appVersion = "test", catalogEntryId = entryId, catalogVariantDir = variantDir))
+        return out.toByteArray()
+    }
+
+    private fun importBundle(bundle: ByteArray) {
+        nextBundle = bundle
+        viewModel.importExternalFromBundle(mockContext, Uri.parse("content://bundle/test"))
+    }
+
+    /** The raw record list from the preference, without suspension (poll predicates). */
+    private fun storedRecords() =
+        com.antivocale.app.data.ExternalModelListJson.decode(fakePrefs._externalModelsJson.value)
+
+    /** Polls [predicate] on real time (the import and the catalog refreshes
+     *  run on real IO dispatchers); FAILS the test on timeout so a broken
+     *  derivation cannot pass by silently waiting out the clock. */
+    private fun kotlinx.coroutines.test.TestScope.await(what: String, predicate: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + 5_000
+        while (!predicate() && System.currentTimeMillis() < deadline) {
+            Thread.sleep(20)
+            runCurrent()
+        }
+        assertTrue("timed out waiting for: $what", predicate())
+    }
+
+    private fun restoredDir(): File =
+        File(SherpaModelManager.of("qwen3-asr").getModelStorageDir(mockContext),
+            "sherpa-onnx-qwen3-asr-0.6b-int8")
+
+    private fun qwen3Present(): Boolean =
+        viewModel.catalogStates.value["qwen3-asr"]?.downloadedVariants?.contains("0.6b-int8") == true
+
+    // ---- (a) the restore arm ----
+
+    @Test
+    fun `a catalog-matching bundle restores onto the built-in dir with no record`() = runTest {
+        importBundle(bundleFrom(
+            qwen3SourceDir, "qwen3_asr",
+            entryId = "qwen3-asr", variantDir = "sherpa-onnx-qwen3-asr-0.6b-int8"))
+        await("restore finished") {
+            viewModel.externalImportState.value == ModelViewModel.ExternalImportState.Idle &&
+                restoredDir().isDirectory
+        }
+
+        // No external twin: the store stays empty.
+        await("no record written") { storedRecords().isEmpty() }
+
+        // The tree is complete at the downloader path, tokenizer/ included,
+        // and passes the manager's validator (the tokenizer/ subdir rule).
+        assertTrue(File(restoredDir(), "encoder.int8.onnx").isFile)
+        assertTrue(File(restoredDir(), "tokenizer/vocab.json").isFile)
+        assertTrue(SherpaModelManager.of("qwen3-asr").isValidModelDir(restoredDir()))
+
+        // The card flips to present through the disk-truth computation, and
+        // the loader's own path predicate resolves it.
+        await("qwen3 card present via the restored dir") { qwen3Present() }
+        assertEquals(
+            restoredDir().absolutePath,
+            SherpaModelDownloader.of("qwen3-asr").getModelPath(mockContext, "0.6b-int8"))
+
+        // The restore never touches preferences (the TASK-797 alias stays dead).
+        assertEquals(null, fakePrefs._sherpaModelPath("qwen3-asr").value)
+    }
+
+    // ---- (b) the external fallback (unresolvable origin, resolvable type) ----
+
+    @Test
+    fun `a builtin-origin bundle with no resolvable entry falls back to the external import`() = runTest {
+        // The transducer source rides a fake entry id: the restore arm
+        // cannot resolve it, but nemo_transducer has an import family, so
+        // the external arm lands the record exactly as before TASK-924.
+        val gigaam = transducerSourceDir()
+        importBundle(bundleFrom(gigaam, "nemo_transducer",
+            entryId = "no-such-entry", variantDir = null))
+        await("bundle import registered") { storedRecords().isNotEmpty() }
+        val record = store.records().single()
+        // The family was re-derived from the modelType (the manifest is
+        // family-less), and nothing links to a nonexistent entry.
+        assertEquals(ModelFamily.TRANSDUCER, record.family)
+        assertEquals(null, record.linkedCatalog)
+    }
+
+    // ---- (c) the hard failure (unresolvable origin AND type) ----
+
+    @Test
+    fun `a restore-less bundle with no import slot fails instead of becoming a twin`() = runTest {
+        // The qwen3 bytes ride an entry id this catalog does not know: the
+        // restore cannot resolve it, qwen3_asr has no import family, so the
+        // import must FAIL (the newer-app-version situation), not write a
+        // broken external twin or a half-restored dir.
+        importBundle(bundleFrom(qwen3SourceDir, "qwen3_asr",
+            entryId = "no-such-entry", variantDir = null))
+        await("import failed") {
+            viewModel.externalImportState.value is ModelViewModel.ExternalImportState.Error
+        }
+        assertTrue(storedRecords().isEmpty())
+        assertFalse(restoredDir().exists())
+    }
+
+    /** The gigaam-shaped transducer source the importer's validation accepts
+     *  (the ModelViewModelBundleLinkTest fixture shape). */
+    private fun transducerSourceDir(): File {
+        val dir = Files.createTempDirectory("bundle-src").toFile()
+        val metadataProp = { key: String, value: String ->
+            key.toByteArray() + byteArrayOf(0x12, value.length.toByte()) + value.toByteArray()
+        }
+        File(dir, "gigaam_v3_e2e_rnnt_encoder_int8.onnx").writeBytes(
+            ByteArray(2048) { if (it == 0) 8 else 1 } + "vocab_size=1024 subsampling_factor=8 ".toByteArray() +
+                metadataProp("model_type", "nemo_transducer"))
+        File(dir, "gigaam_v3_e2e_rnnt_decoder.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 2 })
+        File(dir, "gigaam_v3_e2e_rnnt_joint.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 3 })
+        File(dir, "gigaam_v3_e2e_rnnt_tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
+        return dir
+    }
+}

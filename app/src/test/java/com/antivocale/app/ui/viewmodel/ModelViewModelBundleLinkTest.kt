@@ -249,16 +249,22 @@ class ModelViewModelBundleLinkTest {
     // ---- (a) the import pin ----
 
     @Test
-    fun `bundle import from a built-in entry links the record and writes no sherpa model path`() = runTest {
+    fun `a byte-identical bundle restores onto the built-in dir instead of linking`() = runTest {
+        // TASK-924: the fixture pins match this device's patched catalog, so
+        // the bundle no longer becomes a linked external twin (the #124
+        // reopen complaint) - it lands on the built-in dir and the card
+        // derives presence from DISK. The LINK arm below still covers every
+        // bundle the restore cannot claim (mismatched pins/types/entries).
         importBundle(entryId = "gigaam", variantDir = "gigaam-v3")
-        await("bundle import registered") { storedRecords().isNotEmpty() }
-        val record = store.records().single()
-        assertEquals(LinkedCatalogRef("gigaam", "gigaam-v3"), record.linkedCatalog)
-        // The TASK-797 alias stays reverted: the built-in loader must keep
-        // resolving nothing for this entry.
+        val restored = File(
+            SherpaModelManager.of("gigaam").getModelStorageDir(mockContext), "gigaam-v3")
+        await("restored dir present") { restored.isDirectory }
+        await("no record written") { storedRecords().isEmpty() }
+        // The TASK-797 alias stays reverted: the restore never writes a
+        // saved model path.
         assertEquals(null, fakePrefs._sherpaModelPath("gigaam").value)
-        // The linked card derives presence with no download on disk.
-        await("gigaam card derives v3 present via the link") {
+        // The card flips to present through the disk-truth computation.
+        await("gigaam card present via the restored dir") {
             viewModel.catalogStates.value["gigaam"]?.downloadedVariants?.contains("v3") == true
         }
     }
@@ -336,10 +342,15 @@ class ModelViewModelBundleLinkTest {
     // ---- (e) legacy manifests without variant identity ----
 
     @Test
-    fun `legacy manifest without variant links a single-variant entry`() = runTest {
+    fun `legacy manifest without variant restores a single-variant entry`() = runTest {
+        // TASK-924: the single variant resolves without a stamped dirName,
+        // and the pins match, so the same-bytes bundle restores as builtin
+        // (no record) instead of linking (the pre-924 assertion).
         importBundle(entryId = "gigaam", variantDir = null)
-        await("bundle import registered") { storedRecords().isNotEmpty() }
-        assertEquals(LinkedCatalogRef("gigaam", "gigaam-v3"), store.records().single().linkedCatalog)
+        val restored = File(
+            SherpaModelManager.of("gigaam").getModelStorageDir(mockContext), "gigaam-v3")
+        await("restored dir present") { restored.isDirectory }
+        await("no record written") { storedRecords().isEmpty() }
     }
 
     @Test
