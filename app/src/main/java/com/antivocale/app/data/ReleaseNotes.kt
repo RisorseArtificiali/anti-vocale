@@ -25,16 +25,29 @@ object ReleaseNotes {
 
     private val BULLET_PREFIXES = listOf("•", "-")
 
-    /** The current version's bullet lines for [locale], empty when absent
-     *  (the UI treats empty as "no notes"). */
-    fun sectionFor(locale: String, versionName: String, assets: AssetManager): List<String> {
-        val text = assets.open(ASSET_PATH).bufferedReader().use { it.readText() }
-        return sectionsFor(text, locale, versionName)
+    /** The parsed locale blocks, read once per process (the asset's bytes
+     *  are fixed for the process lifetime; every re-call, rotation, and
+     *  hub-card tap reuses this map). */
+    private var cachedBlocks: Map<String, List<String>>? = null
+
+    /** The current version's bullet lines for [inAppLanguage], empty when
+     *  absent (the UI treats empty as "no notes"). The blank-language
+     *  fallback to the system locale is OWNED here, not at the call sites:
+     *  one rule, one entry point (the simplify review found three inline
+     *  copies of the ifBlank expression otherwise). */
+    fun notesFor(inAppLanguage: String, versionName: String, assets: AssetManager): List<String> {
+        val locale = inAppLanguage.ifBlank { java.util.Locale.getDefault().toLanguageTag() }
+        val blocks = cachedBlocks ?: run {
+            val text = assets.open(ASSET_PATH).bufferedReader().use { it.readText() }
+            localeBlocks(text).also { cachedBlocks = it }
+        }
+        val tag = resolveTag(locale, blocks.keys) ?: FALLBACK_TAG
+        return bulletsFor(blocks[tag] ?: emptyList(), versionName)
     }
 
     /** Pure core (JVM-tested): resolve the locale block, extract the
      *  version's bullets. */
-    fun sectionsFor(text: String, locale: String, versionName: String): List<String> {
+    fun parse(text: String, locale: String, versionName: String): List<String> {
         val blocks = localeBlocks(text)
         val tag = resolveTag(locale, blocks.keys) ?: FALLBACK_TAG
         return bulletsFor(blocks[tag] ?: emptyList(), versionName)

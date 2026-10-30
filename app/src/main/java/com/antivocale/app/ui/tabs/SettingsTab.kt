@@ -2056,8 +2056,8 @@ fun SettingsTab(
                     titleRes = R.string.whats_new_title,
                     summaryRes = R.string.whats_new_summary,
                 ) {
-                    showWhatsNewNotes = ReleaseNotes.sectionFor(
-                        currentLanguage.ifBlank { java.util.Locale.getDefault().toLanguageTag() },
+                    showWhatsNewNotes = ReleaseNotes.notesFor(
+                        currentLanguage,
                         BuildConfig.VERSION_NAME,
                         context.assets,
                     )

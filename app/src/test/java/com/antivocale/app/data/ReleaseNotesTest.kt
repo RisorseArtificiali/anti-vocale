@@ -53,7 +53,7 @@ class ReleaseNotesTest {
     fun `the version section keeps its bullets in order, both bullet forms`() {
         assertEquals(
             listOf("• first bullet", "- dash bullet"),
-            ReleaseNotes.sectionsFor(sample, "en-US", "2.0.0"),
+            ReleaseNotes.parse(sample, "en-US", "2.0.0"),
         )
     }
 
@@ -61,7 +61,7 @@ class ReleaseNotesTest {
     fun `the section stops at the next version's header`() {
         assertEquals(
             listOf("• older bullet"),
-            ReleaseNotes.sectionsFor(sample, "en-US", "1.9.0"),
+            ReleaseNotes.parse(sample, "en-US", "1.9.0"),
         )
     }
 
@@ -69,7 +69,7 @@ class ReleaseNotesTest {
     fun `a two-letter device locale reaches its xx-XX block`() {
         assertEquals(
             listOf("• primo punto"),
-            ReleaseNotes.sectionsFor(sample, "it", "2.0.0"),
+            ReleaseNotes.parse(sample, "it", "2.0.0"),
         )
     }
 
@@ -77,7 +77,7 @@ class ReleaseNotesTest {
     fun `a plain two-letter tag matches directly`() {
         assertEquals(
             listOf("• перший пункт"),
-            ReleaseNotes.sectionsFor(sample, "uk", "2.0.0"),
+            ReleaseNotes.parse(sample, "uk", "2.0.0"),
         )
     }
 
@@ -85,7 +85,7 @@ class ReleaseNotesTest {
     fun `a full tag matches exactly`() {
         assertEquals(
             listOf("• primo punto"),
-            ReleaseNotes.sectionsFor(sample, "it-IT", "2.0.0"),
+            ReleaseNotes.parse(sample, "it-IT", "2.0.0"),
         )
     }
 
@@ -93,20 +93,20 @@ class ReleaseNotesTest {
     fun `an unknown locale falls back to en-US`() {
         assertEquals(
             listOf("• first bullet", "- dash bullet"),
-            ReleaseNotes.sectionsFor(sample, "de-AT", "2.0.0"),
+            ReleaseNotes.parse(sample, "de-AT", "2.0.0"),
         )
     }
 
     @Test
     fun `a version the locale block lacks returns empty (no notes)`() {
-        assertTrue(ReleaseNotes.sectionsFor(sample, "it", "9.9.9").isEmpty())
+        assertTrue(ReleaseNotes.parse(sample, "it", "9.9.9").isEmpty())
     }
 
     @Test
     fun `a trailing-space header still opens the section`() {
         assertEquals(
             listOf("• premier point"),
-            ReleaseNotes.sectionsFor(sample, "fr", "2.0.0"),
+            ReleaseNotes.parse(sample, "fr", "2.0.0"),
         )
     }
 
@@ -114,7 +114,7 @@ class ReleaseNotesTest {
     fun `a full-width colon header still opens the section`() {
         assertEquals(
             listOf("• 第一点"),
-            ReleaseNotes.sectionsFor(sample, "zh", "2.0.0"),
+            ReleaseNotes.parse(sample, "zh", "2.0.0"),
         )
     }
 
@@ -122,7 +122,7 @@ class ReleaseNotesTest {
     fun `the locale match is case-insensitive`() {
         assertEquals(
             listOf("• перший пункт"),
-            ReleaseNotes.sectionsFor(sample, "UK", "2.0.0"),
+            ReleaseNotes.parse(sample, "UK", "2.0.0"),
         )
     }
 
@@ -134,10 +134,10 @@ class ReleaseNotesTest {
         val text = RepoFiles.readText("docs/play-store/release-notes.xml")
         val firstHeader = text.lineSequence().first { it.startsWith("What's new in ") }
         val version = firstHeader.removePrefix("What's new in ").removeSuffix(":")
-        val en = ReleaseNotes.sectionsFor(text, "en-US", version)
+        val en = ReleaseNotes.parse(text, "en-US", version)
         assertTrue("en-US section for $version should have bullets", en.isNotEmpty())
         assertTrue(en.all { it.startsWith("•") || it.startsWith("-") })
-        val it = ReleaseNotes.sectionsFor(text, "it", version)
+        val it = ReleaseNotes.parse(text, "it", version)
         assertTrue("it-IT section for $version should have bullets", it.isNotEmpty())
     }
 

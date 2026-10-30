@@ -38,7 +38,6 @@ import androidx.compose.ui.platform.LocalContext
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.data.ReleaseNotes
 import com.antivocale.app.ui.components.WhatsNewDialog
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,9 +130,9 @@ fun MainScreen(
     // fresh install records the running version instead (the first launch
     // is not an update: nothing is "new" yet, and the welcome tour owns
     // that moment). The popup writes the versionCode on dismissal, so the
-    // same version never re-pops, rotation included.
+    // same version never re-pops, rotation included. notesFor owns the
+    // blank-language fallback (one rule, one entry point).
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var whatsNewNotes by remember { mutableStateOf<List<String>?>(null) }
     LaunchedEffect(Unit) {
         if (settingsViewModel.readWhatsNewLastShownVersion() == BuildConfig.VERSION_CODE) {
@@ -143,10 +142,8 @@ fun MainScreen(
             settingsViewModel.saveWhatsNewLastShownVersion(BuildConfig.VERSION_CODE)
             return@LaunchedEffect
         }
-        val notes = ReleaseNotes.sectionFor(
-            settingsViewModel.currentLanguage.value.ifBlank {
-                java.util.Locale.getDefault().toLanguageTag()
-            },
+        val notes = ReleaseNotes.notesFor(
+            settingsViewModel.currentLanguage.value,
             BuildConfig.VERSION_NAME,
             context.assets,
         )
@@ -155,7 +152,7 @@ fun MainScreen(
     whatsNewNotes?.let { notes ->
         WhatsNewDialog(notes = notes, onDismiss = {
             whatsNewNotes = null
-            scope.launch { settingsViewModel.saveWhatsNewLastShownVersion(BuildConfig.VERSION_CODE) }
+            settingsViewModel.saveWhatsNewLastShownVersion(BuildConfig.VERSION_CODE)
         })
     }
 
