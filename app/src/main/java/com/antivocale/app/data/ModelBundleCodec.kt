@@ -42,11 +42,8 @@ object ModelBundleCodec {
 
     /** Writes the bundle for [modelDir] to [out]; the caller owns closing. */
     fun export(modelDir: File, out: OutputStream, metadata: BundleMetadata) {
-        // An unreadable dir throws (the old walk's contract); an empty one
-        // produces a manifest-only bundle, as before.
-        if (modelDir.listFiles() == null) {
-            throw IllegalArgumentException("empty model dir: $modelDir")
-        }
+        // The walk owns the readability contract for the whole tree; an
+        // empty dir produces a manifest-only bundle, as before.
         val files = buildList { collectModelFiles(modelDir, "", this) }
         ZipOutputStream(out).use { zip ->
             // NO_COMPRESSION deflate: zip STORED would need size+crc up
@@ -102,7 +99,12 @@ object ModelBundleCodec {
      * restore path.
      */
     private fun collectModelFiles(dir: File, prefix: String, out: MutableList<Pair<File, String>>) {
-        for (child in dir.listFiles()?.sortedBy { it.name } ?: return) {
+        // One contract for the whole tree: an unreadable dir anywhere
+        // throws, because a bundle that silently skipped it would pin a
+        // partial file set and degrade the restore identity downstream.
+        val children = dir.listFiles()
+            ?: throw IllegalArgumentException("unreadable model dir: $dir")
+        for (child in children.sortedBy { it.name }) {
             val relPath = if (prefix.isEmpty()) child.name else "$prefix/${child.name}"
             when {
                 child.isDirectory -> collectModelFiles(child, relPath, out)

@@ -114,6 +114,21 @@ class ExternalModelImporter(
          */
         fun isCatalogEntryUrl(url: String): Boolean = url.trim().endsWith(".json")
 
+        /** TASK-924: moves a verified staging dir into an arbitrary target
+         *  the caller has already clean-replaced (the builtin bundle
+         *  restore; the same landing discipline [freshTargetDir] applies
+         *  under the external root). Rename first; copy as the
+         *  cross-volume fallback for a cacheDir to filesDir move that
+         *  rename refuses. Returns false, with [target] cleaned, when
+         *  neither works. On the companion so the seam interface stays the
+         *  import surface it is. */
+        fun moveDirInto(src: File, target: File): Boolean {
+            if (src.renameTo(target)) return true
+            val copied = src.copyRecursively(target, overwrite = true)
+            if (!copied) target.deleteRecursively()
+            return copied
+        }
+
         /**
          * TASK-900 (GH #160 follow-up): a HuggingFace WEB url for a file
          * (/blob/<rev>/<path>) serves the HTML page, not the file, so an

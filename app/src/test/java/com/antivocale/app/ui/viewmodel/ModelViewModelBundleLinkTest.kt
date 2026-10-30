@@ -70,9 +70,7 @@ class ModelViewModelBundleLinkTest {
     /** The fixture-bytes source the served gigaam pins are hashed from. */
     private lateinit var gigaamSourceDir: File
 
-    private fun hashFile(f: File): String =
-        java.security.MessageDigest.getInstance("SHA-256").digest(f.readBytes())
-            .joinToString("") { "%02x".format(it) }
+    private fun hashFile(f: File) = BundleImportTestSupport.hashFile(f)
 
     @Before
     fun setUp() {
@@ -229,19 +227,7 @@ class ModelViewModelBundleLinkTest {
 
     /** The raw record list from the preference, without suspension (poll predicates). */
     private fun storedRecords(): List<ExternalModelRecord> =
-        com.antivocale.app.data.ExternalModelListJson.decode(fakePrefs._externalModelsJson.value)
-
-    /** Polls [predicate] on real time (the import and the catalog refreshes
-     *  run on real IO dispatchers); FAILS the test on timeout so a broken
-     *  derivation cannot pass by silently waiting out the clock. */
-    private fun kotlinx.coroutines.test.TestScope.await(what: String, predicate: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + 5_000
-        while (!predicate() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(20)
-            runCurrent()
-        }
-        assertTrue("timed out waiting for: $what", predicate())
-    }
+        BundleImportTestSupport.storedRecords(fakePrefs._externalModelsJson.value)
 
     private fun whisperSmallPresent(): Boolean =
         viewModel.catalogStates.value["whisper"]?.downloadedVariants?.contains("small") == true
