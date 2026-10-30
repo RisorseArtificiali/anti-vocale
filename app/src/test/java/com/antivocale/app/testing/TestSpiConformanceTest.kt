@@ -95,6 +95,9 @@ class TestSpiConformanceTest {
             "allBenchmarkResults",
             "customTransducerModelPath", "customTransducerModelType",
             "externalMigrationDone",
+            // TASK-929: session marker (the once-per-update popup state),
+            // the same one-shot class as externalMigrationDone.
+            "whatsNewLastShownVersion",
             "pendingBackendLoad", // TASK-640: crash marker, write-path only
             "modelPath", // rendered as activeModelPath/paths.llm
             "externalModelsJson", // op=records covers it
