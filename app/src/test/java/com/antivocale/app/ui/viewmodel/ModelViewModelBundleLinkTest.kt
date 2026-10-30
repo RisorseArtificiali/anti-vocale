@@ -239,8 +239,10 @@ class ModelViewModelBundleLinkTest {
         // TASK-924: the fixture pins match this device's patched catalog, so
         // the bundle no longer becomes a linked external twin (the #124
         // reopen complaint). It lands on the built-in dir and the card
-        // derives presence from DISK. The LINK arm below still covers every
-        // bundle the restore cannot claim (mismatched pins/types/entries).
+        // derives presence from DISK. Post-924 no bundle import links a
+        // record at all (a matching bundle restores; a mismatching one
+        // fails the identity pass by definition); the guards below pin the
+        // mismatches that still route through the external arm.
         importBundle(entryId = "gigaam", variantDir = "gigaam-v3")
         val restored = File(
             SherpaModelManager.of("gigaam").getModelStorageDir(mockContext), "gigaam-v3")

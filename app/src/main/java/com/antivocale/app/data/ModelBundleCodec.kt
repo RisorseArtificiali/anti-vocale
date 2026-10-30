@@ -35,7 +35,12 @@ import java.util.zip.ZipOutputStream
 object ModelBundleCodec {
 
     private const val TAG = "ModelBundleCodec"
-    private const val FORMAT_VERSION = 1
+    // TASK-924 review R5: 2 = relative-path file entries (subdirectory
+    // trees) and the optional family. Older receivers accept only 1 and
+    // would mangle a v2 bundle's paths into flat names (a corruption
+    // error, not a version error); the range guard below is what hands
+    // them the honest message instead.
+    private const val FORMAT_VERSION = 2
     const val MANIFEST_ENTRY = "manifest.json"
     private const val FILES_PREFIX = "files/"
     private const val COPY_BUFFER = 128 * 1024

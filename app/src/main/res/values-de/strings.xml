@@ -1316,4 +1316,5 @@
         <item quantity="other">%1$d Sprachnachrichten, die während deiner Abwesenheit eingegangen sind, werden jetzt transkribiert. Die Ergebnisse erscheinen im Verlauf.</item>
     </plurals>
     <string name="history_db_recovered_unpreserved">Die Verlaufsdatenbank war beschädigt und wurde zurückgesetzt. Die beschädigten Dateien konnten nicht gesichert werden.</string>
+    <string name="bundle_restore_download_active">Ein Download dieses Modells läuft noch. Warte auf das Ende oder brich ihn ab und importiere das Paket dann erneut.</string>
 </resources>

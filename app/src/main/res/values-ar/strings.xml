@@ -1213,4 +1213,5 @@
     <string name="voice_note_business_folder_grant_rejected">هذا ليس مجلد WhatsApp Business Voice Notes. اختر المجلد المسمى WhatsApp Business Voice Notes وحاول مرة أخرى.</string>
     <string name="voice_note_business_folder_card_desc">لقراءة الرسائل الصوتية، امنح مرة واحدة الوصول إلى المجلد الذي يحفظ فيه WhatsApp Business رسائله:</string>
     <string name="voice_note_business_folder_sheet_step3">مع تحديد مجلد WhatsApp Business Voice Notes (دون فتحه)، انقر استخدام هذا المجلد ثم السماح.</string>
+    <string name="bundle_restore_download_active">لا يزال تنزيل هذا النموذج قيد التقدم. انتظر انتهاءه أو ألغِه ثم استورد الحزمة مرة أخرى.</string>
 </resources>

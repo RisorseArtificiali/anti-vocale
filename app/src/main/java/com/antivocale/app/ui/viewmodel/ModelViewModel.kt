@@ -1594,14 +1594,14 @@ class ModelViewModel @Inject constructor(
                         languages = params.languages,
                         streaming = params.streaming,
                         displayName = params.displayName,
-                        // TASK-801 (the TASK-797 device trial's answer): the
-                        // entity link. The record keeps its external canonical
-                        // file names and the built-in loader is untouched (a
-                        // saved-path alias made the card claim installed and die
-                        // in ModelLoadError, exactly because the importer's names
-                        // differ from the catalog's); the card derives presence
-                        // from the linked record and Use activates it.
-                        linkedCatalog = linkedRef,
+                        // TASK-801 heritage: pre-924 a pin-matching bundle
+                        // linked its record here; post-924 a matching bundle
+                        // RESTORES instead, and this branch only runs when
+                        // the identity pass FAILED, so no bundle import
+                        // links a record anymore. The link machinery stays
+                        // for records created before 924 (review R4: the
+                        // comment used to describe the pre-924 fiction).
+                        linkedCatalog = null,
                     ))
                 }
             } finally {
@@ -1623,7 +1623,13 @@ class ModelViewModel @Inject constructor(
     private fun linkedCatalogRefFor(params: ModelBundleCodec.RecordParams): LinkedCatalogRef? {
         val entryId = params.catalogEntryId ?: return null
         val entry = BundledCatalog.byId(entryId) ?: return null
-        if (entry.modelType != params.modelType) return null
+        // Blank modelType (the streaming Nemotron, whistle, the LLM) parses
+        // to null on the params side; both spellings name the same type, so
+        // the strict compare must fold them or exactly the entries the
+        // TASK-924 export-gate removal enabled could restore nowhere
+        // (review R1; the fallback then fails them with the
+        // newer-app-version string, which is factually wrong).
+        if (entry.modelType.ifBlank { null } != params.modelType) return null
         val variantDir = params.catalogVariantDir
             ?.takeIf { dir -> entry.variants.any { it.dirName == dir } }
             ?: entry.variants.singleOrNull()?.dirName
@@ -1658,6 +1664,20 @@ class ModelViewModel @Inject constructor(
         ref: LinkedCatalogRef,
         staging: File,
     ): String {
+        val entry = BundledCatalog.byId(ref.catalogEntryId)
+            ?: error("catalog entry vanished between identity and restore: ${ref.catalogEntryId}")
+        val variant = entry.variants.firstOrNull { it.dirName == ref.variantDir }
+            ?: error("catalog variant vanished between identity and restore: ${ref.catalogEntryId}/${ref.variantDir}")
+        // A concurrent download of the same variant writes into the dir the
+        // restore is about to replace: its open handles would keep writing
+        // into unlinked inodes and its sidecar-first writes could re-create
+        // paths inside the restored tree. The import mutex does not see the
+        // download path, so an in-flight download refuses the restore
+        // (review R3).
+        if (_catalogStates.value[ref.catalogEntryId]?.variantDownloadStates
+                ?.get(variant.name)?.isDownloading == true) {
+            error(ctx.getString(R.string.bundle_restore_download_active))
+        }
         val target = File(
             SherpaModelManager.of(ref.catalogEntryId).getModelStorageDir(context), ref.variantDir)
         // The restore replaces whatever partial/corrupt dir is there, so
@@ -1669,14 +1689,18 @@ class ModelViewModel @Inject constructor(
         if (!ExternalModelImporter.moveDirInto(staging, target)) {
             error("cannot move the restored files into $target")
         }
-        val variant = BundledCatalog.byId(ref.catalogEntryId)?.variants
-            ?.firstOrNull { it.dirName == ref.variantDir }
-            ?: error("catalog entry vanished between identity and restore: ${ref.catalogEntryId}")
-        // The validator pass is expected (the pins matched and the sidecar
-        // absence folds to complete in CatalogModelValidator); a failure is
-        // a plumbing bug and fails loudly rather than shipping a junk dir.
-        check(CatalogModelValidator.isValidModelDir(target, variant.files.map { it.name })) {
-            "restored dir failed the catalog validator: $target"
+        try {
+            // The validator pass is expected (the pins matched and the
+            // sidecar absence folds to complete in CatalogModelValidator);
+            // a failure is a plumbing bug and fails loudly rather than
+            // shipping a junk dir (review R6: the failure deletes the
+            // landed dir so the sweep has nothing to orphan).
+            check(CatalogModelValidator.isValidModelDir(target, variant.files.map { it.name })) {
+                "restored dir failed the catalog validator: $target"
+            }
+        } catch (e: IllegalStateException) {
+            target.deleteRecursively()
+            throw e
         }
         Log.i(TAG, "Bundle restored as built-in: ${ref.catalogEntryId}/${ref.variantDir}")
         return params.displayName ?: ref.variantDir

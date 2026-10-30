@@ -83,12 +83,17 @@ class ModelViewModelBundleRestoreTest {
         appFilesDir = Files.createTempDirectory("bundle-restore-files").toFile()
         val appCacheDir = Files.createTempDirectory("bundle-restore-cache").toFile()
 
-        // The served catalog re-pins the qwen3-asr files onto the fixture
-        // bytes (the real pins hash the real weights no test can ship);
-        // pin names are the catalog's relative paths (tokenizer/ tree).
+        // The served catalog re-pins the qwen3-asr AND nemotron-streaming
+        // files onto the fixture bytes (the real pins hash the real weights
+        // no test can ship); pin names are the catalog's relative paths
+        // (tokenizer/ tree). BOTH entries patch here because the catalog
+        // singleton loads once per class: a per-test override would load
+        // after the first attach and never take effect.
         qwen3SourceDir = qwen3SourceDir()
         val realCatalogJson = RepoFiles.readText("src/main/assets/models_catalog.json")
         nextCatalogJson = patchCatalogPins(realCatalogJson, "qwen3-asr", pinsOf(qwen3SourceDir))
+        nextCatalogJson = patchCatalogPins(
+            nextCatalogJson, "nemotron-streaming", pinsOf(nemotronStreamingSourceDir()))
         val assetManager = mockk<android.content.res.AssetManager>(relaxed = true)
         every { assetManager.open(any()) } answers {
             ByteArrayInputStream(nextCatalogJson.toByteArray(Charsets.UTF_8))
@@ -256,8 +261,38 @@ class ModelViewModelBundleRestoreTest {
         assertEquals(null, fakePrefs._sherpaModelPath("qwen3-asr").value)
     }
 
-    // ---- (b) the external fallback (unresolvable origin, resolvable type) ----
+    // ---- (a2) the blank-modelType entry (review R1) ----
 
+    @Test
+    fun `a blank-modelType builtin bundle restores onto the built-in dir`() = runTest {
+        // nemotron-streaming's catalog modelType is "", which recordParams
+        // parses to null; the identity pass must fold the blank and null
+        // spellings or the entry the export-gate removal newly enabled
+        // could restore nowhere (the fallback would then fail it with the
+        // factually-wrong newer-app-version string).
+        val src = nemotronStreamingSourceDir()
+        importBundle(bundleFrom(src, "",
+            entryId = "nemotron-streaming",
+            variantDir = "nemotron-3.5-asr-streaming-0.6b-1120ms-int8"))
+        val restored = File(
+            File(appFilesDir, "nemotron"), "nemotron-3.5-asr-streaming-0.6b-1120ms-int8")
+        await("streaming dir restored") { restored.isDirectory }
+        await("no record written") { storedRecords().isEmpty() }
+        assertTrue(File(restored, "encoder.int8.onnx").isFile)
+    }
+
+    /** The streaming Nemotron fixture: the catalog variant's four file
+     *  names, no metadata theater (the identity pass never loads it). */
+    private fun nemotronStreamingSourceDir(): File {
+        val dir = Files.createTempDirectory("bundle-src-nemotron").toFile()
+        File(dir, "encoder.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 1 })
+        File(dir, "decoder.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 2 })
+        File(dir, "joiner.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 3 })
+        File(dir, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
+        return dir
+    }
+
+    // ---- (b) the external fallback (unresolvable origin, resolvable type) ----
     @Test
     fun `a builtin-origin bundle with no resolvable entry falls back to the external import`() = runTest {
         // The transducer source rides a fake entry id: the restore arm

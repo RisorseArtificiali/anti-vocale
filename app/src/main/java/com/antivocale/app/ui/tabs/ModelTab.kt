@@ -1502,15 +1502,14 @@ private fun CatalogModelSection(
                     // TASK-924: the import-family gate is gone. A bundle whose
                     // bytes match the receiving device's catalog restores onto
                     // the built-in card directly, so every PRESENT variant
-                    // exports (entryDirFor null = absent or incomplete). The
-                    // dir resolves at CLICK time: the ungated hook would
-                    // otherwise stat every present variant's files on each
-                    // recomposition.
+                    // exports. The dir resolves at COMPOSITION time (review
+                    // R2): the click-time variant left a visible menu entry
+                    // that silently did nothing in the linked-record and
+                    // flat-layout Gemma states, which is worse than the
+                    // per-recomposition stat walk it was avoiding.
                     onExportClick = onExportBundle?.let { hook ->
-                        {
-                            entryDirFor(context, entry.id, variant.variantName)?.let { dir ->
-                                hook(dir, entry, variant)
-                            }
+                        entryDirFor(context, entry.id, variant.variantName)?.let { dir ->
+                            { hook(dir, entry, variant) }
                         }
                     },
                     onInfoClick = { onInfoClick(variant) }

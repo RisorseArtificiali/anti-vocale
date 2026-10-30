@@ -1328,4 +1328,5 @@
         <item quantity="other">מתבצעת תמלול של %1$d הודעות קוליות שהגיעו בזמן שהאפליקציה הייתה סגורה. התוצאות יופיעו בהיסטוריה.</item>
     </plurals>
     <string name="history_db_recovered_unpreserved">מסד הנתונים של ההיסטוריה נפגם ואופס. לא ניתן היה לשמר את הקבצים הפגומים.</string>
+    <string name="bundle_restore_download_active">הורדת הדגם הזה עדיין בעיצומה. המתן שתסתיים או בטל אותה ולאחר מכן ייבא את החבילה שוב.</string>
 </resources>

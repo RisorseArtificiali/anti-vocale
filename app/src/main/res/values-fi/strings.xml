@@ -1156,4 +1156,5 @@
     <string name="voice_note_business_folder_grant_rejected">Tuo ei ole WhatsApp Business Voice Notes -kansio. Valitse kansio, jonka nimi on WhatsApp Business Voice Notes, ja yritä uudelleen.</string>
     <string name="voice_note_business_folder_card_desc">Jotta viestit voidaan lukea, myönnä kerran käyttöoikeus kansioon, johon WhatsApp Business tallentaa ne:</string>
     <string name="voice_note_business_folder_sheet_step3">Kun WhatsApp Business Voice Notes -kansio on valittuna (älä avaa sitä), napauta KÄYTÄ TÄTÄ KANSIOTA ja sitten SALLI.</string>
+    <string name="bundle_restore_download_active">Tämän mallin lataus on vielä käynnissä. Odota sen valmistumista tai peruuta se ja tuo paketti sitten uudelleen.</string>
 </resources>

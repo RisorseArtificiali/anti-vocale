@@ -51,7 +51,7 @@ class ModelBundleCodecTest {
 
         assertEquals("My Model", manifest.getString("name"))
         assertEquals("WHISPER", manifest.getString("family"))
-        assertEquals(1, manifest.getInt("formatVersion"))
+        assertEquals(2, manifest.getInt("formatVersion"))
         assertEquals("he", manifest.getJSONArray("languages").getString(0))
         assertEquals("enc-bytes", File(target, "encoder.int8.onnx").readText())
         assertEquals("a\nb\nc", File(target, "tokens.txt").readText())
@@ -312,7 +312,7 @@ class ModelBundleCodecTest {
         ModelBundleCodec.export(dir, out, metadata())
         // patch formatVersion to a future value
         val patched = String(out.toByteArray(), Charsets.ISO_8859_1)
-            .replace("\"formatVersion\":1", "\"formatVersion\":99")
+            .replace("\"formatVersion\":2", "\"formatVersion\":99")
             .toByteArray(Charsets.ISO_8859_1)
         val target = File(tmp.newFolder(), "imported")
         try {

@@ -1321,4 +1321,5 @@
         <item quantity="other">در حال رونویسی %1$d پیام صوتی که در غیاب برنامه رسیده‌اند. نتایج در تاریخچه نمایش داده می‌شوند.</item>
     </plurals>
     <string name="history_db_recovered_unpreserved">پایگاه دادهٔ تاریخچه آسیب دید و بازنشانی شد. نگه‌داری فایل‌های آسیب‌دیده ممکن نشد.</string>
+    <string name="bundle_restore_download_active">دانلود این مدل هنوز در جریان است. تا پایان آن صبر کنید یا لغو کنید و سپس بسته را دوباره وارد کنید.</string>
 </resources>

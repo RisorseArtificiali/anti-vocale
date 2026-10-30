@@ -1336,4 +1336,5 @@
         <item quantity="other">Transcribing %1$d voice notes that arrived while the app was away. Results will appear in History.</item>
     </plurals>
     <string name="history_db_recovered_unpreserved">The history database was damaged and has been reset. The damaged files could not be preserved.</string>
+    <string name="bundle_restore_download_active">A download of this model is still in progress. Wait for it to finish or cancel it, then import the bundle again.</string>
 </resources>

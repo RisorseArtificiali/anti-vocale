@@ -1332,4 +1332,5 @@
         <item quantity="other">%1$d spraakberichten die binnenkwamen terwijl de app afwezig was, worden nu getranscribeerd. De resultaten verschijnen in de geschiedenis.</item>
     </plurals>
     <string name="history_db_recovered_unpreserved">De geschiedenisdatabase was beschadigd en is opnieuw ingesteld. De beschadigde bestanden konden niet worden bewaard.</string>
+    <string name="bundle_restore_download_active">Een download van dit model is nog bezig. Wacht tot die klaar is of annuleer hem en importeer het pakket opnieuw.</string>
 </resources>

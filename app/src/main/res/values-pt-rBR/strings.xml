@@ -1184,4 +1184,5 @@
         <item quantity="other">Transcrevendo %1$d notas de voz que chegaram enquanto o app estava fechado. Os resultados aparecerão no histórico.</item>
     </plurals>
     <string name="history_db_recovered_unpreserved">O banco de dados do histórico estava danificado e foi redefinido. Não foi possível preservar os arquivos danificados.</string>
+    <string name="bundle_restore_download_active">Um download deste modelo ainda está em andamento. Espere terminar ou cancele e importe o pacote novamente.</string>
 </resources>

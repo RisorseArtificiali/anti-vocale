@@ -1322,4 +1322,5 @@
         <item quantity="other">Trascrizione di %1$d messaggi vocali arrivati mentre l\'app era chiusa. I risultati compariranno nella cronologia.</item>
     </plurals>
     <string name="history_db_recovered_unpreserved">Il database della cronologia era danneggiato ed è stato azzerato. Non è stato possibile conservare i file danneggiati.</string>
+    <string name="bundle_restore_download_active">Un download di questo modello è ancora in corso. Attendine il termine o annullalo, poi importa di nuovo il pacchetto.</string>
 </resources>

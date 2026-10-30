@@ -1184,4 +1184,5 @@
         <item quantity="other">Transcribiendo %1$d notas de voz que llegaron mientras la app no estaba. Los resultados aparecerán en el historial.</item>
     </plurals>
     <string name="history_db_recovered_unpreserved">La base de datos del historial estaba dañada y se ha restablecido. No se han podido conservar los archivos dañados.</string>
+    <string name="bundle_restore_download_active">Una descarga de este modelo sigue en curso. Espera a que termine o cancélala y vuelve a importar el paquete.</string>
 </resources>
