@@ -36,7 +36,15 @@ object ReleaseNotes {
      *  one rule, one entry point (the simplify review found three inline
      *  copies of the ifBlank expression otherwise). */
     fun notesFor(inAppLanguage: String, versionName: String, assets: AssetManager): List<String> {
-        val locale = inAppLanguage.ifBlank { java.util.Locale.getDefault().toLanguageTag() }
+        // The preference's untouched default is the sentinel "system", not
+        // blank: both spellings mean "use the device locale" (review R1;
+        // the old ifBlank-only check was dead code for every default-
+        // configuration user, who always got en-US notes inside a
+        // fully-localized UI).
+        val locale = when (inAppLanguage.isBlank() || inAppLanguage == "system") {
+            true -> java.util.Locale.getDefault().toLanguageTag()
+            false -> inAppLanguage
+        }
         val blocks = cachedBlocks ?: run {
             val text = assets.open(ASSET_PATH).bufferedReader().use { it.readText() }
             localeBlocks(text).also { cachedBlocks = it }

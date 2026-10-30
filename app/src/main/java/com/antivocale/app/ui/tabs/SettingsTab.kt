@@ -2056,11 +2056,15 @@ fun SettingsTab(
                     titleRes = R.string.whats_new_title,
                     summaryRes = R.string.whats_new_summary,
                 ) {
+                    // Review R2: the hub card shares the popup's empty guard
+                    // (a version without notes must not open an empty dialog
+                    // with just a version line; the popup checks isNotEmpty
+                    // in MainScreen).
                     showWhatsNewNotes = ReleaseNotes.notesFor(
                         currentLanguage,
                         BuildConfig.VERSION_NAME,
                         context.assets,
-                    )
+                    ).takeIf { it.isNotEmpty() }
                 }
             }
             showWhatsNewNotes?.let { notes ->
