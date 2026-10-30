@@ -64,7 +64,7 @@ object ReleaseNotes {
      * each language has exactly one block, so zh-TW and pt-PT land on the
      * only block their language has.
      */
-    internal fun resolveTag(locale: String, tags: Collection<String>): String? {
+    private fun resolveTag(locale: String, tags: Collection<String>): String? {
         val wanted = locale.trim().replace('_', '-').lowercase()
         if (wanted.isEmpty()) return null
         tags.firstOrNull { it.lowercase() == wanted }?.let { return it }
@@ -82,11 +82,11 @@ object ReleaseNotes {
     private fun isHeader(line: String, versionName: String) =
         !isBullet(line) && line.contains(versionName) && endsWithColon(line)
 
-    /** The matching header opens the section, the NEXT header line (any
-     *  version) closes it, the block end closes it too. Only bullet lines
-     *  are collected; blank and stray prose lines are skipped without
-     *  ending the section. */
-    fun bulletsFor(block: List<String>, versionName: String): List<String> {
+    /** The matching header opens the section; the next colon-ending
+     *  non-bullet line (in practice the next version's header) or the
+     *  block end closes it. Only bullet lines are collected; blank and
+     *  stray prose lines are skipped without ending the section. */
+    private fun bulletsFor(block: List<String>, versionName: String): List<String> {
         val bullets = mutableListOf<String>()
         var inSection = false
         for (line in block) {
