@@ -18,7 +18,7 @@ This SPI is deliberately separate from the production exported receivers (`PROCE
 
 ```text
 Action: com.antivocale.app.TEST_SPI   (string extras, one op per broadcast)
-  op     nav | get | set | records | identity_cache | import | notify_memory_error | clipboard | notifications | unload | voice_note_state | model_download | clear_orphaned | search | log | log_read | log_delete | voice_note_watermark_reset | voice_note_simulate | notify_text | help   (missing or unknown op answers with help; nav, voice_note_grant_open, notify_action and share_open are receiver-side, TASK-486/TASK-826/TASK-912)
+  op     nav | get | set | records | identity_cache | import | notify_memory_error | clipboard | notifications | unload | voice_note_state | model_download | clear_orphaned | bundle_export | bundle_import | model_present | search | log | log_read | log_delete | voice_note_watermark_reset | voice_note_simulate | notify_text | help   (missing or unknown op answers with help; nav, voice_note_grant_open, notify_action and share_open are receiver-side, TASK-486/TASK-826/TASK-912)
   key    one of the set keys below    (op=set)
   value  the new value                (op=set)
   entry  catalog entry id             (op=set, only for key=sherpa_path)

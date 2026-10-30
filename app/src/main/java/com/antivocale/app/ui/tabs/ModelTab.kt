@@ -647,6 +647,7 @@ fun ModelTab(
                 guardedModelSwitch = guardedSwitch,
                 onInfoClick = { modelInfoVariant = it },
                 onBrowseAll = { browseAllModels = true },
+                onExportBundle = ::launchBundleExport,
             )
         }
 
@@ -1020,6 +1021,7 @@ private fun CuratedLanguageSection(
     guardedModelSwitch: (() -> Unit) -> Unit,
     onInfoClick: (ModelVariant) -> Unit,
     onBrowseAll: () -> Unit,
+    onExportBundle: ((java.io.File, CatalogEntry, CatalogVariantUi) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     // Community references resolve against the BUNDLED index snapshot: static
@@ -1081,6 +1083,11 @@ private fun CuratedLanguageSection(
                             visibleVariants = variants,
                             guardedModelSwitch = guardedModelSwitch,
                             onInfoClick = onInfoClick,
+                            // TASK-924 device trial: the curated section never
+                            // wired the export hook (pre-924 its gate made
+                            // that invisible for transferable types too), so
+                            // a present curated card offered no Export.
+                            onExportBundle = onExportBundle,
                         )
                     }
                 }

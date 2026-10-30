@@ -1,6 +1,7 @@
 package com.antivocale.app.testing
 
 import com.antivocale.app.data.ExternalModelRecord
+import java.io.File
 import com.antivocale.app.data.ExternalModelImportOperations
 import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelStore
@@ -97,6 +98,9 @@ internal class TestSpiOps(
             OP_VOICE_NOTE_STATE -> voiceNoteState(value)
             OP_MODEL_DOWNLOAD -> modelDownload(entry, value)
             OP_CLEAR_ORPHANED -> clearOrphaned(entry, value)
+            OP_BUNDLE_EXPORT -> bundleExport(entry, value)
+            OP_BUNDLE_IMPORT -> bundleImport(value)
+            OP_MODEL_PRESENT -> modelPresent(entry, value)
             OP_SEARCH -> search(value, mode)
             OP_LOG -> insertLog(value)
             OP_LOG_READ -> readLog(value)
@@ -911,6 +915,105 @@ internal class TestSpiOps(
     }
 
     /**
+     * TASK-931: exports a present variant's offline bundle to a scriptable
+     * path (the app's external-files dir, pullable over adb without run-as)
+     * through the SAME shared core the UI export uses (ModelBundleTransfer),
+     * so a scripted bundle is byte-identical to a user-exported one. usage:
+     * op=bundle_export entry=<catalog id> value=<variant name>. The reply
+     * carries the absolute path and the byte size.
+     */
+    private fun bundleExport(entry: String?, variant: String?): String {
+        val context = requireContext(OP_BUNDLE_EXPORT)
+        validateCatalogVariant(OP_BUNDLE_EXPORT, entry, variant)?.let { return it }
+        val entryId = entry ?: error("validated")
+        val variantName = variant ?: error("validated")
+        val downloader = com.antivocale.app.transcription.SherpaModelDownloader.of(entryId)
+        val dir = downloader.getModelPath(context, variantName)
+            ?: return JSONObject().put("op", OP_BUNDLE_EXPORT)
+                .put("error", "variant '$entryId/$variantName' is not present (a validator-complete dir)")
+                .toString()
+        val catalogEntry = com.antivocale.app.data.catalog.BundledCatalog.byId(entryId) ?: error("validated")
+        val uiVariant = com.antivocale.app.transcription.CatalogVariantUi.forEntry(entryId)
+            .firstOrNull { it.variantName == variantName }
+        val displayName = uiVariant?.let { context.getString(it.titleResId) } ?: variantName
+        val out = File(context.getExternalFilesDir(null), "bundle-$entryId-$variantName.zip")
+        java.io.FileOutputStream(out).use { stream ->
+            com.antivocale.app.data.ModelBundleTransfer.export(
+                File(dir), catalogEntry, variantName,
+                displayName = displayName,
+                variantDirName = uiVariant?.dirName,
+                appVersion = context.packageManager
+                    .getPackageInfo(context.packageName, 0).versionName ?: "spi",
+                out = stream)
+        }
+        return JSONObject().put("op", OP_BUNDLE_EXPORT)
+            .put("entry", entryId).put("variant", variantName)
+            .put("path", out.absolutePath)
+            .put("bytes", out.length())
+            .toString()
+    }
+
+    /**
+     * TASK-931: imports a bundle from a file path (absolute, or a name
+     * resolved under the app's external-files dir where bundle_export
+     * writes) through the SAME shared core the UI import uses. The reply
+     * names the arm that ran: outcome=restored (built-in dir, no record)
+     * or outcome=imported (external record). The download-active guard is
+     * a no-op here: a scripted trial controls both the download and the
+     * import, so the caller sequences them.
+     */
+    private suspend fun bundleImport(value: String?): String {
+        val context = requireContext(OP_BUNDLE_IMPORT)
+        if (value.isNullOrBlank()) {
+            return JSONObject().put("op", OP_BUNDLE_IMPORT)
+                .put("error", "usage: op=bundle_import value=<absolute path or external-files name>")
+                .toString()
+        }
+        val file = File(value).takeIf { it.isAbsolute }
+            ?: File(context.getExternalFilesDir(null), value)
+        if (!file.isFile) {
+            return JSONObject().put("op", OP_BUNDLE_IMPORT)
+                .put("error", "no bundle at '${file.absolutePath}'")
+                .toString()
+        }
+        val outcome = com.antivocale.app.data.ModelBundleTransfer.importBundle(
+            context, file.inputStream().buffered(), importer,
+            downloadActive = { _, _ -> false },
+            noFamilyError = "bundle model has no external import slot and matches no catalog variant",
+        )
+        return when (outcome) {
+            is com.antivocale.app.data.ModelBundleTransfer.Outcome.Restored ->
+                JSONObject().put("op", OP_BUNDLE_IMPORT)
+                    .put("outcome", "restored").put("displayName", outcome.displayName)
+                    .toString()
+            is com.antivocale.app.data.ModelBundleTransfer.Outcome.Imported ->
+                JSONObject().put("op", OP_BUNDLE_IMPORT)
+                    .put("outcome", "imported").put("backendId", outcome.record.backendId)
+                    .put("displayName", outcome.record.displayName)
+                    .toString()
+        }
+    }
+
+    /**
+     * TASK-931: the read-side presence the Models card derives (the
+     * downloader's validator-complete predicate), so a trial asserts the
+     * restore landed without run-as ls. usage:
+     * op=model_present entry=<catalog id> value=<variant name>.
+     */
+    private fun modelPresent(entry: String?, variant: String?): String {
+        val context = requireContext(OP_MODEL_PRESENT)
+        validateCatalogVariant(OP_MODEL_PRESENT, entry, variant)?.let { return it }
+        val entryId = entry ?: error("validated")
+        val variantName = variant ?: error("validated")
+        val downloader = com.antivocale.app.transcription.SherpaModelDownloader.of(entryId)
+        return JSONObject().put("op", OP_MODEL_PRESENT)
+            .put("entry", entryId).put("variant", variantName)
+            .put("present", downloader.isModelDownloaded(context, variantName))
+            .put("dir", downloader.getModelPath(context, variantName) ?: JSONObject.NULL)
+            .toString()
+    }
+
+    /**
      * TASK-625 trial tool: posts the production memory-failure error
      * notification (the exact ResultNotificationFactory builder both error
      * surfaces use) so the Open-setting action can be exercised on device
@@ -1115,6 +1218,12 @@ internal class TestSpiOps(
          *  input cannot reach on the Compose button). Mirrors model_download's
          *  arg shape: entry=<catalog id> value=<variant name>. */
         const val OP_CLEAR_ORPHANED = "clear_orphaned"
+        /** TASK-931: the bundle round trip without SAF (see bundleExport). */
+        const val OP_BUNDLE_EXPORT = "bundle_export"
+        /** TASK-931: bundle import from a file path (see bundleImport). */
+        const val OP_BUNDLE_IMPORT = "bundle_import"
+        /** TASK-931: read-side variant presence (see modelPresent). */
+        const val OP_MODEL_PRESENT = "model_present"
         const val OP_VOICE_NOTE_STATE = "voice_note_state"
         /** TASK-911: value=<query> mode=literal|similar, the History search
          *  without UI (similar is the TranscriptFuzzySearch arm). */
@@ -1161,7 +1270,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024

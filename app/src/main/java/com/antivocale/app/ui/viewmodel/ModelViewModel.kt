@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.ModelBundleCodec
+import com.antivocale.app.data.ModelBundleTransfer
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.data.ModelDownloader
@@ -1537,7 +1538,7 @@ class ModelViewModel @Inject constructor(
         options: Map<String, String> = emptyMap(),
         languages: List<String> = emptyList(),
     ) = runExternalImport("External folder", onProgress = null) {
-        ExternalImportOutcome.Imported(externalModelImporter.importFromTreeUri(
+        ModelBundleTransfer.Outcome.Imported(externalModelImporter.importFromTreeUri(
             context, treeUri,
             modelType = ctcModelType(family, ctcModelType),
             family = family, options = options, languages = languages))
@@ -1560,151 +1561,22 @@ class ModelViewModel @Inject constructor(
             // FOLDER picker; the caller releases the persisted read grant
             // before invoking this, so the one-shot read rides the
             // picker's transient grant again (nothing persists).
-            val staging = File(context.cacheDir, "bundle-import-${System.currentTimeMillis()}")
-            try {
-                val manifest = context.contentResolver.openInputStream(bundleUri)?.use { input ->
-                    ModelBundleCodec.import(input, staging)
-                } ?: error("cannot open the selected bundle")
-                val params = ModelBundleCodec.recordParams(manifest)
-                // TASK-924: ONE identity pass decides the arm, and its result
-                // is both the restore key and the entity link the external
-                // arm needs (same function, same params; a bundle whose
-                // bytes are this device's catalog variant's bytes restores
-                // onto the built-in card, everything else rides the external
-                // arm exactly as before TASK-924, where a family-less
-                // manifest re-derives the family from the modelType and a
-                // type with no slot fails there with the honest string).
-                val linkedRef = linkedCatalogRefFor(params)
-                if (linkedRef != null) {
-                    ExternalImportOutcome.Restored(
-                        restoreBuiltinBundle(context, params, linkedRef, staging))
-                } else {
-                    if (params.catalogEntryId != null) {
-                        Log.i(TAG, "Bundle from entry '${params.catalogEntryId}' does not match this " +
-                            "device's catalog (type=${params.modelType}, " +
-                            "variant=${params.catalogVariantDir}); importing as external")
-                    }
-                    ExternalImportOutcome.Imported(externalModelImporter.importFromDirectory(
-                        src = staging,
-                        modelType = params.modelType,
-                        family = params.family
-                            ?: ModelBundleCodec.importFamilyForModelType(params.modelType.orEmpty())
-                            ?: error(ctx.getString(R.string.bundle_restore_unsupported)),
-                        options = params.options,
-                        languages = params.languages,
-                        streaming = params.streaming,
-                        displayName = params.displayName,
-                        // TASK-801 heritage: pre-924 a pin-matching bundle
-                        // linked its record here; post-924 a matching bundle
-                        // RESTORES instead, and this branch only runs when
-                        // the identity pass FAILED, so no bundle import
-                        // links a record anymore. The link machinery stays
-                        // for records created before 924 (review R4: the
-                        // comment used to describe the pre-924 fiction).
-                        linkedCatalog = null,
-                    ))
-                }
-            } finally {
-                staging.deleteRecursively()
+            // TASK-931: staging, the identity pass, and the restore/external
+            // routing live in the shared transfer core; this stays the SAF
+            // shell plus the UI-state wiring.
+            val input = context.contentResolver.openInputStream(bundleUri)
+                ?: error("cannot open the selected bundle")
+            input.use {
+                com.antivocale.app.data.ModelBundleTransfer.importBundle(
+                    context, it, externalModelImporter,
+                    downloadActive = { entryId, variantName ->
+                        _catalogStates.value[entryId]?.variantDownloadStates
+                            ?.get(variantName)?.isDownloading == true
+                    },
+                    noFamilyError = ctx.getString(R.string.bundle_restore_unsupported),
+                )
             }
         }
-
-    /**
-     * TASK-801: the catalog identity a bundle import links to, or null for a
-     * plain import. Linked only when the manifest's entry still exists in THIS
-     * device's bundled catalog, the modelTypes match (a relabeled or
-     * hand-edited manifest must not hijack an unrelated card), the variant
-     * resolves (the manifest's dirName when it names one of the entry's
-     * variants, else the entry's only variant; pre-801 manifests carry no
-     * variant identity, and a multi-variant entry is not linkable without
-     * one), AND the bundle's pinned bytes are the catalog variant's pinned
-     * bytes: the card must not vouch for weights the catalog never named.
-     */
-    private fun linkedCatalogRefFor(params: ModelBundleCodec.RecordParams): LinkedCatalogRef? {
-        val entryId = params.catalogEntryId ?: return null
-        val entry = BundledCatalog.byId(entryId) ?: return null
-        // Blank modelType (the streaming Nemotron, whistle, the LLM) parses
-        // to null on the params side; both spellings name the same type, so
-        // the strict compare must fold them or exactly the entries the
-        // TASK-924 export-gate removal enabled could restore nowhere
-        // (review R1; the fallback then fails them with the
-        // newer-app-version string, which is factually wrong).
-        if (entry.modelType.ifBlank { null } != params.modelType) return null
-        val variantDir = params.catalogVariantDir
-            ?.takeIf { dir -> entry.variants.any { it.dirName == dir } }
-            ?: entry.variants.singleOrNull()?.dirName
-            ?: return null
-        val variant = entry.variants.first { it.dirName == variantDir }
-        // Key-set equality, not just coverage: an extra canonical-named file
-        // (encoder.int8.onnx) riding the bundle could win the importer's
-        // role matching over the verified catalog-named file, so the card
-        // would vouch for bytes the record never loads.
-        val pinsMatch = params.filePins.keys == variant.files.map { it.name }.toSet() &&
-            variant.files.all { catalogFile ->
-                // Unpinned catalog files (none today, TASK-661 pins all)
-                // ride unconstrained.
-                catalogFile.sha256 == null || params.filePins[catalogFile.name] == catalogFile.sha256
-            }
-        if (!pinsMatch) return null
-        return LinkedCatalogRef(entryId, variantDir)
-    }
-
-    /**
-     * TASK-924 (GH #124 reopen): the BUILTIN restore arm. The identity pass
-     * at the call site has already resolved [ref] (the SAME strict rules as
-     * the entity link), so this only lands the codec-verified [staging]
-     * files in the built-in dir: no ExternalModelStore record is written,
-     * and the card flips to present through the disk-truth computation.
-     * Returns the restored variant's display name; a landing failure
-     * throws into the import's error channel.
-     */
-    private fun restoreBuiltinBundle(
-        context: Context,
-        params: ModelBundleCodec.RecordParams,
-        ref: LinkedCatalogRef,
-        staging: File,
-    ): String {
-        val entry = BundledCatalog.byId(ref.catalogEntryId)
-            ?: error("catalog entry vanished between identity and restore: ${ref.catalogEntryId}")
-        val variant = entry.variants.firstOrNull { it.dirName == ref.variantDir }
-            ?: error("catalog variant vanished between identity and restore: ${ref.catalogEntryId}/${ref.variantDir}")
-        // A concurrent download of the same variant writes into the dir the
-        // restore is about to replace: its open handles would keep writing
-        // into unlinked inodes and its sidecar-first writes could re-create
-        // paths inside the restored tree. The import mutex does not see the
-        // download path, so an in-flight download refuses the restore
-        // (review R3).
-        if (_catalogStates.value[ref.catalogEntryId]?.variantDownloadStates
-                ?.get(variant.name)?.isDownloading == true) {
-            error(ctx.getString(R.string.bundle_restore_download_active))
-        }
-        val target = File(
-            SherpaModelManager.of(ref.catalogEntryId).getModelStorageDir(context), ref.variantDir)
-        // The restore replaces whatever partial/corrupt dir is there, so
-        // the end state is the same regardless of the target's prior
-        // content (the orphan sweep never deletes a current-named dir,
-        // which is exactly why a stale one must go here).
-        target.deleteRecursively()
-        target.parentFile?.mkdirs()
-        if (!ExternalModelImporter.moveDirInto(staging, target)) {
-            error("cannot move the restored files into $target")
-        }
-        try {
-            // The validator pass is expected (the pins matched and the
-            // sidecar absence folds to complete in CatalogModelValidator);
-            // a failure is a plumbing bug and fails loudly rather than
-            // shipping a junk dir (review R6: the failure deletes the
-            // landed dir so the sweep has nothing to orphan).
-            check(CatalogModelValidator.isValidModelDir(target, variant.files.map { it.name })) {
-                "restored dir failed the catalog validator: $target"
-            }
-        } catch (e: IllegalStateException) {
-            target.deleteRecursively()
-            throw e
-        }
-        Log.i(TAG, "Bundle restored as built-in: ${ref.catalogEntryId}/${ref.variantDir}")
-        return params.displayName ?: ref.variantDir
-    }
 
     /**
      * TASK-761 (review triage): the offline-transfer bundle export (GH
@@ -1721,39 +1593,15 @@ class ModelViewModel @Inject constructor(
         variant: CatalogVariantUi,
     ) = viewModelScope.launch(Dispatchers.IO) {
         try {
-            val metadata = ModelBundleCodec.BundleMetadata(
-                displayName = ctx.getString(variant.titleResId),
-                // The IMPORT family (the sherpa import taxonomy), NOT the
-                // entry's architecture string, when the modelType has an
-                // external slot. TASK-924: null (omitted from the manifest)
-                // for the builtin-only types (qwen3, the streaming Nemotron,
-                // the LLM): the receiving restore arm needs no family, and
-                // the external fallback re-derives one from the modelType
-                // when it can.
-                family = ModelBundleCodec.importFamilyForModelType(entry.modelType)?.name,
-                modelType = entry.modelType,
-                languages = BundledCatalog.byId(entry.id)?.let { catalogEntry ->
-                    // The UI variantName is the catalog variant NAME ("v3"),
-                    // never the dirName ("gigaam-v3"): comparing dirNames here
-                    // silently exported empty language lists (TASK-801 review).
-                    // Entries may also declare their languages at entry level
-                    // only (gigaam: ['ru'], no per-variant list).
-                    catalogEntry.variants
-                        .firstOrNull { it.name == variant.variantName }
-                        ?.languages
-                        ?.takeIf { it.isNotEmpty() }
-                        ?: catalogEntry.languages
-                } ?: emptyList(),
-                streaming = entry.isStreaming,
-                options = emptyMap(),
-                appVersion = BuildConfig.VERSION_NAME,
-                // TASK-797: the built-in entry the bundle came from; the
-                // receiver links the imported record to its card (TASK-801).
-                catalogEntryId = entry.id,
-                catalogVariantDir = variant.dirName,
-            )
             ctx.contentResolver.openOutputStream(uri)?.use { out ->
-                ModelBundleCodec.export(dir, out, metadata)
+                // TASK-931: the metadata rules and the zip live in the
+                // shared transfer core (the debug SPI exports the same
+                // bytes through the same code).
+                com.antivocale.app.data.ModelBundleTransfer.export(
+                    dir, entry, variant.variantName,
+                    displayName = ctx.getString(variant.titleResId),
+                    variantDirName = variant.dirName,
+                    appVersion = BuildConfig.VERSION_NAME, out = out)
             } ?: error("cannot open export target $uri")
             Log.i(TAG, "Model bundle exported: ${dir.name} -> $uri")
         } catch (e: Exception) {
@@ -1775,7 +1623,7 @@ class ModelViewModel @Inject constructor(
                 bytes = bytes, totalBytes = total,
                 progress = if (total > 0) bytes.toFloat() / total else 0f)
         }) { onProgress ->
-        ExternalImportOutcome.Imported(externalModelImporter.importFromUrl(
+        ModelBundleTransfer.Outcome.Imported(externalModelImporter.importFromUrl(
             url,
             modelType = ctcModelType(family, ctcModelType),
             family = family, options = options, languages = languages,
@@ -1798,12 +1646,12 @@ class ModelViewModel @Inject constructor(
     /** Shared import scaffolding: progress state, IO dispatching, and the failure tail.
      *  [onProgress] is handed to the block so URL imports can stream download telemetry
      *  into the state (TASK-398); null for the folder path (nothing to report).
-     *  TASK-924: the success payload is the [ExternalImportOutcome] pair:
+     *  TASK-924: the success payload is the [ModelBundleTransfer.Outcome] pair:
      *  an external record, or a builtin restore that wrote no record. */
     private fun runExternalImport(
         label: String,
         onProgress: ((Int, Int, String, Long, Long) -> Unit)?,
-        block: suspend ((Int, Int, String, Long, Long) -> Unit) -> ExternalImportOutcome,
+        block: suspend ((Int, Int, String, Long, Long) -> Unit) -> ModelBundleTransfer.Outcome,
     ) {
         val noop: (Int, Int, String, Long, Long) -> Unit = { _, _, _, _, _ -> }
         viewModelScope.launch(Dispatchers.IO) {
@@ -1818,7 +1666,7 @@ class ModelViewModel @Inject constructor(
                             // exactly for scope-less callers.
                             shareTargetManager.onModelDownloaded()
                             when (outcome) {
-                                is ExternalImportOutcome.Imported -> {
+                                is ModelBundleTransfer.Outcome.Imported -> {
                                     _snackbarEvent.tryEmit(SnackbarEvent.Message(
                                         ctx.getString(R.string.external_imported, outcome.record.displayName)))
                                     // First-run behavior: auto-select when nothing
@@ -1830,7 +1678,7 @@ class ModelViewModel @Inject constructor(
                                         }
                                     }
                                 }
-                                is ExternalImportOutcome.Restored -> {
+                                is ModelBundleTransfer.Outcome.Restored -> {
                                     // No record exists to name or activate; the
                                     // card flips via the disk-truth refresh.
                                     _snackbarEvent.tryEmit(SnackbarEvent.Message(
@@ -1850,13 +1698,6 @@ class ModelViewModel @Inject constructor(
         }
     }
 
-    /** TASK-924: the two success shapes of an external import: a record, or
-     *  a builtin restore that landed the bundle on the built-in card (no
-     *  record exists to name or activate). */
-    private sealed interface ExternalImportOutcome {
-        data class Imported(val record: ExternalModelRecord) : ExternalImportOutcome
-        data class Restored(val displayName: String) : ExternalImportOutcome
-    }
 
     fun useExternalModel(record: ExternalModelRecord) {
         viewModelScope.launch { activateExternalModel(record) }
