@@ -34,6 +34,11 @@ import com.svenjacobs.reveal.revealable
 import com.svenjacobs.reveal.rememberRevealCanvasState
 import com.svenjacobs.reveal.rememberRevealState
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.platform.LocalContext
+import com.antivocale.app.BuildConfig
+import com.antivocale.app.data.ReleaseNotes
+import com.antivocale.app.ui.components.WhatsNewDialog
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,6 +123,40 @@ fun MainScreen(
                 revealState.reveal(step.key)
             }
         }
+    }
+
+    // TASK-929: the What's-New one-shot, ONCE per process (LaunchedEffect
+    // in the root composable, never a recomposition-prone spot). A
+    // versionCode the preference has never seen pops the release notes; a
+    // fresh install records the running version instead (the first launch
+    // is not an update: nothing is "new" yet, and the welcome tour owns
+    // that moment). The popup writes the versionCode on dismissal, so the
+    // same version never re-pops, rotation included.
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var whatsNewNotes by remember { mutableStateOf<List<String>?>(null) }
+    LaunchedEffect(Unit) {
+        if (settingsViewModel.readWhatsNewLastShownVersion() == BuildConfig.VERSION_CODE) {
+            return@LaunchedEffect
+        }
+        if (!settingsViewModel.readOnboardingCompleted()) {
+            settingsViewModel.saveWhatsNewLastShownVersion(BuildConfig.VERSION_CODE)
+            return@LaunchedEffect
+        }
+        val notes = ReleaseNotes.sectionFor(
+            settingsViewModel.currentLanguage.value.ifBlank {
+                java.util.Locale.getDefault().toLanguageTag()
+            },
+            BuildConfig.VERSION_NAME,
+            context.assets,
+        )
+        if (notes.isNotEmpty()) whatsNewNotes = notes
+    }
+    whatsNewNotes?.let { notes ->
+        WhatsNewDialog(notes = notes, onDismiss = {
+            whatsNewNotes = null
+            scope.launch { settingsViewModel.saveWhatsNewLastShownVersion(BuildConfig.VERSION_CODE) }
+        })
     }
 
     // Force Logs tab when a highlight signal arrives

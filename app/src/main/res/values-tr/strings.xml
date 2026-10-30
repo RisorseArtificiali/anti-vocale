@@ -1317,4 +1317,8 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">Geçmiş veritabanı hasarlıydı ve sıfırlandı. Hasarlı dosyalar korunamadı.</string>
     <string name="bundle_restore_download_active">Bu modelin indirilmesi hâlâ sürüyor. Bitmesini bekleyin veya iptal edin, sonra paketi yeniden içe aktarın.</string>
+
+    <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
+    <string name="whats_new_title">Yenilikler</string>
+    <string name="whats_new_summary">Bu sürümdeki yenilikler</string>
 </resources>

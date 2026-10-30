@@ -1185,4 +1185,8 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">La base de données de l\'historique était endommagée et a été réinitialisée. Les fichiers endommagés n\'ont pas pu être conservés.</string>
     <string name="bundle_restore_download_active">Un téléchargement de ce modèle est en cours. Attendez qu\'il se termine ou annulez-le, puis réimportez le paquet.</string>
+
+    <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
+    <string name="whats_new_title">Nouveautés</string>
+    <string name="whats_new_summary">Nouveautés de cette version</string>
 </resources>

@@ -139,6 +139,8 @@ class PreferencesManagerImpl(
         private val DEMOTED_BACKENDS = stringSetPreferencesKey("demoted_backends")
         // TASK-685: the Models-filter favorite; key absence = untouched.
         private val MODEL_FILTER_LANGUAGE = stringPreferencesKey("model_filter_language")
+        // TASK-929: the What's-New popup's once-per-update marker.
+        private val WHATS_NEW_LAST_SHOWN_VERSION = intPreferencesKey("whats_new_last_shown_version")
     }
 
     private val cache = AtomicReference(CachedPreferences())
@@ -206,7 +208,8 @@ class PreferencesManagerImpl(
         val compactResultActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         val languageChipEnabled: Boolean = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         val externalModelsJson: String? = null,
-        val scheduledFoldersJson: String? = null
+        val scheduledFoldersJson: String? = null,
+        val whatsNewLastShownVersion: Int = PreferencesManager.DEFAULT_WHATS_NEW_LAST_SHOWN_VERSION
     )
 
     private fun Preferences.toCached() = CachedPreferences(
@@ -281,7 +284,9 @@ class PreferencesManagerImpl(
         compactResultActions = this[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         languageChipEnabled = this[LANGUAGE_CHIP_ENABLED] ?: PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         externalModelsJson = this[EXTERNAL_MODELS_JSON],
-        scheduledFoldersJson = this[SCHEDULED_FOLDERS_JSON]
+        scheduledFoldersJson = this[SCHEDULED_FOLDERS_JSON],
+        whatsNewLastShownVersion =
+            this[WHATS_NEW_LAST_SHOWN_VERSION] ?: PreferencesManager.DEFAULT_WHATS_NEW_LAST_SHOWN_VERSION
     )
 
     fun initialize() {
@@ -338,6 +343,17 @@ class PreferencesManagerImpl(
             preferences[SUBTITLE_CHOICE_TIMEOUT] = minutes
         }
         cache.updateAndGet { it.copy(subtitleChoiceTimeout = minutes) }
+    }
+
+    override val whatsNewLastShownVersion: Flow<Int> = dataStore.data.map {
+        it[WHATS_NEW_LAST_SHOWN_VERSION] ?: PreferencesManager.DEFAULT_WHATS_NEW_LAST_SHOWN_VERSION
+    }.onStart { emit(cache.get().whatsNewLastShownVersion) }
+
+    override suspend fun saveWhatsNewLastShownVersion(versionCode: Int) {
+        dataStore.edit { preferences ->
+            preferences[WHATS_NEW_LAST_SHOWN_VERSION] = versionCode
+        }
+        cache.updateAndGet { it.copy(whatsNewLastShownVersion = versionCode) }
     }
 
     override suspend fun getLegacyLanguagePreference(): String {

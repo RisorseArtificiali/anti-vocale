@@ -1,0 +1,107 @@
+- generic [ref=f2e2]:
+  - generic [ref=f2e3]:
+    - navigation [ref=f2e4]:
+      - generic [ref=f2e5]: Galène
+      - generic [ref=f2e8]:
+        - generic [ref=f2e85] [cursor=pointer]: speaker
+        - generic [ref=f2e86] [cursor=pointer]: admin
+    - generic [ref=f2e9]:
+      - banner [ref=f2e10]:
+        - navigation [ref=f2e11]:
+          - generic [ref=f2e12]:
+            - generic "Collapse left panel" [ref=f2e13] [cursor=pointer]:
+              - generic [aria-hidden] [ref=f2e14]: 
+            - heading "Test/e2e" [level=1] [ref=f2e15]
+          - list [ref=f2e16]:
+            - listitem [ref=f2e87]:
+              - button "Enable" [disabled] [ref=f2e88]:
+                - generic [aria-hidden] [ref=f2e89]: 
+                - text: Enable
+            - listitem: 
+            - listitem [ref=f2e17]:
+              - generic [ref=f2e18] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f2e20]: 
+                - generic [ref=f2e21]: Mute
+            - listitem [ref=f2e90]:
+              - generic [ref=f2e91] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f2e93]: 
+                - generic [ref=f2e94]: Share Screen
+            - listitem [ref=f2e22]:
+              - generic [aria-hidden] [ref=f2e25] [cursor=pointer]: 
+      - generic [ref=f2e26]:
+        - generic [ref=f2e29]:
+          - generic "Hide chat" [ref=f2e30] [cursor=pointer]: ✕
+          - generic [ref=f2e34]:
+            - textbox "Type /help for help" [ref=f2e95]
+            - button "➤" [ref=f2e36] [cursor=pointer]
+        - generic [ref=f2e38]:   
+  - generic:
+    - generic:
+      - heading "Settings" [level=2] [ref=f2e39]
+      - generic [aria-hidden] [ref=f2e41] [cursor=pointer]: 
+    - generic [ref=f2e42]:
+      - generic [ref=f2e97]:
+        - generic [aria-hidden] [ref=f2e100]: 
+        - generic [ref=f2e101]:
+          - generic [ref=f2e102]: speaker
+          - generic [ref=f2e103]: presenter
+        - generic [ref=f2e105] [cursor=pointer]:
+          - generic [ref=f2e106]: 
+          - text: Logout
+      - group "Media Options" [ref=f2e108]:
+        - generic [ref=f2e110]: "Camera:"
+        - combobox "Camera:" [ref=f2e111]:
+          - option "off" [selected]
+          - option "Camera 1"
+        - generic [ref=f2e112]: "Microphone:"
+        - combobox "Microphone:" [ref=f2e113]:
+          - option "off"
+          - option "Microphone 1" [selected]
+        - generic [ref=f2e114]:
+          - checkbox "Mirror view" [checked] [ref=f2e115]
+          - text: Mirror view
+        - generic [ref=f2e116]:
+          - checkbox "Blackboard mode" [ref=f2e117]
+          - text: Blackboard mode
+        - generic [ref=f2e118]:
+          - checkbox "Noise suppression" [checked] [ref=f2e119]
+          - text: Noise suppression
+        - generic [ref=f2e120]:
+          - checkbox "High-quality audio" [ref=f2e121]
+          - text: High-quality audio
+      - group "Other Settings" [ref=f2e43]:
+        - generic [ref=f2e45]:
+          - generic [ref=f2e46]: "Filter:"
+          - combobox "Filter:" [ref=f2e47]:
+            - option "none" [selected]
+            - option "Horizontal mirror"
+            - option "Vertical mirror"
+            - option "Rotate"
+        - generic [ref=f2e48]:
+          - generic [ref=f2e49]: "Send:"
+          - combobox "Send:" [ref=f2e50]:
+            - option "lowest"
+            - option "low"
+            - option "normal" [selected]
+            - option "unlimited"
+        - generic [ref=f2e51]:
+          - generic [ref=f2e52]: "Simulcast:"
+          - combobox "Simulcast:" [ref=f2e53]:
+            - option "off"
+            - option "auto" [selected]
+            - option "on"
+        - generic [ref=f2e54]:
+          - generic [ref=f2e55]: "Receive:"
+          - combobox "Receive:" [ref=f2e56]:
+            - option "nothing"
+            - option "audio only"
+            - option "screenshare only"
+            - option "low quality"
+            - option "everything" [selected]
+        - generic [ref=f2e57]:
+          - checkbox "Activity detection" [ref=f2e58]
+          - text: Activity detection
+        - generic [ref=f2e59]:
+          - checkbox "Display audio-only users" [ref=f2e60]
+          - text: Display audio-only users
+  - text:     ✕

@@ -1185,4 +1185,8 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">La base de datos del historial estaba dañada y se ha restablecido. No se han podido conservar los archivos dañados.</string>
     <string name="bundle_restore_download_active">Una descarga de este modelo sigue en curso. Espera a que termine o cancélala y vuelve a importar el paquete.</string>
+
+    <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
+    <string name="whats_new_title">Novedades</string>
+    <string name="whats_new_summary">Novedades de esta versión</string>
 </resources>

@@ -1322,4 +1322,8 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">پایگاه دادهٔ تاریخچه آسیب دید و بازنشانی شد. نگه‌داری فایل‌های آسیب‌دیده ممکن نشد.</string>
     <string name="bundle_restore_download_active">دانلود این مدل هنوز در جریان است. تا پایان آن صبر کنید یا لغو کنید و سپس بسته را دوباره وارد کنید.</string>
+
+    <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
+    <string name="whats_new_title">تازه‌ها</string>
+    <string name="whats_new_summary">تازه‌های این نسخه</string>
 </resources>

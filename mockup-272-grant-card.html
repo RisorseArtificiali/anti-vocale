@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Settings: cartella note vocali</title>
+<style>
+  :root {
+    --bg: #141218; --surface: #211f26; --surface2 = #2b2930;
+    --on-surface: #e6e1e9; --on-surface-dim: #cac4d0;
+    --primary: #d0bcff; --on-primary: #381e72;
+    --error: #f2b8b5; --outline: #49454f;
+  }
+  body { background: var(--bg); color: var(--on-surface);
+         font-family: Roboto, "Segoe UI", sans-serif; margin: 0; padding: 28px;
+         display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
+  .phone { width: 400px; background: var(--bg); border: 1px solid #33303a;
+           border-radius: 24px; padding: 18px 14px; }
+  .caption { font-size: 12px; color: #9f97a8; margin: 0 0 10px 6px; }
+  .card { background: var(--surface); border-radius: 18px; padding: 18px 16px;
+          margin-bottom: 14px; }
+  .row1 { display: flex; align-items: flex-start; gap: 12px; }
+  .icon { width: 40px; height: 40px; border-radius: 50%; background: #353043;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 20px; flex: none; }
+  .titles { flex: 1; min-width: 0; }
+  h3 { margin: 0 0 2px; font-size: 15.5px; font-weight: 600; }
+  h3 .state { font-weight: 500; }
+  .ok { color: #9fdcaa; } .missing { color: var(--error); }
+  .desc { font-size: 12.5px; color: var(--on-surface-dim); line-height: 1.45;
+          margin: 6px 0 12px; }
+  .crumb { background: #2a2731; border-radius: 10px; padding: 8px 10px;
+           font-size: 11.5px; color: var(--on-surface-dim); line-height: 1.6;
+           font-family: "SF Mono", Menlo, monospace; word-break: break-all; }
+  .crumb b { color: var(--on-surface); font-weight: 600; }
+  .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .btn { border-radius: 22px; padding: 9px 18px; font-size: 13.5px; font-weight: 600;
+         border: none; }
+  .filled { background: var(--primary); color: var(--on-primary); }
+  .tonal { background: #4a4458; color: var(--primary); }
+  .text { background: none; color: var(--error); padding: 9px 8px; }
+  .toggle-row { display:flex; align-items:center; justify-content: space-between;
+                background: var(--surface); border-radius: 18px; padding: 14px 16px;
+                margin-bottom: 14px; }
+  .switch { width: 44px; height: 24px; border-radius: 12px; background: var(--primary);
+            position: relative; }
+  .switch::after { content:""; position:absolute; top:3px; right:3px; width:18px; height:18px;
+                   border-radius:50%; background: var(--on-primary); }
+  .switch.off { background: var(--outline); }
+  .switch.off::after { right: auto; left: 3px; background: #e6e1e9; }
+  /* dialog */
+  .sheet { position: relative; width: 400px; background: var(--surface);
+           border: 1px solid #33303a; border-radius: 24px; padding: 22px 18px 14px; }
+  .steps { margin: 14px 0; }
+  .step { display: flex; gap: 12px; margin-bottom: 14px; }
+  .num { width: 26px; height: 26px; border-radius: 50%; background: var(--primary);
+         color: var(--on-primary); font-size: 13px; font-weight: 700;
+         display:flex; align-items:center; justify-content:center; flex:none; }
+  .step p { margin: 2px 0 0; font-size: 13px; color: var(--on-surface-dim); line-height: 1.5; }
+  .step p b { color: var(--on-surface); }
+  .dui { background: #2a2731; border-radius: 12px; padding: 10px 12px;
+         font-size: 12px; color: var(--on-surface); display: flex;
+         align-items: center; gap: 8px; margin-top: 6px; }
+  .dui .chev { color: #9f97a8; }
+</style>
+</head>
+<body>
+
+<div>
+  <p class="caption">Stato 1: senza grant (toggle già attivo)</p>
+  <div class="phone">
+    <div class="toggle-row">
+      <div class="titles"><h3>Avvisi note vocali</h3>
+        <div class="desc" style="margin:2px 0 0">Trascrivi le note vocali WhatsApp appena arrivano.</div>
+      </div>
+      <div class="switch"></div>
+    </div>
+    <div class="card">
+      <div class="row1">
+        <div class="icon">📂</div>
+        <div class="titles">
+          <h3>Cartella note vocali <span class="state missing">· da concedere</span></h3>
+        </div>
+      </div>
+      <div class="desc">Per leggere le note, concedi una volta l'accesso alla
+        cartella in cui WhatsApp le salva:</div>
+      <div class="crumb">Memoria interna › <b>Android › media › com.whatsapp › WhatsApp › Media › WhatsApp Voice Notes</b></div>
+      <div class="actions">
+        <button class="btn filled">Scegli la cartella</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <p class="caption">Stato 2: grant attivo (browsing sempre disponibile)</p>
+  <div class="phone">
+    <div class="toggle-row">
+      <div class="titles"><h3>Avvisi note vocali</h3>
+        <div class="desc" style="margin:2px 0 0">Trascrivi le note vocali WhatsApp appena arrivano.</div>
+      </div>
+      <div class="switch"></div>
+    </div>
+    <div class="card">
+      <div class="row1">
+        <div class="icon">📂</div>
+        <div class="titles">
+          <h3>Cartella note vocali <span class="state ok">· concessa</span></h3>
+        </div>
+      </div>
+      <div class="crumb">Memoria interna › Android › media › com.whatsapp › WhatsApp › Media › <b>WhatsApp Voice Notes</b></div>
+      <div class="actions">
+        <button class="btn tonal">Cambia cartella</button>
+        <button class="btn text">Rimuovi accesso</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <p class="caption">Guida al tocco di "Scegli la cartella" (bottom sheet)</p>
+  <div class="sheet">
+    <h3 style="font-size:17px">Concedi l'accesso alla cartella</h3>
+    <div class="steps">
+      <div class="step"><div class="num">1</div>
+        <p>Nel selettore che si apre, entra in <b>Memoria interna</b>
+        (menu a sinistra, "Mostra memoria di archiviazione" se non la vedi).</p></div>
+      <div class="step"><div class="num">2</div>
+        <p>Scendi lungo il percorso fino alla cartella delle note vocali:</p>
+        <div class="dui">Android <span class="chev">›</span> media <span class="chev">›</span> com.whatsapp <span class="chev">›</span> WhatsApp <span class="chev">›</span> Media <span class="chev">›</span> <b>WhatsApp Voice Notes</b></div>
+      </div>
+      <div class="step"><div class="num">3</div>
+        <p>Con la cartella <b>WhatsApp Voice Notes</b> selezionata (non entrarci), tocca
+        <b>USA QUESTA CARTELLA</b> e poi <b>CONSENTI</b>.</p></div>
+    </div>
+    <div class="actions" style="justify-content:flex-end">
+      <button class="btn tonal">Annulla</button>
+      <button class="btn filled">Apri il selettore</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

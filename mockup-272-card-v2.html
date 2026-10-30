@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card cartella vocali WhatsApp: varianti di layout</title>
+<style>
+  :root {
+    --surface: #121316;
+    --card: #1e1f24;
+    --surface-variant: #2a2b31;
+    --primary: #a8c8ff;
+    --on-primary: #00315f;
+    --on-surface: #e3e2e8;
+    --on-surface-variant: #c4c6cf;
+    --error: #ffb4ab;
+    --outline: #47474f;
+  }
+  body {
+    margin: 0; padding: 24px;
+    background: #0d0e11; color: var(--on-surface);
+    font-family: Roboto, "Segoe UI", system-ui, sans-serif;
+    display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start;
+  }
+  h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; color: var(--primary); }
+  p.note { font-size: 12px; color: var(--on-surface-variant); margin: 0 0 12px; max-width: 360px; }
+  .phone {
+    width: 360px; background: var(--surface); border-radius: 24px;
+    padding: 16px; border: 1px solid var(--outline);
+  }
+  .card {
+    background: var(--card); border-radius: 14px; padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+  .a-header { display: flex; align-items: center; gap: 10px; }
+  .a-icon {
+    width: 38px; height: 38px; border-radius: 10px; flex: none;
+    background: color-mix(in srgb, var(--primary) 18%, transparent);
+    display: flex; align-items: center; justify-content: center; font-size: 19px;
+  }
+  .a-titles { flex: 1; min-width: 0; }
+  .a-title { font-size: 14.5px; font-weight: 600; }
+  .a-state { font-size: 11.5px; color: var(--primary); margin-top: 2px; }
+  .a-path {
+    margin-top: 12px; background: var(--surface-variant); border-radius: 10px;
+    padding: 10px 12px; font-family: ui-monospace, Menlo, monospace;
+    font-size: 11.5px; line-height: 1.7; color: var(--on-surface-variant);
+    word-break: break-all;
+  }
+  .a-path b { color: var(--on-surface); }
+  .a-desc { margin-top: 10px; font-size: 12.5px; color: var(--on-surface-variant); line-height: 1.55; }
+  .a-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  .b-crumbs { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+  .b-chip {
+    background: var(--surface-variant); border-radius: 7px; padding: 4px 8px;
+    font-family: ui-monospace, Menlo, monospace; font-size: 11px;
+    color: var(--on-surface-variant);
+  }
+  .b-chip.bold { color: var(--on-surface); font-weight: 600; }
+  .b-sep { align-self: center; color: var(--outline); font-size: 11px; }
+  .c-row { display: flex; align-items: center; gap: 10px; }
+  .c-spacer { flex: 1; }
+  .btn {
+    border-radius: 20px; padding: 8px 14px; font-size: 12.5px; font-weight: 500;
+    display: inline-block; border: none;
+  }
+  .btn-tonal { background: color-mix(in srgb, var(--primary) 24%, transparent); color: var(--primary); }
+  .btn-filled { background: var(--primary); color: var(--on-primary); }
+  .btn-text { background: none; color: var(--error); padding: 8px 10px; }
+</style>
+</head>
+<body>
+
+<div>
+  <h2>Variant A: righe a piena larghezza</h2>
+  <p class="note">Icona e titolo a sinistra, stato a destra sulla stessa riga; descrizione, percorso e bottoni ognuno su tutta la larghezza della card. Niente colonne.</p>
+  <div class="phone"><div class="card">
+    <div class="a-header">
+      <div class="a-icon">📁</div>
+      <div class="a-titles">
+        <div class="a-title">Cartella nota vocale</div>
+        <div class="a-state">Permesso concesso</div>
+      </div>
+    </div>
+    <div class="a-path">Memoria interna › Android › media › com.whatsapp › WhatsApp › Media › <b>WhatsApp Voice Notes</b></div>
+    <div class="a-actions">
+      <span class="btn btn-text">Rimuovi accesso</span>
+      <span class="btn btn-tonal">Cambia cartella</span>
+    </div>
+  </div></div>
+</div>
+
+<div>
+  <h2>Variant B: percorso a chip</h2>
+  <p class="note">Come la A, ma il percorso diventa una fila di chip monospace che riempiono la larghezza e vanno a capo da soli: la gerarchia si legge a colpo d'occhio.</p>
+  <div class="phone"><div class="card">
+    <div class="a-header">
+      <div class="a-icon">📁</div>
+      <div class="a-titles">
+        <div class="a-title">Cartella nota vocale</div>
+        <div class="a-state">Permesso concesso</div>
+      </div>
+    </div>
+    <div class="b-crumbs">
+      <span class="b-chip">Memoria interna</span><span class="b-sep">›</span>
+      <span class="b-chip">Android</span><span class="b-sep">›</span>
+      <span class="b-chip">media</span><span class="b-sep">›</span>
+      <span class="b-chip">com.whatsapp</span><span class="b-sep">›</span>
+      <span class="b-chip">WhatsApp</span><span class="b-sep">›</span>
+      <span class="b-chip">Media</span><span class="b-sep">›</span>
+      <span class="b-chip bold">WhatsApp Voice Notes</span>
+    </div>
+    <div class="a-actions">
+      <span class="btn btn-text">Rimuovi accesso</span>
+      <span class="btn btn-tonal">Cambia cartella</span>
+    </div>
+  </div></div>
+</div>
+
+<div>
+  <h2>Variant C: compatta, azioni in testa</h2>
+  <p class="note">La più corta: titolo e stato sulla prima riga, i bottoni in alto a destra sulla stessa riga, il percorso sotto a piena larghezza. Meno verticale di tutte.</p>
+  <div class="phone"><div class="card">
+    <div class="c-row">
+      <div class="a-icon">📁</div>
+      <div class="a-titles">
+        <div class="a-title">Cartella nota vocale</div>
+        <div class="a-state">Permesso concesso</div>
+      </div>
+      <div class="c-spacer"></div>
+      <span class="btn btn-text">Rimuovi</span>
+      <span class="btn btn-tonal">Cambia</span>
+    </div>
+    <div class="a-path">Memoria interna › Android › media › com.whatsapp › WhatsApp › Media › <b>WhatsApp Voice Notes</b></div>
+  </div></div>
+</div>
+
+<div>
+  <h2>Stato cartella mancante (Variant A)</h2>
+  <p class="note">Per confronto: lo stato di errore usa la stessa struttura, il bottone primario è unico.</p>
+  <div class="phone"><div class="card">
+    <div class="a-header">
+      <div class="a-icon">📁</div>
+      <div class="a-titles">
+        <div class="a-title">Cartella nota vocale</div>
+        <div class="a-state" style="color: var(--error)">Permesso mancante</div>
+      </div>
+    </div>
+    <div class="a-desc">Concedi l'accesso alla cartella dei vocali di WhatsApp: le nuove note verranno trascritte automaticamente appena arrivano.</div>
+    <div class="a-path">Memoria interna › Android › media › com.whatsapp › WhatsApp › Media › <b>WhatsApp Voice Notes</b></div>
+    <div class="a-actions">
+      <span class="btn btn-filled">Scegli cartella</span>
+    </div>
+  </div></div>
+</div>
+
+</body>
+</html>

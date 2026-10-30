@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TASK-796 2b-A: rimozione icone decorative (mockup prima/dopo)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+<style>
+  :root {
+    --surface: #1C1B1F;
+    --surface-variant: #49454F;
+    --surface-2: #2A2831;
+    --on-surface: #E6E1E5;
+    --on-surface-variant: #CAC4D0;
+    --primary: #D0BCFF;
+    --secondary-container: #4A4458;
+    --on-secondary-container: #E8DEF8;
+    --outline: #938F99;
+    --error: #F2B8B5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #141218;
+    color: var(--on-surface);
+    font-family: Roboto, sans-serif;
+    padding: 32px 24px 64px;
+  }
+  .ms { font-family: 'Material Symbols Outlined'; font-size: 24px; line-height: 1; font-variation-settings: 'FILL' 0; user-select: none; }
+  .ms-20 { font-size: 20px; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 6px; }
+  .intro { color: var(--on-surface-variant); font-size: 14px; max-width: 880px; line-height: 1.5; margin-bottom: 8px; }
+  .intro b { color: var(--on-surface); }
+  .legend { display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px; color: var(--on-surface-variant); margin: 14px 0 34px; }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .chip { display: inline-block; width: 14px; height: 14px; border-radius: 4px; }
+  .chip.red { background: #5c1f24; border: 1px solid var(--error); }
+  .chip.green { background: #1e4620; border: 1px solid #7ddf74; }
+  section.block { margin-bottom: 44px; }
+  .caption { margin-bottom: 12px; max-width: 880px; }
+  .caption h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .caption p { font-size: 13px; color: var(--on-surface-variant); line-height: 1.5; }
+  .caption code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 12px; color: #cfc6d8; }
+  .duo { display: flex; gap: 20px; flex-wrap: wrap; }
+  .panel { width: 380px; border-radius: 28px; background: var(--surface); padding: 18px 14px; border: 1px solid #2c2a33; position: relative; }
+  .panel-label { position: absolute; top: -10px; left: 14px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 2px 10px; border-radius: 999px; }
+  .panel-label.before { background: #5c1f24; color: #ffd9de; border: 1px solid var(--error); }
+  .panel-label.after { background: #1e4620; color: #d3f8cf; border: 1px solid #7ddf74; }
+  .panel-label.after::after { content: ""; }
+  /* card primitives, mirroring the app's Compose layout */
+  .card { background: var(--surface-variant); border-radius: 12px; padding: 14px 16px; margin-top: 14px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .col { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+  .title { font-size: 16px; font-weight: 700; color: var(--on-surface); }
+  .subtitle { font-size: 12px; color: var(--on-surface-variant); line-height: 1.35; }
+  .headline { font-size: 16px; font-weight: 700; }
+  .ms.tint { color: var(--on-surface-variant); }
+  .ms.primary { color: var(--primary); }
+  .ms.dead { color: var(--error); position: relative; }
+  .ms.dead::after { content: ""; position: absolute; inset: -3px; border: 2px dashed var(--error); border-radius: 8px; }
+  .btn-outlined {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    border: 1px solid var(--outline); color: var(--primary); background: transparent;
+    border-radius: 999px; padding: 9px 16px; font-size: 14px; font-weight: 500;
+    width: 100%; margin-top: 8px; font-family: Roboto;
+  }
+  .variant-card { background: #36314100; }
+  .vcard { background: var(--surface-2); border-radius: 12px; padding: 12px; margin-top: 8px; }
+  .vcard .row { gap: 8px; }
+  .pill { font-size: 11px; font-weight: 700; color: var(--primary); background: rgba(208,188,255,.14); padding: 2px 10px; border-radius: 999px; letter-spacing: .02em; }
+  .state-note { font-size: 11px; color: var(--primary); }
+  .note {
+    margin-top: 14px; font-size: 12.5px; color: var(--on-surface-variant);
+    background: var(--surface-2); border-left: 3px solid var(--primary);
+    padding: 10px 14px; border-radius: 0 8px 8px 0; max-width: 880px; line-height: 1.5;
+  }
+  .note b { color: var(--on-surface); }
+  .keepstrip { margin-top: 40px; }
+  .keepstrip h2 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+  .keeps { display: flex; flex-wrap: wrap; gap: 10px; max-width: 900px; }
+  .keep { display: inline-flex; align-items: center; gap: 8px; background: var(--surface-2); border: 1px solid #7ddf7455; border-radius: 999px; padding: 8px 14px; font-size: 12.5px; color: var(--on-surface-variant); }
+</style>
+</head>
+<body>
+
+<h1>Models: rimozione delle icone decorative</h1>
+<p class="intro">
+  TASK-796 round 2b-A. La tua direzione: le icone sui modelli non portano significato, si tolgono del tutto anziché sostituirle. Restano solo le icone funzionali (bottoni, chevron, stato). Sei superfici, ognuna in <b>prima/dopo</b>. Le icone da rimuovere sono evidenziate in rosso nel pannello PRIMA.
+</p>
+<div class="legend">
+  <span class="key"><span class="chip red"></span> icona rimossa</span>
+  <span class="key"><span class="chip green"></span> pannello DOPO (come apparirà)</span>
+</div>
+
+<!-- 1. Gemma entry -->
+<section class="block">
+  <div class="caption">
+    <h2>1. Voce d'ingresso Gemma (sezione Avanzate)</h2>
+    <p>L'icona Memory (un chip) davanti al titolo. Non comunica nulla che il titolo non dica già. La chevron a destra resta: è ciò che dice che la voce apre una pagina.</p>
+  </div>
+  <div class="duo">
+    <div class="panel"><span class="panel-label before">Prima</span>
+      <div class="card" style="margin-top:18px">
+        <div class="row">
+          <span class="ms dead">memory</span>
+          <div class="col">
+            <div class="title">Modelli Gemma AI</div>
+            <div class="subtitle">Modelli di assistenza completi: trascrizione vocale + riassunti di testo, rifinitura in due passate, chat offline</div>
+          </div>
+          <span class="ms tint">chevron_right</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel"><span class="panel-label after">Dopo</span>
+      <div class="card" style="margin-top:18px">
+        <div class="row">
+          <div class="col">
+            <div class="title">Modelli Gemma AI</div>
+            <div class="subtitle">Modelli di assistenza completi: trascrizione vocale + riassunti di testo, rifinitura in due passate, chat offline</div>
+          </div>
+          <span class="ms tint">chevron_right</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. LiteRT card -->
+<section class="block">
+  <div class="caption">
+    <h2>2. Scheda «Aggiungi un modello Gemma» (dentro la sotto-pagina Gemma)</h2>
+    <p>Stessa icona Memory nella riga di titolo della scheda. Nel dopo il titolo è solo testo. Le icone dentro i due bottoni restano: etichettano azioni, non decorano.</p>
+  </div>
+  <div class="duo">
+    <div class="panel"><span class="panel-label before">Prima</span>
+      <div class="card" style="margin-top:18px">
+        <div class="row">
+          <span class="ms dead">memory</span>
+          <span class="title">Aggiungi un modello Gemma (LiteRT)</span>
+        </div>
+        <p class="subtitle" style="margin-top:6px">Aggiungi manualmente un file modello Gemma (.litertlm) che hai già, da questo dispositivo o tramite un URL Hugging Face. Per la maggior parte degli utenti bastano i download qui sopra.</p>
+        <button class="btn-outlined"><span class="ms ms-20">folder_open</span>Scegli un file .litertlm</button>
+        <button class="btn-outlined"><span class="ms ms-20">cloud_download</span>Importa da URL Hugging Face</button>
+      </div>
+    </div>
+    <div class="panel"><span class="panel-label after">Dopo</span>
+      <div class="card" style="margin-top:18px">
+        <span class="title">Aggiungi un modello Gemma (LiteRT)</span>
+        <p class="subtitle" style="margin-top:6px">Aggiungi manualmente un file modello Gemma (.litertlm) che hai già, da questo dispositivo o tramite un URL Hugging Face. Per la maggior parte degli utenti bastano i download qui sopra.</p>
+        <button class="btn-outlined"><span class="ms ms-20">folder_open</span>Scegli un file .litertlm</button>
+        <button class="btn-outlined"><span class="ms ms-20">cloud_download</span>Importa da URL Hugging Face</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Curated header -->
+<section class="block">
+  <div class="caption">
+    <h2>3. Intestazione della sezione consigliata «Per la tua lingua»</h2>
+    <p>La stella davanti al titolo. È il «Star header decision» rimasto aperto dalla review. Il titolo è già un'intestazione per semantica e peso; la stella non aggiunge.</p>
+  </div>
+  <div class="duo">
+    <div class="panel"><span class="panel-label before">Prima</span>
+      <div class="row" style="margin-top:22px; padding: 0 4px">
+        <span class="ms ms-20 dead">star</span>
+        <span class="headline">Per la tua lingua</span>
+      </div>
+      <p class="subtitle" style="padding: 0 4px">Consigliato per l'italiano: veloce e accurato</p>
+    </div>
+    <div class="panel"><span class="panel-label after">Dopo</span>
+      <div style="margin-top:22px; padding: 0 4px">
+        <span class="headline">Per la tua lingua</span>
+      </div>
+      <p class="subtitle" style="padding: 0 4px">Consigliato per l'italiano: veloce e accurato</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Catalog cards -->
+<section class="block">
+  <div class="caption">
+    <h2>4. Schede dei modelli a catalogo (es. Whisper scaricato, Parakeet non scaricato)</h2>
+    <p>Lo slot d'icona davanti al titolo contiene o la famiglia (Translate/GraphicEq) o lo stato (scaffale = scaricato, freccia = download in corso). Nel dopo lo slot sparisce. Lo stato non si perde: ogni riga variante sotto ha il suo stato, e il modello attivo porta la pill «Attivo».</p>
+  </div>
+  <div class="duo">
+    <div class="panel"><span class="panel-label before">Prima</span>
+      <div class="card" style="margin-top:18px">
+        <div class="row">
+          <span class="ms dead" style="color:var(--primary)">auto_stories</span>
+          <div class="col">
+            <div class="title">Whisper</div>
+            <div class="subtitle">Riconoscimento vocale multilingue</div>
+          </div>
+          <span class="ms ms-20 tint">info</span>
+        </div>
+        <div class="vcard">
+          <div class="row">
+            <div class="col"><div class="title" style="font-size:15px">Whisper Small</div><div class="subtitle">~500 MB</div></div>
+            <span class="ms ms-20 primary">check_circle</span><span class="pill">Attivo</span>
+          </div>
+        </div>
+        <div class="vcard">
+          <div class="row">
+            <div class="col"><div class="title" style="font-size:15px">Whisper Turbo</div><div class="subtitle">~1,6 GB</div></div>
+            <span class="ms ms-20 tint">download</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <span class="ms dead">translate</span>
+          <div class="col">
+            <div class="title">Parakeet TDT</div>
+            <div class="subtitle">25 lingue • Veloce • Consigliato</div>
+          </div>
+        </div>
+        <div class="vcard">
+          <div class="row">
+            <div class="col"><div class="title" style="font-size:15px">Parakeet TDT (int8)</div><div class="subtitle">~700 MB</div></div>
+            <span class="ms ms-20 tint">download</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel"><span class="panel-label after">Dopo</span>
+      <div class="card" style="margin-top:18px">
+        <div class="row">
+          <div class="col">
+            <div class="title">Whisper</div>
+            <div class="subtitle">Riconoscimento vocale multilingue</div>
+          </div>
+          <span class="ms ms-20 tint">info</span>
+        </div>
+        <div class="vcard">
+          <div class="row">
+            <div class="col"><div class="title" style="font-size:15px">Whisper Small</div><div class="subtitle">~500 MB</div></div>
+            <span class="ms ms-20 primary">check_circle</span><span class="pill">Attivo</span>
+          </div>
+        </div>
+        <div class="vcard">
+          <div class="row">
+            <div class="col"><div class="title" style="font-size:15px">Whisper Turbo</div><div class="subtitle">~1,6 GB</div></div>
+            <span class="ms ms-20 tint">download</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <div class="col">
+            <div class="title">Parakeet TDT</div>
+            <div class="subtitle">25 lingue • Veloce • Consigliato</div>
+          </div>
+        </div>
+        <div class="vcard">
+          <div class="row">
+            <div class="col"><div class="title" style="font-size:15px">Parakeet TDT (int8)</div><div class="subtitle">~700 MB</div></div>
+            <span class="ms ms-20 tint">download</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note"><b>Punto di decisione:</b> nello slot attuale lo stato «scaricato» (scaffale) e «download in corso» (freccia) vivono insieme alla famiglia. La proposta li toglie perché lo stato è già visibile riga per riga (spunta, pill Attivo, spinner) e la famiglia è nel titolo. Se vuoi tenere una traccia «già scaricato» a livello di scheda, l'alternativa è una piccola pill di testo accanto al titolo, senza icone: dimmi quale preferisci.</div>
+</section>
+
+<!-- 5. External record card -->
+<section class="block">
+  <div class="caption">
+    <h2>5. Scheda di un modello esterno importato</h2>
+    <p>L'icona Memory davanti al nome del record. Il punto attivo (radio) a destra resta: è il segno di selezione. Anche il bottone Usa resta.</p>
+  </div>
+  <div class="duo">
+    <div class="panel"><span class="panel-label before">Prima</span>
+      <div class="card" style="margin-top:18px; background: var(--surface-2)">
+        <div class="row">
+          <span class="ms dead primary">memory</span>
+          <div class="col">
+            <div class="title">Whisper v3 Turbo (ebraico)</div>
+            <div class="subtitle">1,5 GB, Whisper, ebraico</div>
+          </div>
+          <span class="ms primary" style="font-size:20px">radio_button_checked</span>
+        </div>
+        <div class="row" style="justify-content: flex-end; margin-top: 10px">
+          <span class="pill">Attivo</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel"><span class="panel-label after">Dopo</span>
+      <div class="card" style="margin-top:18px; background: var(--surface-2)">
+        <div class="row">
+          <div class="col">
+            <div class="title">Whisper v3 Turbo (ebraico)</div>
+            <div class="subtitle">1,5 GB, Whisper, ebraico</div>
+          </div>
+          <span class="ms primary" style="font-size:20px">radio_button_checked</span>
+        </div>
+        <div class="row" style="justify-content: flex-end; margin-top: 10px">
+          <span class="pill">Attivo</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. LAN offload card -->
+<section class="block">
+  <div class="caption">
+    <h2>6. Scheda offload remoto (LAN, se configurata)</h2>
+    <p>L'icona Lan. Lo stato attivo è già detto dalla pill «Attivo»; l'endpoint è la riga che identifica il servizio.</p>
+  </div>
+  <div class="duo">
+    <div class="panel"><span class="panel-label before">Prima</span>
+      <div class="card" style="margin-top:18px">
+        <div class="row">
+          <span class="ms dead">lan</span>
+          <div class="col">
+            <div class="title">Offload remoto</div>
+            <div class="subtitle">192.168.30.20:8080</div>
+          </div>
+          <span class="state-note" style="font-weight:700">Attivo</span>
+        </div>
+        <p class="subtitle" style="margin-top:6px">Invia l'audio al tuo box OmniVoice sulla rete locale invece di trascrivere sul telefono.</p>
+      </div>
+    </div>
+    <div class="panel"><span class="panel-label after">Dopo</span>
+      <div class="card" style="margin-top:18px">
+        <div class="row">
+          <div class="col">
+            <div class="title">Offload remoto</div>
+            <div class="subtitle">192.168.30.20:8080</div>
+          </div>
+          <span class="state-note" style="font-weight:700">Attivo</span>
+        </div>
+        <p class="subtitle" style="margin-top:6px">Invia l'audio al tuo box OmniVoice sulla rete locale invece di trascrivere sul telefono.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="keepstrip">
+  <h2>Cosa resta (icore funzionali, nessuna modifica)</h2>
+  <div class="keeps">
+    <span class="keep"><span class="ms ms-20">chevron_right</span> chevron di apertura pagina/voce</span>
+    <span class="keep"><span class="ms ms-20">radio_button_checked</span> punto attivo (selezione)</span>
+    <span class="keep"><span class="ms ms-20">check_circle</span> spunta di stato sulle righe variante</span>
+    <span class="keep"><span class="ms ms-20">download</span> bottone/indicatore di download</span>
+    <span class="keep"><span class="ms ms-20">info</span> bottone info modello</span>
+    <span class="keep"><span class="ms ms-20">expand_more</span> frecce espandi/comprimi</span>
+    <span class="keep"><span class="ms ms-20">folder_open</span> icone dentro i bottoni d'import (etichettano l'azione)</span>
+    <span class="keep"><span class="ms ms-20">warning</span> avvisi ed errori nei banner</span>
+  </div>
+</div>
+
+</body>
+</html>

@@ -399,6 +399,24 @@ class SettingsViewModel @Inject constructor(
         )
 
     /**
+     * TASK-929: the What's-New startup probe reads the DataStore-backed
+     * flows directly, because the StateFlow INITIALS answer a cold start
+     * before the first emission lands and would flip it to the wrong arm
+     * (the tour's fail-closed true; this pref's never-shown 0).
+     */
+    suspend fun readWhatsNewLastShownVersion(): Int =
+        preferencesManager.whatsNewLastShownVersion.first()
+
+    suspend fun readOnboardingCompleted(): Boolean =
+        preferencesManager.onboardingCompleted.first()
+
+    fun saveWhatsNewLastShownVersion(versionCode: Int) {
+        viewModelScope.launch {
+            preferencesManager.saveWhatsNewLastShownVersion(versionCode)
+        }
+    }
+
+    /**
      * TASK-491's tour-completion moment, now also the TASK-685 (GH #112)
      * first-run favorite seed. The interface language becomes the initial
      * Models-filter favorite when the filter offers it, and only when that

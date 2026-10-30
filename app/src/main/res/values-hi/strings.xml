@@ -1316,4 +1316,8 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">इतिहास डेटाबेस क्षतिग्रस्त हो गया था और रीसेट कर दिया गया है। क्षतिग्रस्त फ़ाइलों को सुरक्षित रखा नहीं जा सका।</string>
     <string name="bundle_restore_download_active">इस मॉडल का डाउनलोड अभी चल रहा है। इसके पूरा होने का इंतज़ार करें या रद्द करें, फिर बंडल फिर से आयात करें।</string>
+
+    <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
+    <string name="whats_new_title">नया क्या है</string>
+    <string name="whats_new_summary">इस वर्शन में नया क्या है</string>
 </resources>

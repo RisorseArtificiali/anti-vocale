@@ -12,6 +12,15 @@ interface PreferencesManager {
     /** TASK-515: minutes the subtitles-or-transcribe choice waits before the
      *  timed WorkManager fallback transcribes automatically. */
     val subtitleChoiceTimeoutMinutes: Flow<Int>
+
+    /**
+     * TASK-929: the last versionCode the What's-New popup was shown (or
+     * acknowledged) for; 0 = never shown. The startup probe compares it to
+     * the running versionCode, and a fresh install records the running
+     * version, so only an UPDATE ever pops.
+     */
+    val whatsNewLastShownVersion: Flow<Int>
+    suspend fun saveWhatsNewLastShownVersion(versionCode: Int)
     val themePreference: Flow<String>
     /** TASK-576: app text-size step (TextScale name); SYSTEM = no extra scaling. */
     val textScalePreference: Flow<String>
@@ -425,6 +434,9 @@ interface PreferencesManager {
         /** TASK-515: the stored default; the dropdown's offered set is
          *  presentation data and lives on SettingsViewModel. */
         const val DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES = 5
+
+        /** TASK-929: 0 = the What's-New popup has never fired. */
+        const val DEFAULT_WHATS_NEW_LAST_SHOWN_VERSION = 0
         // TASK-102 (device-measured 2026-09-30, RMX3853, parakeet
         // smoothquant, 90s clip - ONE backend, ONE phone): 4 threads was
         // fastest (164 ms/s audio) vs 6 (170, the old cores-2 default on

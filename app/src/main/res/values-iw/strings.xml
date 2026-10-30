@@ -1329,4 +1329,8 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">מסד הנתונים של ההיסטוריה נפגם ואופס. לא ניתן היה לשמר את הקבצים הפגומים.</string>
     <string name="bundle_restore_download_active">הורדת הדגם הזה עדיין בעיצומה. המתן שתסתיים או בטל אותה ולאחר מכן ייבא את החבילה שוב.</string>
+
+    <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
+    <string name="whats_new_title">מה חדש</string>
+    <string name="whats_new_summary">מה חדש בגרסה זו</string>
 </resources>

@@ -97,6 +97,50 @@ BACKENDS = {
         # whisper below; the app caps parakeet chunks at 60s.
         "chunk_seconds": 60,
     },
+    # cabin-asr-eu-parakeet-tdt-offline-r1 (2026-10-29 scout): fr/de/es/it
+    # fine-tune of v3 distilled from R13x-labelled YouTube speech, shipped as
+    # a sherpa-native int8 package whose pre_encode+depthwise convs stay fp32
+    # (the exclusion recipe). Same decode shape as parakeet: the A/B differs
+    # by weights+recipe only.
+    "cabin_eu": {
+        "kind": "transducer",
+        "dir": MODELS_ROOT / "cabin-asr-eu-r1" / "package",
+        "encoder": "encoder.int8.onnx",
+        "decoder": "decoder.int8.onnx",
+        "joiner": "joiner.int8.onnx",
+        "tokens": "tokens.txt",
+        "model_type": "nemo_transducer",
+        "tail_pad_seconds": 1.0,
+        "chunk_seconds": 60,
+    },
+    # Stock v3 fp32 re-export with the cabin 29-node exclusion list
+    # (TASK-922 E2: isolates the int8 recipe from the fine-tune; same
+    # weights as the shipped package).
+    "parakeet_xpd": {
+        "kind": "transducer",
+        "dir": MODELS_ROOT / "parakeet-v3-int8-xpd",
+        "encoder": "encoder.int8.onnx",
+        "decoder": "decoder.int8.onnx",
+        "joiner": "joiner.int8.onnx",
+        "tokens": "tokens.txt",
+        "model_type": "nemo_transducer",
+        "tail_pad_seconds": 1.0,
+        "chunk_seconds": 60,
+    },
+    # Stock v3 fp32 reference (TASK-922 E2b: the quantization ceiling; also
+    # separates recipe effects from true model behavior on real clips).
+    # encoder.onnx resolves encoder.weights (external data) from the same dir.
+    "parakeet_fp32": {
+        "kind": "transducer",
+        "dir": MODELS_ROOT / "parakeet-v3-fp32-src",
+        "encoder": "encoder.onnx",
+        "decoder": "decoder.onnx",
+        "joiner": "joiner.onnx",
+        "tokens": "tokens.txt",
+        "model_type": "nemo_transducer",
+        "tail_pad_seconds": 1.0,
+        "chunk_seconds": 60,
+    },
     # Parakeet Ultra (moondream post-train of v3; TASK-823 A/B candidate,
     # Alexqwqw int8 conversion). Same sherpa layout, model_type, tokenizer
     # and decode shape as the v3 int8 above, so the A/B differs by weights

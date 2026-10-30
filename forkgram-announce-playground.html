@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Testo annuncio Forkgram, playground</title>
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --panel2: #1c2330; --border: #2a3242;
+    --text: #d7dde7; --muted: #8b95a7; --accent: #5b9dff; --good: #4cc38a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    display: grid; grid-template-columns: 400px 1fr; height: 100vh;
+  }
+  aside {
+    border-right: 1px solid var(--border); background: var(--panel);
+    padding: 20px; overflow-y: auto;
+  }
+  main { display: flex; flex-direction: column; overflow: hidden; }
+  .preview { flex: 1; overflow-y: auto; padding: 28px 36px; }
+  .output { border-top: 1px solid var(--border); background: var(--panel); padding: 14px 20px; }
+  h1 { font-size: 15px; margin: 0 0 4px; }
+  .sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+       color: var(--muted); margin: 18px 0 8px; }
+  .row { display: flex; align-items: flex-start; gap: 10px; margin: 8px 0;
+         padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+         background: var(--panel2); }
+  .row label { font-size: 13px; line-height: 1.35; cursor: pointer; flex: 1; }
+  .row .hint { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .presets button, .copybtn {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer;
+  }
+  .presets button:hover, .copybtn:hover { border-color: var(--accent); }
+  .copybtn { background: var(--accent); color: #0b1220; border: none; font-weight: 600; }
+  .target { display: flex; gap: 6px; margin-bottom: 6px; }
+  .target button { flex: 1; }
+  .target button.sel { border-color: var(--accent); color: var(--accent); }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 22px 26px; max-width: 760px; margin: 0 auto;
+    font-size: 15px; line-height: 1.65; outline: none;
+  }
+  .card:focus { border-color: var(--accent); }
+  .card.manual { border-color: var(--good); }
+  .card .title-line { font-weight: 700; font-size: 16px; margin-bottom: 12px; }
+  .card code { background: var(--panel2); border-radius: 4px; padding: 1px 5px; font-size: 13px; }
+  .links { max-width: 760px; margin: 18px auto 0; }
+  .chip {
+    display: block; margin: 6px 0; padding: 7px 12px; border-radius: 8px;
+    background: var(--panel2); border: 1px solid var(--border);
+    font-size: 12px; color: var(--muted); text-decoration: none;
+  }
+  .chip b { color: var(--text); }
+  .chip:hover { border-color: var(--accent); }
+  .out-text {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px;
+    color: var(--muted); white-space: pre-wrap; max-height: 130px; overflow-y: auto;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px; margin: 10px 0;
+  }
+  .bar { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+  .meta { font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<aside>
+  <h1>Annuncio provider Forkgram</h1>
+  <div class="sub">Il testo finale si compone qui; l'anteprima e il prompt sotto sono live.</div>
+
+  <h2>Destinazione</h2>
+  <div class="target" id="target">
+    <button data-t="main">forkgram/<wbr>TelegramAndroid</button>
+    <button data-t="classic">forkgram-classic</button>
+    <button data-t="both" class="sel">entrambi</button>
+  </div>
+
+  <h2>Preset</h2>
+  <div class="presets" id="presets">
+    <button data-p="minimal">Minimale</button>
+    <button data-p="standard" class="sel">Standard</button>
+    <button data-p="full">Contesto pieno</button>
+    <button data-p="grbit">Focus GRbit (#494)</button>
+  </div>
+
+  <h2>Frasi opzionali</h2>
+  <div id="toggles"></div>
+</aside>
+<main>
+  <div class="preview">
+    <div class="bar" style="max-width:760px;margin:0 auto 10px">
+      <span class="meta" id="modebadge">generato dai controlli (clicca il testo per modificarlo a mano)</span>
+      <button class="copybtn" id="regen" style="display:none">Rigenera dai controlli</button>
+    </div>
+    <div class="card" contenteditable="true" spellcheck="true" id="card">
+      <div class="title-line" id="ptitle"></div>
+      <div id="pbody"></div>
+    </div>
+    <h2 style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);max-width:760px;margin:18px auto 6px">Note e commenti (non entrano nel testo copiato)</h2>
+    <textarea id="notes" placeholder="Commenti, dubbi, varianti da valutare..." style="
+      display:block; width:100%; max-width:760px; margin:0 auto; min-height:90px;
+      background:var(--panel); color:var(--text); border:1px solid var(--border);
+      border-radius:10px; padding:14px 18px; font:inherit; font-size:14px; line-height:1.5;
+      resize:vertical"></textarea>
+    <div class="links" id="links"></div>
+  </div>
+  <div class="output">
+    <div class="bar">
+      <span class="meta" id="meta"></span>
+      <span>
+        <button class="copybtn" id="copy">Copia testo</button>
+        <button class="copybtn" id="copynotes" style="background:var(--panel2);color:var(--text);border:1px solid var(--border)">Copia note</button>
+      </span>
+    </div>
+    <div class="out-text" id="out"></div>
+  </div>
+</main>
+<script>
+const LINKS = [
+  ["Forkgram issue #512", "Subtitle in video via scrib. L'autore di Scrib (23rd) partecipa di persona nel repo Forkgram.", "https://github.com/forkgram/TelegramAndroid/issues/512"],
+  ["Forkgram PR #494", "Self-hosted whisper. Il thread dove 23rd spiega il contratto vendor-neutral e respinge il remoto hardcodato.", "https://github.com/forkgram/TelegramAndroid/pull/494"],
+  ["Il nostro #144", "La richiesta di integrazione (Growebis), con la verifica end-to-end pubblicata.", "https://github.com/RisorseArtificiali/anti-vocale/issues/144"],
+  ["Il nostro #145", "Tracking del provider, chiuso con milestone v1.14.0.", "https://github.com/RisorseArtificiali/anti-vocale/issues/145"],
+  ["Contratto Open Transcribe", "CONTRACT.md su 23rd/Scrib, la specifica che implementiamo.", "https://github.com/23rd/Scrib/blob/master/CONTRACT.md"],
+  ["Release v1.14.1", "Primo build pubblico con il provider attivo.", "https://github.com/RisorseArtificiali/anti-vocale/releases/tag/v1.14.1"],
+];
+
+const SENTENCES = {
+  intro:      { label: "Apertura: provider on-device per il contratto", hint: "Chi siamo e cosa esponiamo. Sempre inclusa.", fixed: true },
+  picker:     { label: "Nessuna modifica al client: picker accanto a Scrib", hint: "La filosofia del contratto, come da PR #494.", fixed: true },
+  togglePath: { label: "Dove si attiva (Settings, Automation, Open Transcribe API)", hint: "Rende l'annuncio subito verificabile.", fixed: true },
+  credit:     { label: "Credito esplicito al contratto di Scrib/23rd", hint: "Il gesto che nel thread #494 e' stato apprezzato.", d: true },
+  verified:   { label: "Verificato su hardware reale con Forkgram", hint: "Credibilita': il collauro e' stato fatto.", d: true },
+  offload:    { label: "Remote offload opzionale (off di default, server tuo)", hint: "Risponde al bisogno di velocita' self-hosted di GRbit senza tradire il posizionamento on-device.", d: false },
+  offloadRef: { label: "...con rimando esplicito alla discussione #494", hint: "Solo se la frase offload e' attiva.", requires: "offload", d: false },
+  diff:       { label: "Frase differenza vs Scrib (framing complementare)", hint: "Sconsigliata nell'annuncio (territorio alleato); tenuta pronta come risposta se nel thread chiedono il confronto.", d: false },
+  stores:     { label: "Disponibilita' F-Droid e Google Play", hint: "Dove procurarselo.", d: true },
+  qa:         { label: "Chiusura: disponibili a domande di integrazione", hint: "Tono collaborativo, come 23rd nei thread.", d: true },
+};
+
+const state = { target: "both", s: {} };
+const DEFAULTS = {};
+for (const k in SENTENCES) { DEFAULTS[k] = !!SENTENCES[k].d; state.s[k] = DEFAULTS[k]; }
+
+const PRESETS = {
+  minimal:  { diff: false, verified: true, credit: false, offload: false, offloadRef: false, stores: true, qa: false },
+  standard: { verified: true, credit: true,  offload: false, offloadRef: false, stores: true, qa: true },
+  full:     { verified: true, credit: true,  offload: true,  offloadRef: false, stores: true, qa: true },
+  grbit:    { verified: true, credit: true,  offload: true,  offloadRef: true,  stores: true, qa: true },
+};
+
+function buildTitle() {
+  return "An on-device transcription provider is now available (Open Transcribe contract)";
+}
+
+function buildBody() {
+  const on = k => SENTENCES[k].fixed || (state.s[k] && (!SENTENCES[k].requires || state.s[SENTENCES[k].requires]));
+  const p = [];
+  if (on("intro")) p.push("An on-device transcription provider for the Open Transcribe contract is now available: <b>Anti-Vocale</b>, a FOSS app (Apache 2.0) that transcribes locally with on-device ASR models (Whisper, Parakeet, community fine-tunes).");
+  if (on("credit")) p.push("It speaks the same vendor-neutral AIDL interface Scrib defined, so credit where due: this works because of that contract.");
+  if (on("picker")) p.push("Since it exposes <code>org.opentranscribe.api.ITranscriptionService</code>, it appears in Forkgram's provider picker next to Scrib with no client change" + (on("togglePath") ? ": enable the toggle under Settings, Automation, Open Transcribe API" : "") + ".");
+  if (on("verified")) p.push("Verified working with Forkgram on real hardware; the audio never leaves the device.");
+  if (on("offload")) {
+    let s = "For longer jobs there is also an optional Remote offload (experimental, off by default) that delegates to a server you configure yourself";
+    if (on("offloadRef")) s += ", which covers the self-hosted speed case discussed in #494";
+    p.push(s + ".");
+  }
+  if (on("diff")) p.push("We sit next to Scrib rather than over it: Scrib is the lean engine that defined this contract, Anti-Vocale adds a curated model catalog and the post-processing layer (two-pass refinement, speaker labels, subtitle exports, summaries) on top of the same on-device idea.");
+  if (on("stores")) p.push("Available on F-Droid and Google Play: https://github.com/RisorseArtificiali/anti-vocale");
+  if (on("qa")) p.push("Happy to answer any integration question here.");
+  return p.join(" ");
+}
+
+function plain(html) {
+  const d = document.createElement("div"); d.innerHTML = html;
+  return d.textContent;
+}
+
+const state2 = { manual: null };
+
+function currentText() {
+  return state2.manual !== null ? state2.manual :
+    buildTitle() + "\n\n" + plain(buildBody());
+}
+
+function updateAll() {
+  if (state2.manual === null) {
+    document.getElementById("ptitle").textContent = buildTitle();
+    document.getElementById("pbody").innerHTML = buildBody();
+  }
+  const full = currentText() + "\n\n" + LINKS.map(l => "- " + l[0] + ": " + l[2]).join("\n");
+  document.getElementById("out").textContent = full;
+  document.getElementById("modebadge").textContent = state2.manual !== null
+    ? "testo modificato a mano (i controlli non lo toccano finché non rigeneri)"
+    : "generato dai controlli (clicca il testo per modificarlo a mano)";
+  document.getElementById("regen").style.display = state2.manual !== null ? "" : "none";
+  document.getElementById("card").classList.toggle("manual", state2.manual !== null);
+  const n = body.split(". ").filter(x => x.trim()).length;
+  document.getElementById("meta").textContent =
+    (state.target === "both" ? "post su forkgram/TelegramAndroid + forkgram-classic" : "post su " + state.target) +
+    " | " + n + " frasi | " + body.length + " caratteri corpo";
+  document.querySelectorAll("#target button").forEach(b =>
+    b.classList.toggle("sel", b.dataset.t === state.target));
+  document.querySelectorAll("#toggles input").forEach(i => {
+    const s = SENTENCES[i.dataset.k];
+    i.disabled = s.fixed || (s.requires && !state.s[s.requires]);
+    i.checked = !!state.s[i.dataset.k];
+  });
+}
+
+const tg = document.getElementById("toggles");
+for (const k in SENTENCES) {
+  const row = document.createElement("div"); row.className = "row";
+  const s = SENTENCES[k];
+  row.innerHTML = `<input type="checkbox" data-k="${k}" ${s.fixed ? "checked disabled" : ""}>
+    <label>${s.label}<span class="hint">${s.hint}</span></label>`;
+  row.querySelector("input").addEventListener("change", e => {
+    state.s[k] = e.target.checked; updateAll();
+  });
+  tg.appendChild(row);
+}
+
+document.querySelectorAll("#target button").forEach(b =>
+  b.addEventListener("click", () => { state.target = b.dataset.t; updateAll(); }));
+document.querySelectorAll("#presets button").forEach(b =>
+  b.addEventListener("click", () => {
+    for (const k in SENTENCES) if (!SENTENCES[k].fixed) state.s[k] = PRESETS[b.dataset.p][k] ?? DEFAULTS[k];
+    updateAll();
+  }));
+
+document.getElementById("links").innerHTML =
+  "<h2 style='font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)'>Conversazioni di riferimento</h2>" +
+  LINKS.map(l => `<a class="chip" href="${l[2]}" target="_blank"><b>${l[0]}</b> ${l[1]}</a>`).join("");
+
+const card = document.getElementById("card");
+card.addEventListener("input", () => {
+  state2.manual = card.innerText.replace(/\n{3,}/g, "\n\n").trim();
+  updateAll();
+});
+document.getElementById("regen").addEventListener("click", () => {
+  state2.manual = null; updateAll();
+});
+document.getElementById("copy").addEventListener("click", async () => {
+  await navigator.clipboard.writeText(document.getElementById("out").textContent);
+  const b = document.getElementById("copy"); b.textContent = "Copiato!";
+  setTimeout(() => b.textContent = "Copia testo", 1200);
+});
+document.getElementById("copynotes").addEventListener("click", async () => {
+  await navigator.clipboard.writeText(document.getElementById("notes").value);
+  const b = document.getElementById("copynotes"); b.textContent = "Copiate!";
+  setTimeout(() => b.textContent = "Copia note", 1200);
+});
+
+updateAll();
+</script>
+</body>
+</html>

@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.ReleaseNotes
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.RemoteOmnivoiceBackend
@@ -100,6 +101,7 @@ import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.screens.PromptSettingsScreen
 import com.antivocale.app.ui.components.SettingsHubCard
 import com.antivocale.app.ui.components.SubPageScrollScaffold
+import com.antivocale.app.ui.components.WhatsNewDialog
 import com.antivocale.app.ui.screens.SpeakerSettingsScreen
 import com.antivocale.app.ui.screens.PerformanceSettingsScreen
 import com.antivocale.app.ui.screens.AutomationSettingsScreen
@@ -178,6 +180,10 @@ fun SettingsTab(
     var showAutomationSettings by rememberSaveable("showAutomationSettings") { mutableStateOf(false) }
     var showVoiceNoteSettings by rememberSaveable("showVoiceNoteSettings") { mutableStateOf(false) }
     var showBackupTransfer by rememberSaveable("showBackupTransfer") { mutableStateOf(false) }
+    // TASK-929: the What's-New notes hold a List<String>, which is not
+    // saveable; the dialog is transient view state and drops on rotation
+    // like every other content dialog.
+    var showWhatsNewNotes by remember { mutableStateOf<List<String>?>(null) }
 
     // The ONE sub-page clear (TASK-632): system back and every nav-effect
     // branch share it, so a future sub-page flag cannot be cleared in one
@@ -2040,6 +2046,28 @@ fun SettingsTab(
             onReplayTour = { viewModel.replayOnboardingTour() }
         )
 
+        // TASK-929: the What's-New hub card, the auto-popup's persistent
+        // About entry. The notes are the store listing's bullets for the
+        // running version, resolved with the same locale rule the feedback
+        // body uses (in-app language first, blank = system locale).
+        if (feedbackVisible) {
+            SearchFilterRow(searchQuery, SettingsSearchId.WHATS_NEW, searchState) {
+                SettingsHubCard(
+                    titleRes = R.string.whats_new_title,
+                    summaryRes = R.string.whats_new_summary,
+                ) {
+                    showWhatsNewNotes = ReleaseNotes.sectionFor(
+                        currentLanguage.ifBlank { java.util.Locale.getDefault().toLanguageTag() },
+                        BuildConfig.VERSION_NAME,
+                        context.assets,
+                    )
+                }
+            }
+            showWhatsNewNotes?.let { notes ->
+                WhatsNewDialog(notes = notes) { showWhatsNewNotes = null }
+            }
+        }
+
         // Spacer for scroll
         Spacer(modifier = Modifier.height(32.dp))
         }
@@ -3674,7 +3702,7 @@ internal enum class SettingsSearchId {
     SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, VOICE_NOTE_HUB, PER_APP_SETTINGS,
     SHARE_SHORTCUT_ICONS, BACKUP_HUB,
     // Feedback
-    FEEDBACK,
+    FEEDBACK, WHATS_NEW,
 }
 
 /**
@@ -4106,6 +4134,12 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.faq_card_results_title, R.string.faq_card_trouble_title,
             R.string.faq_full_link,
         ),
+    ),
+    // TASK-929: the What's-New hub card, beside the Feedback card it
+    // belongs with. Ungrouped, like its neighbor.
+    SettingsSearchCard(
+        SettingsSearchId.WHATS_NEW, SettingsSearchSection.FEEDBACK,
+        listOf(R.string.whats_new_title, R.string.whats_new_summary),
     ),
 )
 

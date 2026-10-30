@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Anti-Vocale issue replies workshop</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background:#0d1117; color:#c9d1d9; font-size:14px; }
+  header { padding:10px 16px; border-bottom:1px solid #21262d; display:flex; gap:12px; align-items:center; }
+  header h1 { font-size:15px; margin:0; font-weight:600; color:#e6edf3; }
+  header .hint { color:#8b949e; font-size:12px; }
+  .tabs { display:flex; gap:4px; padding:8px 16px 0; flex-wrap:wrap; }
+  .tab { padding:6px 12px; border:1px solid #30363d; border-bottom:none; border-radius:6px 6px 0 0; cursor:pointer; color:#8b949e; background:transparent; font-size:13px; }
+  .tab.active { color:#e6edf3; background:#161b22; border-color:#388bfd; }
+  .wrap { display:grid; grid-template-columns: 380px 1fr; gap:0; height:calc(100vh - 92px); }
+  .left { border-right:1px solid #21262d; overflow-y:auto; padding:14px 16px; }
+  .right { overflow-y:auto; padding:14px 20px; }
+  .card { background:#161b22; border:1px solid #30363d; border-radius:8px; padding:12px; margin-bottom:12px; }
+  .card h3 { margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:#8b949e; }
+  .ctx { font-size:13px; line-height:1.5; }
+  .ctx b { color:#e6edf3; }
+  .ctx .fact { margin:6px 0; padding-left:10px; border-left:2px solid #388bfd; }
+  .ctx .fact.warn { border-color:#d29922; }
+  label.row { display:flex; align-items:center; gap:8px; margin:8px 0; cursor:pointer; }
+  label.row input[type=checkbox] { accent-color:#388bfd; }
+  select, textarea { background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px; padding:6px 8px; font:inherit; width:100%; }
+  textarea.reply { min-height:180px; line-height:1.55; font-size:13.5px; resize:vertical; }
+  textarea:focus { outline:1px solid #388bfd; }
+  .preset { padding:4px 10px; margin:2px; border-radius:12px; border:1px solid #30363d; background:#161b22; color:#8b949e; cursor:pointer; font-size:12px; }
+  .preset:hover { color:#e6edf3; border-color:#388bfd; }
+  .meta { color:#8b949e; font-size:12px; margin:4px 0 10px; }
+  .gh-preview { background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:14px 16px; line-height:1.6; white-space:pre-wrap; }
+  .gh-preview .links a { color:#58a6ff; }
+  .copybar { position:sticky; bottom:0; background:#0d1117; padding:10px 0 4px; display:flex; gap:10px; align-items:center; }
+  button.primary { background:#238636; color:#fff; border:none; border-radius:6px; padding:8px 16px; font-weight:600; cursor:pointer; font-size:13px; }
+  button.primary:hover { background:#2ea043; }
+  .charcount { color:#8b949e; font-size:12px; }
+  .editor-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .editor-head span { font-size:12px; color:#8b949e; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; border:1px solid #30363d; margin-right:6px; }
+  .badge.shipped { color:#3fb950; border-color:#238636; }
+  .badge.pending { color:#d29922; border-color:#d29922; }
+  .badge.decision { color:#bc8cff; border-color:#bc8cff; }
+  .note { font-size:12px; color:#8b949e; line-height:1.5; margin-top:8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Issue replies workshop</h1>
+  <span class="hint">edit on the right, context on the left, copy what you approve. Nothing is posted from here.</span>
+</header>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="wrap">
+  <div class="left" id="left"></div>
+  <div class="right" id="right"></div>
+</div>
+
+<script>
+const ISSUES = {
+  "163": {
+    label: "#163 WhatsApp Business",
+    badges: [["decision","your decision"],["pending","5 PRs awaiting your review + CI approval"]],
+    author: "dpakkia (Davide Pacchiarotti)",
+    context: [
+      ["b","What he asks"],["f","Same automatic voice-note pipeline for WhatsApp Business (com.whatsapp.w4b), configured independently. No second detector, no new permissions."],
+      ["b","What he shipped"],["f","PR #164 (49 files, +1362/-308, closes #163): dual-source pipeline. Device-tested on Galaxy S23 / Android 16 per his report."],
+      ["b","His PR set (4, all action_required)","warn"],["f","#167: 16KB page alignment for libwhistle_jni (7 lines; fact-verified on our built arm64 APK: ours is the only 4KB .so). #166: one notification labels at most one note (consumed-set + tests). #165: automatic voice notes post a result notification naming app + sender; auto-copy stays share-only. #164: the main one."],
+      ["b","Review verdicts (2026-10-21)"],["f","#167 APPROVE (verified on our built APK: ours was the only 4KB .so). #166 APPROVE-WITH-NITS (telemetry-split nit, latent TOCTOU to document; tests proven to pin: they fail on unpatched main with the exact wrong-label outcomes). #165 APPROVE (stale TASK-820/688 comments, one FQN; product obs: burst heads-up priority to trial on the Realme shade). #164 APPROVE-WITH-NITS: F1 should-fix = Business notification-preference defaults (PerAppPreferencesManager.kt:162-168 exact-package switch, w4b falls to default(): no auto-copy, no send-back); F2 hub summary still WhatsApp-specific; F3 English placeholders in hi/nl/zh; F4-F6 nits; 149 tests green with the patch, compiles clean."],
+      ["b","Action left to the maintainer"],["f","Approve the action_required workflow runs on the four PRs; post the review comments; merge order after fixes: 167, 166, 165, then 164."],
+      ["b","Risk to avoid"],["f","Any wording that reads as endorsement or a merge promise before the review; do not reference #67 (wake lock) as his, it is Dum4G's."]
+    ],
+    controls: { tone: "warm", ciPromise: true, links: true, length: "short" },
+    draft: `Review done across the four PRs. #167 (the 16 KB page alignment) is approved as-is; #166 and #165 are approved with minor nits. #164 is strong work and approved with one should-fix before merge: PerAppPreferencesManager.getDefaultPreferences still switches on exact package equality, so a Business note's notification loses auto-copy and the one-tap send-back that WhatsApp notes get; the fix is a two-line mapping plus a pin test, and I will leave the smaller items as inline review comments on each PR. I am approving the workflow runs now so CI can execute. Thank you for the separation of concerns across the set and the disclosure note; no merge timing promises, the fixes land first.`
+  },
+  "161": {
+    label: "#161 non-Gemma litertlm",
+    badges: [["decision","your decision"],["pending","probe device-gated (730/529), artifacts downloaded + hash-verified"]],
+    author: "srappan",
+    context: [
+      ["b","What he asks"],["f","Allow importing non-Gemma .litertlm models. His one-line example: litert-community/Qwen3-ASR-1.7B."],
+      ["b","Real state (2026-10-21)"],["f","The LLM lane ships Gemma only (LlmTranscriptionBackend). Non-Gemma .litertlm ASR exists on litert-community: Qwen3-ASR-1.7B and VibeVoice-ASR (Streaming 1.5B fp32+int8, BitNet). Both candidate artifacts are downloaded and sha256-verified locally; load-compat under our pinned LiteRT-LM 0.17.1 is UNVERIFIED (probe tasks 730/529, device-gated)."],
+      ["b","Workaround today"],["f","Qwen3-ASR has official sherpa exports already in our catalog (the 0.6B entry); any sherpa-format model imports via Model tab > Advanced > ONNX Sherpa."],
+      ["b","Risk to avoid"],["f","Promising import support or a date before the runtime question is answered."]
+    ],
+    controls: { tone: "warm", ciPromise: false, links: true, length: "short" },
+    draft: `Good timing: the non-Gemma .litertlm lane is exactly what I am evaluating, with Qwen3-ASR-1.7B and VibeVoice as the two candidates in hand. The first question is runtime compatibility, whether each bundle actually loads and transcribes under the shipped LiteRT-LM, so no import support or date is promised yet. Meanwhile the sherpa lane covers this model today: Qwen3-ASR is already in the app's catalog, and sherpa-format exports import via Model tab > Advanced > ONNX Sherpa.`
+  },
+  "162": {
+    label: "#162 live recording",
+    badges: [["decision","your decision"],["pending","tracked; implementation gated on your go (TASK-676 -> #79 pill)"]],
+    author: "furiop (discloses an AI-assisted suggestion)",
+    context: [
+      ["b","What he asks"],["f","Transcribe while recording, with a small built-in recorder: text as he speaks or with a short delay. Explicitly the recording half of #115, not the keyboard."],
+      ["b","State"],["f","You already committed to tracking this in the #115 thread ('in-app recording with live text is TASK-676', with tap-to-start/tap-to-stop recorded as a requirement). TASK-676 has since evolved into the dictation-pill floating overlay shape (GH #79 lineage); feasibility Done, implementation awaiting your go."],
+      ["b","What exists"],["f","The streaming machinery is real: the Nemotron 3.5 backend renders text as it decodes (progressive display shipped). A recorder plus UI rides an existing path."],
+      ["b","Tone note"],["f","He disclosed the suggestion was Claude-assisted. You value that disclosure (README policy). One appreciative line lands."]
+    ],
+    controls: { tone: "warm", ciPromise: false, links: true, length: "short" },
+    draft: `This half of #115 is exactly what I kept open: in-app recording with live text is tracked (where I said so at the time), with tap to start and tap to stop recorded as a requirement rather than hold-to-talk. The streaming machinery you spotted is real, the Nemotron backend already renders text as it arrives, so the feature is a recorder plus UI on top of a path that exists. Thank you also for the disclosure note; that is the right way to file an AI-shaped suggestion. No ETA yet.`
+  },
+  "160": {
+    label: "#160 TranscribePsy-250M",
+    badges: [["decision","your decision"],["pending","tracked as TASK-855, eval-first probe (To Do)"]],
+    author: "bi4key",
+    context: [
+      ["b","What he asks"],["f","Add qvac/TranscribePsy-250M: 254M params distilled from Parakeet-TDT-0.6B-v3, EU multilingual (25 langs / 8-lang sub variant / a -gguf variant)."],
+      ["b","State"],["f","Tracked as TASK-855 (eval-first intake, filed 2026-10-19 from this report). Decision rule: measured quality on our reference set decides; the community catalog delivers without an app release."],
+      ["b","Facts to know if he asks"],["f","The -gguf variant has no lane in the app (GGUF backend removed 2026-09-23). No published WER on the card for the EU languages we checked (2026-10-20 sweep); the eval-first probe is the answer to that gap."],
+      ["b","Risk to avoid"],["f","Praising the model before the eval; promising dates."]
+    ],
+    controls: { tone: "warm", ciPromise: false, links: true, length: "short" },
+    draft: `Thank you: TranscribePsy-250M is tracked as an eval-first intake probe, filed from this report. The pitch, Parakeet-TDT quality under half the parameters, is exactly what the community catalog is for, but entry is decided by measured quality on our reference set, not by the parameter count; if it clears the bar it ships through the catalog with no app release needed. No dates yet. If a sherpa-onnx export appears in the meantime, it can be imported today via Model tab > Advanced > ONNX Sherpa.`
+  },
+  "159": {
+    label: "#159 nightly side-by-side (CLOSE)",
+    badges: [["shipped","SHIPPED with TASK-838"],["decision","close after this comment"]],
+    author: "antiframe",
+    context: [
+      ["b","What he asked"],["f","Nightly installable side-by-side with a distinguishable label ('Anti-vocale Nightly'), because release/debug/nightly were indistinguishable on the launcher."],
+      ["b","What shipped (TASK-838, 2026-10-15)"],["f",".nightly build type: applicationIdSuffix .nightly, label 'Anti-Vocale Nightly', Firebase client duplicated, locale-label fix (app_name no longer loses to locale overrides). Nightly channel running since mid-October; first race-fixed sequential builds are the next nightly runs."],
+      ["b","Caveats already in your Oct comment"],["f","One-time model re-download for the suffixed package. Icon variant explicitly deferred (label first)."],
+      ["b","Your Oct promise"],["f","'I evaluated this; it is feasible and I plan to implement it' (his issue, your comment). This comment CLOSES the loop: announce shipped, invite a launcher check, close as shipped."],
+      ["b","Risk to avoid"],["f","Implying the icon variant shipped; pointing at an unverified nightly URL (stay channel-generic)."]
+    ],
+    controls: { tone: "direct", ciPromise: false, links: true, length: "short", closing: true },
+    draft: `The promised build landed: nightly builds now carry the "Anti-Vocale Nightly" label and the com.antivocale.app.nightly id, so a nightly installs side by side with the release and debug apps instead of replacing them. It has been running as the real nightly channel since mid-October, and the one-time model re-download I flagged earlier applies to the first install of the suffixed package. Please give it a try and tell me if the labels misbehave on your launcher; the icon variant stays on the later list. I am closing this as shipped.`
+  }
+};
+
+let cur = "163";
+const state = {};
+
+function baseCtl(id){ return JSON.parse(JSON.stringify(ISSUES[id].controls)); }
+function ctl(id){ if(!state[id]) state[id] = baseCtl(id); return state[id]; }
+function text(id){ if(state[id] && state[id].edited != null) return state[id].edited; return ISSUES[id].draft; }
+function setText(id, t){ state[id] = ctl(id); state[id].edited = t; }
+
+function renderTabs(){
+  const t = document.getElementById('tabs'); t.innerHTML='';
+  Object.entries(ISSUES).forEach(([id,iss])=>{
+    const b=document.createElement('button'); b.className='tab'+(id===cur?' active':''); b.textContent=iss.label;
+    b.onclick=()=>{ cur=id; renderAll(); }; t.appendChild(b);
+  });
+}
+
+function renderLeft(){
+  const iss=ISSUES[cur], c=ctl(cur);
+  const L=document.getElementById('left');
+  L.innerHTML='';
+  const meta=document.createElement('div'); meta.className='meta';
+  meta.innerHTML = `Reporter: <b style="color:#c9d1d9">${iss.author}</b> · ` + iss.badges.map(b=>`<span class="badge ${b[0]}">${b[1]}</span>`).join('');
+  L.appendChild(meta);
+
+  const ctxCard=document.createElement('div'); ctxCard.className='card';
+  ctxCard.innerHTML='<h3>context</h3>';
+  const ctx=document.createElement('div'); ctx.className='ctx';
+  iss.context.forEach(([kind,txt])=>{
+    if(kind==='b'){ const b=document.createElement('div'); b.style.marginTop='8px'; b.innerHTML='<b>'+txt+'</b>'; ctx.appendChild(b); }
+    else { const f=document.createElement('div'); f.className='fact'+(kind==='warn'?' warn':''); f.textContent=txt; ctx.appendChild(f); }
+  });
+  ctxCard.appendChild(ctx); L.appendChild(ctxCard);
+
+  const ctlCard=document.createElement('div'); ctlCard.className='card';
+  ctlCard.innerHTML='<h3>dials</h3>';
+  const presets=document.createElement('div');
+  [["House draft","restore"],["Terse","terse"],["Extended","extended"],["Minimal ack","minimal"],["Close-out","close"]].forEach(([lab,p])=>{
+    const b=document.createElement('button'); b.className='preset'; b.textContent=lab;
+    b.onclick=()=>applyPreset(p); presets.appendChild(b);
+  });
+  ctlCard.appendChild(presets);
+
+  const tone=document.createElement('label'); tone.className='row'; tone.innerHTML='Opening tone';
+  const sel=document.createElement('select');
+  [["warm","warm"],["direct","direct"],["neutral","neutral"]].forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; sel.appendChild(o); });
+  sel.value=c.tone; sel.onchange=()=>{ c.tone=sel.value; applyDials(); renderRight(); };
+  tone.appendChild(sel); ctlCard.appendChild(tone);
+
+  [["ciPromise","keep the CI-approval promise (163 only)"],["links","include issue/PR links"],["length","extended: add the technical paragraph"]].forEach(([k,lab])=>{
+    const l=document.createElement('label'); l.className='row';
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!c[k];
+    cb.onchange=()=>{ c[k]=cb.checked; applyDials(); renderRight(); };
+    l.appendChild(cb); l.appendChild(document.createTextNode(lab)); ctlCard.appendChild(l);
+  });
+  if(ISSUES[cur].controls.closing!==undefined){
+    const l=document.createElement('label'); l.className='row';
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!c.closing;
+    cb.onchange=()=>{ c.closing=cb.checked; applyDials(); renderRight(); };
+    l.appendChild(cb); l.appendChild(document.createTextNode('closing line ("I am closing this as shipped")')); ctlCard.appendChild(l);
+  }
+  L.appendChild(ctlCard);
+
+  const note=document.createElement('div'); note.className='note';
+  note.textContent='Edits in the textarea win over the dials: touch the text and the dials stop rewriting it (Reset draft to re-arm them).';
+  const rb=document.createElement('button'); rb.className='preset'; rb.textContent='Reset draft'; rb.style.marginTop='6px';
+  rb.onclick=()=>{ delete state[cur].edited; renderAll(); };
+  note.appendChild(document.createElement('br')); note.appendChild(rb);
+  L.appendChild(note);
+}
+
+const WARM={163:"This is a remarkably well-prepared request: source-level analysis, device-verified details, and a PR set that keeps the incidental fixes out of the main change.",161:"Good timing: the non-Gemma .litertlm lane is exactly what I am evaluating.",162:"This half of #115 is exactly what I kept open, and thank you for the AI-assistance disclosure; that is the right way to file an AI-shaped suggestion.",160:"Thank you: TranscribePsy-250M is tracked as an eval-first intake probe, filed from this report.",159:"The promised build landed, and it does exactly what the October comment sketched."};
+const DIRECT={163:"Solid prep on this one; the PR set is well separated.",161:"The non-Gemma .litertlm lane is under evaluation right now.",162:"Recording with live text is tracked; the tap-to-start/tap-to-stop preference is part of the requirement.",160:"TranscribePsy-250M is tracked as an eval-first intake probe.",159:"The nightly side-by-side build shipped with the October plan."};
+const NEUTRAL={163:"Taking this in review, in the order: #167, #166, #165, then #164.",161:"Evaluating the non-Gemma .litertlm lane: Qwen3-ASR-1.7B and VibeVoice are the candidates in hand.",162:"In-app recording with live text is tracked from the #115 thread.",160:"TranscribePsy-250M is tracked as an eval-first intake probe.",159:"Nightly side-by-side shipped: separate id, distinct label."};
+
+function coreText(){
+  const c=ctl(cur), id=cur;
+  const open = (c.tone==='warm'?WARM[id]:c.tone==='direct'?DIRECT[id]:NEUTRAL[id]);
+  let parts=[open];
+  if(id==='163'){
+    parts.push(c.ciPromise ? "I have not reviewed the code yet, so that is my next step, starting from the small ones (#167, then #166 and #165) before the main implementation in #164; I will also approve the workflow runs so CI can execute on them."
+                           : "I have not reviewed the code yet; the review order will be the small ones first (#167, #166, #165) before the main implementation in #164.");
+    parts.push("No merge timing commitments until the review is done.");
+  }
+  if(id==='161'){
+    parts.push("The first question is runtime compatibility, whether each bundle loads and transcribes under the shipped LiteRT-LM, so no import support or date is promised yet.");
+    parts.push("Meanwhile the sherpa lane covers this model today: Qwen3-ASR is already in the app's catalog, and sherpa-format exports import via Model tab > Advanced > ONNX Sherpa.");
+  }
+  if(id==='162'){
+    parts.push("The streaming machinery you spotted is real, the Nemotron backend already renders text as it arrives, so the feature is a recorder plus UI on top of a path that exists. No ETA yet.");
+  }
+  if(id==='160'){
+    parts.push("Entry is decided by measured quality on our reference set, not by the parameter count; if it clears the bar it ships through the community catalog with no app release needed. No dates yet.");
+    if(c.length==='extended') parts.push("If a sherpa-onnx export appears in the meantime, it can be imported today via Model tab > Advanced > ONNX Sherpa.");
+  }
+  if(id==='159'){
+    parts.push("It has been running as the real nightly channel since mid-October, and the one-time model re-download I flagged earlier applies to the first install of the suffixed package.");
+    parts.push(c.length==='extended' ? "Please give it a try and tell me if the labels misbehave on your launcher; the icon variant stays on the later list. I am closing this as shipped."
+                                     : "Please give it a try on your launcher. I am closing this as shipped.");
+  }
+  return parts.join(' ');
+}
+function closingText(){
+  return cur==='159' && ctl(cur).closing ? " Closing as shipped." : "";
+}
+function applyDials(){
+  const c=ctl(cur); const base=coreText()+closingText();
+  state[cur].edited = (c.tone==='warm'||c.tone==='direct'||c.tone==='neutral') ? base : base;
+  // extended toggle for 160/159 adds its own sentence inside coreText; others: extended = unchanged core
+  if(c.length==='extended' && cur==='163'){ state[cur].edited = coreText(); }
+}
+
+function renderRight(){
+  const iss=ISSUES[cur]; const R=document.getElementById('right');
+  R.innerHTML='';
+  const head=document.createElement('div');
+  head.innerHTML=`<div style="font-size:15px;color:#e6edf3;font-weight:600;margin-bottom:4px">${iss.label}</div>
+    <div class="meta">reply by paoloantinori · paste-ready · nothing is posted from here</div>`;
+  R.appendChild(head);
+
+  const eh=document.createElement('div'); eh.className='editor-head';
+  eh.innerHTML='<span>edit the reply (markdown ok):</span>';
+  const cc=document.createElement('span'); cc.className='charcount'; cc.id='cc'; eh.appendChild(cc);
+  R.appendChild(eh);
+
+  const ta=document.createElement('textarea'); ta.className='reply'; ta.value=text(cur);
+  ta.oninput=()=>{ setText(cur, ta.value); renderPreview(); };
+  ta.id='ta'; R.appendChild(ta);
+
+  const cb=document.createElement('div'); cb.className='card';
+  cb.innerHTML='<h3>gh preview</h3>';
+  const pv=document.createElement('div'); pv.className='gh-preview'; pv.id='pv'; cb.appendChild(pv);
+  R.appendChild(cb);
+
+  const bar=document.createElement('div'); bar.className='copybar';
+  const btn=document.createElement('button'); btn.className='primary'; btn.textContent='Copy reply';
+  btn.onclick=()=>{ navigator.clipboard.writeText(document.getElementById('ta').value); btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy reply',1200); };
+  bar.appendChild(btn);
+  const rst=document.createElement('button'); rst.className='preset'; rst.textContent='Reset to house draft';
+  rst.onclick=()=>{ delete state[cur].edited; renderAll(); };
+  bar.appendChild(rst);
+  R.appendChild(bar);
+
+  renderPreview();
+}
+function renderPreview(){
+  const ta=document.getElementById('ta'); if(!ta) return;
+  let t=ta.value;
+  if(ctl(cur).links) t=t.replace(/\(#(\d+)\)/g,'(#$1)');
+  document.getElementById('pv').textContent=t;
+  document.getElementById('cc').textContent=t.length+' chars, ~'+Math.max(1,Math.round(t.split(/\s+/).length/40)*1)+' min read';
+}
+function applyPreset(p){
+  const c=ctl(cur); delete state[cur].edited;
+  if(p==='restore'){ Object.assign(c, baseCtl(cur)); }
+  if(p==='terse'){ c.tone='direct'; c.length='short'; c.links=true; c.ciPromise=false; }
+  if(p==='extended'){ c.tone='warm'; c.length='extended'; c.links=true; }
+  if(p==='minimal'){ c.tone='neutral'; c.length='short'; c.links=false; c.ciPromise=false; }
+  if(p==='close'){ c.tone='direct'; c.length='short'; c.closing=true; }
+  renderAll();
+}
+function renderAll(){ renderTabs(); renderLeft(); renderRight(); }
+renderAll();
+</script>
+</body>
+</html>

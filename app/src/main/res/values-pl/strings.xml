@@ -1345,4 +1345,8 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">Baza danych historii została uszkodzona i zresetowana. Nie udało się zachować uszkodzonych plików.</string>
     <string name="bundle_restore_download_active">Pobieranie tego modelu jest w toku. Poczekaj na jego koniec lub anuluj je, a następnie zaimportuj pakiet ponownie.</string>
+
+    <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
+    <string name="whats_new_title">Nowości</string>
+    <string name="whats_new_summary">Nowości w tej wersji</string>
 </resources>

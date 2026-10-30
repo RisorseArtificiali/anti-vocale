@@ -456,9 +456,11 @@ class SettingsSearchRegistryTest {
     }
 
     @Test
-    fun `feedback is one entry carrying the whole card`() {
+    fun `feedback keeps the whole-card entry beside the what's-new hub`() {
+        // TASK-929: the section's second card (the What's-New hub) joins
+        // the single whole-card entry in tree order.
         assertEquals(
-            listOf(SettingsSearchId.FEEDBACK),
+            listOf(SettingsSearchId.FEEDBACK, SettingsSearchId.WHATS_NEW),
             visibleIds(SettingsSearchSection.FEEDBACK, state()),
         )
         assertEquals(
@@ -473,6 +475,10 @@ class SettingsSearchRegistryTest {
                 R.string.faq_full_link,
             ),
             res(SettingsSearchId.FEEDBACK, state()),
+        )
+        assertEquals(
+            listOf(R.string.whats_new_title, R.string.whats_new_summary),
+            res(SettingsSearchId.WHATS_NEW, state()),
         )
     }
 }

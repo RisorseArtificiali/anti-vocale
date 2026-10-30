@@ -1337,4 +1337,8 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">The history database was damaged and has been reset. The damaged files could not be preserved.</string>
     <string name="bundle_restore_download_active">A download of this model is still in progress. Wait for it to finish or cancel it, then import the bundle again.</string>
+
+    <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
+    <string name="whats_new_title">What\'s New</string>
+    <string name="whats_new_summary">Release notes for this version</string>
 </resources>

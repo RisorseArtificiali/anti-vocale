@@ -1144,4 +1144,8 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">历史记录数据库已损坏并被重置。损坏的文件无法保留。</string>
     <string name="bundle_restore_download_active">此模型的下载仍在进行中。请等待其完成或取消，然后重新导入该软件包。</string>
+
+    <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
+    <string name="whats_new_title">更新内容</string>
+    <string name="whats_new_summary">此版本的更新内容</string>
 </resources>
