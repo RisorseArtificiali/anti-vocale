@@ -1,0 +1,554 @@
+<en-US>
+What's new in 1.15.0:
+• New: WhatsApp voice notes transcribe themselves as they arrive (opt-in, on-device)
+• New: History search finds words the model mis-heard ("include similar words")
+• New: long pauses become paragraph breaks
+• New: other apps can use Anti-Vocale as their transcriber (Open Transcribe)
+• Improved: damaged models self-heal; missed notes return as one digest
+• Fixed: a corrupted History database recovers instead of crashing
+What's new in 1.14.1:
+• New: watched folders auto-transcribe new audio; remote offload (experimental)
+• New: share as timed text, SRT or VTT; export models as offline bundles
+• New: auto-save verifies the write; the notification names the file
+• Improved: Advanced tab: in-app community catalog, one-flow import; Chinese UI
+• Fixed: subtitle-prompt timeout crash; Qwen3 cutting long inputs
+What's new in 1.14.0:
+• New: folder watch: new audio files in folders you pick are transcribed automatically
+• New: remote offload (experimental, off by default): long jobs can go to your own server
+• New: export downloaded models as offline bundles for another device
+• New: Chinese interface; community catalog past 30 models, filterable by language
+• Improved: compact Advanced section in the Models tab, Gemma on its own page
+What's new in 1.13.2:
+• Fixed: a History search with no matches no longer leaves the view stuck; the search bar stays visible with its clear button
+What's new in 1.13.1:
+• Fixed: low-memory alerts now carry an "Open setting" action that lands on the exact Settings row
+• Changed: models always try to run; the memory guard no longer blocks by default and is opt-in (Settings > Advanced)
+What's new in 1.13.0:
+• New: speaker labels in transcripts (two speakers detected automatically)
+• New: dual-model mode: a fast first pass, then a refined transcript
+• New: text size setting for transcripts
+• New: repetition-loop guard on long runs
+• Improved: Gemma engine updated (0.17.1); audio transcription no longer crashes
+• Improved: History loads long transcripts faster
+• Fixed: the language chip appears only on models that detect language
+What's new in 1.12.1:
+• Fixed: audio shared by call-recorder apps is now recognized
+• New: imported model folders are auto-detected; a chooser appears only when ambiguous
+• New: the subtitle-choice prompt timeout is now a setting (1-10 minutes)
+• Fixed: rejected over-long recordings show their real duration
+• Fixed: faster, safer sharing; rotating during a share no longer duplicates work
+
+What's new in 1.12.0:
+• New: first-launch guided tour (replayable from Settings)
+• New: pick audio or video files from the History tab
+• New: AI summary of long transcripts: copyable, retryable, custom prompt
+• New: app icon picker and Hebrew interface
+• Settings reorganized; punctuation pass added
+• Fixed: Telegram voice-note duration
+• Fixed: Whisper translating instead of transcribing
+• Fixed: clearer low-memory and corrupt-model errors</en-US>
+
+<it-IT>
+Novità della versione 1.15.0:
+• Nuovo: i vocali WhatsApp si trascrivono da soli (opt-in, sul dispositivo)
+• Nuovo: la ricerca trova le parole sentite male dal modello ("parole simili")
+• Nuovo: le pause lunghe diventano a capo di paragrafo
+• Nuovo: altre app possono usare Anti-Vocale come trascrittore (Open Transcribe)
+• Migliorato: modelli danneggiati autoriparati; riepilogo dei vocali persi
+• Corretto: database della Cronologia corrotto recuperato senza blocchi
+Novità della versione 1.14.1:
+• Nuovo: le cartelle osservate trascrivono i nuovi audio; offload remoto (sperimentale)
+• Nuovo: condividi come testo con tempi, SRT o VTT; esporta modelli come bundle offline
+• Nuovo: il salvataggio automatico verifica la scrittura; la notifica indica il file
+• Migliorato: tab Avanzate: catalogo community in app, import in un flusso; interfaccia cinese
+• Corretto: crash allo scadere della richiesta sottotitoli; Qwen3 tagliava i testi lunghi
+Novità della versione 1.14.0:
+• Nuovo: sorveglianza cartella: i nuovi file audio nelle cartelle scelte si trascrivono da soli
+• Nuovo: offload remoto (sperimentale, spento di default): i lavori lunghi possono andare sul tuo server
+• Nuovo: esporta i modelli scaricati come bundle offline per un altro dispositivo
+• Nuovo: interfaccia in cinese; catalogo community oltre 30 modelli, filtrabile per lingua
+• Migliorato: sezione Avanzate compatta nel tab Modelli, Gemma in pagina dedicata
+Novità della versione 1.13.2:
+• Corretto: una ricerca nella Cronologia senza risultati non lascia più la schermata bloccata; la barra di ricerca resta visibile con il pulsante di cancellazione
+Novità della versione 1.13.1:
+• Corretto: gli avvisi di memoria insufficiente hanno ora un'azione "Apri impostazione" che porta alla riga giusta
+• Modifica: i modelli vengono sempre avviati; il controllo memoria non blocca più di default ed è facoltativo (Impostazioni > Avanzate)
+Novità della versione 1.13.0:
+• Nuovo: etichette dei parlanti nei trascritti (rilevati in automatico)
+• Nuovo: modalità doppia: passata veloce, poi testo raffinato
+• Nuovo: dimensione del testo dei trascritti
+• Nuovo: protezione dai loop nelle registrazioni lunghe
+• Migliorato: Gemma aggiornato (0.17.1): niente più crash in trascrizione audio
+• Migliorato: il registro carica prima i testi lunghi
+• Corretto: la bandierina lingua solo sui modelli che la rilevano
+Novità della versione 1.12.1:
+• Corretto: l'audio condiviso dalle app di registrazione chiamate viene riconosciuto
+• I modelli importati da cartella vengono riconosciuti automaticamente; la scelta appare solo se ambiguo
+• Il timeout della richiesta sottotitoli è ora un'impostazione (1-10 minuti)
+• Le registrazioni troppo lunghe rifiutate mostrano la durata reale
+• Condivisione più rapida e sicura; ruotare lo schermo non duplica più la trascrizione
+
+Novità della versione 1.12.0:
+• Tour guidato al primo avvio (riutilizzabile dalle Impostazioni)
+• Scegli file audio o video dalla scheda Registro
+• Riepilogo AI delle trascrizioni lunghe: copiabile, ripetibile, prompt personalizzato
+• Scelta icona app e interfaccia in ebraico
+• Impostazioni riorganizzate; aggiunto il pass di punteggiatura
+• Durata dei vocali Telegram corretta
+• Whisper traduceva invece di trascrivere
+• Messaggi chiari per memoria bassa e modello corrotto
+
+Novità della versione 1.11.3:
+
+• GigaAM v3 (russo): accuratezza nettamente migliore sulle registrazioni più lunghe di un minuto (l'audio ora viene spezzato in passaggi da 30 s, come nell'addestramento del modello)
+
+Novità della versione 1.11.2:
+
+• Addio limite dei 10 minuti: le registrazioni lunghe ora vengono trascritte (fino a 2 ore con i modelli a segmenti; negli altri casi il limite dipende dalla memoria del dispositivo)
+• Gli errori per file troppo lunghi indicano il limite reale invece di un messaggio generico
+• Avviare una trascrizione molto lunga dall'app chiede prima conferma, con una stima dei tempi
+• GigaAM v3: sistemato l'errore nativo oltre i ~3 minuti
+
+Novità della versione 1.11.1:
+
+• Corretto: crash durante la trascrizione di registrazioni lunghe o in alta qualità su telefoni con poca memoria
+• Catalogo community: voci Canary rinominate con i nomi ufficiali NVIDIA Canary Flash
+• Dalla 1.11.0: audio di qualsiasi durata con qualsiasi modello; coda visibile e annullabile; catalogo community e tier Canary per telefoni leggeri; nomi nativi delle lingue; download con verifica di integrità; corretto Qwen3-ASR che non si caricava
+
+Novità della versione 1.11.0:
+
+• Audio di qualsiasi lunghezza con qualsiasi modello: le registrazioni lunghe vengono divise e ricucite automaticamente
+• Coda visibile: elementi immediati e annullabili; ogni voce mostra modello e durata
+• Catalogo community, import con un tocco in molte lingue, più il nuovo tier Canary (en/de/es/fr) per telefoni leggeri
+• Lingue nei nomi nativi; download con verifica di integrità
+• Corretto: Qwen3-ASR non si caricava
+
+Novità della versione 1.10.0:
+
+• Modelli personali: importa modelli di trascrizione custom da cartella o link (Transducer, Whisper, CTC, SenseVoice), verificati e con condivisione dedicata
+• Scheda Modelli ridisegnata, confronto velocità/qualità
+• Accelerazione NNAPI su ogni dispositivo, recupero automatico su CPU
+• Corretto: crash selezionando Gemma (la 1.9.2 su F-Droid non partiva); Parakeet quantizzato che non si caricava
+• Motori unificati: app più leggera, aggiornamenti più rapidi
+
+Novità della versione 1.9.2:
+
+• Release di manutenzione: migliorata la riproducibilità della build per la distribuzione su F-Droid. Nessuna modifica visibile all'utente.
+
+Novità della versione 1.9.1:
+
+• Risolto: il modello Parakeet (quantizzato) crashava silenziosamente; ora i file modello vengono validati prima del caricamento, quindi un download danneggiato viene intercettato invece di far crashare l'app
+• Messaggi di errore più chiari e specifici: vedi il motivo reale (modello danneggiato, errore interno, nessun modello caricato) invece del generico "trascrizione fallita"
+• Ripristino da crash: se avviene un crash, l'app si riapre sulla scheda Modello e guida al re-download del modello interessato
+• Il motore di trascrizione predefinito è ora Parakeet TDT (prima Gemma), in linea con il modello più scaricato
+• Rimossi i permessi di storage inutilizzati (READ_MEDIA_AUDIO, READ_EXTERNAL_STORAGE); tutto l'accesso ai file avviene tramite il selettore di sistema
+• Errore più chiaro quando si condivide un formato audio non supportato
+
+Novità della versione 1.9.0:
+
+• Risolto: il modello Parakeet (quantizzato) crashava silenziosamente; ora i file modello vengono validati prima del caricamento, quindi un download danneggiato viene intercettato invece di far crashare l'app
+• Gestione errori tipizzata: gli errori di trascrizione ora mostrano messaggi specifici (modello danneggiato, errore interno, nessun modello caricato) invece del generico "trascrizione fallita"
+• Prevenzione crash: i file modello non validi vengono rilevati prima del caricamento, prevenendo chiusure anomale silenziose dell'app
+• Ripristino da crash: in caso di crash nativo, l'app guida al re-download del modello al prossimo avvio
+• Il backend predefinito è ora Parakeet TDT (prera Gemma), in linea con il modello più scaricato
+
+Novità della versione 1.8.5:
+
+• Rimossi i permessi di storage inutilizzati (READ_MEDIA_AUDIO, READ_EXTERNAL_STORAGE) - l'app non ne aveva mai bisogno; tutto l'accesso ai file avviene tramite il selettore di sistema. Messaggio di errore più chiaro quando si condivide un formato audio non supportato.
+
+Novità della versione 1.8.4:
+
+• APK divisi per architettura (download più piccoli) e librerie native compresse
+
+Novità della versione 1.8.3:
+
+• Manutenzione: il motore di riconoscimento vocale sherpa-onnx è ora compilato da sorgente per F-Droid e la libreria non viene più distribuita come binario precompilato
+
+Novità della versione 1.8.2:
+
+• Rimossi permessi inutilizzati di tracciamento pubblicitario (AD_ID, ad-services attribution) iniettati da Firebase Analytics — la lista dei permessi dell'app ora corrisponde realmente alla promessa "nessun tracciamento, nessuna pubblicità"
+• Privacy: rimosso interamente Firebase Analytics; la segnalazione dei crash (Crashlytics) non ne risente
+
+Novità della versione 1.8.0:
+
+• Novità: Salva le trascrizioni in una cartella — salvataggio automatico di ogni trascrizione come .txt in una cartella a tua scelta (Drive, Syncthing, Dropbox, qualsiasi cosa). Utile per creare il tuo archivio o pipeline di sincronizzazione
+• Risolto: l'interruttore globale Copia automatica ora funziona per tutte le app, non solo WhatsApp (#13)
+• Risolto: il dialogo "trascrizione interrotta" non appare più al completamento normale (#11)
+• Risolto: Nemotron non tronca più la fine dei messaggi brevi
+• Aggiornato il motore di inferenza (sherpa-onnx 1.13.4) con formattazione più pulita dell'output
+
+Novità della versione 1.7.0:
+
+• Rileva ed estrai i sottotitoli integrati dai file video prima di trascrivere (chiude #9)
+• Accetta file video come input di trascrizione (viene trascritta la traccia audio)
+• Naviga i segmenti completati dalla notifica in corso durante una trascrizione lunga
+• Rinforzato Gemma/LiteRT su audio multi-segmento; corretto un crash di WorkManager solo in release
+• LiteRT-LM 0.12.0 → 0.13.1 (supporto runtime MTP); i modelli .litertlm obsoleti propongono il re-download
+
+Novità della versione 1.6.1:
+
+• Nemotron ora mostra il testo progressivamente durante la decodifica
+• Nemotron ora appare nel selettore "riprova con un altro modello"
+• Corretto il badge "Attivo" che mandava a capo l'ultima lettera nella scheda del modello
+• Le info di Nemotron ora elencano le lingue supportate invece di "sconosciuto"
+
+Novità della versione 1.6.0:
+
+• Nuovo backend streaming Nemotron 3.5 — il testo della trascrizione appare progressivamente in tempo reale
+• Parakeet: qualità migliorata su audio lunghi grazie a SmoothQuant int8, con fallback automatico al modello stock
+• Selezione della lingua per stream per le trascrizioni Nemotron
+• Le cartelle obsolete dei modelli vengono rimosse automaticamente
+• Aggiornate le librerie di inferenza per prestazioni e stabilità
+
+Novità della versione 1.5.4:
+
+• Aggiornato sherpa-onnx a v1.13.2 per inferenza ONNX migliorata
+
+Novità della versione 1.5.3:
+
+• Risolto troncamento silenzioso dell'ultimo segmento in trascrizioni lunghe su dispositivi con poca memoria
+• I chunk falliti vengono ora ritentati con pulizia della memoria prima di arrendersi
+• La notifica avvisa quando la trascrizione è incompleta (alcuni chunk sono falliti)
+
+Novità della versione 1.5.2:
+
+• Migliorato il ricampionamento audio per una maggiore accuratezza della trascrizione
+
+Novità della versione 1.5.1:
+
+• Migliorato il ricampionamento audio per una maggiore accuratezza della trascrizione
+
+Novità della versione 1.5.0:
+
+• Importante aggiornamento del motore di trascrizione con nuove opzioni di backend
+• Migliorata la gestione e il download dei modelli
+• Ottimizzazioni delle prestazioni per inferenza più rapida on-device
+
+Novità della versione 1.4.0:
+
+• Modalità Picture-in-Picture — visualizza il testo della trascrizione in tempo reale in una finestra fluttuante mentre usi altre app
+• Visualizzazione edge-to-edge per Android 15+ (SDK 35) con gestione corretta delle barre di sistema
+• Download concorrente dei modelli con tracciamento del progresso per singolo download
+• Azioni swipe-to-reveal sulle voci del registro (copia, condividi, elimina)
+• Nascondimento automatico dell'intestazione della scheda Registro allo scorrimento
+• Notifica di guida all'installazione del modello quando nessun modello è configurato
+• Risolte trascrizioni troncate con chunking Cut & Merge in stile WhisperX
+• Risolto ripristino da corruzione KeyStore per EncryptedSharedPreferences
+• Risolte trascrizioni annullate bloccate come IN ATTESA
+• Risolto il tocco sulla notifica che non scorreva al messaggio trascritto
+
+Novità della versione 1.3.1:
+
+• Traduzione italiana completa — tradotte 28 stringhe precedentemente mancanti (Statistiche Prestazioni, ETA Trascrizione, Visualizzazione Progressiva, finestre modello)
+• Risolto "Today"/"Yesterday" visualizzati in inglese nella scheda Registro con lingua italiana
+• Risolte stringhe inglesi nella scheda Impostazioni quando si usa l'italiano
+• Risolto servizio notifiche che mostrava messaggi di errore e progresso in inglese con lingua italiana
+• Risolte descrizioni dei contenuti per l'accessibilità non localizzate (supporto screen reader)
+• Risolte trascrizioni annullate bloccate come IN ATTESA invece di essere segnate come ERRORE
+• Risolto il tocco sulla notifica che non scorreva al messaggio trascritto nella scheda Registro
+
+Novità della versione 1.3.0:
+
+• Aggiunto Qwen3-ASR come 4° backend di trascrizione (0.6B int8) per il riconoscimento vocale multilingue
+• Aggiunto supporto per i modelli Gemma 4 E2B ed E4B per la trascrizione multimodale on-device
+• Aggiunta impostazione configurabile per la lingua di trascrizione
+• Aggiunta via rapida per audio brevi che salta il chunking per maggiore reattività
+• Dialogo informativo su dispositivi non supportati invece del crash nativo
+• Gestione centralizzata dei modelli — eliminata duplicazione di downloader, ID backend e logica di validazione
+• Migliorata la visibilità del pulsante di scaricamento del modello (visibile solo quando un modello è caricato)
+• Ripristinato il modello distil-whisper con metadati multilingue corretti
+• Aggiunti molti nuovi test unitari e strumentati per maggiore affidabilità
+
+Novità della versione 1.2.3:
+
+• Risolto il crash della trascrizione con Gemma ("Conversation is closed") che poteva verificarsi quando la sessione LiteRT-LM veniva utilizzata in modo concorrente
+
+Novità della versione 1.2.2:
+
+• Risolto il crash all'avvio causato dal danneggiamento del KeyStore di Android (l'app si ripristina automaticamente — potrebbe essere necessario reinserire il token HuggingFace)
+
+Novità della versione 1.2.1:
+
+• Risolto il crash alla condivisione di audio da versioni Android precedenti (Android 11 e inferiori)
+• Aggiornate le librerie native per il supporto delle dimensioni pagina memoria di 16 KB
+• Aggiornata la toolchain di build (Kotlin 2.2, AGP 8.10, Gradle 8.11.1)
+
+Novità della versione 1.2.0:
+
+• Il download dei modelli Whisper ora utilizza file singoli da HuggingFace anziché archivi tar.bz2, per download più veloci e affidabili
+• Aggiunto Firebase Crashlytics per la segnalazione centralizzata dei crash
+
+Novità della versione 1.1.1:
+
+• Ripristino delle impostazioni di notifica per-app ai valori predefiniti (singola o tutte)
+• Suggerimento iniziale per le impostazioni per-app
+• Risolto spazio verticale inutile nell'intestazione della scheda Registro
+• Risolto sfarfallio dell'interfaccia all'avvio
+
+Novità della versione 1.1.0:
+
+• Numero di thread di inferenza configurabile con rilevamento automatico dei core CPU
+• Condivisione consapevole della coda: notifica toast quando si condivide durante una trascrizione attiva
+• ETA di trascrizione adattivo con feedback in tempo reale per batch
+• I log di trascrizione ora persistono in un database locale
+• Notifiche consapevoli della coda per molteplici trascrizioni simultanee
+• Le modifiche alle impostazioni sono bloccate durante la trascrizione attiva per prevenire errori
+
+Novità dalla versione 1.0.3:
+
+• Rimozione del silenzio basata su VAD prima della trascrizione
+• Trascrizione parallela dei chunk audio per elaborazione più veloce
+• Supporto del modello Distil-Whisper Large v3 Italiano con interfaccia di confronto della velocità
+• ExtractionService per download resilienti dei modelli con tracciamento del progresso
+• Autenticazione HuggingFace con resume e retry dei download
+• ETA di progresso basato su calibrazione e statistiche di prestazione
+• Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)</it-IT>
+
+<de-DE>
+Neuigkeiten in Version 1.15.0:
+• Neu: WhatsApp-Sprachnachrichten werden selbst transkribiert (Opt-in, auf dem Gerät)
+• Neu: die Suche findet vom Modell falsch gehörte Wörter („ähnliche Wörter“)
+• Neu: lange Pausen werden zu Absatzumbrüchen
+• Neu: andere Apps können Anti-Vocale als Transkriptor nutzen (Open Transcribe)
+• Verbessert: beschädigte Modelle heilen selbst; verpasste Nachrichten als Zusammenfassung
+• Behoben: eine beschädigte Verlaufsdatenbank erholt sich statt abzustürzen
+Neuigkeiten in Version 1.14.1:
+• Neu: beobachtete Ordner transkribieren neue Audio automatisch; Remote-Offload (experimentell)
+• Neu: Teilen als Text mit Zeitmarken, SRT oder VTT; Modelle als Offline-Bündel exportieren
+• Neu: Auto-Speichern prüft das Schreiben; die Benachrichtigung nennt die Datei
+• Verbessert: Tab „Erweitert“: Community-Katalog in der App, Import in einem Ablauf; chinesische UI
+• Behoben: Absturz bei abgelaufener Untertitel-Auswahl; Qwen3 schnitt lange Texte ab
+Neuigkeiten in Version 1.14.0:
+• Neu: Ordnerüberwachung: neue Audiodateien in gewählten Ordnern werden automatisch transkribiert
+• Neu: Remote-Offload (experimentell, standardmäßig aus): lange Aufträge können an deinen Server gehen
+• Neu: Modelle als Offline-Bundles exportieren
+• Neu: chinesische Oberfläche; Community-Katalog über 30 Modelle, nach Sprache filterbar
+• Verbessert: kompakter Erweitert-Bereich, Gemma-Downloads auf eigener Seite</de-DE>
+
+<es-ES>
+Novedades de la versión 1.15.0:
+• Nuevo: las notas de voz de WhatsApp se transcriben solas (opcional, local)
+• Nuevo: la búsqueda encuentra palabras que el modelo escuchó mal («palabras similares»)
+• Nuevo: las pausas largas se vuelven saltos de párrafo
+• Nuevo: otras apps pueden usar Anti-Vocale como transcriptor (Open Transcribe)
+• Mejorado: los modelos dañados se reparan solos; notas perdidas en un resumen
+• Corregido: una base del Historial corrupta se recupera en vez de fallar
+Novedades de la versión 1.14.1:
+• Nuevo: las carpetas vigiladas transcriben audio nuevo; offload remoto (experimental)
+• Nuevo: comparte como texto con tiempos, SRT o VTT; exporta modelos como paquetes offline
+• Nuevo: el guardado automático comprueba la escritura; la notificación nombra el archivo
+• Mejorado: pestaña Avanzado: catálogo de comunidad en la app, importación en un flujo; interfaz china
+• Corregido: fallo al expirar la elección de subtítulos; Qwen3 cortaba textos largos
+Novedades de la versión 1.14.0:
+• Nuevo: vigilancia de carpetas: los nuevos archivos de audio en las carpetas elegidas se transcriben solos
+• Nuevo: descarga remota (experimental, desactivada por defecto): los trabajos largos pueden ir a tu servidor
+• Nuevo: exporta los modelos descargados como paquetes sin conexión
+• Nuevo: interfaz en chino; catálogo comunitario de más de 30 modelos, filtrable por idioma
+• Mejorado: sección Avanzado compacta, descargas de Gemma en su propia página</es-ES>
+
+<fr-FR>
+Nouveautés de la version 1.15.0 :
+• Nouveau : les messages vocaux WhatsApp se transcrivent seuls (opt-in, local)
+• Nouveau : la recherche trouve les mots mal entendus (« mots similaires »)
+• Nouveau : les longues pauses deviennent des sauts de paragraphe
+• Nouveau : d'autres applis peuvent employer Anti-Vocale comme transcripteur
+• Amélioré : les modèles endommagés se réparent seuls ; messages manqués en un résumé
+• Corrigé : une base Historique corrompue se rétablit sans planter
+Nouveautés de la version 1.14.1 :
+• Nouveau : les dossiers surveillés transcrivent le nouvel audio ; déport distant (expérimental)
+• Nouveau : partage en texte horodaté, SRT ou VTT ; export des modèles hors ligne
+• Nouveau : l’enregistrement auto vérifie l’écriture ; la notification nomme le fichier
+• Amélioré : onglet Avancé : catalogue communauté dans l’appli, import en un flux ; en chinois
+• Corrigé : plantage du choix des sous-titres expiré ; Qwen3 tronquait les longs textes
+Nouveautés de la version 1.14.0 :
+• Nouveau : surveillance de dossiers : les nouveaux fichiers audio choisis se transcrivent seuls
+• Nouveau : déport distant (expérimental, désactivé par défaut) : les longues tâches peuvent partir sur votre serveur
+• Nouveau : exportez les modèles téléchargés en paquets hors ligne
+• Nouveau : interface en chinois ; catalogue communautaire de plus de 30 modèles, filtrable par langue
+• Amélioré : section Avancé compacte, téléchargements Gemma sur leur propre page</fr-FR>
+
+<pt-BR>
+Novidades da versão 1.15.0:
+• Novo: as mensagens de voz do WhatsApp se transcrevem sozinhas (opcional, local)
+• Novo: a busca encontra palavras que o modelo ouviu errado («palavras semelhantes»)
+• Novo: pausas longas viram quebras de parágrafo
+• Novo: outros apps podem usar o Anti-Vocale como transcritor (Open Transcribe)
+• Melhorado: modelos danificados se recuperam sozinhos; notas perdidas num resumo
+• Corrigido: um banco de dados do Histórico corrompido se recupera em vez de travar
+Novidades da versão 1.14.1:
+• Novo: pastas assistidas transcrevem o novo áudio; offload remoto (experimental)
+• Novo: compartilhe como texto com tempos, SRT ou VTT; exporte modelos como pacotes offline
+• Novo: o salvamento automático confere a gravação; a notificação mostra o arquivo
+• Melhorado: aba Avançado: catálogo da comunidade no app, importação em um fluxo; interface chinesa
+• Corrigido: travamento ao expirar a escolha de legendas; Qwen3 cortava textos longos
+Novidades da versão 1.14.0:
+• Novo: vigilância de pastas: os novos arquivos de áudio nas pastas escolhidas se transcrevem sozinhos
+• Novo: offload remoto (experimental, desligado por padrão): os trabalhos longos podem ir para o seu servidor
+• Novo: exporte os modelos baixados como pacotes offline
+• Novo: interface em chinês; catálogo da comunidade com mais de 30 modelos, filtrável por idioma
+• Melhorado: seção Avançada compacta, downloads do Gemma em página própria</pt-BR>
+
+<ru-RU>
+Что нового в версии 1.15.0:
+• Новое: голосовые WhatsApp расшифровываются сами (по желанию, на устройстве)
+• Новое: поиск находит слова, расслышанные моделью неверно («похожие слова»)
+• Новое: длинные паузы становятся абзацами
+• Новое: другие приложения могут использовать Anti-Vocale как транскрайбер (Open Transcribe)
+• Улучшено: повреждённые модели восстанавливаются сами; пропущенные сообщения одним дайджестом
+• Исправлено: повреждённая база Истории восстанавливается, а не ломается
+Что нового в версии 1.14.1:
+• Новое: наблюдаемые папки сами расшифровывают новый звук; удалённая разгрузка (экспериментально)
+• Новое: отправка как текст с таймкодами, SRT или VTT; экспорт моделей как офлайн-пакетов
+• Новое: автосохранение проверяет запись; уведомление называет файл
+• Улучшено: раздел «Дополнительно»: каталог сообщества в приложении, импорт в один шаг; китайский интерфейс
+• Исправлено: сбой при истечении выбора субтитров; Qwen3 обрезал длинные тексты
+Что нового в версии 1.14.0:
+• Новое: наблюдение за папками: новые аудиофайлы в выбранных папках расшифровываются автоматически
+• Новое: удалённая разгрузка (экспериментально, выключено): длинные задачи можно отправить на свой сервер
+• Новое: экспорт скачанных моделей офлайн-пакетами
+• Новое: интерфейс на китайском; каталог сообщества больше 30 моделей, с фильтром по языку
+• Улучшено: компактный раздел «Дополнительно», загрузки Gemma на отдельной странице</ru-RU>
+
+<tr-TR>
+Sürüm 1.15.0'daki yenilikler:
+• Yeni: WhatsApp sesli mesajları kendiliğinden yazıya dökülür (isteğe bağlı, cihazda)
+• Yeni: arama, modelin yanlış duyduğu kelimeleri bulur («benzer kelimeler»)
+• Yeni: uzun duraklamalar paragraf sonu olur
+• Yeni: diğer uygulamalar Anti-Vocale'i transkriptör olarak kullanabilir (Open Transcribe)
+• İyileştirildi: bozuk modeller kendini onarır; kaçırılan mesajlar tek özetle döner
+• Düzeltildi: bozuk Geçmiş veritabanı çökmek yerine kurtulur
+Sürüm 1.14.1'daki yenilikler:
+• Yeni: izlenen klasörler yeni sesi kendiliğinden yazıya çevirir; uzak aktarım (deneysel)
+• Yeni: zaman damgalı metin, SRT veya VTT olarak paylaşın; modelleri çevrimdışı paket olarak dışa aktarın
+• Yeni: otomatik kaydetme yazmayı doğrular; bildirim dosya adını verir
+• İyileştirildi: Gelişmiş sekmesi: uygulama içinde topluluk kataloğu, tek akışlı içe aktarma; Çince arayüz
+• Düzeltildi: altyazı seçimi zaman aşımında çökme; Qwen3 uzun metinleri kesiyordu
+Sürüm 1.14.0'daki yenilikler:
+• Yeni: klasör izleme: seçtiğiniz klasörlerdeki yeni ses dosyaları kendiliğinden metne çıkar
+• Yeni: uzak aktarım (deneysel, kapalı): uzun işleri kendi sunucunuza gönderebilirsiniz
+• Yeni: indirilen modelleri çevrimdışı paket olarak dışa aktarın
+• Yeni: Çince arayüz; 30'dan fazla modelli topluluk kataloğu, dile göre filtrelenebilir
+• İyileştirildi: kompakt Gelişmiş bölümü, Gemma indirmeleri kendi sayfasında</tr-TR>
+
+<pl-PL>
+Nowości w wersji 1.15.0:
+• Nowość: notatki głosowe WhatsApp transkrybują się same (opcjonalnie, lokalnie)
+• Nowość: wyszukiwanie znajduje słowa źle usłyszane przez model („podobne słowa”)
+• Nowość: długie pauzy stają się podziałami akapitów
+• Nowość: inne aplikacje mogą używać Anti-Vocale jako transkrybenta (Open Transcribe)
+• Lepiej: uszkodzone modele naprawiają się same; pominięte wiadomości w jednym podsumowaniu
+• Poprawiono: uszkodzona baza Historii odzyskuje się zamiast wysypać
+Nowości w wersji 1.14.1:
+• Nowość: obserwowane foldery same transkrybują nowe audio; zdalny offload (eksperymentalny)
+• Nowość: udostępniaj jako tekst z czasami, SRT lub VTT; eksportuj modele jako pakiety offline
+• Nowość: autozapis sprawdza zapis; powiadomienie podaje nazwę pliku
+• Ulepszono: sekcja Zaawansowane: katalog społeczności w aplikacji, import w jednym przepływie; chiński interfejs
+• Poprawiono: awaria po upływie wyboru napisów; Qwen3 ucinał długie teksty
+Nowości w wersji 1.14.0:
+• Nowość: obserwowanie folderów: nowe pliki audio w wybranych folderach transkrybują się same
+• Nowość: zdalny offload (eksperymentalny, wyłączony): długie zadania mogą iść na własny serwer
+• Nowość: eksport pobranych modeli jako pakiety offline
+• Nowość: interfejs po chińsku; katalog społeczności ponad 30 modeli z filtrem języka
+• Ulepszone: kompaktowa sekcja Zaawansowane, pobieranie Gemma na osobnej stronie</pl-PL>
+
+<hi-IN>
+संस्करण 1.15.0 में नया क्या है:
+• नया: WhatsApp वॉइस नोट्स अपने आप ट्रांसक्राइब होते हैं (स्वेच्छा से, डिवाइस पर)
+• नया: खोज मॉडल के गलत सुने शब्द ढूंढती है («समान शब्द»)
+• नया: लंबे ठहराव पैराग्राफ ब्रेक बनते हैं
+• नया: दूसरे ऐप Anti-Vocale को ट्रांसक्राइबर मानकर इस्तेमाल कर सकते हैं (Open Transcribe)
+• बेहतर: खराब मॉडल खुद ठीक होते हैं; छूटे संदेश एक सारांश में
+• ठीक: इतिहास का खराब डेटाबेस ठीक हो जाता है, क्रैश नहीं
+संस्करण 1.14.1 में नया क्या है:
+• नया: चुनी फ़ोल्डर नए ऑडियो को अपने आप लिखते हैं; रिमोट ऑफ़लोड (प्रयोगात्मक)
+• नया: टाइमस्टैम्प टेक्स्ट, SRT या VTT के रूप में साझा करें; मॉडल ऑफ़लाइन बंडल के रूप में निर्यात करें
+• नया: ऑटो-सेव लिखने की जाँच करता है; सूचना फ़ाइल का नाम बताती है
+• सुधार: उन्नत टैब: ऐप में कम्युनिटी कैटलॉग, एक प्रवाह में आयात; चीनी इंटरफ़ेस
+• ठीक: सबटाइटल चुनाव समाप्ति पर क्रैश; Qwen3 लंबे टेक्स्ट काट रहा था
+संस्करण 1.14.0 में नया क्या है:
+• नया: फ़ोल्डर निगरानी: चुनी फ़ोल्डरों की नई ऑडियो फ़ाइलें अपने आप ट्रांसक्राइब होती हैं
+• नया: रिमोट ऑफ़लोड (प्रायोगिक, बंद): लंबे काम अपने सर्वर पर भेजें
+• नया: डाउनलोड किए मॉडल ऑफ़लाइन बंडल के रूप में निर्यात करें
+• नया: चीनी इंटरफ़ेस; 30+ मॉडलों की कम्युनिटी कैटलॉग, भाषा से फ़िल्टर
+• बेहतर: कॉम्पैक्ट एडवांस्ड सेक्शन, Gemma डाउनलोड अलग पेज पर</hi-IN>
+
+<uk>
+Новинки версії 1.15.0:
+• Нове: голосові WhatsApp розшифровуються самі (за бажанням, на пристрої)
+• Нове: пошук знаходить слова, почуті моделлю неправильно («схожі слова»)
+• Нове: довгі паузи стають абзацами
+• Нове: інші програми можуть використовувати Anti-Vocale як транскрайбер (Open Transcribe)
+• Краще: пошкоджені моделі відновлюються самі; пропущені повідомлення одним дайджестом
+• Виправлено: пошкоджена база Історії відновлюється, а не ламається
+Новинки версії 1.14.1:
+• Нове: відстежувані теки самі розшифровують нове аудіо; віддалене розвантаження (експериментально)
+• Нове: поділіться як текст із таймкодами, SRT або VTT; експортуйте моделі як офлайн-пакети
+• Нове: автозбереження перевіряє запис; сповіщення називає файл
+• Покращено: розділ «Додатково»: каталог спільноти в застосунку, імпорт в один крок; китайський інтерфейс
+• Виправлено: збій після спливу вибору субтитрів; Qwen3 обрізав довгі тексти
+Новинки версії 1.14.0:
+• Нове: спостереження за папками: нові аудіофайли у вибраних папках транскрибуються самі
+• Нове: віддалене розвантаження (експериментально, вимкнено): довгі завдання можна відправити на свій сервер
+• Нове: експорт завантажених моделей офлайн-пакетами
+• Нове: інтерфейс китайською; каталог спільноти понад 30 моделей з фільтром мови
+• Покращено: компактний розділ «Додатково», завантаження Gemma на окремій сторінці</uk>
+<he-IL>
+מה חדש בגרסה 1.15.0:
+• חדש: הודעות קוליות ב־WhatsApp מתועתקות אוטומטית (בבחירה, על המכשיר)
+• חדש: החיפוש מוצא מילים שהמודל שמע לא נכון («מילים דומות»)
+• חדש: הפסקות ארוכות הופכות למעברי פסקה
+• חדש: אפליקציות אחרות יכולות להשתמש ב־Anti-Vocale כמתעתק (Open Transcribe)
+• משופר: מודלים פגומים מתקנים את עצמם; הודעות שהוחמצו בתמצית אחת
+• תוקן: מסד נתונים פגום של ההיסטוריה מתאושש במקום לקרוס
+מה חדש בגרסה 1.14.1:
+• חדש: תיקיות מעקב מתמללות אודיו חדש בעצמן; העברה מרחוק (ניסיוני)
+• חדש: שיתוף כטקסט עם חותמות זמן, SRT או VTT; ייצוא מודלים כחבילות לא-מקוונות
+• חדש: שמירה אוטומטית מאמתת את הכתיבה; ההתראה מציינת את הקובץ
+• שופר: לוח מתקדם: קטלוג הקהילה באפליקציה, ייבוא בזרימה אחת; ממשק בסינית
+• תוקן: קריסה בתום זמן בחירת כתוביות; Qwen3 קטע טקסטים ארוכים
+מה חדש בגרסה 1.14.0:
+• חדש: פיקוח תיקיות: קבצי אודיו חדשים בתיקיות שתבחרו מתומללים אוטומטית
+• חדש: היפרדות מרחוק (ניסיוני, כבוי): מטלות ארוכות יכולות לרוץ על השרת שלכם
+• חדש: ייצוא מודלים שהורדו כחבילות לא מקוונות
+• חדש: ממשק בסינית; קטלוג הקהילה מעל 30 מודלים, מסונן לפי שפה
+• שופר: מקטע מתקדם קומפקטי, הורדות Gemma בעמוד משלהן</he-IL>
+<fa-IR>
+چه چیز جدید‌های نسخه 1.15.0:
+• جدید: پیام‌های صوتی واتس‌اپ خودکار پیاده‌سازی می‌شوند (اختیاری، روی دستگاه)
+• جدید: جست‌وجو واژه‌های اشتباه‌شنیده مدل را پیدا می‌کند («واژه‌های مشابه»)
+• جدید: مکث‌های طولانی به شکست پاراگراف تبدیل می‌شوند
+• جدید: برنامه‌های دیگر می‌توانند Anti-Vocale را پیاده‌نویس خود کنند (Open Transcribe)
+• بهبود: مدل‌های آسیب‌دیده خودترمیم؛ پیام‌های از دست‌رفته در یک خلاصه
+• رفع اشکال: پایگاه‌داده خراب تاریخچه ترمیم می‌شود، فرونمی‌پاشد
+چه چیز جدید‌های نسخه 1.14.1:
+• جدید: پوشه‌های تحت نظر صدهای جدید را خودکار رو‌نویسی می‌کنند؛ آف‌لود از راه دور (آزمایشی)
+• جدید: اشتراک به‌صورت متن زمان‌دار، SRT یا VTT؛ برون‌بری مدل‌ها به‌صورت بسته‌ی آفلاین
+• جدید: ذخیره‌ی خودکار نوشتن را بررسی می‌کند؛ اعلان نام فایل را می‌گوید
+• بهبود: بخش پیشرفته: کاتالوگ انجمن در خود برنامه، درون‌ریزی در یک جریان؛ رابط چینی
+• رفع شد: خرابی پس از پایان مهلت انتخاب زیرنویس؛ Qwen3 متن‌های طولانی را قطع می‌کرد
+چه چیز جدید‌های نسخه 1.14.0:
+• جدید: پایش پوشه: فایل‌های صوتی جدید در پوشه‌های انتخابی خودکار تبدیل می‌شوند
+• جدید: بارگذاری به سرور راه دور (آزمایشی، خاموش): کارهای طولانی را به سرور خودتان بفرستید
+• جدید: مدل‌های دانلودشده را بسته آفلاین خارج کنید
+• جدید: رابط چینی؛ کاتالوگ جامعه بالای 30 مدل، فیلتر زبان
+• بهبود: بخش پیشرفته فشرده، دانلودهای Gemma در صفحه خودشان</fa-IR>
+<zh-CN>
+1.15.0 版本更新：
+• 新增：WhatsApp 语音消息自动转写（可选择开启，仅在设备上）
+• 新增：搜索能找到模型听错的词（“包含相似词语”）
+• 新增：较长的停顿变成段落换行
+• 新增：其他应用可将 Anti-Vocale 用作转写器（Open Transcribe）
+• 改进：损坏的模型自我修复；错过的话语汇总为一条摘要
+• 修复：历史记录数据库损坏时可恢复，不再崩溃
+1.14.1 版本更新：
+• 新增：关注的文件夹自动转写新音频；远程卸载（实验性）
+• 新增：以带时间码文本、SRT 或 VTT 分享；模型可导出为离线包
+• 新增：自动保存会验证写入；通知显示文件名
+• 改进：高级页：应用内社区目录、一步导入；中文界面
+• 修复：字幕选择超时崩溃；Qwen3 截断长文本
+1.14.0 版本更新：
+• 新增：文件夹监视：所选文件夹中的新音频自动转录
+• 新增：远程卸载（实验性，默认关）：长任务可交给自己的服务器
+• 新增：已下载模型可导出为离线包
+• 新增：中文界面；社区目录超 30 个模型，可按语言筛选
+• 改进：高级区更紧凑，Gemma 下载独立成页</zh-CN>
