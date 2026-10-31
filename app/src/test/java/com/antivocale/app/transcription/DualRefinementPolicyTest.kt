@@ -18,13 +18,15 @@ class DualRefinementPolicyTest {
         enabled: Boolean = true,
         selected: String = "parakeet",
         streaming: String? = "nemotron-streaming",
-    ) = DualRefinementPolicy.fastBackendFor(
-        requestType = requestType,
-        backendOverride = override,
-        refinementEnabled = enabled,
-        selectedBackendId = selected,
-        streamingBackendId = streaming,
-    )
+    ) = kotlinx.coroutines.runBlocking {
+        DualRefinementPolicy.fastBackendFor(
+            requestType = requestType,
+            backendOverride = override,
+            refinementEnabled = enabled,
+            selectedBackendId = selected,
+            fastArm = { streaming },
+        )
+    }
 
     // ---- TASK-740: the refineOverride gate ----
 
@@ -32,28 +34,50 @@ class DualRefinementPolicyTest {
     fun `a pin equal to the streaming backend disqualifies the two-pass`() {
         // pin=nemotron-streaming, active=whisper: without the gate the run
         // would decode both phases on the same model (double decode).
-        assertNull(DualRefinementPolicy.fastBackendFor(
-            requestType = "audio", backendOverride = null, refinementEnabled = true,
-            selectedBackendId = "whisper", streamingBackendId = "nemotron-streaming",
-            refineOverride = "nemotron-streaming"))
+        assertNull(kotlinx.coroutines.runBlocking {
+            DualRefinementPolicy.fastBackendFor(
+                requestType = "audio", backendOverride = null, refinementEnabled = true,
+                selectedBackendId = "whisper", fastArm = { "nemotron-streaming" },
+                refineOverride = "nemotron-streaming")
+        })
     }
 
     @Test
     fun `a pin as the accurate side keeps the pass alive when it differs from the fast model`() {
-        assertEquals("nemotron-streaming", DualRefinementPolicy.fastBackendFor(
-            requestType = "audio", backendOverride = null, refinementEnabled = true,
-            selectedBackendId = "whisper", streamingBackendId = "nemotron-streaming",
-            refineOverride = "gigaam"))
+        assertEquals("nemotron-streaming", kotlinx.coroutines.runBlocking {
+            DualRefinementPolicy.fastBackendFor(
+                requestType = "audio", backendOverride = null, refinementEnabled = true,
+                selectedBackendId = "whisper", fastArm = { "nemotron-streaming" },
+                refineOverride = "gigaam")
+        })
     }
 
     @Test
     fun `a pinned remote offload backend is excluded like a selected one`() {
         // TASK-681 hazard: a local first pass must never mask server-side
         // failures behind local text, pin or no pin.
-        assertNull(DualRefinementPolicy.fastBackendFor(
-            requestType = "audio", backendOverride = null, refinementEnabled = true,
-            selectedBackendId = "whisper", streamingBackendId = "nemotron-streaming",
-            refineOverride = "remote-omnivoice"))
+        assertNull(kotlinx.coroutines.runBlocking {
+            DualRefinementPolicy.fastBackendFor(
+                requestType = "audio", backendOverride = null, refinementEnabled = true,
+                selectedBackendId = "whisper", fastArm = { "nemotron-streaming" },
+                refineOverride = "remote-omnivoice")
+        })
+    }
+
+    @Test
+    fun `an offload-accurate request never resolves the fast arm`() {
+        // TASK-932 review: the arm's resolution walks every candidate's
+        // model dir on disk; the offload exclusion must reject BEFORE it,
+        // or every Omnivoice run pays the probe for a pass that can never
+        // run.
+        var probed = false
+        assertNull(kotlinx.coroutines.runBlocking {
+            DualRefinementPolicy.fastBackendFor(
+                requestType = "audio", backendOverride = null, refinementEnabled = true,
+                selectedBackendId = RemoteOmnivoiceBackend.BACKEND_ID,
+                fastArm = { probed = true; "nemotron-streaming" })
+        })
+        org.junit.Assert.assertFalse("fast arm resolved for a rejected offload run", probed)
     }
 
     @Test

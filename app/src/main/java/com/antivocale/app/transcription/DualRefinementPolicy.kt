@@ -2,9 +2,10 @@ package com.antivocale.app.transcription
 
 /**
  * GH #43 (design D3): the one eligibility gate for two-pass transcription
- * (fast streaming first pass + accurate refinement). Pure on purpose: the
- * call site supplies resolved facts, so a duration or calibration-based
- * threshold can be added after the device trial without touching call sites.
+ * (fast streaming first pass + accurate refinement). Pure over its cheap
+ * conditions on purpose: the call site supplies resolved facts (the fast
+ * arm lazily), so a duration or calibration-based threshold can be added
+ * after the device trial without touching call sites.
  *
  * All conditions must hold; otherwise the request runs single-model exactly
  * as today. The gate returns the chosen fast backend id so the caller never
@@ -69,17 +70,19 @@ object DualRefinementPolicy {
      *   deliberate single-model choice and disqualifies.
      * @param refinementEnabled the user toggle (default off).
      * @param selectedBackendId the user's selected backend (the accurate side).
-     * @param streamingBackendId the resolved FAST side (TASK-932: the
-     *   installed streaming entry, else the smallest installed catalog
-     *   entry BESIDES the accurate side; the name predates the widening).
-     *   Null when nothing qualifies.
+     * @param fastArm the FAST side supplier, LAZY (TASK-932 review: its
+     *   resolution walks every candidate's model dir on disk, so it runs
+     *   only after every cheap condition and the offload exclusion below
+     *   passed; TASK-932: the installed streaming entry, else the smallest
+     *   installed catalog entry BESIDES the accurate side). Null when
+     *   nothing qualifies.
      */
-    fun fastBackendFor(
+    suspend fun fastBackendFor(
         requestType: String,
         backendOverride: String?,
         refinementEnabled: Boolean,
         selectedBackendId: String,
-        streamingBackendId: String?,
+        fastArm: suspend () -> String?,
         /** TASK-740 (GH #127): the pinned refinement model; the accurate
          *  side is THIS when set, the selected backend otherwise. */
         refineOverride: String? = null,
@@ -87,20 +90,22 @@ object DualRefinementPolicy {
         if (requestType != "audio") return null
         if (!backendOverride.isNullOrEmpty()) return null
         if (!refinementEnabled) return null
-        val fast = streamingBackendId ?: return null
         // TASK-740: ONE notion of "the accurate side" - the pin when set,
-        // the selected backend otherwise - feeds BOTH the degenerate check
-        // and the offload exclusion below (a pinned remote backend must be
-        // excluded exactly like a selected one, or a local first pass would
-        // mask server-side failures behind local text).
+        // the selected backend otherwise - feeds BOTH the offload exclusion
+        // below and the degenerate check after the arm resolves (a pinned
+        // remote backend must be excluded exactly like a selected one, or
+        // a local first pass would mask server-side failures behind local
+        // text).
         val accurate = refineOverride ?: selectedBackendId
-        if (fast == accurate) return null
         // TASK-681: an offload run takes no local first pass. The remote arm
         // exists for files the phone should not decode at all; a local
         // streaming preview would duplicate exactly that work, and the F4/F5
         // first-pass fallback would mask server-side failures behind local
-        // text, the opposite of the honest-timeout contract.
+        // text, the opposite of the honest-timeout contract. Checked BEFORE
+        // the arm resolves so an offload request never pays the disk probe.
         if (accurate == RemoteOmnivoiceBackend.BACKEND_ID) return null
+        val fast = fastArm() ?: return null
+        if (fast == accurate) return null
         return fast
     }
 }
