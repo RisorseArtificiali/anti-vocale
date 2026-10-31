@@ -13,7 +13,9 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -102,6 +104,63 @@ class LogsViewModelBatchIntakeTest {
             viewModel.pendingBrowseDuplicate.first { it?.modelName == "model-b" }
         }
         assertEquals("model-b", second?.modelName)
+    }
+
+    @Test
+    fun `a second batch queues behind an unresolved first batch`() = runBlocking {
+        viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
+        val first = withTimeout(5000) {
+            viewModel.pendingBrowseDuplicate.first { it != null }
+        }
+        assertEquals("model-a", first?.modelName)
+
+        // Review W1: a second pick while the first dialog is still pending
+        // must not overwrite the single slot; its file queues on the shared
+        // intake lock instead.
+        viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/2")))
+        delay(200)
+        assertEquals("model-a", viewModel.pendingBrowseDuplicate.value?.modelName)
+
+        viewModel.clearPendingBrowseDuplicate()
+        val second = withTimeout(5000) {
+            viewModel.pendingBrowseDuplicate.first { it?.modelName == "model-b" }
+        }
+        assertEquals("model-b", second?.modelName)
+    }
+
+    @Test
+    fun `an abandoned dialog times out and reports the file as not added`() = runBlocking {
+        viewModel.browseDialogTimeoutMs = 100
+        // A live subscriber keeps the report on the snackbar path; the
+        // notification path would drive real NotificationCompat code
+        // against this test's mock context.
+        val reports = mutableListOf<String>()
+        val collector = launch { viewModel.historyError.collect { reports.add(it) } }
+        viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
+        withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it != null } }
+
+        // The pending state must clear and the batch must not park.
+        withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it == null } }
+        assertEquals(null, viewModel.pendingBrowseDuplicate.value)
+        withTimeout(5000) { while (reports.isEmpty()) delay(10) }
+        collector.cancel()
+    }
+
+    @Test
+    fun `a throwing intake is reported, not only logged`() = runBlocking {
+        coEvery {
+            SharedAudioHandler.copyToAppStorage(any(), any(), any(), any())
+        } throws RuntimeException("fgs start refused")
+        val reports = mutableListOf<String>()
+        val job = launch { viewModel.historyError.collect { reports.add(it) } }
+        // The collector must be subscribed before the intake runs.
+        delay(100)
+
+        viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
+        // The stubbed context resolves the message to an empty string; the
+        // emission itself is the behavior under test.
+        withTimeout(5000) { while (reports.isEmpty()) delay(10) }
+        job.cancel()
     }
 
     @Test

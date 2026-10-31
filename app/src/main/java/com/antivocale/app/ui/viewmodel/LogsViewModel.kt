@@ -42,6 +42,10 @@ import com.antivocale.app.transcription.variantAwareDisplayName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -183,8 +187,28 @@ class LogsViewModel @Inject constructor(
          * ResultNotificationFactory's band table).
          */
         internal const val HISTORY_ERROR_NOTIFICATION_ID = 2501
+
+        /**
+         * Review W2: the duplicate dialog composes with the History tab, so
+         * leaving the tab leaves the intake awaiting forever. Reusing the
+         * subtitle-choice timeout preference does not read naturally here
+         * (minutes, WorkManager-driven notification prompt), so a flat
+         * ceiling bounds the wait instead.
+         */
+        private const val BROWSE_DIALOG_TIMEOUT_MS = 60_000L
     }
 
+    /**
+     * Review W1: one lock per browse intake pass, duplicate gate included.
+     * A second batch's files queue behind the first batch's dialog-and-copy
+     * chain (strict FIFO), so the single-slot pending state can never be
+     * overwritten by a concurrent batch.
+     */
+    private val intakeMutex = Mutex()
+
+    /** Review W2: the ceiling above, overridable so the unit test waits
+     *  milliseconds instead of a minute. */
+    internal var browseDialogTimeoutMs: Long = BROWSE_DIALOG_TIMEOUT_MS
 
     /**
      * Pending long-audio warning (TASK-432): non-null while the advisory dialog
@@ -375,8 +399,12 @@ class LogsViewModel @Inject constructor(
      * intake starts only after file N resolves (answered dialog or clean
      * enqueue), so the single-slot [pendingBrowseDuplicate] state can never
      * be overwritten mid-batch: the overwritten file used to lose its dialog
-     * silently and never enqueue. A failure in one file's intake is logged
-     * and does not skip the remaining files.
+     * silently and never enqueue. Review W1: the pass lock inside
+     * [transcribeLocalFile] is shared across batches, so a second pick's
+     * files queue behind a still-running first batch instead of overwriting
+     * its pending state. A failure in one file's intake is reported and does
+     * not skip the remaining files (review W4: a Throwable here used to be
+     * Log.e-only, a dropped file the user never heard about).
      */
     fun transcribeLocalFiles(context: Context, uris: List<Uri>) {
         if (uris.isEmpty()) return
@@ -388,6 +416,10 @@ class LogsViewModel @Inject constructor(
                     throw ce
                 } catch (t: Throwable) {
                     Log.e(TAG, "Browse intake failed for $uri", t)
+                    val localized = LocaleManager.updateContextLocale(
+                        context.applicationContext)
+                    reportHistoryError(
+                        localized.getString(R.string.failed_to_process_audio))
                 }
             }
         }
@@ -399,9 +431,9 @@ class LogsViewModel @Inject constructor(
      * free-space pre-copy check, app-storage copy) and enqueues it on the
      * inference service with source "browse": not a share request, so no
      * share-back affordances, exactly like a Tasker-initiated local file.
-     * Suspending (review V1): on a duplicate hit it holds the caller's slot
-     * until the open-or-reprocess dialog resolves, which is what serializes
-     * [transcribeLocalFiles].
+     * Suspending: the whole pass (duplicate gate included) holds the shared
+     * intake lock (review W1), and on a duplicate hit it additionally waits
+     * for the open-or-reprocess dialog to resolve (review V1).
      */
     suspend fun transcribeLocalFile(context: Context, uri: Uri) {
         // The applicationContext, never the Activity: the copy is blocking IO
@@ -413,50 +445,62 @@ class LogsViewModel @Inject constructor(
         // applicationContext.getString would ignore a pinned app language
         // (code-review finding 4 on the browse flow).
         val localizedContext = LocaleManager.updateContextLocale(appContext)
-        withContext(Dispatchers.IO) {
-            // copyToAppStorage never throws: every path lands in a
-            // CopyResult variant (the FGS start below is the throwing step).
-            val result = SharedAudioHandler.copyToAppStorage(appContext, uri)
-            val localPath = when (result) {
-                is SharedAudioHandler.CopyResult.Success -> result.path
-                // Every failure variant carries its own localized message
-                // (single definition next to the sealed class).
-                else -> {
-                    reportHistoryError(result.userMessage(localizedContext))
-                    return@withContext
+        intakeMutex.withLock {
+            withContext(Dispatchers.IO) {
+                // copyToAppStorage never throws: every path lands in a
+                // CopyResult variant (the FGS start below is the throwing step).
+                val result = SharedAudioHandler.copyToAppStorage(appContext, uri)
+                val localPath = when (result) {
+                    is SharedAudioHandler.CopyResult.Success -> result.path
+                    // Every failure variant carries its own localized message
+                    // (single definition next to the sealed class).
+                    else -> {
+                        reportHistoryError(result.userMessage(localizedContext))
+                        return@withContext
+                    }
                 }
-            }
 
-            // TASK-842 browse arm: hash once (IO, size-capped by the
-            // guard), then the ONE-owner lookup. On a hit the
-            // open-or-reprocess dialog owns the request; reprocess resumes
-            // the normal flow. The closure captures only the hash, never
-            // the hit's row (the transcript text must not linger in the
-            // pending state).
-            val contentHash = duplicateGuard.hashOnIo(localPath)
-            if (contentHash != null) {
-                val hit = duplicateGuard.lookup(appContext, orchestrator, contentHash)
-                if (hit != null) {
-                    val hashForContinuation = contentHash
-                    val dialogResolved = CompletableDeferred<Unit>()
-                    _pendingBrowseDuplicate.value = PendingBrowseDuplicate(
-                        existingTaskId = hit.row.taskId,
-                        modelName = hit.modelName,
-                        continueRequest = {
-                            continueBrowseIntake(
-                                appContext, localPath, localizedContext, hashForContinuation)
-                        },
-                        resolved = dialogResolved,
-                    )
-                    // Review V1: hold this intake's slot until the dialog
-                    // resolves; both arms go through
-                    // [clearPendingBrowseDuplicate], which completes the gate.
-                    dialogResolved.await()
-                    return@withContext
+                // TASK-842 browse arm: hash once (IO, size-capped by the
+                // guard), then the ONE-owner lookup. On a hit the
+                // open-or-reprocess dialog owns the request; reprocess resumes
+                // the normal flow. The closure captures only the hash, never
+                // the hit's row (the transcript text must not linger in the
+                // pending state).
+                val contentHash = duplicateGuard.hashOnIo(localPath)
+                if (contentHash != null) {
+                    val hit = duplicateGuard.lookup(appContext, orchestrator, contentHash)
+                    if (hit != null) {
+                        val hashForContinuation = contentHash
+                        val dialogResolved = CompletableDeferred<Unit>()
+                        _pendingBrowseDuplicate.value = PendingBrowseDuplicate(
+                            existingTaskId = hit.row.taskId,
+                            modelName = hit.modelName,
+                            continueRequest = {
+                                continueBrowseIntake(
+                                    appContext, localPath, localizedContext, hashForContinuation)
+                            },
+                            resolved = dialogResolved,
+                        )
+                        // Review V1: hold this intake's slot until the dialog
+                        // resolves; both arms go through
+                        // [clearPendingBrowseDuplicate], which completes the gate.
+                        // Review W2: the dialog dies with the History tab, so a
+                        // timeout reports the file as not added and lets the
+                        // batch continue instead of parking the intake forever.
+                        try {
+                            withTimeout(browseDialogTimeoutMs) { dialogResolved.await() }
+                        } catch (_: TimeoutCancellationException) {
+                            clearPendingBrowseDuplicate()
+                            reportHistoryError(
+                                localizedContext.getString(R.string.failed_to_process_audio))
+                            return@withContext
+                        }
+                        return@withContext
+                    }
                 }
-            }
 
-            continueBrowseIntake(appContext, localPath, localizedContext, contentHash)
+                continueBrowseIntake(appContext, localPath, localizedContext, contentHash)
+            }
         }
     }
 
