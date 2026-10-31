@@ -356,6 +356,12 @@ class LogsViewModel @Inject constructor(
         }
     }
 
+    /** Review Y5: one owner of the not-added wording; every browse-intake
+     *  failure arm reports through here. */
+    private fun reportFailedToProcess(localizedContext: Context) {
+        reportHistoryError(localizedContext.getString(R.string.failed_to_process_audio))
+    }
+
     private fun postHistoryErrorNotification(message: String) {
         // Sibling parity (code review): the result channel like the share
         // error path, a contentIntent opening the app, NOT the Tasker
@@ -396,17 +402,21 @@ class LogsViewModel @Inject constructor(
     fun transcribeLocalFiles(context: Context, uris: List<Uri>) {
         if (uris.isEmpty()) return
         viewModelScope.launch {
+            // Review Y5: the in-app locale is per batch, not per file; user-
+            // facing strings resolve through it because on API 26-32
+            // setApplicationLocales reaches Activity contexts only, so raw
+            // applicationContext.getString would ignore a pinned app language
+            // (code-review finding 4 on the browse flow).
+            val localizedContext = LocaleManager.updateContextLocale(
+                context.applicationContext)
             for (uri in uris) {
                 try {
-                    transcribeLocalFile(context, uri)
+                    transcribeLocalFile(context, uri, localizedContext)
                 } catch (ce: CancellationException) {
                     throw ce
                 } catch (t: Throwable) {
                     Log.e(TAG, "Browse intake failed for $uri", t)
-                    val localized = LocaleManager.updateContextLocale(
-                        context.applicationContext)
-                    reportHistoryError(
-                        localized.getString(R.string.failed_to_process_audio))
+                    reportFailedToProcess(localizedContext)
                 }
             }
         }
@@ -420,18 +430,18 @@ class LogsViewModel @Inject constructor(
      * share-back affordances, exactly like a Tasker-initiated local file.
      * Suspending: on a duplicate hit it waits for the open-or-reprocess
      * dialog to resolve (review V1), holding the intake lock only across
-     * that gate (review Y6).
+     * that gate (review Y6). The caller resolves [localizedContext] once per
+     * batch (review Y5).
      */
-    suspend fun transcribeLocalFile(context: Context, uri: Uri) {
+    suspend fun transcribeLocalFile(
+        context: Context,
+        uri: Uri,
+        localizedContext: Context,
+    ) {
         // The applicationContext, never the Activity: the copy is blocking IO
         // with no suspension points, so the coroutine can outlive the
         // Activity's teardown, and nothing here needs the Activity.
         val appContext = context.applicationContext
-        // User-facing strings resolve through the in-app locale: on API 26-32
-        // setApplicationLocales reaches Activity contexts only, so raw
-        // applicationContext.getString would ignore a pinned app language
-        // (code-review finding 4 on the browse flow).
-        val localizedContext = LocaleManager.updateContextLocale(appContext)
         withContext(Dispatchers.IO) {
             // copyToAppStorage never throws: every path lands in a
             // CopyResult variant (the FGS start below is the throwing step).
@@ -483,8 +493,7 @@ class LogsViewModel @Inject constructor(
                         try {
                             dialogResolved.await()
                         } catch (_: BrowseDialogDisposedException) {
-                            reportHistoryError(
-                                localizedContext.getString(R.string.failed_to_process_audio))
+                            reportFailedToProcess(localizedContext)
                         }
                     }
                     return@withContext
@@ -655,7 +664,7 @@ class LogsViewModel @Inject constructor(
             InferenceEnqueue.Outcome.Started,
             InferenceEnqueue.Outcome.FallbackNotificationPosted -> Unit
             is InferenceEnqueue.Outcome.Failed ->
-                reportHistoryError(localizedContext.getString(R.string.failed_to_process_audio))
+                reportFailedToProcess(localizedContext)
         }
     }
 
