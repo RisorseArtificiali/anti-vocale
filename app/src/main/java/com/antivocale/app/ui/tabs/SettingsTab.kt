@@ -2052,7 +2052,12 @@ fun SettingsTab(
         // About entry. The notes are the store listing's bullets for the
         // running version, resolved with the same locale rule the feedback
         // body uses (in-app language first, blank = system locale).
-        if (feedbackVisible) {
+        // TASK-936: a version without notes (a SNAPSHOT build) hides the
+        // row instead of leaving a visible no-op behind the empty guard.
+        val whatsNewNotes = remember(currentLanguage) {
+            ReleaseNotes.notesFor(currentLanguage, BuildConfig.VERSION_NAME, context.assets)
+        }
+        if (feedbackVisible && whatsNewNotes.isNotEmpty()) {
             SearchFilterRow(searchQuery, SettingsSearchId.WHATS_NEW, searchState) {
                 SettingsHubCard(
                     titleRes = R.string.whats_new_title,
@@ -2062,11 +2067,7 @@ fun SettingsTab(
                     // (a version without notes must not open an empty dialog
                     // with just a version line; the popup checks isNotEmpty
                     // in MainScreen).
-                    showWhatsNewNotes = ReleaseNotes.notesFor(
-                        currentLanguage,
-                        BuildConfig.VERSION_NAME,
-                        context.assets,
-                    ).takeIf { it.isNotEmpty() }
+                    showWhatsNewNotes = whatsNewNotes
                 }
             }
             showWhatsNewNotes?.let { notes ->
