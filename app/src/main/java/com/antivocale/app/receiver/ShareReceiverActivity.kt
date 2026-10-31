@@ -37,6 +37,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import java.io.File
+import java.util.UUID
 
 /**
  * Transparent activity for receiving shared audio files.
@@ -177,6 +178,24 @@ class ShareReceiverActivity : Activity() {
         internal fun backendIdForAlias(aliasClassName: String, registry: BackendRegistry): String? =
             if (aliasClassName == com.antivocale.app.data.ShareTargetManager.EXTERNAL_FAMILY_ALIAS) EXTERNAL_FAMILY_BACKEND_ID
             else registry.byShareAlias(aliasClassName)?.backendId
+
+        /**
+         * TASK-927: the shared audio URIs of a share intent, in delivery
+         * order. ACTION_SEND reads the single EXTRA_STREAM;
+         * ACTION_SEND_MULTIPLE reads the ParcelableArrayList (null and
+         * non-Uri entries dropped). Empty means the intent carries no audio
+         * at all.
+         */
+        internal fun extractSharedUris(intent: Intent): List<Uri> =
+            if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
+                @Suppress("DEPRECATION")
+                intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+                    ?.filterNotNull()
+                    .orEmpty()
+            } else {
+                @Suppress("DEPRECATION")
+                listOfNotNull(intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri)
+            }
     }
 
     private var sourcePackage: String? = null
@@ -186,6 +205,16 @@ class ShareReceiverActivity : Activity() {
     /** Set when the copy-and-dispatch coroutine starts; the only state the
      *  recreation guard needs (see [onSaveInstanceState]). */
     private var dispatchStarted = false
+
+    /**
+     * TASK-927: files still owed their flow completion in the current
+     * ACTION_SEND_MULTIPLE batch; 0 for every single-file entry. [endFlow]
+     * counts one resolution per file and finishes the transparent Activity
+     * only on the last: an early destroy would revoke the read grants of
+     * the URIs not yet copied, and the per-file dialogs need a live window
+     * to attach to.
+     */
+    private var batchFilesRemaining = 0
 
     /** The app-wide entry point, resolved once per instance; [appScope] and
      *  the registry/store reads all derive from it. */
@@ -261,15 +290,74 @@ class ShareReceiverActivity : Activity() {
 
         when (intent?.action) {
             Intent.ACTION_SEND -> handleSendIntent(intent)
+            Intent.ACTION_SEND_MULTIPLE -> handleSendMultipleIntent(intent)
             else -> {
                 Log.w(TAG, "Unexpected action: ${intent?.action}")
-                cleanup()
-                finish()
+                endFlow()
             }
         }
     }
 
     private fun handleSendIntent(intent: Intent) {
+        val uris = extractSharedUris(intent)
+        resolveSourcePackage(uris.firstOrNull())
+
+        val uri = uris.firstOrNull()
+        Log.i(TAG, "Handle share: URI=$uri, MIME=${intent.type}, source=$sourcePackage")
+
+        if (uri == null) {
+            // Dynamic launcher shortcuts (TASK-393) reach here by design: the
+            // shortcut intent carries the alias component but cannot carry an
+            // audio stream. With the shortcut marker, open the SAF audio
+            // picker instead of dead-ending; the alias backend override is
+            // re-derived from this intent's component after the pick, which
+            // returns to this same Activity instance.
+            if (intent.getBooleanExtra(EXTRA_FROM_SHORTCUT, false)) {
+                launchAudioPicker()
+                return
+            }
+            Log.e(TAG, "No EXTRA_STREAM in intent")
+            showErrorToast(getString(R.string.no_audio_file))
+            endFlow()
+            return
+        }
+
+        processSharedAudio(uri, intent.type)
+    }
+
+    /**
+     * TASK-927: the ACTION_SEND_MULTIPLE entry. Each EXTRA_STREAM URI rides
+     * the SAME copy-and-dispatch flow a single share uses; the batch counter
+     * set here keeps the Activity alive until every flow resolves.
+     */
+    private fun handleSendMultipleIntent(intent: Intent) {
+        val uris = extractSharedUris(intent)
+        resolveSourcePackage(uris.firstOrNull())
+        Log.i(TAG, "Handle batch share: ${uris.size} URI(s), MIME=${intent.type}, source=$sourcePackage")
+
+        if (uris.isEmpty()) {
+            Log.e(TAG, "No EXTRA_STREAM in intent")
+            showErrorToast(getString(R.string.no_audio_file))
+            endFlow()
+            return
+        }
+
+        batchFilesRemaining = uris.size
+        uris.forEach { processSharedAudio(it, intent.type) }
+    }
+
+    /**
+     * The caller-attribution ladder shared by every share entry: the calling
+     * component, then the calling package, then the content URI's authority
+     * resolved to its OWNING PACKAGE via PackageManager. The authority (e.g.
+     * "com.google.android.apps.nbu.files.provider") is the FileProvider
+     * authority, NOT the package itself; resolveContentProvider() returns
+     * the actual app package (e.g. "com.google.android.apps.nbu.files"), which then maps
+     * to the human label ("Files") via AppInfoUtils.getAppName() at display time.
+     * A batch resolves once against the first URI: every
+     * EXTRA_STREAM URI in one intent comes from the same sender.
+     */
+    private fun resolveSourcePackage(firstUri: Uri?) {
         // Try to detect the calling package (limited availability on modern Android)
         if (sourcePackage == null) {
             sourcePackage = callingActivity?.packageName
@@ -287,16 +375,8 @@ class ShareReceiverActivity : Activity() {
             }
         }
 
-        @Suppress("DEPRECATION")
-        val uri = intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
-
-        // If still null, resolve the content URI's authority to its OWNING PACKAGE via
-        // PackageManager. The authority (e.g. "com.google.android.apps.nbu.files.provider")
-        // is the FileProvider authority, NOT the package — resolveContentProvider() returns
-        // the actual app package (e.g. "com.google.android.apps.nbu.files"), which then maps
-        // to the human label ("Files") via AppInfoUtils.getAppName() at display time.
-        if (sourcePackage == null && uri != null && uri.scheme == "content") {
-            val authority = uri.authority
+        if (sourcePackage == null && firstUri != null && firstUri.scheme == "content") {
+            val authority = firstUri.authority
             if (authority != null) {
                 val resolved = try {
                     packageManager.resolveContentProvider(authority, 0)?.packageName
@@ -316,28 +396,6 @@ class ShareReceiverActivity : Activity() {
         } else {
             Log.d(TAG, "Source app not detected - will use default preferences")
         }
-
-        Log.i(TAG, "Handle share: URI=$uri, MIME=${intent.type}, source=$sourcePackage")
-
-        if (uri == null) {
-            // Dynamic launcher shortcuts (TASK-393) reach here by design: the
-            // shortcut intent carries the alias component but cannot carry an
-            // audio stream. With the shortcut marker, open the SAF audio
-            // picker instead of dead-ending; the alias backend override is
-            // re-derived from this intent's component after the pick, which
-            // returns to this same Activity instance.
-            if (intent.getBooleanExtra(EXTRA_FROM_SHORTCUT, false)) {
-                launchAudioPicker()
-                return
-            }
-            Log.e(TAG, "No EXTRA_STREAM in intent")
-            showErrorToast(getString(R.string.no_audio_file))
-            cleanup()
-            finish()
-            return
-        }
-
-        processSharedAudio(uri, intent.type)
     }
 
     /**
@@ -360,8 +418,7 @@ class ShareReceiverActivity : Activity() {
         if (uri == null) {
             // User backed out of the picker: nothing to transcribe; the same
             // quiet exit as the external-model chooser cancel path.
-            cleanup()
-            finish()
+            endFlow()
             return
         }
         processSharedAudio(uri, data?.type)
@@ -397,16 +454,18 @@ class ShareReceiverActivity : Activity() {
                 // shares it); the copy itself already logged the specific cause.
                 else -> {
                     showErrorToast(result.userMessage(this@ShareReceiverActivity))
-                    cleanup()
-                    finish()
+                    endFlow()
                     return@launch
                 }
             }
 
             Log.i(TAG, "Copied to: $localPath")
 
-            // Start service with file path and detected package
-            val taskId = "share_${System.currentTimeMillis()}"
+            // Start service with file path and detected package. The uuid
+            // fragment mirrors the copy's file name: a batch of
+            // sub-millisecond copies could otherwise stamp two rows with
+            // the same millisecond taskId (getByTaskId is first-match).
+            val taskId = "share_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(8)}"
 
             // TASK-677 (GH #92 import half): a handed subtitle FILE is an
             // import, not audio. Its cues become the transcript (ASR
@@ -478,8 +537,7 @@ class ShareReceiverActivity : Activity() {
             // Unreachable in production (the alias component is disabled with no records),
             // guarded anyway so a stale component state degrades politely.
             com.antivocale.app.util.ToastCompat.show(this, R.string.external_none_imported)
-            cleanup()
-            finish()
+            endFlow()
             return
         }
 
@@ -502,8 +560,7 @@ class ShareReceiverActivity : Activity() {
                 }
             }
             .setOnCancelListener {
-                cleanup()
-                finish()
+                endFlow()
             }
             .show()
     }
@@ -543,8 +600,7 @@ class ShareReceiverActivity : Activity() {
             // GH #18 review: the just-copied file is undecodable garbage;
             // delete it now, not at the 24h sweep.
             withContext(Dispatchers.IO) { File(localPath).delete() }
-            cleanup()
-            finish()
+            endFlow()
             return
         }
 
@@ -555,8 +611,7 @@ class ShareReceiverActivity : Activity() {
             // (user-configured timeout) falls back to ASR if the user
             // ignores the prompt; either tap cancels the worker.
             com.antivocale.app.util.ToastCompat.show(this, R.string.subtitles_found_title)
-            cleanup()
-            finish()
+            endFlow()
             return
         }
 
@@ -620,8 +675,7 @@ class ShareReceiverActivity : Activity() {
                 putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, existing.taskId)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             })
-            cleanup()
-            finish()
+            endFlow()
         }
         android.app.AlertDialog.Builder(this)
             .setTitle(R.string.duplicate_found_title)
@@ -678,8 +732,7 @@ class ShareReceiverActivity : Activity() {
             }
         }
 
-        cleanup()
-        finish()
+        endFlow()
     }
 
     private fun cleanup() {
@@ -690,6 +743,22 @@ class ShareReceiverActivity : Activity() {
         } catch (e: Exception) {
             Log.d(TAG, "Cleanup: receiver already unregistered or never registered")
         }
+    }
+
+    /**
+     * The flow-end tail shared by every per-file resolution. Outside a batch
+     * this is the old cleanup-then-finish; inside a batch it burns one
+     * counter slot per resolved file and finishes only on the last, so the
+     * sibling URIs keep their read grants and any pending dialog keeps its
+     * window.
+     */
+    private fun endFlow() {
+        if (batchFilesRemaining > 0) {
+            batchFilesRemaining--
+            if (batchFilesRemaining > 0) return
+        }
+        cleanup()
+        finish()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
