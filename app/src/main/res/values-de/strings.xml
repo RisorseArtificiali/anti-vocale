@@ -1133,6 +1133,8 @@
     <string name="error_oom_transcription_protected">Nicht genug Speicher, um dieses Audio auch mit aktivem Speicherschutz zu transkribieren. Versuche eine kürzere Datei, ein kleineres Modell oder schließe andere Apps.</string>
     <string name="external_family_detected">Erkannt: %1$s</string>
     <string name="external_family_pick_title">Zu welcher Familie gehört dieses Modell?</string>
+    <string name="external_bundles_pick_title">Mehrere Bundles gefunden</string>
+    <string name="external_bundles_pick_subtitle">Wähle eines zum Importieren</string>
     <string name="subtitle_timeout_title">Automatische Wahlzeit</string>
     <string name="subtitle_timeout_description">Wie lange die Auswahlbenachrichtigung für ein Video mit Untertiteln wartet, bevor automatisch transkribiert wird.</string>
     <string name="transcript_export_format_title">Dateiformat für Auto-Speichern</string>

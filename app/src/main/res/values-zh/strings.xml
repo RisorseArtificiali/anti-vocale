@@ -964,6 +964,8 @@
     <string name="error_oom_transcription_protected">即使开启了内存保护，内存仍不足以转写此音频。请尝试更短的文件、更小的模型，或关闭其他应用。</string>
     <string name="external_family_detected">检测到：%1$s</string>
     <string name="external_family_pick_title">此模型属于哪个家族？</string>
+    <string name="external_bundles_pick_title">发现多个模型包</string>
+    <string name="external_bundles_pick_subtitle">选择一个进行导入</string>
     <string name="subtitle_timeout_title">自动选择超时</string>
     <string name="subtitle_timeout_description">对于带字幕的视频，选择通知在自动开始转写前的等待时长。</string>
     <string name="transcript_export_format_title">自动保存文件格式</string>

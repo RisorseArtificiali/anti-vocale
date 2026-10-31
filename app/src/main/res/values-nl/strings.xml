@@ -1136,6 +1136,8 @@
     <string name="error_oom_transcription_protected">Niet genoeg geheugen om deze audio te transcriberen, zelfs niet met geheugenbescherming aan. Probeer een korter bestand, een kleiner model, of sluit andere apps.</string>
     <string name="external_family_detected">Gedetecteerd: %1$s</string>
     <string name="external_family_pick_title">Tot welke familie behoort dit model?</string>
+    <string name="external_bundles_pick_title">Meerdere bundels gevonden</string>
+    <string name="external_bundles_pick_subtitle">Kies er een om te importeren</string>
     <string name="subtitle_timeout_title">Time-out van automatische keuze</string>
     <string name="subtitle_timeout_description">Hoe lang de keuzemelding voor een video met ondertitels wacht voordat de transcriptie uit zichzelf begint.</string>
     <string name="transcript_export_format_title">Bestandsformaat voor automatisch opslaan</string>

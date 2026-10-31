@@ -960,6 +960,8 @@
     <string name="error_oom_transcription_protected">لا توجد ذاكرة كافية لنسخ هذا الصوت حتى مع تشغيل حماية الذاكرة. جرّب ملفًا أقصر أو نموذجًا أصغر، أو أغلق التطبيقات الأخرى.</string>
     <string name="external_family_detected">تم الكشف عن: %1$s</string>
     <string name="external_family_pick_title">إلى أي عائلة ينتمي هذا النموذج؟</string>
+    <string name="external_bundles_pick_title">تم العثور على عدة حزم</string>
+    <string name="external_bundles_pick_subtitle">اختر واحدة للاستيراد</string>
     <string name="subtitle_timeout_title">مهلة الاختيار التلقائي</string>
     <string name="subtitle_timeout_description">مدة انتظار إشعار الاختيار الخاص بفيديو يحتوي على نصوص ترجمة قبل بدء النسخ تلقائيًا.</string>
     <string name="transcript_export_format_title">تنسيق ملف الحفظ التلقائي</string>

@@ -1154,6 +1154,8 @@
     <string name="error_oom_transcription_protected">Недостаточно памяти для расшифровки этого аудио даже при включённой защите памяти. Попробуйте более короткий файл, меньшую модель или закройте другие приложения.</string>
     <string name="external_family_detected">Обнаружено: %1$s</string>
     <string name="external_family_pick_title">К какому семейству относится эта модель?</string>
+    <string name="external_bundles_pick_title">Найдено несколько архивов</string>
+    <string name="external_bundles_pick_subtitle">Выберите один для импорта</string>
     <string name="subtitle_timeout_title">Таймаут автоматического выбора</string>
     <string name="subtitle_timeout_description">Сколько ждёт уведомление с выбором для видео с субтитрами, прежде чем начать расшифровку самостоятельно.</string>
     <string name="transcript_export_format_title">Формат автосохранения</string>

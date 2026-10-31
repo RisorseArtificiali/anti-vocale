@@ -1137,6 +1137,8 @@
     <string name="error_oom_transcription_protected">حتی با فعال بودن محافظت حافظه، حافظه کافی برای رونویسی این صوت وجود ندارد. یک فایل کوتاه‌تر یا مدل کوچک‌تر امتحان کنید یا سایر برنامه‌ها را ببندید.</string>
     <string name="external_family_detected">شناسایی‌شده: %1$s</string>
     <string name="external_family_pick_title">این مدل به کدام خانواده تعلق دارد؟</string>
+    <string name="external_bundles_pick_title">چند بسته پیدا شد</string>
+    <string name="external_bundles_pick_subtitle">یکی را برای وارد کردن انتخاب کنید</string>
     <string name="subtitle_timeout_title">مهلت انتخاب خودکار</string>
     <string name="subtitle_timeout_description">مدتی که اعلان انتخاب برای ویدیوی دارای زیرنویس منتظر می‌ماند و بعد خودش رونویسی را آغاز می‌کند.</string>
     <string name="transcript_export_format_title">قالب ذخیره خودکار</string>

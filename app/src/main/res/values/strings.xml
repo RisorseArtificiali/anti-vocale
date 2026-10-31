@@ -1170,6 +1170,8 @@
     <string name="error_oom_transcription_protected">Not enough memory to transcribe this audio even with memory protection on. Try a shorter file, a smaller model, or close other apps.</string>
     <string name="external_family_detected">Detected: %1$s</string>
     <string name="external_family_pick_title">Which family is this model?</string>
+    <string name="external_bundles_pick_title">Multiple bundles found</string>
+    <string name="external_bundles_pick_subtitle">Pick one to import</string>
     <string name="subtitle_timeout_title">Automatic Choice Timeout</string>
     <string name="subtitle_timeout_description">How long the choice notification for a video with subtitles waits before transcription starts on its own.</string>
     <string name="transcript_export_format_title">Auto-Save File Format</string>

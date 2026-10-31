@@ -1001,6 +1001,8 @@
     <string name="error_oom_transcription_protected">Mémoire insuffisante pour transcrire ce fichier audio même avec la protection mémoire activée. Essaie un fichier plus court, un modèle plus petit, ou ferme les autres applications.</string>
     <string name="external_family_detected">Détecté : %1$s</string>
     <string name="external_family_pick_title">De quelle famille ce modèle fait-il partie ?</string>
+    <string name="external_bundles_pick_title">Plusieurs bundles trouvés</string>
+    <string name="external_bundles_pick_subtitle">Choisissez-en un à importer</string>
     <string name="subtitle_timeout_title">Délai de choix automatique</string>
     <string name="subtitle_timeout_description">Combien de temps la notification de choix d\'une vidéo sous-titrée attend avant de transcrire d\'elle-même.</string>
     <string name="transcript_export_format_title">Format de sauvegarde automatique</string>

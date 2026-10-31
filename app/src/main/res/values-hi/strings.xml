@@ -1132,6 +1132,8 @@
     <string name="error_oom_transcription_protected">मेमोरी सुरक्षा चालू होने के बावजूद इस ऑडियो को ट्रांसक्राइब करने के लिए मेमोरी काफ़ी नहीं है। छोटी फ़ाइल या छोटा मॉडल आज़माएँ, या दूसरे ऐप बंद करें।</string>
     <string name="external_family_detected">पहचाना गया: %1$s</string>
     <string name="external_family_pick_title">यह मॉडल किस परिवार का है?</string>
+    <string name="external_bundles_pick_title">एकाधिक बंडल मिले</string>
+    <string name="external_bundles_pick_subtitle">इंपोर्ट करने के लिए एक चुनें</string>
     <string name="subtitle_timeout_title">स्वचालित चयन समय-सीमा</string>
     <string name="subtitle_timeout_description">सबटाइटल वाले वीडियो की चयन सूचना कितनी देर प्रतीक्षा करती है और खुद ट्रांसक्रिप्ट शुरू करती है।</string>
     <string name="transcript_export_format_title">ऑटो-सेव फ़ाइल प्रारूप</string>

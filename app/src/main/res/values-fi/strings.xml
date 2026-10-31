@@ -1004,6 +1004,8 @@
     <string name="error_oom_transcription_protected">Muisti ei riitä tämän äänen transkriptioon, vaikka muistisuojaus on päällä. Kokeile lyhyempää tiedostoa, pienempää mallia tai sulje muut sovellukset.</string>
     <string name="external_family_detected">Tunnistettu: %1$s</string>
     <string name="external_family_pick_title">Mihin perheeseen tämä malli kuuluu?</string>
+    <string name="external_bundles_pick_title">Löytyi useita paketteja</string>
+    <string name="external_bundles_pick_subtitle">Valitse yksi tuotavaksi</string>
     <string name="subtitle_timeout_title">Automaattisen valinnan aikakatkaisu</string>
     <string name="subtitle_timeout_description">Kuinka kauan tekstitytetyn videon valinta-ilmoitus odottaa, ennen kuin transkriptio käynnistyy itsestään.</string>
     <string name="transcript_export_format_title">Automaattitallennuksen tiedostomuoto</string>

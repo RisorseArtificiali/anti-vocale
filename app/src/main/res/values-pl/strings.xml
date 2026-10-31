@@ -1153,6 +1153,8 @@
     <string name="error_oom_transcription_protected">Za mało pamięci, aby transkrybować ten plik audio nawet przy włączonej ochronie pamięci. Spróbuj krótszego pliku, mniejszego modelu albo zamknij inne aplikacje.</string>
     <string name="external_family_detected">Wykryto: %1$s</string>
     <string name="external_family_pick_title">Do której rodziny należy ten model?</string>
+    <string name="external_bundles_pick_title">Znaleziono kilka archiwów</string>
+    <string name="external_bundles_pick_subtitle">Wybierz jedno do zaimportowania</string>
     <string name="subtitle_timeout_title">Czas automatycznego wyboru</string>
     <string name="subtitle_timeout_description">Jak długo powiadomienie z wyborem dla filmu z napisami czeka, zanim samo rozpocznie transkrypcję.</string>
     <string name="transcript_export_format_title">Format autozapisu</string>

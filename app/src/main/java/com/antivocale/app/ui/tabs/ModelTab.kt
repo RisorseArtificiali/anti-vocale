@@ -170,6 +170,7 @@ fun ModelTab(
     val externalImportScope = rememberCoroutineScope()
     var detectedExternalFamily by remember { mutableStateOf<ModelFamily?>(null) }
     var ambiguousPick by remember { mutableStateOf<AmbiguousFamilyPick?>(null) }
+    var bundlePick by remember { mutableStateOf<List<BundleZipPick>?>(null) }
     var detectJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     fun importFolder(picked: Uri, family: ModelFamily, ctcSubtype: String? = null) {
         // A chooser subtype is written back so the section dropdown (and a
@@ -183,6 +184,15 @@ fun ModelTab(
             options = externalImport.options(),
             languages = externalImport.languageCodes(),
         )
+    }
+    // TASK-925: the one-zip and chosen-zip branches share this entry (the
+    // chooser tap runs it too, after the dialog state clears).
+    fun importBundle(tree: Uri, bundle: Uri) {
+        // TASK-761 hygiene (review F5): the folder picker persisted a read
+        // grant; the import reads through the transient one, so release the
+        // persisted slot before importing.
+        com.antivocale.app.util.TreeUris.releasePersistableReadGrant(context, tree)
+        viewModel.importExternalFromBundle(context, bundle)
     }
     fun routeDetection(picked: Uri, family: ModelFamily) {
         // The chip shows the detected family in every branch: for CTC it is
@@ -243,6 +253,7 @@ fun ModelTab(
             com.antivocale.app.util.TreeUris.takePersistableReadGrant(context, picked)
             detectedExternalFamily = null
             ambiguousPick = null
+            bundlePick = null
             // A rapid re-pick must not race the previous detect probe; the
             // import phase itself is not cancellable (viewModelScope).
             detectJob?.cancel()
@@ -272,26 +283,26 @@ fun ModelTab(
                     }
                     ModelFamilyDetector.Result.Unknown -> {
                         // TASK-796 round 3 (maintainer): one import path,
-                        // no user-facing choice. A folder that is not
-                        // itself a model dir may be where a bundle lives
-                        // (Downloads, say): EXACTLY one .zip child imports
-                        // as the bundle (several zips is not our call to
-                        // make; the folder import then reports what is
-                        // missing). The scan runs in the VM on IO
-                        // (review F1/F2); a broken grant must not escape
-                        // this scope either.
-                        val bundleChild = runCatching {
-                            viewModel.zipChildren(context, picked).singleOrNull()
-                        }.getOrElse { null }
-                        if (bundleChild != null) {
-                            // TASK-761 hygiene (review F5): the folder
-                            // picker persisted a read grant; the import
-                            // reads through the transient one, so release
-                            // the persisted slot before importing.
-                            com.antivocale.app.util.TreeUris.releasePersistableReadGrant(context, picked)
-                            viewModel.importExternalFromBundle(context, bundleChild)
-                        } else {
-                            importFolder(picked, externalImport.family)
+                        // no family choice. A folder that is not itself a
+                        // model dir may be where a bundle lives (Downloads,
+                        // say). TASK-925 (GH #124 reopen 2): exactly one
+                        // .zip child still imports as the bundle, but
+                        // several zips is the user's call after all, as a
+                        // one-tap chooser (the old fall-through to the
+                        // folder import reported a misleading
+                        // missing-files error). The scan runs in the VM on
+                        // IO (review F1/F2); a broken grant must not
+                        // escape this scope either.
+                        val zips = runCatching {
+                            viewModel.zipChildren(context, picked)
+                        }.getOrElse { emptyList() }
+                        when (zips.size) {
+                            0 -> importFolder(picked, externalImport.family)
+                            1 -> importBundle(picked, zips.first())
+                            else -> bundlePick = zips.map { child ->
+                                BundleZipPick(picked, child,
+                                    viewModel.bundleZipDisplayName(context, child))
+                            }
                         }
                     }
                 }
@@ -938,6 +949,33 @@ fun ModelTab(
                         confirmButton = {},
                         dismissButton = {
                             TextButton(onClick = { ambiguousPick = null }) {
+                                Text(stringResource(android.R.string.cancel))
+                            }
+                        },
+                    )
+                }
+
+                if (bundlePick != null) {
+                    // TASK-925 (GH #124 reopen 2): the picked folder holds
+                    // several .zip bundles; a row's tap imports that one,
+                    // dismiss cancels with nothing imported.
+                    AlertDialog(
+                        onDismissRequest = { bundlePick = null },
+                        title = { Text(stringResource(R.string.external_bundles_pick_title)) },
+                        text = {
+                            Column {
+                                Text(stringResource(R.string.external_bundles_pick_subtitle))
+                                bundlePick?.forEach { pick ->
+                                    TextButton(onClick = {
+                                        bundlePick = null
+                                        importBundle(pick.treeUri, pick.zipUri)
+                                    }) { Text(pick.name) }
+                                }
+                            }
+                        },
+                        confirmButton = {},
+                        dismissButton = {
+                            TextButton(onClick = { bundlePick = null }) {
                                 Text(stringResource(android.R.string.cancel))
                             }
                         },
@@ -1630,6 +1668,10 @@ private fun variantFitHint(
 
 /** TASK-513: an ambiguous family pick waiting on the user's choice. */
 private data class AmbiguousFamilyPick(val uri: Uri, val candidates: List<ModelFamily>)
+
+/** TASK-925: one row of the multi-zip chooser; treeUri releases the
+ *  folder grant at tap time, exactly like the single-zip path. */
+private data class BundleZipPick(val treeUri: Uri, val zipUri: Uri, val name: String)
 
 /** Family label table (TASK-513 hoisted from the section: compile-time
  *  constant, shared by the dropdown, the detected chip, and the chooser). */

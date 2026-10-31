@@ -1001,6 +1001,8 @@
     <string name="error_oom_transcription_protected">No hay memoria suficiente para transcribir este audio incluso con la protección de memoria activada. Prueba con un archivo más corto, un modelo más pequeño o cierra otras aplicaciones.</string>
     <string name="external_family_detected">Detectado: %1$s</string>
     <string name="external_family_pick_title">¿De qué familia es este modelo?</string>
+    <string name="external_bundles_pick_title">Se encontraron varios paquetes</string>
+    <string name="external_bundles_pick_subtitle">Elige uno para importar</string>
     <string name="subtitle_timeout_title">Tiempo de espera de la elección automática</string>
     <string name="subtitle_timeout_description">Cuánto espera la notificación de elección de un vídeo con subtítulos antes de transcribir por sí sola.</string>
     <string name="transcript_export_format_title">Formato de autoguardado</string>
