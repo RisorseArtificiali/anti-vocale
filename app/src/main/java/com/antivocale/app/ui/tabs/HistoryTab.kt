@@ -893,12 +893,21 @@ fun HistoryTab(
         ActivityResultContracts.OpenMultipleDocuments()
     ) { uris ->
         if (uris.isEmpty()) return@rememberLauncherForActivityResult
-        browseScope.launch {
-            if (uris.size > 1) {
+        // Review W3: the intake starts immediately; showSnackbar suspends
+        // until dismissal, so awaiting it first idled a 20-file pick for
+        // the snackbar's whole display duration.
+        viewModel.transcribeLocalFiles(context, uris)
+        if (uris.size > 1) {
+            browseScope.launch {
+                // Review W6: the explicit locale keeps the count's digits on
+                // the app's language, not the device's (Arabic-Indic
+                // numerals inside a pinned-English UI otherwise).
                 snackbarHostState.showSnackbar(
-                    String.format(currentBatchEnqueuedTemplate, uris.size))
+                    String.format(
+                        LocaleManager.effectiveLocale(),
+                        currentBatchEnqueuedTemplate,
+                        uris.size))
             }
-            viewModel.transcribeLocalFiles(context, uris)
         }
     }
     // TASK-842 browse arm: the open-or-reprocess dialog (the same four
