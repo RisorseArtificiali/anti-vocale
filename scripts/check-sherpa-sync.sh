@@ -67,4 +67,18 @@ if [ "$marker_ver" != "$script_ver" ] || [ "$marker_ver" != "$gradle_ver" ] \
     exit 1
 fi
 
-echo "OK: sherpa $marker_ver in sync across marker, script, build file, workflow URL, and eval pin"
+# 6th sync point (GH #175, #38): the F-Droid recipe's LATEST srclib pin
+# must match the srclib-commit in .sherpa-version. The recipe has one
+# srclibs line per historical version; only the FIRST (newest) is checked.
+marker_srclib=$(grep '^srclib-commit ' .sherpa-version | awk '{print $2}')
+fdroid_srclib=$(grep -A1 'srclibs:' metadata/com.antivocale.app.yml \
+    | head -2 | tail -1 | sed 's/.*sherpa_onnx@//;s/[[:space:]]*$//')
+if [ "$fdroid_srclib" != "$marker_srclib" ]; then
+    echo "FAIL: F-Droid recipe srclib pin out of sync:"
+    echo "  .sherpa-version:            $marker_srclib"
+    echo "  metadata (first srclibs):   $fdroid_srclib"
+    echo "Update metadata/com.antivocale.app.yml to sherpa_onnx@$marker_srclib"
+    exit 1
+fi
+
+echo "OK: sherpa $marker_ver in sync across marker, script, build file, workflow URL, eval pin, and F-Droid recipe"
