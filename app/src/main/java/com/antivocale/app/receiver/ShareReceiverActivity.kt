@@ -1,6 +1,5 @@
 package com.antivocale.app.receiver
 
-import android.app.Activity
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -13,10 +12,14 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateListOf
 import androidx.core.app.NotificationCompat
 import com.antivocale.app.R
 import com.antivocale.app.MainActivity
+import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.VoiceNoteDuplicateGuard
 import com.antivocale.app.receiver.ChooserBroadcastReceiver
@@ -25,6 +28,9 @@ import com.antivocale.app.service.InferenceEnqueue
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.service.ResultNotificationFactory
 import com.antivocale.app.transcription.BackendRegistry
+import com.antivocale.app.ui.dialogs.DuplicateFoundDialog
+import com.antivocale.app.ui.dialogs.ExternalModelChooserDialog
+import com.antivocale.app.ui.theme.AntiVocaleTheme
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.SharedAudioHandler
 import kotlinx.coroutines.CoroutineScope
@@ -51,8 +57,8 @@ import java.util.UUID
  */
 /**
  * Hilt entry point for fetching [PreferencesManager] without annotating this transparent
- * share-target Activity with @AndroidEntryPoint (which requires a ComponentActivity subclass).
- * Used only to read the transcription-language preference for subtitle track selection.
+ * share-target Activity with @AndroidEntryPoint. Used only to read the
+ * transcription-language preference for subtitle track selection.
  */
 @EntryPoint
 @InstallIn(SingletonComponent::class)
@@ -108,7 +114,7 @@ interface BackendRegistryEntryPoint {
  * the user is offered a choice (use subtitles vs. transcribe audio) via a notification
  * instead of starting ASR immediately.
  */
-class ShareReceiverActivity : Activity() {
+class ShareReceiverActivity : ComponentActivity() {
 
     companion object {
         const val TAG = "ShareReceiverActivity"
@@ -224,6 +230,39 @@ class ShareReceiverActivity : Activity() {
      *  that together exhaust storage mid-stream. */
     private val batchCopyGate = kotlinx.coroutines.sync.Semaphore(permits = 1)
 
+    /**
+     * The pending user interactions the Compose surface (see [onCreate]'s
+     * setContent) renders. The share flows append; the user's answer removes
+     * its own entry and runs the arm the old platform dialog carried.
+     * A batch can pend several at once (one per file, e.g. two duplicates or
+     * two family-alias choosers), stacked in append order exactly like the
+     * platform dialogs they replaced. Internal so the state-holder test can
+     * seed and drive the arms without running the copy flow.
+     */
+    internal val pendingDialogs = mutableStateListOf<PendingDialog>()
+
+    /** One pending interaction. Every variant carries its flow's unique
+     *  per-file taskId, so two entries are never data-equal twins. */
+    internal sealed interface PendingDialog {
+        /** TASK-842 duplicate prompt: open the existing row or reprocess. */
+        data class Duplicate(
+            val modelName: String,
+            val existingTaskId: String,
+            val taskId: String,
+            val localPath: String,
+            val backendOverride: String?,
+            val contentHash: String,
+        ) : PendingDialog
+
+        /** ShareExternal family chooser: pick one imported model. */
+        data class ExternalChooser(
+            val taskId: String,
+            val localPath: String,
+            val records: List<ExternalModelRecord>,
+            val contentHash: String?,
+        ) : PendingDialog
+    }
+
     /** The app-wide entry point, resolved once per instance; [appScope] and
      *  the registry/store reads all derive from it. */
     private val appEntryPoint by lazy {
@@ -236,9 +275,9 @@ class ShareReceiverActivity : Activity() {
 
     /**
      * SAF audio picker for the shortcut flow: the same OpenDocument contract
-     * the ModelTab file picker uses, driven via createIntent/parseResult
-     * because this plain Activity (deliberately not a ComponentActivity) has
-     * no registerForActivityResult. The stateless contract is safe to share.
+     * the ModelTab file picker uses, driven via createIntent/parseResult with
+     * the single [REQUEST_PICK_AUDIO] result code. The stateless contract is
+     * safe to share.
      */
     private val audioPickerContract = ActivityResultContracts.OpenDocument()
 
@@ -272,6 +311,28 @@ class ShareReceiverActivity : Activity() {
             Log.i(TAG, "Share flow already dispatched by this process; skipping re-dispatch")
             finish()
             return
+        }
+
+        // The dialog surface. Platform-theme translucent window is fine:
+        // Material3 composes its own theme, no AppCompat host needed.
+        setContent {
+            AntiVocaleTheme {
+                pendingDialogs.forEach { entry ->
+                    when (entry) {
+                        is PendingDialog.Duplicate -> DuplicateFoundDialog(
+                            modelName = entry.modelName,
+                            onOpen = { onDuplicateOpen(entry) },
+                            onReprocess = { onDuplicateReprocess(entry) },
+                        )
+
+                        is PendingDialog.ExternalChooser -> ExternalModelChooserDialog(
+                            records = entry.records,
+                            onPick = { chosen -> onExternalChooserPick(entry, chosen) },
+                            onDismiss = { onExternalChooserCancel(entry) },
+                        )
+                    }
+                }
+            }
         }
 
         Log.i(TAG, "Share received: action=${intent?.action}, type=${intent?.type}")
@@ -542,11 +603,12 @@ class ShareReceiverActivity : Activity() {
     }
 
     /**
-     * Chooser for the ShareExternal family alias: a platform AlertDialog (this Activity is
-     * deliberately not a ComponentActivity, so no Compose). Blocks until the user picks an
-     * imported model, then continues the normal flow with the concrete external backend id.
-     * Suspending: the record read is a DataStore access and must not park the
-     * main thread (the TASK-517 rule); the caller already runs on Main.
+     * Chooser for the ShareExternal family alias: enqueues the pending
+     * chooser the Compose surface renders, then returns; the pick arm
+     * ([onExternalChooserPick]) continues the flow with the concrete
+     * external backend id. Suspending: the record read is a DataStore
+     * access and must not park the main thread (the TASK-517 rule); the
+     * caller already runs on Main.
      */
     private suspend fun showExternalModelChooser(
         taskId: String,
@@ -577,28 +639,7 @@ class ShareReceiverActivity : Activity() {
             return
         }
 
-        val labels = records.map { record ->
-            record.displayName + if (record.languages.isEmpty()) "" else " (" + record.languages.joinToString(", ") + ")"
-        }.toTypedArray()
-
-        android.app.AlertDialog.Builder(this)
-            .setTitle(R.string.share_target_external)
-            .setItems(labels) { _, which ->
-                val chosen = records[which]
-                Log.i(TAG, "External model chosen via share chooser: ${chosen.backendId}")
-                launchShareFlow {
-                    if (contentHash != null &&
-                        offerDuplicateDialogIfNeeded(taskId, localPath, chosen.backendId, contentHash)
-                    ) {
-                        return@launchShareFlow  // the dialog owns the request from here
-                    }
-                    dispatch(taskId, localPath, chosen.backendId, contentHash)
-                }
-            }
-            .setOnCancelListener {
-                endFlow()
-            }
-            .show()
+        pendingDialogs.add(PendingDialog.ExternalChooser(taskId, localPath, records, contentHash))
     }
 
     /** The subtitle probe branch plus the default ASR path, shared by every
@@ -682,13 +723,14 @@ class ShareReceiverActivity : Activity() {
      * TASK-842 (GH #157 part 3): the interactive duplicate guard. Looks up
      * the fresh copy's content hash against completed rows FOR THE MODEL
      * THIS RUN WOULD USE (the same display-name derivation the row will
-     * stamp); on a hit, the platform dialog (this Activity's precedent)
-     * offers open-or-reprocess and OWNS the request. Returns true when the
-     * dialog took over (the caller must not dispatch); false when there is
-     * no duplicate (the caller proceeds) or the Activity is already gone
-     * (reprocess is the safe default: never lose a share over a dialog).
-     * A destroy between the entry check and the show re-check falls back
-     * to reprocess the same way.
+     * stamp); on a hit, enqueues the pending duplicate prompt the Compose
+     * surface renders (the same [DuplicateFoundDialog] the History browse
+     * FAB shows) and it OWNS the request. Returns true when the prompt took
+     * over (the caller must not dispatch); false when there is no duplicate
+     * (the caller proceeds) or the Activity is already gone (reprocess is
+     * the safe default: never lose a share over a dialog). A destroy
+     * between the entry check and the prompt re-check falls back to
+     * reprocess the same way.
      */
     private suspend fun offerDuplicateDialogIfNeeded(
         taskId: String,
@@ -701,33 +743,77 @@ class ShareReceiverActivity : Activity() {
             .lookup(this, appEntryPoint.transcriptionOrchestrator(), contentHash, backendOverride)
             ?: return false
         val existing = hit.row
-        // Three suspension points sit between the entry check and show():
-        // re-check here so a destroy in that window cannot BadToken-crash.
+        // Three suspension points sit between the entry check and the
+        // append: re-check here so a destroy in that window cannot leave a
+        // prompt pointing at a dead window.
         if (isFinishing || isDestroyed) return false
         Log.i(TAG, "Duplicate content for model=${hit.modelName}: opening-or-reprompting taskId=${existing.taskId}")
 
-        fun openExisting() {
-            startActivity(Intent(this, MainActivity::class.java).apply {
-                putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, existing.taskId)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-            endFlow()
-        }
-        android.app.AlertDialog.Builder(this)
-            .setTitle(R.string.duplicate_found_title)
-            .setMessage(getString(R.string.duplicate_found_message, hit.modelName))
-            .setPositiveButton(R.string.duplicate_found_open) { _, _ -> openExisting() }
-            .setNegativeButton(R.string.duplicate_found_again) { _, _ ->
-                launchShareFlow {
-                    dispatch(taskId, localPath, backendOverride, contentHash)
-                }
-            }
-            // A dismiss outside the buttons is ambiguous: OPEN is the
-            // conservative arm (no recompute, the user still lands on the
-            // transcript).
-            .setOnCancelListener { openExisting() }
-            .show()
+        pendingDialogs.add(
+            PendingDialog.Duplicate(
+                modelName = hit.modelName,
+                existingTaskId = existing.taskId,
+                taskId = taskId,
+                localPath = localPath,
+                backendOverride = backendOverride,
+                contentHash = contentHash,
+            )
+        )
         return true
+    }
+
+    /**
+     * The arms the old platform dialog carried, now driven by the Compose
+     * surface. The endFlow accounting is untouched: every arm runs the
+     * exact resolution path its dialog callback ran. Entries are removed
+     * by identity, since a batch can pend data-shaped equals.
+     */
+    private fun removePendingDialog(entry: PendingDialog) {
+        val index = pendingDialogs.indexOfFirst { it === entry }
+        if (index >= 0) pendingDialogs.removeAt(index)
+    }
+
+    /** The open arm: land on the existing transcript row. Also the answer
+     *  to a dismiss outside the buttons (the conservative arm). */
+    internal fun onDuplicateOpen(entry: PendingDialog.Duplicate) {
+        removePendingDialog(entry)
+        openExisting(entry.existingTaskId)
+    }
+
+    /** The reprocess arm: run the flow's dispatch with this request's backend. */
+    private fun onDuplicateReprocess(entry: PendingDialog.Duplicate) {
+        removePendingDialog(entry)
+        launchShareFlow {
+            dispatch(entry.taskId, entry.localPath, entry.backendOverride, entry.contentHash)
+        }
+    }
+
+    private fun openExisting(existingTaskId: String) {
+        startActivity(Intent(this, MainActivity::class.java).apply {
+            putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, existingTaskId)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+        endFlow()
+    }
+
+    /** The chooser's row-tap arm: continue the flow with the chosen backend. */
+    private fun onExternalChooserPick(entry: PendingDialog.ExternalChooser, chosen: ExternalModelRecord) {
+        removePendingDialog(entry)
+        Log.i(TAG, "External model chosen via share chooser: ${chosen.backendId}")
+        launchShareFlow {
+            if (entry.contentHash != null &&
+                offerDuplicateDialogIfNeeded(entry.taskId, entry.localPath, chosen.backendId, entry.contentHash)
+            ) {
+                return@launchShareFlow  // the dialog owns the request from here
+            }
+            dispatch(entry.taskId, entry.localPath, chosen.backendId, entry.contentHash)
+        }
+    }
+
+    /** The chooser's dismiss arm (the platform dialog's cancel listener). */
+    internal fun onExternalChooserCancel(entry: PendingDialog.ExternalChooser) {
+        removePendingDialog(entry)
+        endFlow()
     }
 
     /**

@@ -10,10 +10,9 @@ import com.antivocale.app.R
 /**
  * TASK-842 (GH #157 part 3): the duplicate open-or-reprocess dialog, shared
  * by every INTERACTIVE intake surface (the History browse FAB renders it
- * directly; the share flow uses the platform-dialog form on its non-Compose
- * Activity, with the same four strings and arms). Dismiss outside the
- * buttons is the caller's conservative arm (open), mirroring the share
- * dialog's cancel.
+ * directly; the share flow renders this same composable on its Compose
+ * surface, with the same four strings and arms). Dismiss outside the
+ * buttons is the caller's conservative arm (open).
  */
 @Composable
 fun DuplicateFoundDialog(
