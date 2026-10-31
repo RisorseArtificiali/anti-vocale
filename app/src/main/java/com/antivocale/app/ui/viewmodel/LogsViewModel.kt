@@ -188,10 +188,11 @@ class LogsViewModel @Inject constructor(
     }
 
     /**
-     * Review W1: one lock per browse intake pass, duplicate gate included.
-     * A second batch's files queue behind the first batch's dialog-and-copy
-     * chain (strict FIFO), so the single-slot pending state can never be
-     * overwritten by a concurrent batch.
+     * Review Y6: one lock around the duplicate-hit window only (set the
+     * pending slot, await the dialog gate). Copy and hash run outside, so a
+     * second pick's fresh files proceed while a first pick's dialog pends; a
+     * second pick's duplicate queues here (FIFO), so the single-slot
+     * [pendingBrowseDuplicate] can never be overwritten mid-dialog.
      */
     private val intakeMutex = Mutex()
 
@@ -384,10 +385,11 @@ class LogsViewModel @Inject constructor(
      * intake starts only after file N resolves (answered dialog or clean
      * enqueue), so the single-slot [pendingBrowseDuplicate] state can never
      * be overwritten mid-batch: the overwritten file used to lose its dialog
-     * silently and never enqueue. Review W1: the pass lock inside
-     * [transcribeLocalFile] is shared across batches, so a second pick's
-     * files queue behind a still-running first batch instead of overwriting
-     * its pending state. A failure in one file's intake is reported and does
+     * silently and never enqueue. Review Y6: a second pick's fresh files
+     * (copy, hash, clean enqueue) proceed while a first pick's dialog pends;
+     * only its duplicate files queue on [transcribeLocalFile]'s intake lock,
+     * so the single-slot pending state is never overwritten mid-dialog. A
+     * failure in one file's intake is reported and does
      * not skip the remaining files (review W4: a Throwable here used to be
      * Log.e-only, a dropped file the user never heard about).
      */
@@ -416,9 +418,9 @@ class LogsViewModel @Inject constructor(
      * free-space pre-copy check, app-storage copy) and enqueues it on the
      * inference service with source "browse": not a share request, so no
      * share-back affordances, exactly like a Tasker-initiated local file.
-     * Suspending: the whole pass (duplicate gate included) holds the shared
-     * intake lock (review W1), and on a duplicate hit it additionally waits
-     * for the open-or-reprocess dialog to resolve (review V1).
+     * Suspending: on a duplicate hit it waits for the open-or-reprocess
+     * dialog to resolve (review V1), holding the intake lock only across
+     * that gate (review Y6).
      */
     suspend fun transcribeLocalFile(context: Context, uri: Uri) {
         // The applicationContext, never the Activity: the copy is blocking IO
@@ -430,39 +432,43 @@ class LogsViewModel @Inject constructor(
         // applicationContext.getString would ignore a pinned app language
         // (code-review finding 4 on the browse flow).
         val localizedContext = LocaleManager.updateContextLocale(appContext)
-        intakeMutex.withLock {
-            withContext(Dispatchers.IO) {
-                // copyToAppStorage never throws: every path lands in a
-                // CopyResult variant (the FGS start below is the throwing step).
-                val result = SharedAudioHandler.copyToAppStorage(appContext, uri)
-                val localPath = when (result) {
-                    is SharedAudioHandler.CopyResult.Success -> result.path
-                    // Every failure variant carries its own localized message
-                    // (single definition next to the sealed class).
-                    else -> {
-                        reportHistoryError(result.userMessage(localizedContext))
-                        return@withContext
-                    }
+        withContext(Dispatchers.IO) {
+            // copyToAppStorage never throws: every path lands in a
+            // CopyResult variant (the FGS start below is the throwing step).
+            val result = SharedAudioHandler.copyToAppStorage(appContext, uri)
+            val localPath = when (result) {
+                is SharedAudioHandler.CopyResult.Success -> result.path
+                // Every failure variant carries its own localized message
+                // (single definition next to the sealed class).
+                else -> {
+                    reportHistoryError(result.userMessage(localizedContext))
+                    return@withContext
                 }
+            }
 
-                // TASK-842 browse arm: hash once (IO, size-capped by the
-                // guard), then the ONE-owner lookup. On a hit the
-                // open-or-reprocess dialog owns the request; reprocess resumes
-                // the normal flow. The closure captures only the hash, never
-                // the hit's row (the transcript text must not linger in the
-                // pending state).
-                val contentHash = duplicateGuard.hashOnIo(localPath)
-                if (contentHash != null) {
-                    val hit = duplicateGuard.lookup(appContext, orchestrator, contentHash)
-                    if (hit != null) {
-                        val hashForContinuation = contentHash
+            // TASK-842 browse arm: hash once (IO, size-capped by the
+            // guard), then the ONE-owner lookup. On a hit the
+            // open-or-reprocess dialog owns the request; reprocess resumes
+            // the normal flow. The closure captures only the hash, never
+            // the hit's row (the transcript text must not linger in the
+            // pending state).
+            val contentHash = duplicateGuard.hashOnIo(localPath)
+            if (contentHash != null) {
+                val hit = duplicateGuard.lookup(appContext, orchestrator, contentHash)
+                if (hit != null) {
+                    // Review Y6: only this window holds the intake lock (set
+                    // the pending slot, await the gate); the copy and the hash
+                    // above ran outside it, so a second batch's fresh files
+                    // proceed while this dialog pends and its duplicates queue
+                    // here, keeping the single slot overwrite-free.
+                    intakeMutex.withLock {
                         val dialogResolved = CompletableDeferred<Unit>()
                         _pendingBrowseDuplicate.value = PendingBrowseDuplicate(
                             existingTaskId = hit.row.taskId,
                             modelName = hit.modelName,
                             continueRequest = {
                                 continueBrowseIntake(
-                                    appContext, localPath, localizedContext, hashForContinuation)
+                                    appContext, localPath, localizedContext, contentHash)
                             },
                             resolved = dialogResolved,
                         )
@@ -480,12 +486,12 @@ class LogsViewModel @Inject constructor(
                             reportHistoryError(
                                 localizedContext.getString(R.string.failed_to_process_audio))
                         }
-                        return@withContext
                     }
+                    return@withContext
                 }
-
-                continueBrowseIntake(appContext, localPath, localizedContext, contentHash)
             }
+
+            continueBrowseIntake(appContext, localPath, localizedContext, contentHash)
         }
     }
 

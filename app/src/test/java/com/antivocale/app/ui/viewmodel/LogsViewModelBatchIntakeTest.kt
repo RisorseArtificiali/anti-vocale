@@ -211,6 +211,34 @@ class LogsViewModelBatchIntakeTest {
     }
 
     @Test
+    fun `a second batch's fresh file proceeds while a first dialog pends`() = runBlocking {
+        // Batch 1's file is a duplicate, batch 2's file is not.
+        coEvery { duplicateGuard.lookup(any(), any(), any(), any()) } returnsMany listOf(
+            hit("task-1", "model-a"),
+            null,
+        )
+        mockkObject(SubtitleChoice)
+        every {
+            SubtitleChoice.offerIfTracks(any(), any(), any(), any(), any(), any(), any())
+        } returns true
+
+        viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
+        withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it != null } }
+
+        // Review Y6: the second pick's fresh file must not queue behind the
+        // pending dialog (the whole-pass lock used to park it there).
+        viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/2")))
+        withTimeout(5000) {
+            verify(timeout = 1000) {
+                SubtitleChoice.offerIfTracks(
+                    any(), any(), eq("/tmp/browse-copy"), any(), any(), any(), any())
+            }
+        }
+        // ...and the pending dialog was not displaced.
+        assertEquals("model-a", viewModel.pendingBrowseDuplicate.value?.modelName)
+    }
+
+    @Test
     fun `empty pick is a no-op`() = runBlocking {
         viewModel.transcribeLocalFiles(mockk<Context>(relaxed = true), emptyList())
         assertEquals(null, viewModel.pendingBrowseDuplicate.value)
