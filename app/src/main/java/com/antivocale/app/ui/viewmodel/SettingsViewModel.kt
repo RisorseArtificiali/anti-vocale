@@ -1017,13 +1017,29 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.refinementModelBackendId,
                 activeModelRepository.installedBackendsFlow,
             ) { selected, pin, installed -> Triple(selected, pin, installed) }
-                .collect { (selected, pin, _) ->
+                .collect { (selected, pin, installed) ->
                     val accurate = pin.takeIf { it.isNotBlank() } ?: selected
                     val fastId =
                         com.antivocale.app.transcription.SherpaModelManager
                             .installedFastEntryId(getApplication<Application>(), accurate)
+                    // A non-blank pin must itself be a usable refinement
+                    // target: a STALE pin (recorded, model since deleted)
+                    // would otherwise leave the gate open while every run
+                    // degrades to SKIP_REFINE_LOAD_FAILED. Built-in pins
+                    // resolve through the manager's dir probe (the same
+                    // probe class the fast arm uses, so heal and delete
+                    // keep the lock truthful); any other id (LLM,
+                    // external) resolves through this combine's installed
+                    // set, which already re-probes on install/uninstall.
+                    val pinUsable = pin.isBlank() ||
+                        installed.any { it.backendId == pin } ||
+                        runCatching {
+                            com.antivocale.app.transcription.SherpaModelManager
+                                .of(pin)
+                                .resolveActiveModelPath(getApplication<Application>()) != null
+                        }.getOrDefault(false)
                     _fastBackendId.value = fastId
-                    _refinementAvailable.value = fastId != null
+                    _refinementAvailable.value = pinUsable && fastId != null
                 }
         }
         // Load text size from preferences (TASK-576)

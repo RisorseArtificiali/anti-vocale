@@ -158,6 +158,24 @@ class SettingsViewModelRefinementGateTest {
     }
 
     @Test
+    fun `a stale pin keeps the toggle locked even when a fast arm resolves`() = runTest {
+        // The pin names a model that was deleted after pinning: the probe
+        // still finds a fast arm besides it, but the accurate side itself
+        // is unusable and every run would degrade to SKIP_REFINE_LOAD_FAILED,
+        // so the gate locks on the pin, not on the arm.
+        mockkObject(SherpaModelManager.Companion) {
+            coEvery { SherpaModelManager.installedFastEntryId(any(), "gigaam") } returns
+                "whisper"
+            fakePrefs._sherpaModelPath("whisper").value = "/models/whisper"
+            fakePrefs._transcriptionBackend.value = "whisper"
+            fakePrefs._refinementModelBackendId.value = "gigaam"
+            awaitGate { viewModel.fastBackendId.value == "whisper" }
+            assertEquals("whisper", viewModel.fastBackendId.value)
+            assertFalse(viewModel.refinementAvailable.value)
+        }
+    }
+
+    @Test
     fun `losing the fast arm re-locks the toggle and publishes null`() = runTest {
         mockkObject(SherpaModelManager.Companion) {
             coEvery { SherpaModelManager.installedFastEntryId(any(), any()) } returns "whisper"
