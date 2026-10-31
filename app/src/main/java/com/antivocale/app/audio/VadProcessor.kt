@@ -95,8 +95,14 @@ data class VadResult(
             fun drainSegments() {
                 while (!vad.empty()) {
                     val segment: SpeechSegment = vad.front()
-                    val start = segment.start.coerceIn(0L, totalSamples.toLong()).toInt()
-                    val end = (segment.start + segment.samples.size)
+                    // GH #175 (F-Droid build): the prebuilt AAR types start
+                    // as Long, the source-built library types it as Int, so
+                    // the clamp must not assume either; toLong() is a no-op
+                    // on Long and widens Int, making the coerceIn valid in
+                    // both builds.
+                    val start = segment.start.toLong()
+                        .coerceIn(0L, totalSamples.toLong()).toInt()
+                    val end = (segment.start + segment.samples.size).toLong()
                         .coerceIn(0L, totalSamples.toLong()).toInt()
                     val sampleCount = end - start
                     vad.pop()

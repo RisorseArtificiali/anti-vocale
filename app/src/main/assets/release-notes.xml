@@ -6,6 +6,7 @@ What's new in 1.15.0:
 • New: long pauses become paragraph breaks
 • New: other apps can use Anti-Vocale as their transcriber (Open Transcribe)
 • Improved: damaged models self-heal; missed notes return as one digest
+• Changed: test-signed GitHub builds now update in place (one-time clean install still needed from older test-signed versions)
 • Fixed: a corrupted History database recovers instead of crashing
 What's new in 1.14.1:
 • New: watched folders auto-transcribe new audio; remote offload (experimental)
