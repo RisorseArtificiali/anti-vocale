@@ -57,7 +57,7 @@ class ModelManagerCatalogTest {
         kotlinx.coroutines.runBlocking {
             assertEquals(
                 BuiltInBackendIds.NEMOTRON,
-                SherpaModelManager.installedFastEntryId(context))
+                SherpaModelManager.installedFastEntryId(context, null))
         }
     }
 
@@ -68,14 +68,47 @@ class ModelManagerCatalogTest {
         kotlinx.coroutines.runBlocking {
             assertEquals(
                 BuiltInBackendIds.WHISPER,
-                SherpaModelManager.installedFastEntryId(context))
+                SherpaModelManager.installedFastEntryId(context, null))
         }
     }
 
     @Test
     fun `installedFastEntryId is null when nothing is installed`() {
         kotlinx.coroutines.runBlocking {
-            assertNull(SherpaModelManager.installedFastEntryId(context))
+            assertNull(SherpaModelManager.installedFastEntryId(context, null))
+        }
+    }
+
+    // TASK-932 review F1 (GH #176): the accurate side (the refinement pin,
+    // else the selected backend) is excluded from BOTH arms, so the smallest
+    // or streaming candidate can never equal the refinement target.
+
+    @Test
+    fun `excluding the smallest installed entry falls through to the next smallest`() {
+        // GH #176's shape in miniature: parakeet (640 default-variant size)
+        // is the smallest install, so WITHOUT the exclusion the resolver
+        // returned the selected backend itself and the gate locked a
+        // two-model setup as degenerate.
+        installVariant(BuiltInBackendIds.PARAKEET, "parakeet-tdt-0.6b-v3-int8", "parakeet-tdt")
+        installVariant(BuiltInBackendIds.QWEN3_ASR, "sherpa-onnx-qwen3-asr-0.6b-int8", "qwen3-asr")
+        kotlinx.coroutines.runBlocking {
+            assertEquals(
+                BuiltInBackendIds.QWEN3_ASR,
+                SherpaModelManager.installedFastEntryId(context, BuiltInBackendIds.PARAKEET))
+        }
+    }
+
+    @Test
+    fun `excluding the streaming entry falls through to the smallest other install`() {
+        installVariant(BuiltInBackendIds.PARAKEET, "parakeet-tdt-0.6b-v3-int8", "parakeet-tdt")
+        installVariant(BuiltInBackendIds.WHISPER, "sherpa-onnx-whisper-small", "whisper")
+        installVariant(
+            BuiltInBackendIds.NEMOTRON,
+            "nemotron-3.5-asr-streaming-0.6b-1120ms-int8", "nemotron")
+        kotlinx.coroutines.runBlocking {
+            assertEquals(
+                BuiltInBackendIds.WHISPER,
+                SherpaModelManager.installedFastEntryId(context, BuiltInBackendIds.NEMOTRON))
         }
     }
 
@@ -85,7 +118,7 @@ class ModelManagerCatalogTest {
         // fast arm must stay a speech model even when it is the only install.
         installVariant("llm", "gemma-4-e2b", "models")
         kotlinx.coroutines.runBlocking {
-            assertNull(SherpaModelManager.installedFastEntryId(context))
+            assertNull(SherpaModelManager.installedFastEntryId(context, null))
         }
     }
 

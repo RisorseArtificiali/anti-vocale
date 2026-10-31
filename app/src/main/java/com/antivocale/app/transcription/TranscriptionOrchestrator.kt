@@ -2017,12 +2017,19 @@ class TranscriptionOrchestrator @Inject constructor(
         val refinePin = runCatching {
             preferencesManager.refinementModelBackendId.first()
         }.getOrDefault("").takeIf(String::isNotBlank)
+        val selectedBackendId = preferencesManager.transcriptionBackend.first()
+        // TASK-932 review F2: ONE accurate computation, the same shape the
+        // Settings gate resolves (the pin when set, the selected backend
+        // otherwise). The fast-id resolution excludes it, so the resolved
+        // arm can never equal the refinement target (GH #176); the policy's
+        // degenerate check stays as the final guard.
         val fastId = DualRefinementPolicy.fastBackendFor(
             requestType = requestType,
             backendOverride = backendOverride,
             refinementEnabled = preferencesManager.refinementEnabled.first(),
-            selectedBackendId = preferencesManager.transcriptionBackend.first(),
-            streamingBackendId = installedFastBackendId(context),
+            selectedBackendId = selectedBackendId,
+            streamingBackendId =
+                installedFastBackendId(context, refinePin ?: selectedBackendId),
             refineOverride = refinePin,
         ) ?: return null
 
@@ -2319,11 +2326,15 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     /** The fast first-pass backend id (TASK-932: the streaming entry when
-     *  installed, else the smallest installed catalog entry), or null when
-     *  no candidate resolves. TASK-603 F3: delegates to the shared owner
-     *  (Settings derives the toggle's availability from the same probe). */
-    private suspend fun installedFastBackendId(context: Context): String? =
-        SherpaModelManager.installedFastEntryId(context)
+     *  installed, else the smallest installed catalog entry besides
+     *  [excludeBackendId]), or null when no candidate resolves. TASK-603 F3:
+     *  delegates to the shared owner (Settings derives the toggle's
+     *  availability from the same probe). */
+    private suspend fun installedFastBackendId(
+        context: Context,
+        excludeBackendId: String?,
+    ): String? =
+        SherpaModelManager.installedFastEntryId(context, excludeBackendId)
 
     /** GH #43: nests the first pass's context and the skip verdict on the
      *  delivered row's (phase 2) context; a no-op for single-model runs. */

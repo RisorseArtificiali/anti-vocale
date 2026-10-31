@@ -71,7 +71,8 @@ object DualRefinementPolicy {
      * @param selectedBackendId the user's selected backend (the accurate side).
      * @param streamingBackendId the resolved FAST side (TASK-932: the
      *   installed streaming entry, else the smallest installed catalog
-     *   entry; the name predates the widening). Null when nothing qualifies.
+     *   entry BESIDES the accurate side; the name predates the widening).
+     *   Null when nothing qualifies.
      */
     fun fastBackendFor(
         requestType: String,

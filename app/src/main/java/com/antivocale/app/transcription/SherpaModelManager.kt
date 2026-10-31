@@ -37,20 +37,29 @@ class SherpaModelManager private constructor(val entryId: String) {
          * TASK-932 (GH #176): the fast first-pass backend id. The installed
          * streaming entry (instant preview) when one resolves, else the
          * smallest installed built-in catalog entry by default-variant size.
-         * The LLM is never a fast arm, and a stubbed-engine backend
-         * (F-Droid whistle) cannot load, so neither qualifies. Null when
-         * nothing qualifies: every caller degrades to single-model. ONE
-         * owner: the orchestrator's runtime two-pass gate and the Settings
-         * toggle's availability both derive from this (the
+         * [excludeBackendId] removes one candidate from BOTH arms: the
+         * accurate side (the refinement pin, else the selected backend)
+         * can never come back as the fast arm, or the gate would lock a
+         * two-model setup as degenerate (the GH #176 report). The LLM is
+         * never a fast arm, and a stubbed-engine backend (F-Droid whistle)
+         * cannot load, so neither qualifies. Null when nothing qualifies:
+         * every caller degrades to single-model. ONE owner: the
+         * orchestrator's runtime two-pass gate and the Settings toggle's
+         * availability both derive from this (the
          * installedStreamingEntryId drift-prevention pattern).
          */
-        suspend fun installedFastEntryId(context: android.content.Context): String? =
+        suspend fun installedFastEntryId(
+            context: android.content.Context,
+            excludeBackendId: String?,
+        ): String? =
             runCatching {
                 installedStreamingEntryId(context)
+                    ?.takeIf { it != excludeBackendId }
                     ?: com.antivocale.app.data.catalog.BundledCatalog.entries()
                         .filterNot { it.isStreaming }
                         .filterNot { BuiltInBackendIds.isLlm(it.id) }
                         .filterNot { BuiltInBackendIds.hiddenOnStubBuild(it.id) }
+                        .filter { entry -> entry.id != excludeBackendId }
                         .filter { entry ->
                             SherpaModelManager.of(entry.id)
                                 .resolveActiveModelPath(context) != null

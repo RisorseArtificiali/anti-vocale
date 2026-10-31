@@ -1001,24 +1001,29 @@ class SettingsViewModel @Inject constructor(
                 if (it) refreshSpeakerIdentities()
             }
         }
-        // TASK-932 (GH #176): availability has TWO inputs, and both are
-        // collected: the backend selection (a switch) and the installed
-        // set (any install or uninstall re-probes; the TASK-603 F6 lesson:
-        // collecting the backend alone never re-probes on install). The
-        // disk probe rides each (rare) emission of either source, through
-        // the shared owner of the probe.
+        // TASK-932 (GH #176): availability has THREE inputs, and all are
+        // collected: the backend selection, the refine-model pin, and the
+        // installed set (any install or uninstall re-probes; the TASK-603
+        // F6 lesson: collecting the backend alone never re-probes on
+        // install). The disk probe rides each (rare) emission, through the
+        // shared owner of the probe. The accurate side resolves EXACTLY as
+        // the runtime does (review F2: the pin when set, the selected
+        // backend otherwise) and is passed as the probe's exclusion, so a
+        // non-null fast arm is by construction a second model besides the
+        // refinement target and no further comparison is needed.
         viewModelScope.launch(Dispatchers.Default) {
             kotlinx.coroutines.flow.combine(
                 preferencesManager.transcriptionBackend,
+                preferencesManager.refinementModelBackendId,
                 activeModelRepository.installedBackendsFlow,
-            ) { selected, installed -> selected to installed }
-                .collect { (selected, installed) ->
+            ) { selected, pin, installed -> Triple(selected, pin, installed) }
+                .collect { (selected, pin, _) ->
+                    val accurate = pin.takeIf { it.isNotBlank() } ?: selected
                     val fastId =
                         com.antivocale.app.transcription.SherpaModelManager
-                            .installedFastEntryId(getApplication<Application>())
+                            .installedFastEntryId(getApplication<Application>(), accurate)
                     _fastBackendId.value = fastId
-                    _refinementAvailable.value = fastId != null &&
-                        installed.size >= 2 && fastId != selected
+                    _refinementAvailable.value = fastId != null
                 }
         }
         // Load text size from preferences (TASK-576)

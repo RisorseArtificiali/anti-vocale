@@ -860,9 +860,9 @@ fun SettingsTab(
                     icon = Icons.Default.Bolt,
                     title = refinementTitle,
                     description = refinementDescription,
-                    // Greyed out until a second model is installed and the
-                    // fast arm resolves to a model other than the selected
-                    // one (the orchestrator enforces the same gate).
+                    // Greyed out until a fast arm resolves besides the
+                    // refinement target (the pinned model, else the selected
+                    // one; the orchestrator enforces the same gate).
                     supportingText = refinementLockedReason.takeIf { !refinementAvailable },
                     enabled = refinementAvailable,
                     checked = refinementEnabled && refinementAvailable,
