@@ -879,10 +879,13 @@ fun HistoryTab(
     // through the same shared-audio path as the share receiver and enqueues
     // transcription, so no storage permission is needed. TASK-927: the
     // multi contract sets EXTRA_ALLOW_MULTIPLE (checkboxes in the picker);
-    // every picked URI enqueues through the same per-file path, and a
-    // multi pick announces the count on the snackbar. The template resolves
-    // in composition (the count is only known at result time; TASK-898's
-    // rememberUpdatedState keeps the coroutine reading the latest locale).
+    // every picked URI enqueues through the same per-file path. Review V1:
+    // the intakes run SEQUENTIALLY, so a duplicate dialog resolves before
+    // the next file starts. The snackbar is a pick-time claim (review V7):
+    // it announces the SELECTION, not completed enqueues. The template
+    // resolves in composition (the count is only known at result time;
+    // TASK-898's rememberUpdatedState keeps the coroutine reading the
+    // latest locale).
     val batchEnqueuedTemplate = stringResource(R.string.batch_enqueued)
     val currentBatchEnqueuedTemplate by rememberUpdatedState(batchEnqueuedTemplate)
     val browseScope = rememberCoroutineScope()
@@ -890,12 +893,12 @@ fun HistoryTab(
         ActivityResultContracts.OpenMultipleDocuments()
     ) { uris ->
         if (uris.isEmpty()) return@rememberLauncherForActivityResult
-        uris.forEach { viewModel.transcribeLocalFile(context, it) }
-        if (uris.size > 1) {
-            browseScope.launch {
+        browseScope.launch {
+            if (uris.size > 1) {
                 snackbarHostState.showSnackbar(
                     String.format(currentBatchEnqueuedTemplate, uris.size))
             }
+            viewModel.transcribeLocalFiles(context, uris)
         }
     }
     // TASK-842 browse arm: the open-or-reprocess dialog (the same four

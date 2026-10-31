@@ -1,6 +1,7 @@
 package com.antivocale.app.ui.viewmodel
 
 import android.content.Context
+import android.util.Log
 import java.util.concurrent.ConcurrentHashMap
 import com.antivocale.app.util.SubtitleFormatter
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -38,6 +39,8 @@ import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.transcription.TranscriptFuzzySearch
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.transcription.variantAwareDisplayName
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -368,13 +371,39 @@ class LogsViewModel @Inject constructor(
     }
 
     /**
+     * TASK-927 review V1: the multi pick's sequential intake. File N+1's
+     * intake starts only after file N resolves (answered dialog or clean
+     * enqueue), so the single-slot [pendingBrowseDuplicate] state can never
+     * be overwritten mid-batch: the overwritten file used to lose its dialog
+     * silently and never enqueue. A failure in one file's intake is logged
+     * and does not skip the remaining files.
+     */
+    fun transcribeLocalFiles(context: Context, uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        viewModelScope.launch {
+            for (uri in uris) {
+                try {
+                    transcribeLocalFile(context, uri)
+                } catch (ce: CancellationException) {
+                    throw ce
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Browse intake failed for $uri", t)
+                }
+            }
+        }
+    }
+
+    /**
      * TASK-500: the History browse FAB. Copies the picked file through the
      * SAME shared-audio path as the share receiver (format-agnostic copy,
      * free-space pre-copy check, app-storage copy) and enqueues it on the
      * inference service with source "browse": not a share request, so no
      * share-back affordances, exactly like a Tasker-initiated local file.
+     * Suspending (review V1): on a duplicate hit it holds the caller's slot
+     * until the open-or-reprocess dialog resolves, which is what serializes
+     * [transcribeLocalFiles].
      */
-    fun transcribeLocalFile(context: Context, uri: Uri) {
+    suspend fun transcribeLocalFile(context: Context, uri: Uri) {
         // The applicationContext, never the Activity: the copy is blocking IO
         // with no suspension points, so the coroutine can outlive the
         // Activity's teardown, and nothing here needs the Activity.
@@ -384,7 +413,7 @@ class LogsViewModel @Inject constructor(
         // applicationContext.getString would ignore a pinned app language
         // (code-review finding 4 on the browse flow).
         val localizedContext = LocaleManager.updateContextLocale(appContext)
-        viewModelScope.launch(Dispatchers.IO) {
+        withContext(Dispatchers.IO) {
             // copyToAppStorage never throws: every path lands in a
             // CopyResult variant (the FGS start below is the throwing step).
             val result = SharedAudioHandler.copyToAppStorage(appContext, uri)
@@ -394,7 +423,7 @@ class LogsViewModel @Inject constructor(
                 // (single definition next to the sealed class).
                 else -> {
                     reportHistoryError(result.userMessage(localizedContext))
-                    return@launch
+                    return@withContext
                 }
             }
 
@@ -409,14 +438,21 @@ class LogsViewModel @Inject constructor(
                 val hit = duplicateGuard.lookup(appContext, orchestrator, contentHash)
                 if (hit != null) {
                     val hashForContinuation = contentHash
+                    val dialogResolved = CompletableDeferred<Unit>()
                     _pendingBrowseDuplicate.value = PendingBrowseDuplicate(
                         existingTaskId = hit.row.taskId,
                         modelName = hit.modelName,
                         continueRequest = {
                             continueBrowseIntake(
                                 appContext, localPath, localizedContext, hashForContinuation)
-                        })
-                    return@launch
+                        },
+                        resolved = dialogResolved,
+                    )
+                    // Review V1: hold this intake's slot until the dialog
+                    // resolves; both arms go through
+                    // [clearPendingBrowseDuplicate], which completes the gate.
+                    dialogResolved.await()
+                    return@withContext
                 }
             }
 
@@ -434,6 +470,9 @@ class LogsViewModel @Inject constructor(
         /** The matched run's model, for the dialog copy. */
         val modelName: String,
         val continueRequest: () -> Unit,
+        /** Completes when the dialog resolves; the multi-pick intake loop
+         *  awaits it before starting the next file (review V1). */
+        val resolved: CompletableDeferred<Unit> = CompletableDeferred(),
     )
 
     private val _pendingBrowseDuplicate =
@@ -443,8 +482,11 @@ class LogsViewModel @Inject constructor(
     val pendingBrowseDuplicate: StateFlow<PendingBrowseDuplicate?> =
         _pendingBrowseDuplicate.asStateFlow()
 
-    /** Either arm's dismissal; also the dialog's cancel path (open). */
+    /** Either arm's dismissal; also the dialog's cancel path (open).
+     *  Completes the pending state's gate so the sequential intake loop
+     *  starts the next file (review V1). */
     fun clearPendingBrowseDuplicate() {
+        _pendingBrowseDuplicate.value?.resolved?.complete(Unit)
         _pendingBrowseDuplicate.value = null
     }
 
