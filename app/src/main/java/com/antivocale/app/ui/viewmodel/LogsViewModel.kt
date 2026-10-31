@@ -472,7 +472,7 @@ class LogsViewModel @Inject constructor(
                     // proceed while this dialog pends and its duplicates queue
                     // here, keeping the single slot overwrite-free.
                     intakeMutex.withLock {
-                        val dialogResolved = CompletableDeferred<Boolean>()
+                        val dialogResolved = CompletableDeferred<Unit>()
                         _pendingBrowseDuplicate.value = PendingBrowseDuplicate(
                             existingTaskId = hit.row.taskId,
                             modelName = hit.modelName,
@@ -484,15 +484,17 @@ class LogsViewModel @Inject constructor(
                         )
                         // Review V1: hold this intake's slot until the dialog
                         // resolves; both arms go through
-                        // [clearPendingBrowseDuplicate], which completes the gate.
-                        // Review Y1/Y2: the dialog's own composition bounds the
-                        // wait (the flat ceiling used to cancel dialogs a slow
-                        // reader was still using). A disposal completes the
-                        // gate as DISPOSED: this file reports as not added
-                        // (W4) and the batch continues.
-                        if (!dialogResolved.await()) {
-                            reportFailedToProcess(localizedContext)
-                        }
+                        // [clearPendingBrowseDuplicate], which completes the
+                        // gate. Round-3 review: the dialog is app STATE, not a
+                        // composition: it re-presents on every History
+                        // recomposition (rotation included), so leaving the
+                        // tab parks this batch until the user returns and
+                        // answers it. No timer (it cancelled dialogs a slow
+                        // reader was still using) and no disposal hook (an
+                        // activity recreation for a config change MainActivity
+                        // does not handle would cancel a live dialog and
+                        // report a file that never failed).
+                        dialogResolved.await()
                     }
                     return@withContext
                 }
@@ -512,12 +514,9 @@ class LogsViewModel @Inject constructor(
         /** The matched run's model, for the dialog copy. */
         val modelName: String,
         val continueRequest: () -> Unit,
-        /** Completes with true when an arm resolved the dialog, false when
-         *  it left composition unresolved; the multi-pick intake loop awaits
-         *  it before starting the next file (review V1). A value, not an
-         *  exception channel, so a shifted try/catch can never misread a
-         *  disposal as job cancellation. */
-        val resolved: CompletableDeferred<Boolean> = CompletableDeferred(),
+        /** Completes when either dialog arm runs; the multi-pick intake
+         *  loop awaits it before starting the next file (review V1). */
+        val resolved: CompletableDeferred<Unit> = CompletableDeferred(),
     )
 
     private val _pendingBrowseDuplicate =
@@ -527,31 +526,15 @@ class LogsViewModel @Inject constructor(
     val pendingBrowseDuplicate: StateFlow<PendingBrowseDuplicate?> =
         _pendingBrowseDuplicate.asStateFlow()
 
-    /** One owner of the complete-then-clear ordering every gate exit leans
-     *  on (reviews V1 and Y6): the gate completes BEFORE the slot clears. */
-    private fun completeGate(current: PendingBrowseDuplicate, resolved: Boolean) {
-        current.resolved.complete(resolved)
-        _pendingBrowseDuplicate.value = null
-    }
-
     /** Either arm's dismissal; also the dialog's cancel path (open).
-     *  Completes the pending state's gate so the sequential intake loop
-     *  starts the next file (review V1). */
+     *  Completes the pending state's gate (BEFORE the slot clears) so the
+     *  sequential intake loop starts the next file (review V1; the ordering
+     *  the gate leans on). */
     fun clearPendingBrowseDuplicate() {
-        _pendingBrowseDuplicate.value?.let { completeGate(it, true) }
-    }
-
-    /**
-     * Review Y1/Y2: the DuplicateFoundDialog left composition without an arm
-     * resolving it (tab switch, navigation). A still-pending duplicate's gate
-     * completes as DISPOSED: the awaiting intake reports that file as not
-     * added (W4) and the batch continues. No-op when the slot is already
-     * clear (an arm resolved it) or belongs to a newer instance (a stale
-     * disposal firing on the swap), both checked by the identity test.
-     */
-    fun onBrowseDialogDisposed(dialog: PendingBrowseDuplicate) {
-        val current = _pendingBrowseDuplicate.value
-        if (current === dialog) completeGate(current, false)
+        _pendingBrowseDuplicate.value?.let { pending ->
+            pending.resolved.complete(Unit)
+            _pendingBrowseDuplicate.value = null
+        }
     }
 
     /** The browse intake past the duplicate guard (both the no-hit path and

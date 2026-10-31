@@ -97,13 +97,12 @@ class LogsViewModelBatchIntakeTest {
     }
 
     /** A subscriber awaited before the triggering action, so a report routes
-     *  to the snackbar path (subscriptionCount above zero) instead of the
-     *  notification path the mock context cannot run. Join it after. */
-    private suspend fun awaitFirstReport(scope: kotlinx.coroutines.CoroutineScope): kotlinx.coroutines.Job {
-        val job = scope.launch { viewModel.historyError.first() }
-        viewModel.historyError.subscriptionCount.first { it > 0 }
-        return job
-    }
+     *  to the snackbar path instead of the notification path the mock
+     *  context cannot run. Join it after. Under the Unconfined Main the
+     *  launch subscribes before its first suspension point, so subscription
+     *  is deterministic without a timed sleep. */
+    private fun awaitFirstReport(scope: kotlinx.coroutines.CoroutineScope): kotlinx.coroutines.Job =
+        scope.launch { viewModel.historyError.first() }
 
     @Test
     fun `second file's intake waits for the first dialog to resolve`() = runBlocking {
@@ -134,9 +133,9 @@ class LogsViewModelBatchIntakeTest {
         }
         assertEquals("model-a", first?.modelName)
 
-        // Review W1: a second pick while the first dialog is still pending
-        // must not overwrite the single slot; its file queues on the shared
-        // intake lock instead.
+        // Review W1/Y6: a second pick's DUPLICATE queues on the shared
+        // intake lock behind the first dialog (fresh files proceed; the
+        // "fresh file proceeds" test pins that half).
         viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/2")))
         delay(200)
         assertEquals("model-a", viewModel.pendingBrowseDuplicate.value?.modelName)
@@ -146,54 +145,6 @@ class LogsViewModelBatchIntakeTest {
             viewModel.pendingBrowseDuplicate.first { it?.modelName == "model-b" }
         }
         assertEquals("model-b", second?.modelName)
-    }
-
-    @Test
-    fun `a disposed dialog cancels its file and reports it as not added`() = runBlocking {
-        val report = awaitFirstReport(this)
-
-        viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
-        val first = withTimeout(5000) {
-            viewModel.pendingBrowseDuplicate.first { it != null }
-        }
-
-        // The dialog leaves composition without resolving (tab switch).
-        viewModel.onBrowseDialogDisposed(first)
-        // The pending state must clear, the report must land, and the batch
-        // must not park.
-        withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it == null } }
-        assertEquals(null, viewModel.pendingBrowseDuplicate.value)
-        withTimeout(5000) { report.join() }
-    }
-
-    @Test
-    fun `a disposal-cancelled file does not block the batch's next file`() = runBlocking {
-        // File 1 is a duplicate, file 2 is not.
-        coEvery { duplicateGuard.lookup(any(), any(), any(), any()) } returnsMany listOf(
-            hit("task-1", "model-a"),
-            null,
-        )
-        stubSubtitleProbe()
-        val report = awaitFirstReport(this)
-
-        viewModel.transcribeLocalFiles(
-            mockk(relaxed = true),
-            listOf(Uri.parse("content://picker/1"), Uri.parse("content://picker/2")))
-        val first = withTimeout(5000) {
-            viewModel.pendingBrowseDuplicate.first { it != null }
-        }
-
-        viewModel.onBrowseDialogDisposed(first)
-        // The cancelled file reports (W4)...
-        withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it == null } }
-        withTimeout(5000) { report.join() }
-        // ...and file 2, a non-duplicate, still completes intake.
-        withTimeout(5000) {
-            verify(timeout = 1000) {
-                SubtitleChoice.offerIfTracks(
-                    any(), any(), eq("/tmp/browse-copy"), any(), any(), any(), any())
-            }
-        }
     }
 
     @Test

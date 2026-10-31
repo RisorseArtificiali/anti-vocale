@@ -916,11 +916,9 @@ fun HistoryTab(
     // without the activity roundtrip).
     val pendingDuplicate by viewModel.pendingBrowseDuplicate.collectAsState()
     pendingDuplicate?.let { hit ->
-        // Review Y1/Y2: the dialog's composition bounds the duplicate-gate
-        // wait; the ViewModel hook owns the contract (its KDoc).
-        androidx.compose.runtime.DisposableEffect(hit) {
-            onDispose { viewModel.onBrowseDialogDisposed(hit) }
-        }
+        // Round-3 review: the dialog is app STATE: it re-presents here on
+        // every recomposition, so there is deliberately no disposal hook (a
+        // config-change recreation must not cancel a live dialog).
         com.antivocale.app.ui.dialogs.DuplicateFoundDialog(
             modelName = hit.modelName,
             onOpen = {
