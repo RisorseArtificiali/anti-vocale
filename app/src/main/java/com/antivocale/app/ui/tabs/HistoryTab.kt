@@ -880,7 +880,11 @@ fun HistoryTab(
     // transcription, so no storage permission is needed. TASK-927: the
     // multi contract sets EXTRA_ALLOW_MULTIPLE (checkboxes in the picker);
     // every picked URI enqueues through the same per-file path, and a
-    // multi pick announces the count on the snackbar.
+    // multi pick announces the count on the snackbar. The template resolves
+    // in composition (the count is only known at result time; TASK-898's
+    // rememberUpdatedState keeps the coroutine reading the latest locale).
+    val batchEnqueuedTemplate = stringResource(R.string.batch_enqueued)
+    val currentBatchEnqueuedTemplate by rememberUpdatedState(batchEnqueuedTemplate)
     val browseScope = rememberCoroutineScope()
     val browseLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
@@ -890,7 +894,7 @@ fun HistoryTab(
         if (uris.size > 1) {
             browseScope.launch {
                 snackbarHostState.showSnackbar(
-                    context.getString(R.string.batch_enqueued, uris.size))
+                    String.format(currentBatchEnqueuedTemplate, uris.size))
             }
         }
     }
