@@ -850,6 +850,9 @@ fun SettingsTab(
             // GH #43: two-pass transcription (instant preview, then refine).
             val refinementTitle = stringResource(R.string.refinement_title)
             val refinementDescription = stringResource(R.string.refinement_description)
+            // TASK-932: the locked state names its own fix (the language-chip
+            // note pattern: the why-unavailable line rides supportingText).
+            val refinementLockedReason = stringResource(R.string.refinement_locked_reason)
             // TASK-689: the gate reads the registry; this GH #43 card had a
             // gate but no count entry under the old two-list convention.
             SearchFilterRow(searchQuery, SettingsSearchId.REFINEMENT, searchState) {
@@ -857,8 +860,10 @@ fun SettingsTab(
                     icon = Icons.Default.Bolt,
                     title = refinementTitle,
                     description = refinementDescription,
-                    // Greyed out until a streaming model is installed and the
-                    // selected backend is not the streaming one itself.
+                    // Greyed out until a second model is installed and the
+                    // fast arm resolves to a model other than the selected
+                    // one (the orchestrator enforces the same gate).
+                    supportingText = refinementLockedReason.takeIf { !refinementAvailable },
                     enabled = refinementAvailable,
                     checked = refinementEnabled && refinementAvailable,
                     onCheckedChange = { enabled -> viewModel.saveRefinementEnabled(enabled) }
@@ -876,14 +881,11 @@ fun SettingsTab(
                         description = stringResource(R.string.refinement_model_description)
                     ) {
                         val inheritLabel = stringResource(R.string.refinement_model_inherit)
-                        // The FAST arm (the installed streaming backend) is
-                        // excluded: pinning it would silently kill the
-                        // two-pass (the policy's degenerate check) while the
-                        // toggle stays on.
-                        val streamingId by viewModel.streamingBackendId.collectAsState()
-                        val options = listOf("") + installed
-                            .map { it.backendId }
-                            .filter { it != streamingId }
+                        // TASK-932: every installed model may pin, the fast
+                        // arm's own id included (the fast arm then resolves
+                        // to the smallest other candidate; the policy's
+                        // degenerate check stays the guard).
+                        val options = listOf("") + installed.map { it.backendId }
                         // A stale pin (model deleted after pinning) falls
                         // back to the catalog family label, never the raw
                         // backend id (the picker invariant).

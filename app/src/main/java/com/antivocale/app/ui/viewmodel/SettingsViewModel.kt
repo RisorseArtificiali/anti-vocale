@@ -475,9 +475,11 @@ class SettingsViewModel @Inject constructor(
     private val _refinementModelBackendId = MutableStateFlow("")
     val refinementModelBackendId: StateFlow<String> = _refinementModelBackendId.asStateFlow()
 
-    /** TASK-740.1: the FAST arm's backend id (excluded from the refine picker). */
-    private val _streamingBackendId = MutableStateFlow<String?>(null)
-    val streamingBackendId: StateFlow<String?> = _streamingBackendId.asStateFlow()
+    /** TASK-932: the FAST arm's resolved backend id (the streaming entry
+     *  when installed, else the smallest installed catalog entry); null
+     *  when no candidate resolves. */
+    private val _fastBackendId = MutableStateFlow<String?>(null)
+    val fastBackendId: StateFlow<String?> = _fastBackendId.asStateFlow()
     fun saveRefinementModelBackendId(backendId: String) {
         viewModelScope.launch {
             try {
@@ -999,28 +1001,25 @@ class SettingsViewModel @Inject constructor(
                 if (it) refreshSpeakerIdentities()
             }
         }
-        // TASK-603 F6: availability has TWO inputs, and both are collected:
-        // the backend selection (a switch) and the streaming entry's saved
-        // path (a bare install writes no backend value, and the backend flow
-        // is distinctUntilChanged, so collecting it alone never re-probes on
-        // install; review F1). The disk probe rides each (rare) emission of
-        // either source, through the shared owner of the probe.
-        val streamingEntry = com.antivocale.app.data.catalog.BundledCatalog.entries()
-            .firstOrNull { it.isStreaming }
-        if (streamingEntry != null) {
-            viewModelScope.launch(Dispatchers.Default) {
-                kotlinx.coroutines.flow.combine(
-                    preferencesManager.transcriptionBackend,
-                    preferencesManager.sherpaModelPath(streamingEntry.id),
-                ) { selected, _ -> selected }
-                    .collect { selected ->
-                        val installedId =
-                            com.antivocale.app.transcription.SherpaModelManager
-                                .installedStreamingEntryId(getApplication<Application>())
-                        _streamingBackendId.value = installedId
-                        _refinementAvailable.value = installedId != null && streamingEntry.id != selected
-                    }
-            }
+        // TASK-932 (GH #176): availability has TWO inputs, and both are
+        // collected: the backend selection (a switch) and the installed
+        // set (any install or uninstall re-probes; the TASK-603 F6 lesson:
+        // collecting the backend alone never re-probes on install). The
+        // disk probe rides each (rare) emission of either source, through
+        // the shared owner of the probe.
+        viewModelScope.launch(Dispatchers.Default) {
+            kotlinx.coroutines.flow.combine(
+                preferencesManager.transcriptionBackend,
+                activeModelRepository.installedBackendsFlow,
+            ) { selected, installed -> selected to installed }
+                .collect { (selected, installed) ->
+                    val fastId =
+                        com.antivocale.app.transcription.SherpaModelManager
+                            .installedFastEntryId(getApplication<Application>())
+                    _fastBackendId.value = fastId
+                    _refinementAvailable.value = fastId != null &&
+                        installed.size >= 2 && fastId != selected
+                }
         }
         // Load text size from preferences (TASK-576)
         viewModelScope.launch {
