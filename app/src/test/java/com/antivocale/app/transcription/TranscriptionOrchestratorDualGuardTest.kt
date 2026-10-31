@@ -212,4 +212,21 @@ class TranscriptionOrchestratorDualGuardTest : TranscriptionOrchestratorTestBase
             }
         }
     }
+
+    @Test
+    fun `the runtime probe excludes the pinned accurate side`() = runTest {
+        // TASK-932: with the pin set to a DIFFERENT backend than the active
+        // default (whisper), the fast-id resolution must exclude the PIN (the
+        // accurate side), not the selection, or a two-model setup would
+        // resolve a degenerate arm and the gate would lock (GH #176).
+        mockkObject(SherpaModelManager.Companion) {
+            coEvery {
+                SherpaModelManager.installedFastEntryId(any(), any())
+            } returns "nemotron-streaming"
+            runTwoPassF4(taskId = "dual-exclude-pin", pin = "gigaam", scope = this@runTest)
+            coVerify {
+                SherpaModelManager.installedFastEntryId(any(), eq("gigaam"))
+            }
+        }
+    }
 }
