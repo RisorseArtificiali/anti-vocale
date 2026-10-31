@@ -361,6 +361,7 @@
     <string name="processing_segment_progress">Сегмент %1$d из %2$d…</string>
     <string name="progressive_initial">Подготовка текста; финальный результат после завершения</string>
     <string name="added_to_queue">Добавлено в очередь…</string>
+    <string name="batch_enqueued">Файлов добавлено в очередь распознавания: %1$d</string>
     <string name="processing_chunk">Обработка фрагмента %1$d/%2$d…</string>
     <string name="processing_audio">Обработка аудио…</string>
     <string name="processing_request">Обработка запроса %1$s…</string>

@@ -375,6 +375,7 @@
     <string name="processing_segment_progress">Segment %1$d van %2$d…</string>
     <string name="progressive_initial">Tekst wordt voorbereid; het eindresultaat volgt na afronding</string>
     <string name="added_to_queue">Aan wachtrij toegevoegd…</string>
+    <string name="batch_enqueued">%1$d bestanden toegevoegd aan de transcriptiewachtrij</string>
     <string name="processing_chunk">Chunk %1$d/%2$d verwerken…</string>
     <string name="processing_audio">Audio verwerken…</string>
     <string name="processing_request">%1$s-verzoek verwerken…</string>

@@ -372,6 +372,7 @@
     <string name="processing_segment_progress">מקטע %1$d מתוך %2$d…</string>
     <string name="progressive_initial">מכין טקסט; התוצאה הסופית תהיה זמינה בסיום</string>
     <string name="added_to_queue">נוסף לתור…</string>
+    <string name="batch_enqueued">הוכנסו %1$d קבצים לתור התמלול</string>
     <string name="processing_chunk">מעבד מקטע %1$d/%2$d…</string>
     <string name="processing_audio">מעבד אודיו…</string>
     <string name="processing_request">מעבד בקשת %1$s…</string>
