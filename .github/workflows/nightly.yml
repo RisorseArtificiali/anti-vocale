@@ -126,6 +126,13 @@ jobs:
           # remote configured, which checkout provides.
           fetch-depth: 1
 
+      # GH #175: the sherpa srclib pin in the F-Droid recipe drifted
+      # 3.5 months behind .sherpa-version because only the release
+      # workflow ran this check. Running it on every nightly catches
+      # the drift the day it lands on main, not at release time.
+      - name: Sherpa sync check (6 sync points including the F-Droid recipe)
+        run: ./scripts/check-sherpa-sync.sh
+
       # TASK-784 review: record the CHECKOUT's HEAD, not github.sha. On
       # schedule events github.sha is the trigger-time HEAD while the
       # artifacts build from this fresh checkout a moment later; the tag
