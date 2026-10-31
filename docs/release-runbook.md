@@ -233,6 +233,25 @@ scripts/sync-fdroid-mirror.sh
 # DRY_RUN=1 prints the actions instead (fetches, guard and diff still run).
 ```
 
+## Step 4b. Verify the LIVE fdroiddata pins (post-release watch)
+
+Our recipe copy and the nightly sync check validate OUR side only. The build
+that ships runs from fdroiddata, and the checkupdates-bot MR carries the NEW
+version's blocks: the GH #175 failure (2026-10-31) lived in the bot MR's
+added blocks while our copy was already correct. After a release lands, run:
+
+```bash
+./scripts/check-fdroid-pin.sh
+```
+
+It compares `.sherpa-version` against the LIVE fdroiddata master (newest
+block) and every open MR's ADDED pins. On a mismatch: fix the master via MR
+(see Step 4's flow), and comment the correct pin on the bot MR (pushing to
+the bot's branch needs fdroiddata rights we do not have). Answer F-Droid
+maintainers' questions in the same day: their cycles are volunteer time.
+Re-run until both checks pass and the F-Droid build goes green; only then
+close the tracking issue.
+
 ## Step 5. Build reference APKs (reproducible F-Droid, pre-tag dispatch)
 
 Dispatch the workflow with the bump COMMIT (no tag exists yet). The job clones
