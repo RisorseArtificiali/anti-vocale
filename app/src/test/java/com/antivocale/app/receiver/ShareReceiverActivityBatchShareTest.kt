@@ -4,6 +4,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Parcelable
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -67,6 +68,23 @@ class ShareReceiverActivityBatchShareTest {
     }
 
     @Test
+    fun `non-Uri entries in the batch list are dropped, not cast`() {
+        val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply { type = "audio/*" }
+        val stream = arrayListOf<Parcelable>(
+            Uri.parse("content://sender/1"),
+            // The exported multi-share component can be handed any Parcelable
+            // (review V2); the extraction must drop it instead of casting.
+            android.os.Bundle().apply { putString("not", "a uri") },
+        )
+        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, stream)
+
+        assertEquals(
+            listOf(Uri.parse("content://sender/1")),
+            ShareReceiverActivity.extractSharedUris(intent),
+        )
+    }
+
+    @Test
     fun `stream-less multi share takes the legacy dead end`() {
         val activity = Robolectric.buildActivity(
             ShareReceiverActivity::class.java,
@@ -93,6 +111,25 @@ class ShareReceiverActivityBatchShareTest {
 
         // The flows queued on the paused looper: no dead-end signal, and the
         // transparent Activity stays alive for the grants and the dialogs.
+        assertFalse(activity.isFinishing)
+        assertTrue(notificationsPosted().isEmpty())
+        assertNull(Shadows.shadowOf(activity).nextStartedActivityForResult)
+    }
+
+    @Test
+    fun `multi share on an alias component routes into the per-file flows, no dead end`() {
+        // TASK-927 review V4: the alias filters must match ACTION_SEND_MULTIPLE
+        // so a multi share to a pinned backend target enters the same per-file
+        // flow (the alias override itself is pinned by backendIdForAlias).
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val intent = multiStreamIntent(
+            Uri.parse("content://sender/1"),
+            Uri.parse("content://sender/2"),
+        ).apply { setClassName(context.packageName, "com.antivocale.app.ShareParakeet") }
+        val activity = Robolectric.buildActivity(ShareReceiverActivity::class.java, intent)
+            .create()
+            .get()
+
         assertFalse(activity.isFinishing)
         assertTrue(notificationsPosted().isEmpty())
         assertNull(Shadows.shadowOf(activity).nextStartedActivityForResult)

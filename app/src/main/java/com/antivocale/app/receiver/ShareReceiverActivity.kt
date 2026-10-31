@@ -31,6 +31,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -183,14 +184,16 @@ class ShareReceiverActivity : Activity() {
          * TASK-927: the shared audio URIs of a share intent, in delivery
          * order. ACTION_SEND reads the single EXTRA_STREAM;
          * ACTION_SEND_MULTIPLE reads the ParcelableArrayList (null and
-         * non-Uri entries dropped). Empty means the intent carries no audio
-         * at all.
+         * non-Uri entries dropped: the deprecated generic read does no
+         * element validation, and this component is exported and advertised
+         * for ACTION_SEND_MULTIPLE, so a foreign Parcelable must not reach
+         * the flow). Empty means the intent carries no audio at all.
          */
         internal fun extractSharedUris(intent: Intent): List<Uri> =
             if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
                 @Suppress("DEPRECATION")
                 intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
-                    ?.filterNotNull()
+                    ?.filterIsInstance<Uri>()
                     .orEmpty()
             } else {
                 @Suppress("DEPRECATION")
@@ -215,6 +218,11 @@ class ShareReceiverActivity : Activity() {
      * to attach to.
      */
     private var batchFilesRemaining = 0
+
+    /** TASK-927 review V5: bounds the batch to one concurrent app-storage
+     *  copy, so the per-copy free-space gate cannot be passed by N flows
+     *  that together exhaust storage mid-stream. */
+    private val batchCopyGate = kotlinx.coroutines.sync.Semaphore(permits = 1)
 
     /** The app-wide entry point, resolved once per instance; [appScope] and
      *  the registry/store reads all derive from it. */
@@ -300,9 +308,8 @@ class ShareReceiverActivity : Activity() {
 
     private fun handleSendIntent(intent: Intent) {
         val uris = extractSharedUris(intent)
-        resolveSourcePackage(uris.firstOrNull())
-
         val uri = uris.firstOrNull()
+        resolveSourcePackage(uri)
         Log.i(TAG, "Handle share: URI=$uri, MIME=${intent.type}, source=$sourcePackage")
 
         if (uri == null) {
@@ -425,6 +432,27 @@ class ShareReceiverActivity : Activity() {
     }
 
     /**
+     * TASK-927 review V3: one per-file share-flow run on the app scope.
+     * Every exit must account its [endFlow] slot: a throw used to die into
+     * the scope's CrashReporter handler and stall the batch counter forever
+     * (and in the single case leave the transparent window up), so the
+     * catch resolves the slot like the normal paths do.
+     */
+    private fun launchShareFlow(block: suspend () -> Unit) {
+        appScope.launch(Dispatchers.Main) {
+            try {
+                block()
+            } catch (t: Throwable) {
+                Log.e(TAG, "Share flow failed", t)
+                if (!isFinishing && !isDestroyed) {
+                    showErrorToast(getString(R.string.transcription_failed))
+                }
+                endFlow()
+            }
+        }
+    }
+
+    /**
      * The shared copy-and-dispatch flow for both audio sources: an EXTRA_STREAM
      * share and a shortcut-picker pick. Copies while the URI grant is held
      * (on IO: the copy is blocking work on potentially GB-scale videos and
@@ -437,15 +465,20 @@ class ShareReceiverActivity : Activity() {
      */
     private fun processSharedAudio(uri: Uri, mimeType: String?) {
         dispatchStarted = true
-        appScope.launch(Dispatchers.Main) {
+        launchShareFlow {
             // TASK-578: a content-URI grant dies with the activity; the
             // copy must complete inside this activity's lifetime. It runs
             // here (Main dispatcher, called from onCreate, no finish() path
             // can fire while withContext(IO) holds the main thread
             // suspended), so the grant is alive for the whole copy. Voice
             // messages are small (1-10MB): the blocking IO is bounded.
-            val result = withContext(Dispatchers.IO) {
-                SharedAudioHandler.copyToAppStorage(applicationContext, uri, mimeType)
+            // TASK-927 review V5: the free-space gate passes per copy, so N
+            // concurrent batch copies could collectively exhaust storage
+            // mid-stream; one copy at a time (uncontended in the single case).
+            val result = batchCopyGate.withPermit {
+                withContext(Dispatchers.IO) {
+                    SharedAudioHandler.copyToAppStorage(applicationContext, uri, mimeType)
+                }
             }
 
             val localPath: String = when (result) {
@@ -455,7 +488,7 @@ class ShareReceiverActivity : Activity() {
                 else -> {
                     showErrorToast(result.userMessage(this@ShareReceiverActivity))
                     endFlow()
-                    return@launch
+                    return@launchShareFlow
                 }
             }
 
@@ -474,7 +507,7 @@ class ShareReceiverActivity : Activity() {
             // and would only fail the decode probe.
             if (SharedAudioHandler.isSubtitleFile(localPath)) {
                 dispatchSubtitleImport(taskId, localPath)
-                return@launch
+                return@launchShareFlow
             }
 
             // Resolve the backend override once (applies to both the ASR path and the subtitle
@@ -495,13 +528,13 @@ class ShareReceiverActivity : Activity() {
             if (backendOverride == EXTERNAL_FAMILY_BACKEND_ID) {
                 showExternalModelChooser(
                     taskId, localPath, appEntryPoint.externalModelStore(), contentHash)
-                return@launch
+                return@launchShareFlow
             }
 
             if (contentHash != null &&
                 offerDuplicateDialogIfNeeded(taskId, localPath, backendOverride, contentHash)
             ) {
-                return@launch  // the dialog owns the request from here
+                return@launchShareFlow  // the dialog owns the request from here
             }
 
             dispatch(taskId, localPath, backendOverride, contentHash)
@@ -529,6 +562,9 @@ class ShareReceiverActivity : Activity() {
         if (isFinishing || isDestroyed) {
             Log.w(TAG, "Activity gone before the external chooser could show; dropping share for $taskId")
             showErrorToast(getString(R.string.transcription_failed))
+            // TASK-927 review V3: this exit bypasses every normal endFlow
+            // arm; account the slot (or finish, single case) here.
+            endFlow()
             return
         }
         val records = store.validRecords()
@@ -550,11 +586,11 @@ class ShareReceiverActivity : Activity() {
             .setItems(labels) { _, which ->
                 val chosen = records[which]
                 Log.i(TAG, "External model chosen via share chooser: ${chosen.backendId}")
-                appScope.launch(Dispatchers.Main) {
+                launchShareFlow {
                     if (contentHash != null &&
                         offerDuplicateDialogIfNeeded(taskId, localPath, chosen.backendId, contentHash)
                     ) {
-                        return@launch  // the dialog owns the request from here
+                        return@launchShareFlow  // the dialog owns the request from here
                     }
                     dispatch(taskId, localPath, chosen.backendId, contentHash)
                 }
@@ -682,7 +718,7 @@ class ShareReceiverActivity : Activity() {
             .setMessage(getString(R.string.duplicate_found_message, hit.modelName))
             .setPositiveButton(R.string.duplicate_found_open) { _, _ -> openExisting() }
             .setNegativeButton(R.string.duplicate_found_again) { _, _ ->
-                appScope.launch(Dispatchers.Main) {
+                launchShareFlow {
                     dispatch(taskId, localPath, backendOverride, contentHash)
                 }
             }
