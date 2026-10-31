@@ -328,7 +328,7 @@
     <string name="processing_segment_progress">Osa %1$d / %2$d…</string>
     <string name="progressive_initial">Valmistellaan tekstiä; lopullinen tulos on luettavissa valmistumisen jälkeen</string>
     <string name="added_to_queue">Lisätty jonoon…</string>
-    <string name="batch_enqueued">%1$d tiedostoa lisätty transkriptiojonoon</string>
+    <string name="batch_enqueued">%1$d tiedostoa valittu transkriptioon</string>
     <string name="processing_chunk">Käsitellään osaa %1$d/%2$d…</string>
     <string name="processing_audio">Käsitellään ääntä…</string>
     <string name="processing_request">Käsitellään %1$s-pyyntöä…</string>

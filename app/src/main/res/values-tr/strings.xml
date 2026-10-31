@@ -373,7 +373,7 @@
     <string name="processing_segment_progress">Dilim %1$d / %2$d…</string>
     <string name="progressive_initial">Metin hazırlanıyor; tamamlanınca nihai sonuç</string>
     <string name="added_to_queue">Kuyruğa eklendi…</string>
-    <string name="batch_enqueued">%1$d dosya metin çıkarma kuyruğuna eklendi</string>
+    <string name="batch_enqueued">Transkripsiyon için %1$d dosya seçildi</string>
     <string name="processing_chunk">Parça %1$d/%2$d işleniyor…</string>
     <string name="processing_audio">Ses işleniyor…</string>
     <string name="processing_request">%1$s isteği işleniyor…</string>

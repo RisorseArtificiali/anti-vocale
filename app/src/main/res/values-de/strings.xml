@@ -352,7 +352,7 @@
     <string name="processing_segment_progress">Segment %1$d von %2$d…</string>
     <string name="progressive_initial">Text wird vorbereitet; Endergebnis nach Abschluss</string>
     <string name="added_to_queue">Zur Warteschlange hinzugefügt…</string>
-    <string name="batch_enqueued">%1$d Dateien zur Transkription in die Warteschlange gestellt</string>
+    <string name="batch_enqueued">%1$d Dateien zur Transkription ausgewählt</string>
     <string name="processing_chunk">Chunk %1$d/%2$d wird verarbeitet…</string>
     <string name="processing_audio">Audio wird verarbeitet…</string>
     <string name="processing_request">%1$s-Anfrage wird verarbeitet…</string>

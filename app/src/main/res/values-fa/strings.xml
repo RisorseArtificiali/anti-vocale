@@ -368,7 +368,7 @@
     <string name="failed_to_process_audio">پردازش فایل صوتی ناموفق بود</string>
     <string name="transcription_started">رونویسی آغاز شد…</string>
     <string name="added_to_queue">به صف اضافه شد…</string>
-    <string name="batch_enqueued">%1$d فایل به صف رونویسی اضافه شد</string>
+    <string name="batch_enqueued">%1$d فایل برای رونویسی انتخاب شد</string>
     <string name="processing_chunk">در حال پردازش قطعه %1$d/%2$d…</string>
     <string name="processing_audio">در حال پردازش صدا…</string>
     <string name="processing_request">در حال پردازش درخواست %1$s…</string>

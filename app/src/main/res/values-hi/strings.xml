@@ -351,7 +351,7 @@
     <string name="processing_segment_progress">%2$d में से %1$d हिस्सा…</string>
     <string name="progressive_initial">टेक्स्ट तैयार हो रहा है; पूरा होने पर फ़ाइनल नतीजा</string>
     <string name="added_to_queue">क़तार में जोड़ा गया…</string>
-    <string name="batch_enqueued">ट्रांसक्रिप्शन कतार में %1$d फ़ाइलें जोड़ी गईं</string>
+    <string name="batch_enqueued">ट्रांसक्रिप्शन के लिए %1$d फ़ाइलें चुनी गईं</string>
     <string name="processing_chunk">%2$d में से %1$d हिस्सा प्रोसेस हो रहा है…</string>
     <string name="processing_audio">ऑडियो प्रोसेस हो रहा है…</string>
     <string name="processing_request">%1$s अनुरोध प्रोसेस हो रहा है…</string>

@@ -375,7 +375,7 @@
     <string name="processing_segment_progress">Segment %1$d of %2$d…</string>
     <string name="progressive_initial">Preparing text; final result available on completion</string>
     <string name="added_to_queue">Added to queue…</string>
-    <string name="batch_enqueued">Enqueued %1$d files for transcription</string>
+    <string name="batch_enqueued">%1$d files selected for transcription</string>
     <string name="processing_chunk">Processing chunk %1$d/%2$d…</string>
     <string name="processing_audio">Processing audio…</string>
     <string name="processing_request">Processing %1$s request…</string>

@@ -379,7 +379,7 @@
     <string name="processing_segment_progress">Сегмент %1$d з %2$d…</string>
     <string name="progressive_initial">Готуємо часткові попередні перегляди; повний текст буде доступний після завершення</string>
     <string name="added_to_queue">Додано до черги…</string>
-    <string name="batch_enqueued">Файлів додано до черги розшифровки: %1$d</string>
+    <string name="batch_enqueued">Вибрано файлів для розшифровки: %1$d</string>
     <string name="processing_chunk">Обробка фрагмента %1$d/%2$d…</string>
     <string name="processing_audio">Обробка аудіо…</string>
     <string name="processing_request">Обробка запиту %1$s…</string>

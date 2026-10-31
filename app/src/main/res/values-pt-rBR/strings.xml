@@ -321,7 +321,7 @@
     <string name="processing_segment_progress">Segmento %1$d de %2$d…</string>
     <string name="progressive_initial">Preparando o texto; resultado final ao concluir</string>
     <string name="added_to_queue">Adicionado à fila…</string>
-    <string name="batch_enqueued">%1$d arquivos adicionados à fila de transcrição</string>
+    <string name="batch_enqueued">%1$d arquivos selecionados para transcrição</string>
     <string name="processing_chunk">Processando fragmento %1$d/%2$d…</string>
     <string name="processing_audio">Processando áudio…</string>
     <string name="processing_request">Processando solicitação %1$s…</string>
