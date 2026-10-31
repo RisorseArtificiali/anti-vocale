@@ -40,7 +40,12 @@ class SherpaModelManager private constructor(val entryId: String) {
          * [excludeBackendId] removes one candidate from BOTH arms: the
          * accurate side (the refinement pin, else the selected backend)
          * can never come back as the fast arm, or the gate would lock a
-         * two-model setup as degenerate (the GH #176 report). The LLM is
+         * two-model setup as degenerate (the GH #176 report). The exclusion
+         * is BUILT-IN-CATALOG-SCOPED: an id that matches no candidate arm
+         * (an external:, LLM, or remote-offload id) excludes nothing and
+         * resolves the plain fast arm. Callers pass built-in sherpa ids
+         * because the accurate side for the two-pass policy is a built-in
+         * sherpa backend. The LLM is
          * never a fast arm, and a stubbed-engine backend (F-Droid whistle)
          * cannot load, so neither qualifies. Null when nothing qualifies:
          * every caller degrades to single-model. ONE owner: the
