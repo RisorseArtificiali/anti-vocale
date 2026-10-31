@@ -346,11 +346,15 @@ jobs:
         if: >-
           github.event_name == 'release' ||
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.tag != '' || github.event.inputs.commit != ''))
+        env:
+          # Env mapping, never interpolated into the script text: the secret's
+          # bytes must not be able to break the step's shell quoting.
+          CI_TEST_KEYSTORE_BASE64: ${{ secrets.CI_TEST_KEYSTORE_BASE64 }}
         run: |
           set -eu
-          if [ -n "${{ secrets.CI_TEST_KEYSTORE_BASE64 }}" ]; then
+          if [ -n "$CI_TEST_KEYSTORE_BASE64" ]; then
             echo "Using the pinned CI test keystore (stable identity)"
-            echo "${{ secrets.CI_TEST_KEYSTORE_BASE64 }}" | base64 -d > debug.keystore
+            printf '%s' "$CI_TEST_KEYSTORE_BASE64" | base64 -d > debug.keystore
           else
             echo "CI_TEST_KEYSTORE_BASE64 not set; falling back to a fresh key (this build will NOT update in place)"
             keytool -genkeypair -keystore debug.keystore -alias androiddebugkey \
