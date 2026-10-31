@@ -2017,6 +2017,15 @@ class TranscriptionOrchestrator @Inject constructor(
         val refinePin = runCatching {
             preferencesManager.refinementModelBackendId.first()
         }.getOrDefault("").takeIf(String::isNotBlank)
+        // TASK-932 review F3: the fast-id resolution walks every candidate's
+        // model dir on disk, so the cheap eligibility facts of
+        // fastBackendFor are checked HERE and the probe pays only on a pass
+        // that could actually run it (two-pass off is the default). The
+        // policy re-checks them unchanged as the authoritative gate.
+        val refinementEnabled = preferencesManager.refinementEnabled.first()
+        if (requestType != "audio" || !backendOverride.isNullOrEmpty() || !refinementEnabled) {
+            return null
+        }
         val selectedBackendId = preferencesManager.transcriptionBackend.first()
         // TASK-932 review F2: ONE accurate computation, the same shape the
         // Settings gate resolves (the pin when set, the selected backend
@@ -2026,7 +2035,7 @@ class TranscriptionOrchestrator @Inject constructor(
         val fastId = DualRefinementPolicy.fastBackendFor(
             requestType = requestType,
             backendOverride = backendOverride,
-            refinementEnabled = preferencesManager.refinementEnabled.first(),
+            refinementEnabled = refinementEnabled,
             selectedBackendId = selectedBackendId,
             streamingBackendId =
                 installedFastBackendId(context, refinePin ?: selectedBackendId),

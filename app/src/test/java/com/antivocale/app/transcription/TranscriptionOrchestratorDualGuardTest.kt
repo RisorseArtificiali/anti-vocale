@@ -8,6 +8,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.slot
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -68,6 +69,7 @@ class TranscriptionOrchestratorDualGuardTest : TranscriptionOrchestratorTestBase
         taskId: String,
         pin: String? = null,
         scope: kotlinx.coroutines.CoroutineScope,
+        refinement: Boolean = true,
     ): Result<String> {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val variantDir = File(context.filesDir, "nemotron/nemotron-3.5-asr-streaming-0.6b-1120ms-int8")
@@ -76,7 +78,7 @@ class TranscriptionOrchestratorDualGuardTest : TranscriptionOrchestratorTestBase
         listOf("encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt")
             .forEach { File(variantDir, it).writeText("x") }
 
-        every { preferencesManager.refinementEnabled } returns flowOf(true)
+        every { preferencesManager.refinementEnabled } returns flowOf(refinement)
         stubDefaultWhisperPreferences()
         // AFTER the helper: mockk's later identical-signature stub wins (the
         // base's own "re-stub after baseSetUp and win" convention).
@@ -194,5 +196,20 @@ class TranscriptionOrchestratorDualGuardTest : TranscriptionOrchestratorTestBase
         // The delivered first pass is captioned not-refined, never credited
         // as a completed refinement.
         assertEquals(DualRefinementPolicy.NOT_REFINED, outcome.captured)
+    }
+
+    @Test
+    fun `with two-pass off the fast-arm probe never runs`() = runTest {
+        // TASK-932 review F3: the default-off toggle must not pay the
+        // fast-id resolution's model-dir disk walks on every audio request.
+        mockkObject(SherpaModelManager.Companion) {
+            coEvery {
+                SherpaModelManager.installedFastEntryId(any(), any())
+            } returns "nemotron-streaming"
+            runTwoPassF4(taskId = "dual-lazy", scope = this@runTest, refinement = false)
+            coVerify(exactly = 0) {
+                SherpaModelManager.installedFastEntryId(any(), any())
+            }
+        }
     }
 }
