@@ -102,6 +102,13 @@ class ModelViewModelExternalImportTest {
         var statesAtCallbacks: List<ModelViewModel.ExternalImportState> = emptyList()
         var onProgressObserved: com.antivocale.app.data.ExternalImportProgress = { _, _, _, _, _ -> }
 
+        /** TASK-925: the canned .zip scan zipChildren forwards (the input
+         *  the Unknown-arm branch decides on). */
+        var nextZipChildren: List<Uri> = emptyList()
+
+        override suspend fun bundleZipChildren(context: Context, treeUri: Uri): List<Uri> =
+            nextZipChildren
+
         override suspend fun importFromUrl(
             url: String, modelType: String?, family: ModelFamily,
             options: Map<String, String>, languages: List<String>, streaming: Boolean,
@@ -164,6 +171,20 @@ class ModelViewModelExternalImportTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `zipChildren forwards the importer's scan for every list size (TASK-925)`() = runTest {
+        val ctx = mockk<Context>(relaxed = true)
+        val tree = Uri.parse("content://tree/xyz")
+        fakeImporter.nextZipChildren = emptyList()
+        assertEquals(emptyList<Uri>(), viewModel.zipChildren(ctx, tree))
+        val one = listOf(Uri.parse("content://tree/xyz/doc/a.zip"))
+        fakeImporter.nextZipChildren = one
+        assertEquals(one, viewModel.zipChildren(ctx, tree))
+        val two = one + Uri.parse("content://tree/xyz/doc/b.zip")
+        fakeImporter.nextZipChildren = two
+        assertEquals(two, viewModel.zipChildren(ctx, tree))
     }
 
     @Test

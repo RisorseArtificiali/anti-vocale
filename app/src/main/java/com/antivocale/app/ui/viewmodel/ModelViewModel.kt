@@ -5,6 +5,7 @@ import android.util.Log
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
@@ -1505,15 +1506,26 @@ class ModelViewModel @Inject constructor(
         }
     }
     /**
-     * TASK-796 round 3: the single-picker bundle auto-detect. Returns the
-     * ONLY .zip child's URI when the picked folder holds exactly one (a
-     * random archive among many must not hijack the flow: several zips
-     * means the user must pick the specific folder). Null = no bundle
-     * candidate, the folder import proceeds with its own reporting.
-     * Binder work on IO inside the importer; the UI branch only decides.
+     * TASK-925 (GH #124 reopen 2): every .zip child of the picked folder,
+     * full list. Binder work on IO inside the importer; the UI branch
+     * decides (none = folder import, one = that bundle, several = the
+     * one-tap chooser). Replaces TASK-796 round 3's singleOrNull gate,
+     * which left a several-zips folder to the misleading folder-import
+     * error.
      */
-    suspend fun singleBundleChild(context: Context, treeUri: Uri): Uri? =
-        externalModelImporter.bundleZipChildren(context, treeUri).singleOrNull()
+    suspend fun zipChildren(context: Context, treeUri: Uri): List<Uri> =
+        externalModelImporter.bundleZipChildren(context, treeUri)
+
+    /**
+     * TASK-925: the chooser row's label for one bundle candidate. The
+     * DocumentFile query swallows provider failures, so the fallbacks keep
+     * this never-throw (an unresolvable row must not kill the chooser).
+     */
+    suspend fun bundleZipDisplayName(context: Context, uri: Uri): String =
+        withContext(Dispatchers.IO) {
+            DocumentFile.fromSingleUri(context, uri)?.name
+                ?: uri.lastPathSegment ?: uri.toString()
+        }
 
 
     /** TASK-513: lists a picked SAF folder and detects the family, so the

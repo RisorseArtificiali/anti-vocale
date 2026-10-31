@@ -281,7 +281,7 @@ fun ModelTab(
                         // (review F1/F2); a broken grant must not escape
                         // this scope either.
                         val bundleChild = runCatching {
-                            viewModel.singleBundleChild(context, picked)
+                            viewModel.zipChildren(context, picked).singleOrNull()
                         }.getOrElse { null }
                         if (bundleChild != null) {
                             // TASK-761 hygiene (review F5): the folder
