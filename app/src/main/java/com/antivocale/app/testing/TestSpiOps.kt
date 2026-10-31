@@ -392,18 +392,30 @@ internal class TestSpiOps(
             // positive int is honored downstream, and a timing test may want 3.
             // TASK-515 (reuse review): the third positive-int validator
             // tipped the copy count; one typed table now serves all of them
-            // (the TASK-469 shape: the table IS the dispatch).
-            positiveIntKeys.forEach { (key, unit, save) ->
-                putUnique(key) { value, _ ->
-                    val n = value.toIntOrNull()
-                    if (n == null || n <= 0) {
-                        "$key expects a positive integer ($unit), got '$value'"
-                    } else {
-                        save(n)
-                        null
+            // (the TASK-469 shape: the table IS the dispatch). TASK-929 added
+            // the non-negative sibling below, so the shared loop takes the
+            // lower bound and its adjective as parameters.
+            fun putIntKeys(keys: List<Triple<String, String, suspend (Int) -> Unit>>, min: Int, adjective: String) {
+                keys.forEach { (key, unit, save) ->
+                    putUnique(key) { value, _ ->
+                        val n = value.toIntOrNull()
+                        if (n == null || n < min) {
+                            "$key expects a $adjective integer ($unit), got '$value'"
+                        } else {
+                            save(n)
+                            null
+                        }
                     }
                 }
             }
+            putIntKeys(positiveIntKeys, 1, "positive")
+            // TASK-929 device trial: 0 is the What's-New arm value (the probe
+            // pops only when the stored versionCode differs from the running
+            // one); a negative would never match a real versionCode.
+            putIntKeys(
+                listOf(Triple("whats_new_version", "versionCode", preferences::saveWhatsNewLastShownVersion)),
+                0, "non-negative",
+            )
             putUnique("backend") { value, _ ->
                 if (!isKnownBackend(value)) {
                     "unknown backend '$value' (expected a catalog id, '${LlmTranscriptionBackend.BACKEND_ID}', " +

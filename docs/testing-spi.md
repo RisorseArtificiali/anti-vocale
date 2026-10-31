@@ -86,6 +86,7 @@ Set keys and value formats:
 | `early_preview` | `saveEarlyPreviewEnabled` | `true` or `false` (strict); TASK-186 early preview of the first pipeline chunk's head (default off) |
 | `interrupted_run_notifications` | `saveInterruptedRunNotifications` | `true` or `false`; TASK-684 the generic-interrupted summary notification (default on; the suspended class always notifies) |
 | `threads` | `saveThreadCount` | integer (for example `4`) |
+| `whats_new_version` | `saveWhatsNewLastShownVersion` | non-negative integer (versionCode); `0` arms the What's-New popup for the running build (stored differs from running), the running versionCode disarms it (TASK-929 device trial) |
 | `provider` | `saveInferenceProvider` | `auto`, `nnapi`, `cpu` (the settings dropdown's exact set; anything else is rejected because the app would silently run it as CPU) |
 | `backend` | `saveTranscriptionBackend` | a catalog id (`sherpa-onnx`, `whisper`, `qwen3-asr`, `nemotron-streaming`, `gigaam`), `llm`, or `external:<record id>`; unknown ids are rejected without writing |
 | `advanced_sharing` | `saveAdvancedSharingEnabled` | `true` or `false` (strict) |

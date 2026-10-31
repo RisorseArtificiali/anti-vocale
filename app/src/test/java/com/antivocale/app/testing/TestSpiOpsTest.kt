@@ -243,6 +243,26 @@ class TestSpiOpsTest {
     }
 
     @Test
+    fun `set whats_new_version arms the popup and rejects negative values`() = runTest {
+        // TASK-929 device trial: the What's-New probe pops only when the
+        // stored versionCode differs from the running one; 0 is the arm
+        // value on purpose (the never-shown sentinel), unlike the strictly
+        // positive keys above.
+        JSONObject(ops.handle(TestSpiOps.OP_SET, key = "whats_new_version", value = "0"))
+        assertEquals(0, fake._whatsNewLastShownVersion.value)
+
+        JSONObject(ops.handle(TestSpiOps.OP_SET, key = "whats_new_version", value = "11500"))
+        assertEquals(11500, fake._whatsNewLastShownVersion.value)
+
+        for (bad in listOf("soon", "-1")) {
+            assertTrue(
+                JSONObject(ops.handle(TestSpiOps.OP_SET, key = "whats_new_version", value = bad))
+                    .getString("error").contains("whats_new_version"))
+        }
+        assertEquals("a rejected value must not overwrite the saved preference", 11500, fake._whatsNewLastShownVersion.value)
+    }
+
+    @Test
     fun `set provider writes through and rejects values the app would silently map to cpu`() = runTest {
         ops.handle(TestSpiOps.OP_SET, key = "provider", value = "nnapi")
         assertEquals("nnapi", fake._inferenceProvider.value)
@@ -405,6 +425,7 @@ class TestSpiOpsTest {
             "default_prompt" to "d",
             "summary_prompt" to "s", "external_catalog_url" to "https://x",
             "output_folder" to "", "keep_alive" to "5", "subtitle_timeout" to "5", "threads" to "4",
+            "whats_new_version" to "0",
             "backend" to "llm", "refinement_model" to "llm", "language" to "auto", "model_path" to "/m",
             "model_filter_language" to "it",
             "sherpa_path" to "/m", "transcript_export_format" to "SRT",
