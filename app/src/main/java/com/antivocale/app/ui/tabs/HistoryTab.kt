@@ -916,12 +916,8 @@ fun HistoryTab(
     // without the activity roundtrip).
     val pendingDuplicate by viewModel.pendingBrowseDuplicate.collectAsState()
     pendingDuplicate?.let { hit ->
-        // Review Y1/Y2: the dialog owns the duplicate-gate wait, so its
-        // composition bounds it (the flat ceiling cancelled dialogs a slow
-        // reader was still reading, and a click racing the timeout reported
-        // failure for a file that actually reprocessed). Composed, it waits;
-        // gone without resolving, the hook cancels that file and the batch
-        // reports it and moves on.
+        // Review Y1/Y2: the dialog's composition bounds the duplicate-gate
+        // wait; the ViewModel hook owns the contract (its KDoc).
         androidx.compose.runtime.DisposableEffect(hit) {
             onDispose { viewModel.onBrowseDialogDisposed(hit) }
         }

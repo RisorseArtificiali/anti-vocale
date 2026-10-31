@@ -87,6 +87,24 @@ class LogsViewModelBatchIntakeTest {
             contentHash = "hash",
         )
 
+    /** Pins a non-duplicate file's intake completion at the subtitle probe
+     *  (the F5 boundary): the probe call is the observable we assert on. */
+    private fun stubSubtitleProbe() {
+        mockkObject(SubtitleChoice)
+        every {
+            SubtitleChoice.offerIfTracks(any(), any(), any(), any(), any(), any(), any())
+        } returns true
+    }
+
+    /** A subscriber awaited before the triggering action, so a report routes
+     *  to the snackbar path (subscriptionCount above zero) instead of the
+     *  notification path the mock context cannot run. Join it after. */
+    private suspend fun awaitFirstReport(scope: kotlinx.coroutines.CoroutineScope): kotlinx.coroutines.Job {
+        val job = scope.launch { viewModel.historyError.first() }
+        viewModel.historyError.subscriptionCount.first { it > 0 }
+        return job
+    }
+
     @Test
     fun `second file's intake waits for the first dialog to resolve`() = runBlocking {
         val uris = listOf(Uri.parse("content://picker/1"), Uri.parse("content://picker/2"))
@@ -132,26 +150,20 @@ class LogsViewModelBatchIntakeTest {
 
     @Test
     fun `a disposed dialog cancels its file and reports it as not added`() = runBlocking {
-        // A live subscriber keeps the report on the snackbar path; the
-        // notification path would drive real NotificationCompat code
-        // against this test's mock context.
-        val reports = mutableListOf<String>()
-        val collector = launch { viewModel.historyError.collect { reports.add(it) } }
-        // The collector must be subscribed before the disposal fires.
-        delay(100)
+        val report = awaitFirstReport(this)
 
         viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
         val first = withTimeout(5000) {
             viewModel.pendingBrowseDuplicate.first { it != null }
-        } ?: error("dialog never showed")
+        }
 
         // The dialog leaves composition without resolving (tab switch).
         viewModel.onBrowseDialogDisposed(first)
-        // The pending state must clear and the batch must not park.
+        // The pending state must clear, the report must land, and the batch
+        // must not park.
         withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it == null } }
         assertEquals(null, viewModel.pendingBrowseDuplicate.value)
-        withTimeout(5000) { while (reports.isEmpty()) delay(10) }
-        collector.cancel()
+        withTimeout(5000) { report.join() }
     }
 
     @Test
@@ -161,28 +173,20 @@ class LogsViewModelBatchIntakeTest {
             hit("task-1", "model-a"),
             null,
         )
-        // File 2's intake ends at the subtitle probe (the F5 boundary); the
-        // call itself is the observable completion we pin.
-        mockkObject(SubtitleChoice)
-        every {
-            SubtitleChoice.offerIfTracks(any(), any(), any(), any(), any(), any(), any())
-        } returns true
-
-        val reports = mutableListOf<String>()
-        val collector = launch { viewModel.historyError.collect { reports.add(it) } }
-        delay(100)
+        stubSubtitleProbe()
+        val report = awaitFirstReport(this)
 
         viewModel.transcribeLocalFiles(
             mockk(relaxed = true),
             listOf(Uri.parse("content://picker/1"), Uri.parse("content://picker/2")))
         val first = withTimeout(5000) {
             viewModel.pendingBrowseDuplicate.first { it != null }
-        } ?: error("dialog never showed")
+        }
 
         viewModel.onBrowseDialogDisposed(first)
         // The cancelled file reports (W4)...
         withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it == null } }
-        withTimeout(5000) { while (reports.isEmpty()) delay(10) }
+        withTimeout(5000) { report.join() }
         // ...and file 2, a non-duplicate, still completes intake.
         withTimeout(5000) {
             verify(timeout = 1000) {
@@ -190,7 +194,6 @@ class LogsViewModelBatchIntakeTest {
                     any(), any(), eq("/tmp/browse-copy"), any(), any(), any(), any())
             }
         }
-        collector.cancel()
     }
 
     @Test
@@ -198,16 +201,12 @@ class LogsViewModelBatchIntakeTest {
         coEvery {
             SharedAudioHandler.copyToAppStorage(any(), any(), any(), any())
         } throws RuntimeException("fgs start refused")
-        val reports = mutableListOf<String>()
-        val job = launch { viewModel.historyError.collect { reports.add(it) } }
-        // The collector must be subscribed before the intake runs.
-        delay(100)
+        val report = awaitFirstReport(this)
 
         viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
         // The stubbed context resolves the message to an empty string; the
         // emission itself is the behavior under test.
-        withTimeout(5000) { while (reports.isEmpty()) delay(10) }
-        job.cancel()
+        withTimeout(5000) { report.join() }
     }
 
     @Test
@@ -217,10 +216,7 @@ class LogsViewModelBatchIntakeTest {
             hit("task-1", "model-a"),
             null,
         )
-        mockkObject(SubtitleChoice)
-        every {
-            SubtitleChoice.offerIfTracks(any(), any(), any(), any(), any(), any(), any())
-        } returns true
+        stubSubtitleProbe()
 
         viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
         withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it != null } }

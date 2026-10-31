@@ -411,7 +411,7 @@ class LogsViewModel @Inject constructor(
                 context.applicationContext)
             for (uri in uris) {
                 try {
-                    transcribeLocalFile(context, uri, localizedContext)
+                    transcribeLocalFile(uri, localizedContext)
                 } catch (ce: CancellationException) {
                     throw ce
                 } catch (t: Throwable) {
@@ -430,18 +430,18 @@ class LogsViewModel @Inject constructor(
      * share-back affordances, exactly like a Tasker-initiated local file.
      * Suspending: on a duplicate hit it waits for the open-or-reprocess
      * dialog to resolve (review V1), holding the intake lock only across
-     * that gate (review Y6). The caller resolves [localizedContext] once per
-     * batch (review Y5).
+     * that gate (review Y6). Private so [transcribeLocalFiles] stays the
+     * only door: the locale-correctness contract rides on its per-batch
+     * [localizedContext] resolution (review Y5).
      */
-    suspend fun transcribeLocalFile(
-        context: Context,
+    private suspend fun transcribeLocalFile(
         uri: Uri,
         localizedContext: Context,
     ) {
         // The applicationContext, never the Activity: the copy is blocking IO
         // with no suspension points, so the coroutine can outlive the
         // Activity's teardown, and nothing here needs the Activity.
-        val appContext = context.applicationContext
+        val appContext = localizedContext.applicationContext
         withContext(Dispatchers.IO) {
             // copyToAppStorage never throws: every path lands in a
             // CopyResult variant (the FGS start below is the throwing step).
@@ -472,7 +472,7 @@ class LogsViewModel @Inject constructor(
                     // proceed while this dialog pends and its duplicates queue
                     // here, keeping the single slot overwrite-free.
                     intakeMutex.withLock {
-                        val dialogResolved = CompletableDeferred<Unit>()
+                        val dialogResolved = CompletableDeferred<Boolean>()
                         _pendingBrowseDuplicate.value = PendingBrowseDuplicate(
                             existingTaskId = hit.row.taskId,
                             modelName = hit.modelName,
@@ -487,12 +487,10 @@ class LogsViewModel @Inject constructor(
                         // [clearPendingBrowseDuplicate], which completes the gate.
                         // Review Y1/Y2: the dialog's own composition bounds the
                         // wait (the flat ceiling used to cancel dialogs a slow
-                        // reader was still using). Disposal completes the gate
-                        // as cancelled, this file reports as not added (W4) and
-                        // the batch continues.
-                        try {
-                            dialogResolved.await()
-                        } catch (_: BrowseDialogDisposedException) {
+                        // reader was still using). A disposal completes the
+                        // gate as DISPOSED: this file reports as not added
+                        // (W4) and the batch continues.
+                        if (!dialogResolved.await()) {
                             reportFailedToProcess(localizedContext)
                         }
                     }
@@ -514,9 +512,12 @@ class LogsViewModel @Inject constructor(
         /** The matched run's model, for the dialog copy. */
         val modelName: String,
         val continueRequest: () -> Unit,
-        /** Completes when the dialog resolves; the multi-pick intake loop
-         *  awaits it before starting the next file (review V1). */
-        val resolved: CompletableDeferred<Unit> = CompletableDeferred(),
+        /** Completes with true when an arm resolved the dialog, false when
+         *  it left composition unresolved; the multi-pick intake loop awaits
+         *  it before starting the next file (review V1). A value, not an
+         *  exception channel, so a shifted try/catch can never misread a
+         *  disposal as job cancellation. */
+        val resolved: CompletableDeferred<Boolean> = CompletableDeferred(),
     )
 
     private val _pendingBrowseDuplicate =
@@ -526,33 +527,32 @@ class LogsViewModel @Inject constructor(
     val pendingBrowseDuplicate: StateFlow<PendingBrowseDuplicate?> =
         _pendingBrowseDuplicate.asStateFlow()
 
+    /** One owner of the complete-then-clear ordering every gate exit leans
+     *  on (reviews V1 and Y6): the gate completes BEFORE the slot clears. */
+    private fun completeGate(current: PendingBrowseDuplicate, resolved: Boolean) {
+        current.resolved.complete(resolved)
+        _pendingBrowseDuplicate.value = null
+    }
+
     /** Either arm's dismissal; also the dialog's cancel path (open).
      *  Completes the pending state's gate so the sequential intake loop
      *  starts the next file (review V1). */
     fun clearPendingBrowseDuplicate() {
-        _pendingBrowseDuplicate.value?.resolved?.complete(Unit)
-        _pendingBrowseDuplicate.value = null
+        _pendingBrowseDuplicate.value?.let { completeGate(it, true) }
     }
 
     /**
      * Review Y1/Y2: the DuplicateFoundDialog left composition without an arm
      * resolving it (tab switch, navigation). A still-pending duplicate's gate
-     * completes as cancelled: the awaiting intake reports that file as not
+     * completes as DISPOSED: the awaiting intake reports that file as not
      * added (W4) and the batch continues. No-op when the slot is already
      * clear (an arm resolved it) or belongs to a newer instance (a stale
      * disposal firing on the swap), both checked by the identity test.
      */
     fun onBrowseDialogDisposed(dialog: PendingBrowseDuplicate) {
         val current = _pendingBrowseDuplicate.value
-        if (current !== dialog) return
-        current.resolved.completeExceptionally(BrowseDialogDisposedException())
-        _pendingBrowseDuplicate.value = null
+        if (current === dialog) completeGate(current, false)
     }
-
-    /** The dialog's only exit when no arm ran; never escapes the intake's
-     *  await (caught beside it). */
-    private class BrowseDialogDisposedException :
-        CancellationException("browse duplicate dialog left composition")
 
     /** The browse intake past the duplicate guard (both the no-hit path and
      *  the dialog's reprocess arm land here). */
