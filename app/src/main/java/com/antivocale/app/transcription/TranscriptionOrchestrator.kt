@@ -2022,7 +2022,7 @@ class TranscriptionOrchestrator @Inject constructor(
             backendOverride = backendOverride,
             refinementEnabled = preferencesManager.refinementEnabled.first(),
             selectedBackendId = preferencesManager.transcriptionBackend.first(),
-            streamingBackendId = installedStreamingBackendId(context),
+            streamingBackendId = installedFastBackendId(context),
             refineOverride = refinePin,
         ) ?: return null
 
@@ -2318,11 +2318,12 @@ class TranscriptionOrchestrator @Inject constructor(
         )
     }
 
-    /** The installed streaming catalog entry id, when one resolves locally.
-     *  TASK-603 F3: delegates to the shared owner (Settings derives the
-     *  toggle's availability from the same probe). */
-    private suspend fun installedStreamingBackendId(context: Context): String? =
-        SherpaModelManager.installedStreamingEntryId(context)
+    /** The fast first-pass backend id (TASK-932: the streaming entry when
+     *  installed, else the smallest installed catalog entry), or null when
+     *  no candidate resolves. TASK-603 F3: delegates to the shared owner
+     *  (Settings derives the toggle's availability from the same probe). */
+    private suspend fun installedFastBackendId(context: Context): String? =
+        SherpaModelManager.installedFastEntryId(context)
 
     /** GH #43: nests the first pass's context and the skip verdict on the
      *  delivered row's (phase 2) context; a no-op for single-model runs. */

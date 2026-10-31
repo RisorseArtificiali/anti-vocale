@@ -32,6 +32,32 @@ class SherpaModelManager private constructor(val entryId: String) {
                     }
                     ?.id
             }.getOrNull()
+
+        /**
+         * TASK-932 (GH #176): the fast first-pass backend id. The installed
+         * streaming entry (instant preview) when one resolves, else the
+         * smallest installed built-in catalog entry by default-variant size.
+         * The LLM is never a fast arm, and a stubbed-engine backend
+         * (F-Droid whistle) cannot load, so neither qualifies. Null when
+         * nothing qualifies: every caller degrades to single-model. ONE
+         * owner: the orchestrator's runtime two-pass gate and the Settings
+         * toggle's availability both derive from this (the
+         * installedStreamingEntryId drift-prevention pattern).
+         */
+        suspend fun installedFastEntryId(context: android.content.Context): String? =
+            runCatching {
+                installedStreamingEntryId(context)
+                    ?: com.antivocale.app.data.catalog.BundledCatalog.entries()
+                        .filterNot { it.isStreaming }
+                        .filterNot { BuiltInBackendIds.isLlm(it.id) }
+                        .filterNot { BuiltInBackendIds.hiddenOnStubBuild(it.id) }
+                        .filter { entry ->
+                            SherpaModelManager.of(entry.id)
+                                .resolveActiveModelPath(context) != null
+                        }
+                        .minByOrNull { it.defaultVariant.estimatedSizeMB }
+                        ?.id
+            }.getOrNull()
         private val cache = ConcurrentHashMap<String, SherpaModelManager>()
 
         fun of(entryId: String): SherpaModelManager =

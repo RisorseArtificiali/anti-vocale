@@ -69,8 +69,9 @@ object DualRefinementPolicy {
      *   deliberate single-model choice and disqualifies.
      * @param refinementEnabled the user toggle (default off).
      * @param selectedBackendId the user's selected backend (the accurate side).
-     * @param streamingBackendId the installed streaming catalog entry, when
-     *   one resolves (the fast side). Null when none is installed.
+     * @param streamingBackendId the resolved FAST side (TASK-932: the
+     *   installed streaming entry, else the smallest installed catalog
+     *   entry; the name predates the widening). Null when nothing qualifies.
      */
     fun fastBackendFor(
         requestType: String,
