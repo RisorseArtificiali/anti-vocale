@@ -71,4 +71,40 @@ class ShareReceiverActivityAliasTest {
             ShareReceiverActivity.backendIdForAlias("com.antivocale.app.ShareExternal", registry)
         )
     }
+
+    /**
+     * TASK-927 review V4: the manifest cannot reference constants, so this
+     * test IS the sync. Every SEND filter on a ShareReceiverActivity target
+     * (main activity and share aliases) must also declare
+     * ACTION_SEND_MULTIPLE, or a multi share never offers the pinned backend
+     * targets and an explicit multi send to an alias dead-ends.
+     */
+    @Test
+    fun `every ShareReceiverActivity SEND filter also declares SEND_MULTIPLE`() {
+        val manifest = com.antivocale.app.testing.RepoFiles.readText("src/main/AndroidManifest.xml")
+        // Only filters inside ShareReceiverActivity-targeted blocks count;
+        // other components must not be constrained by this pin.
+        val activityBlocks = Regex(
+            "<activity(-alias)?\\b.*?</activity(-alias)?>",
+            RegexOption.DOT_MATCHES_ALL,
+        )
+            .findAll(manifest)
+            .filter { "ShareReceiverActivity" in it.value }
+        val scopedSendFilters = activityBlocks.flatMap { block ->
+            Regex(
+                "<intent-filter>.*?</intent-filter>",
+                RegexOption.DOT_MATCHES_ALL,
+            )
+                .findAll(block.value)
+                .filter { "android.intent.action.SEND\"" in it.value }
+        }.toList()
+
+        assertTrue("expected share SEND filters in the manifest", scopedSendFilters.isNotEmpty())
+        scopedSendFilters.forEach { filter ->
+            assertTrue(
+                "SEND filter missing ACTION_SEND_MULTIPLE:\n${filter.value}",
+                "android.intent.action.SEND_MULTIPLE" in filter.value,
+            )
+        }
+    }
 }
