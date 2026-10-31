@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import com.antivocale.app.data.VoiceNoteDuplicateGuard
 import com.antivocale.app.data.local.LogEntity
+import com.antivocale.app.receiver.SubtitleChoice
 import com.antivocale.app.transcription.staticRegistry
 import com.antivocale.app.util.LocaleManager
 import com.antivocale.app.util.SharedAudioHandler
@@ -12,6 +13,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -129,20 +131,65 @@ class LogsViewModelBatchIntakeTest {
     }
 
     @Test
-    fun `an abandoned dialog times out and reports the file as not added`() = runBlocking {
-        viewModel.browseDialogTimeoutMs = 100
+    fun `a disposed dialog cancels its file and reports it as not added`() = runBlocking {
         // A live subscriber keeps the report on the snackbar path; the
         // notification path would drive real NotificationCompat code
         // against this test's mock context.
         val reports = mutableListOf<String>()
         val collector = launch { viewModel.historyError.collect { reports.add(it) } }
-        viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
-        withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it != null } }
+        // The collector must be subscribed before the disposal fires.
+        delay(100)
 
+        viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
+        val first = withTimeout(5000) {
+            viewModel.pendingBrowseDuplicate.first { it != null }
+        } ?: error("dialog never showed")
+
+        // The dialog leaves composition without resolving (tab switch).
+        viewModel.onBrowseDialogDisposed(first)
         // The pending state must clear and the batch must not park.
         withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it == null } }
         assertEquals(null, viewModel.pendingBrowseDuplicate.value)
         withTimeout(5000) { while (reports.isEmpty()) delay(10) }
+        collector.cancel()
+    }
+
+    @Test
+    fun `a disposal-cancelled file does not block the batch's next file`() = runBlocking {
+        // File 1 is a duplicate, file 2 is not.
+        coEvery { duplicateGuard.lookup(any(), any(), any(), any()) } returnsMany listOf(
+            hit("task-1", "model-a"),
+            null,
+        )
+        // File 2's intake ends at the subtitle probe (the F5 boundary); the
+        // call itself is the observable completion we pin.
+        mockkObject(SubtitleChoice)
+        every {
+            SubtitleChoice.offerIfTracks(any(), any(), any(), any(), any(), any(), any())
+        } returns true
+
+        val reports = mutableListOf<String>()
+        val collector = launch { viewModel.historyError.collect { reports.add(it) } }
+        delay(100)
+
+        viewModel.transcribeLocalFiles(
+            mockk(relaxed = true),
+            listOf(Uri.parse("content://picker/1"), Uri.parse("content://picker/2")))
+        val first = withTimeout(5000) {
+            viewModel.pendingBrowseDuplicate.first { it != null }
+        } ?: error("dialog never showed")
+
+        viewModel.onBrowseDialogDisposed(first)
+        // The cancelled file reports (W4)...
+        withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it == null } }
+        withTimeout(5000) { while (reports.isEmpty()) delay(10) }
+        // ...and file 2, a non-duplicate, still completes intake.
+        withTimeout(5000) {
+            verify(timeout = 1000) {
+                SubtitleChoice.offerIfTracks(
+                    any(), any(), eq("/tmp/browse-copy"), any(), any(), any(), any())
+            }
+        }
         collector.cancel()
     }
 

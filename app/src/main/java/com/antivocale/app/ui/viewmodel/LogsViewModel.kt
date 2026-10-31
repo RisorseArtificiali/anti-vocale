@@ -42,10 +42,8 @@ import com.antivocale.app.transcription.variantAwareDisplayName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -187,15 +185,6 @@ class LogsViewModel @Inject constructor(
          * ResultNotificationFactory's band table).
          */
         internal const val HISTORY_ERROR_NOTIFICATION_ID = 2501
-
-        /**
-         * Review W2: the duplicate dialog composes with the History tab, so
-         * leaving the tab leaves the intake awaiting forever. Reusing the
-         * subtitle-choice timeout preference does not read naturally here
-         * (minutes, WorkManager-driven notification prompt), so a flat
-         * ceiling bounds the wait instead.
-         */
-        private const val BROWSE_DIALOG_TIMEOUT_MS = 60_000L
     }
 
     /**
@@ -205,10 +194,6 @@ class LogsViewModel @Inject constructor(
      * overwritten by a concurrent batch.
      */
     private val intakeMutex = Mutex()
-
-    /** Review W2: the ceiling above, overridable so the unit test waits
-     *  milliseconds instead of a minute. */
-    internal var browseDialogTimeoutMs: Long = BROWSE_DIALOG_TIMEOUT_MS
 
     /**
      * Pending long-audio warning (TASK-432): non-null while the advisory dialog
@@ -484,16 +469,16 @@ class LogsViewModel @Inject constructor(
                         // Review V1: hold this intake's slot until the dialog
                         // resolves; both arms go through
                         // [clearPendingBrowseDuplicate], which completes the gate.
-                        // Review W2: the dialog dies with the History tab, so a
-                        // timeout reports the file as not added and lets the
-                        // batch continue instead of parking the intake forever.
+                        // Review Y1/Y2: the dialog's own composition bounds the
+                        // wait (the flat ceiling used to cancel dialogs a slow
+                        // reader was still using). Disposal completes the gate
+                        // as cancelled, this file reports as not added (W4) and
+                        // the batch continues.
                         try {
-                            withTimeout(browseDialogTimeoutMs) { dialogResolved.await() }
-                        } catch (_: TimeoutCancellationException) {
-                            clearPendingBrowseDuplicate()
+                            dialogResolved.await()
+                        } catch (_: BrowseDialogDisposedException) {
                             reportHistoryError(
                                 localizedContext.getString(R.string.failed_to_process_audio))
-                            return@withContext
                         }
                         return@withContext
                     }
@@ -533,6 +518,26 @@ class LogsViewModel @Inject constructor(
         _pendingBrowseDuplicate.value?.resolved?.complete(Unit)
         _pendingBrowseDuplicate.value = null
     }
+
+    /**
+     * Review Y1/Y2: the DuplicateFoundDialog left composition without an arm
+     * resolving it (tab switch, navigation). A still-pending duplicate's gate
+     * completes as cancelled: the awaiting intake reports that file as not
+     * added (W4) and the batch continues. No-op when the slot is already
+     * clear (an arm resolved it) or belongs to a newer instance (a stale
+     * disposal firing on the swap), both checked by the identity test.
+     */
+    fun onBrowseDialogDisposed(dialog: PendingBrowseDuplicate) {
+        val current = _pendingBrowseDuplicate.value
+        if (current !== dialog) return
+        current.resolved.completeExceptionally(BrowseDialogDisposedException())
+        _pendingBrowseDuplicate.value = null
+    }
+
+    /** The dialog's only exit when no arm ran; never escapes the intake's
+     *  await (caught beside it). */
+    private class BrowseDialogDisposedException :
+        CancellationException("browse duplicate dialog left composition")
 
     /** The browse intake past the duplicate guard (both the no-hit path and
      *  the dialog's reprocess arm land here). */
