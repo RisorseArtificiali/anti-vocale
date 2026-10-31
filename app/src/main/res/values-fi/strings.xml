@@ -1069,6 +1069,7 @@
     <string name="refinement_model_description">Toisen vaiheen käyttämä malli. Jätä valinnaksi Peri aktiivinen malli, jolloin käytetään aktiivista malliasi.</string>
     <string name="refinement_model_inherit">Peri aktiivinen malli</string>
     <string name="refinement_description">Näytä välitön esikatselu nopealla mallilla ja hienosäädä se valitulla mallilla taustalla</string>
+    <string name="refinement_locked_reason">Lataa toinen malli ottaaksesi käyttöön kaksivaiheisen transkription</string>
     <string name="language_chip_setting_note">Vain Whisper- ja SenseVoice-mallit voivat tunnistaa kielen.</string>
     <string name="technical_details_title">Näytä tekniset tiedot</string>
     <string name="technical_details_description">Näytä tekninen käsittelurivi (dekoodauspolku, lohkot, VAD, muisti) jokaisen transkription alla. Oletuksena pois käytöstä; tekniset tiedot sisältyvät aina palauteraportteihin.</string>

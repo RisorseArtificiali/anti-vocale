@@ -1029,6 +1029,7 @@
     <string name="refinement_model_description">第二遍使用的模型。保持“继承”即可使用当前启用的模型。</string>
     <string name="refinement_model_inherit">继承当前启用的模型</string>
     <string name="refinement_description">先用快速模型流式生成即时预览，再在后台用所选模型进行优化</string>
+    <string name="refinement_locked_reason">下载第二个模型以启用两遍转写</string>
     <string name="language_chip_setting_note">只有 Whisper 和 SenseVoice 模型能够检测语言。</string>
     <string name="technical_details_title">显示技术细节</string>
     <string name="technical_details_description">在每条转写条目下方显示技术处理信息行（解码路径、分块、VAD、内存）。默认关闭；这些细节始终会包含在反馈报告中。</string>

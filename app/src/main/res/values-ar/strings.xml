@@ -1025,6 +1025,7 @@
     <string name="refinement_model_description">النموذج الذي تستخدمه المرحلة الثانية. اتركه على خيار التوريث لاستخدام نموذجك النشط.</string>
     <string name="refinement_model_inherit">توريث النموذج النشط</string>
     <string name="refinement_description">بث معاينة فورية بالنموذج السريع، ثم تحسينها بالنموذج المحدد في الخلفية</string>
+    <string name="refinement_locked_reason">نزّل نموذجًا ثانيًا لتفعيل النسخ على مرحلتين</string>
     <string name="language_chip_setting_note">يمكن لنماذج Whisper و SenseVoice فقط الكشف عن اللغة.</string>
     <string name="technical_details_title">إظهار التفاصيل التقنية</string>
     <string name="technical_details_description">إظهار سطر المعالجة التقنية (مسار فك الترميز، والأجزاء، وVAD، والذاكرة) أسفل كل نص. معطّل افتراضيًا؛ وتُدرَج التفاصيل دائمًا في تقارير الملاحظات.</string>
