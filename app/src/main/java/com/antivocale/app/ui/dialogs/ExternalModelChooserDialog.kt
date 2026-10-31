@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.antivocale.app.R
 import com.antivocale.app.data.ExternalModelRecord
+import com.antivocale.app.transcription.LanguageFlags
+import com.antivocale.app.util.LanguageNames
 
 /**
  * The ShareExternal family chooser, rendered by the share flow's Compose
@@ -46,5 +48,13 @@ fun ExternalModelChooserDialog(
     )
 }
 
+/** The same label derivation every import surface uses: the TASK-796
+ *  flag-prefixed title plus native language names (review F7's
+ *  raw-codes-read-as-noise ruling), not the old platform dialog's
+ *  "(it, en)" literal. */
 private fun recordLabel(record: ExternalModelRecord): String =
-    record.displayName + if (record.languages.isEmpty()) "" else " (" + record.languages.joinToString(", ") + ")"
+    LanguageFlags.titled(
+        record.displayName,
+        record.languages,
+    ) + if (record.languages.isEmpty()) "" else
+        " (" + record.languages.joinToString(", ") { LanguageNames.nativeLanguageName(it) } + ")"

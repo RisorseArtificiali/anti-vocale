@@ -14,12 +14,13 @@ import org.robolectric.annotation.Config
 
 /**
  * The share flow's dialog state holder (the 2026-10-31 look-and-feel fix).
- * The routing arms and the batch accounting are covered by the other
- * ShareReceiverActivity suites; this file drives the surface arms that are
- * synchronous and side-effect assertable without running the copy flow: the
- * entries a batch can pend at once, identity-true removal, and the open and
- * cancel arms' endFlow. No Compose composition: create() only, the surface
- * never attaches.
+ * Scope, honestly: this file drives only the arms that are synchronous and
+ * side-effect assertable without running the copy flow (the entries a batch
+ * can pend at once, identity-true removal, the open and cancel arms'
+ * endFlow). The reprocess and chooser-pick arms stay UNPINNED here: both
+ * launch the copy flow, which the other ShareReceiverActivity suites cover
+ * only at the routing level, not through the dialog arms. No Compose
+ * composition: create() only, the surface never attaches.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])

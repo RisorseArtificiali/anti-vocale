@@ -31,17 +31,22 @@ import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.ui.dialogs.DuplicateFoundDialog
 import com.antivocale.app.ui.dialogs.ExternalModelChooserDialog
 import com.antivocale.app.ui.theme.AntiVocaleTheme
+import com.antivocale.app.ui.theme.fromName
+import com.antivocale.app.ui.theme.TextScale
+import com.antivocale.app.ui.theme.ThemeMode
+import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.SharedAudioHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
-import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.components.SingletonComponent
 import java.io.File
 import java.util.UUID
@@ -56,53 +61,15 @@ import java.util.UUID
  * instead of starting ASR immediately.
  */
 /**
- * Hilt entry point for fetching [PreferencesManager] without annotating this transparent
- * share-target Activity with @AndroidEntryPoint. Used only to read the
- * transcription-language preference for subtitle track selection.
+ * Hilt entry point for fetching [PreferencesManager] from the NON-activity
+ * share surfaces (SubtitleChoice and the receivers): the annotation-free
+ * receiver classes cannot field-inject. The activity itself injects
+ * [ShareReceiverActivity.preferencesManager] directly.
  */
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 interface SubtitlePrefsEntryPoint {
     val preferencesManager: PreferencesManager
-}
-
-/**
- * Hilt entry point for fetching [BackendRegistry] in the same no-@AndroidEntryPoint
- * situation as [SubtitlePrefsEntryPoint]: the registry derives dynamic external-model
- * descriptors from the store, so callers must resolve the app-wide singleton rather
- * than constructing their own instance.
- */
-@EntryPoint
-@InstallIn(SingletonComponent::class)
-interface BackendRegistryEntryPoint {
-    fun backendRegistry(): BackendRegistry
-    /** The chooser reads valid external records; same no-@AndroidEntryPoint situation. */
-    fun externalModelStore(): com.antivocale.app.data.ExternalModelStore
-
-    /** TASK-736: the identity cache the listener fills; the share flow matches against it. */
-    fun voiceNoteIdentityCache(): VoiceNoteIdentityCache
-
-    /**
-     * GH #18: the share-time decode probe. The copy path accepts every file,
-     * so this is how the share flow learns whether the device can actually
-     * decode the container before dispatching transcription.
-     */
-    fun audioPreprocessor(): com.antivocale.app.audio.AudioPreprocessor
-
-    /** TASK-842: the display-name derivation the rows use (the guard's
-     *  hash+model lookup must mirror the name the run will stamp). */
-    fun transcriptionOrchestrator(): com.antivocale.app.transcription.TranscriptionOrchestrator
-
-    /** TASK-842: the duplicate guard's DAO lookup. */
-    fun duplicateGuard(): com.antivocale.app.data.VoiceNoteDuplicateGuard
-
-    /**
-     * The process-lifetime scope (TASK-438 rule: no hand-built scopes). The
-     * share flow's copy-and-dispatch work must run to completion even after
-     * this activity finishes, so it outlives the activity by design.
-     */
-    @com.antivocale.app.di.ApplicationScope
-    fun applicationScope(): CoroutineScope
 }
 
 /**
@@ -114,7 +81,26 @@ interface BackendRegistryEntryPoint {
  * the user is offered a choice (use subtitles vs. transcribe audio) via a notification
  * instead of starting ASR immediately.
  */
+/**
+ * The app-wide singletons the share flow needs, injected now that the class
+ * is a ComponentActivity (the EntryPoint seam's no-activity precondition
+ * vanished with the Compose surface; [SubtitlePrefsEntryPoint] stays for the
+ * non-activity receivers).
+ */
+@AndroidEntryPoint
 class ShareReceiverActivity : ComponentActivity() {
+
+    @javax.inject.Inject lateinit var backendRegistry: BackendRegistry
+    @javax.inject.Inject lateinit var externalModelStore: com.antivocale.app.data.ExternalModelStore
+    @javax.inject.Inject lateinit var voiceNoteIdentityCache: VoiceNoteIdentityCache
+    @javax.inject.Inject lateinit var audioPreprocessor: com.antivocale.app.audio.AudioPreprocessor
+    @javax.inject.Inject lateinit var transcriptionOrchestrator: com.antivocale.app.transcription.TranscriptionOrchestrator
+    @javax.inject.Inject lateinit var duplicateGuard: com.antivocale.app.data.VoiceNoteDuplicateGuard
+    @javax.inject.Inject lateinit var preferencesManager: PreferencesManager
+
+    @com.antivocale.app.di.ApplicationScope
+    @javax.inject.Inject lateinit var injectedAppScope: CoroutineScope
+
 
     companion object {
         const val TAG = "ShareReceiverActivity"
@@ -134,7 +120,6 @@ class ShareReceiverActivity : ComponentActivity() {
         // Keeps a shared video from silently hanging when the notification is ignored.
 
         // Request code of the shortcut flow's SAF audio pick ([launchAudioPicker]).
-        private const val REQUEST_PICK_AUDIO = 1
 
         // Saved-state stamp written by [onSaveInstanceState] once the
         // copy-and-dispatch coroutine has started: the pid of the process
@@ -177,7 +162,7 @@ class ShareReceiverActivity : ComponentActivity() {
         // The registry is NOT held here. Only DI assembles the store+provider pair this
         // registry needs; a second hand-built instance would add a second records collector
         // and split store mutations across racing read-modify-write domains. Callers resolve
-        // the app singleton via [BackendRegistryEntryPoint] and pass it in.
+        // the injected app singleton and pass it in.
         // The ShareExternal family alias (single source: ShareTargetManager) is resolved
         // to a SENTINEL here; the instance flow replaces it with a concrete external:<id>.
         internal const val EXTERNAL_FAMILY_BACKEND_ID = "external"
@@ -241,14 +226,73 @@ class ShareReceiverActivity : ComponentActivity() {
      */
     internal val pendingDialogs = mutableStateListOf<PendingDialog>()
 
+    /**
+     * Installs the Compose dialog surface on first use. Platform-theme
+     * translucent window is fine: Material3 composes its own theme, no
+     * AppCompat host needed. The SAME brand/mode/text-scale the main
+     * activity passes (review CR1: a look-and-feel fix that ignored the
+     * user's saved theme would diverge from the History surface sharing
+     * this dialog); read once per flow, reactive enough for a trampoline.
+     * runBlocking first() reads only the warm preference cache (the
+     * TaskerRequestReceiver gate's documented precedent).
+     */
+    private var dialogSurfaceInstalled = false
+    private fun ensureDialogSurface() {
+        if (dialogSurfaceInstalled) return
+        dialogSurfaceInstalled = true
+        val theme = runBlocking {
+            runCatching { ThemeType.valueOf(preferencesManager.themePreference.first()) }
+                .getOrDefault(ThemeType.DEFAULT)
+        }
+        val themeMode = runBlocking {
+            runCatching { ThemeMode.valueOf(preferencesManager.themeMode.first()) }
+                .getOrDefault(ThemeMode.SYSTEM)
+        }
+        val textScale = TextScale.fromName(
+            runBlocking { preferencesManager.textScalePreference.first() })
+        setContent {
+            AntiVocaleTheme(brand = theme, mode = themeMode, textScale = textScale) {
+                pendingDialogs.forEach { entry ->
+                    // key() pins positional memoization to the entry: removing
+                    // a mid-list dialog must not shift a survivor onto the
+                    // removed one's slots (review CR2).
+                    androidx.compose.runtime.key(entry.taskId) {
+                        when (entry) {
+                            is PendingDialog.Duplicate -> DuplicateFoundDialog(
+                                modelName = entry.modelName,
+                                onOpen = { onDuplicateOpen(entry) },
+                                onReprocess = { onDuplicateReprocess(entry) },
+                            )
+
+                            is PendingDialog.ExternalChooser -> ExternalModelChooserDialog(
+                                records = entry.records,
+                                onPick = { chosen -> onExternalChooserPick(entry, chosen) },
+                                onDismiss = { onExternalChooserCancel(entry) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Accepted hole (round-2 review CR6): a recreation the manifest
+    // configChanges list does NOT cover (locale change, some fold/posture
+    // cases) kills a pended dialog with its window and the dispatch-pid
+    // guard finishes the new instance, so that file's share is lost without
+    // a toast; the covered set (V6) keeps the common rotations alive.
+
     /** One pending interaction. Every variant carries its flow's unique
-     *  per-file taskId, so two entries are never data-equal twins. */
+     *  per-file taskId, so two entries are never data-equal twins; the
+     *  interface owns it because the surface keys composition on it. */
     internal sealed interface PendingDialog {
+        val taskId: String
+
         /** TASK-842 duplicate prompt: open the existing row or reprocess. */
         data class Duplicate(
             val modelName: String,
             val existingTaskId: String,
-            val taskId: String,
+            override val taskId: String,
             val localPath: String,
             val backendOverride: String?,
             val contentHash: String,
@@ -256,30 +300,35 @@ class ShareReceiverActivity : ComponentActivity() {
 
         /** ShareExternal family chooser: pick one imported model. */
         data class ExternalChooser(
-            val taskId: String,
+            override val taskId: String,
             val localPath: String,
             val records: List<ExternalModelRecord>,
             val contentHash: String?,
         ) : PendingDialog
     }
 
-    /** The app-wide entry point, resolved once per instance; [appScope] and
-     *  the registry/store reads all derive from it. */
-    private val appEntryPoint by lazy {
-        EntryPointAccessors.fromApplication(applicationContext, BackendRegistryEntryPoint::class.java)
-    }
-
     /** The process-lifetime scope (TASK-438 rule: no hand-built scopes). The
      *  share flow must run to completion even after finish(). */
-    private val appScope: CoroutineScope get() = appEntryPoint.applicationScope()
+    private val appScope: CoroutineScope get() = injectedAppScope
 
     /**
-     * SAF audio picker for the shortcut flow: the same OpenDocument contract
-     * the ModelTab file picker uses, driven via createIntent/parseResult with
-     * the single [REQUEST_PICK_AUDIO] result code. The stateless contract is
-     * safe to share.
+     * SAF audio picker for the shortcut flow (the same OpenDocument contract
+     * the ModelTab file picker uses). The Activity Result API now that the
+     * class is a ComponentActivity: the register must be an unconditioned
+     * field init (STARTED at latest), so it exists before the flow that
+     * launches it.
      */
-    private val audioPickerContract = ActivityResultContracts.OpenDocument()
+    private val audioPicker = registerForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) {
+            // User backed out of the picker: nothing to transcribe; the same
+            // quiet exit as the external-model chooser cancel path.
+            endFlow()
+        } else {
+            processSharedAudio(uri, null)
+        }
+    }
 
     // Local BroadcastReceiver to receive detected package from ChooserBroadcastReceiver
     private val chosenAppReceiver = object : BroadcastReceiver() {
@@ -313,27 +362,9 @@ class ShareReceiverActivity : ComponentActivity() {
             return
         }
 
-        // The dialog surface. Platform-theme translucent window is fine:
-        // Material3 composes its own theme, no AppCompat host needed.
-        setContent {
-            AntiVocaleTheme {
-                pendingDialogs.forEach { entry ->
-                    when (entry) {
-                        is PendingDialog.Duplicate -> DuplicateFoundDialog(
-                            modelName = entry.modelName,
-                            onOpen = { onDuplicateOpen(entry) },
-                            onReprocess = { onDuplicateReprocess(entry) },
-                        )
-
-                        is PendingDialog.ExternalChooser -> ExternalModelChooserDialog(
-                            records = entry.records,
-                            onPick = { chosen -> onExternalChooserPick(entry, chosen) },
-                            onDismiss = { onExternalChooserCancel(entry) },
-                        )
-                    }
-                }
-            }
-        }
+        // The dialog surface is installed lazily by [ensureDialogSurface]
+        // on the FIRST pended dialog (round-2 efficiency review): the common
+        // copy-and-finish share pays no composition, no theme reads.
 
         Log.i(TAG, "Share received: action=${intent?.action}, type=${intent?.type}")
 
@@ -469,27 +500,10 @@ class ShareReceiverActivity : ComponentActivity() {
     /**
      * Opens the system SAF audio picker for the shortcut flow. The transparent
      * Activity stays alive (no finish) so the picker result can return to this
-     * instance in [onActivityResult].
+     * instance through [audioPicker].
      */
     private fun launchAudioPicker() {
-        startActivityForResult(
-            audioPickerContract.createIntent(this, arrayOf("audio/*")),
-            REQUEST_PICK_AUDIO,
-        )
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != REQUEST_PICK_AUDIO) return
-        val uri = audioPickerContract.parseResult(resultCode, data)
-        if (uri == null) {
-            // User backed out of the picker: nothing to transcribe; the same
-            // quiet exit as the external-model chooser cancel path.
-            endFlow()
-            return
-        }
-        processSharedAudio(uri, data?.type)
+        audioPicker.launch(arrayOf("audio/*"))
     }
 
     /**
@@ -574,7 +588,7 @@ class ShareReceiverActivity : ComponentActivity() {
             // Resolve the backend override once (applies to both the ASR path and the subtitle
             // choice's "Transcribe audio" action). A share-target alias forces a specific backend.
             val backendOverride: String? = intent?.component?.className?.let { alias ->
-                backendIdForAlias(alias, appEntryPoint.backendRegistry())?.also { backendId ->
+                backendIdForAlias(alias, backendRegistry)?.also { backendId ->
                     Log.i(TAG, "Share target alias detected: $alias -> backend: $backendId")
                 }
             }
@@ -582,13 +596,13 @@ class ShareReceiverActivity : ComponentActivity() {
             // TASK-842: the intake content hash, once, on IO (the
             // interactive duplicate guard's key; rides the service intent
             // so the row carries it for FUTURE intakes).
-            val contentHash = appEntryPoint.duplicateGuard().hashOnIo(localPath)
+            val contentHash = duplicateGuard.hashOnIo(localPath)
 
             // External-family share target: the sentinel must become a concrete external:<id>
             // BEFORE any consumer (subtitle branch, timeout worker, service intent) sees it.
             if (backendOverride == EXTERNAL_FAMILY_BACKEND_ID) {
                 showExternalModelChooser(
-                    taskId, localPath, appEntryPoint.externalModelStore(), contentHash)
+                    taskId, localPath, externalModelStore, contentHash)
                 return@launchShareFlow
             }
 
@@ -639,6 +653,7 @@ class ShareReceiverActivity : ComponentActivity() {
             return
         }
 
+        ensureDialogSurface()
         pendingDialogs.add(PendingDialog.ExternalChooser(taskId, localPath, records, contentHash))
     }
 
@@ -668,7 +683,7 @@ class ShareReceiverActivity : ComponentActivity() {
         // GH #18: the decode probe gates only the ASR path; subtitle-only
         // shares were handled above (offered) and never reach here.
         val decodeError = withContext(Dispatchers.IO) {
-            appEntryPoint.audioPreprocessor().probeDecodable(localPath)
+            audioPreprocessor.probeDecodable(localPath)
         }
         if (decodeError != null) {
             showErrorToast(
@@ -700,8 +715,8 @@ class ShareReceiverActivity : ComponentActivity() {
         // flow and the automatic route share one implementation.
         val senderName = withContext(Dispatchers.IO) {
             VoiceNoteSenderResolution.match(
-                appEntryPoint.voiceNoteIdentityCache(),
-                appEntryPoint.audioPreprocessor(),
+                voiceNoteIdentityCache,
+                audioPreprocessor,
                 sourcePackage,
                 localPath)
         }
@@ -739,8 +754,8 @@ class ShareReceiverActivity : ComponentActivity() {
         contentHash: String,
     ): Boolean {
         if (isFinishing || isDestroyed) return false
-        val hit = appEntryPoint.duplicateGuard()
-            .lookup(this, appEntryPoint.transcriptionOrchestrator(), contentHash, backendOverride)
+        val hit = duplicateGuard
+            .lookup(this, transcriptionOrchestrator, contentHash, backendOverride)
             ?: return false
         val existing = hit.row
         // Three suspension points sit between the entry check and the
@@ -749,6 +764,7 @@ class ShareReceiverActivity : ComponentActivity() {
         if (isFinishing || isDestroyed) return false
         Log.i(TAG, "Duplicate content for model=${hit.modelName}: opening-or-reprompting taskId=${existing.taskId}")
 
+        ensureDialogSurface()
         pendingDialogs.add(
             PendingDialog.Duplicate(
                 modelName = hit.modelName,
@@ -769,15 +785,18 @@ class ShareReceiverActivity : ComponentActivity() {
      * by identity, since a batch can pend data-shaped equals.
      */
     private fun removePendingDialog(entry: PendingDialog) {
-        val index = pendingDialogs.indexOfFirst { it === entry }
-        if (index >= 0) pendingDialogs.removeAt(index)
+        pendingDialogs.removeAll { it === entry }
     }
 
     /** The open arm: land on the existing transcript row. Also the answer
      *  to a dismiss outside the buttons (the conservative arm). */
     internal fun onDuplicateOpen(entry: PendingDialog.Duplicate) {
         removePendingDialog(entry)
-        openExisting(entry.existingTaskId)
+        startActivity(Intent(this, MainActivity::class.java).apply {
+            putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, entry.existingTaskId)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+        endFlow()
     }
 
     /** The reprocess arm: run the flow's dispatch with this request's backend. */
@@ -786,14 +805,6 @@ class ShareReceiverActivity : ComponentActivity() {
         launchShareFlow {
             dispatch(entry.taskId, entry.localPath, entry.backendOverride, entry.contentHash)
         }
-    }
-
-    private fun openExisting(existingTaskId: String) {
-        startActivity(Intent(this, MainActivity::class.java).apply {
-            putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, existingTaskId)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        })
-        endFlow()
     }
 
     /** The chooser's row-tap arm: continue the flow with the chosen backend. */
