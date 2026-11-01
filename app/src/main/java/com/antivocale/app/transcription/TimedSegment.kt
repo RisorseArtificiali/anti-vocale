@@ -79,7 +79,10 @@ data class TimedWord(
  * whitespace-led token opens a word too. Null when the tokens cannot back
  * every whitespace word of [cueText]: the count equality is what makes index
  * alignment to the rendered words sound, and a mismatch degrades instead of
- * timing words it cannot see.
+ * timing words it cannot see. Tokens that carry no character (whisper's
+ * bare-space piece, a lone U+2581) group nothing: they detokenize to no
+ * text, so counting them as word starts (or letting their spans stretch a
+ * group) invents a phantom word and fails the gate.
  */
 internal object TimedWords {
 
@@ -89,11 +92,12 @@ internal object TimedWords {
     private const val WORD_START = "▁"
 
     fun ofCue(cueText: String, tokens: List<TimedToken>): List<TimedWord>? {
-        if (tokens.isEmpty()) return null
+        val worded = tokens.filter { hasWordText(it.text) }
+        if (worded.isEmpty()) return null
         val spans = mutableListOf<TimedWord>()
-        var start = tokens.first().startMs
-        var end = tokens.first().endMs
-        for (token in tokens.drop(1)) {
+        var start = worded.first().startMs
+        var end = worded.first().endMs
+        for (token in worded.drop(1)) {
             if (opensWord(token.text)) {
                 spans.add(TimedWord(start, end))
                 start = token.startMs
@@ -130,7 +134,11 @@ internal object TimedWords {
 
     /** U+2581 for sentencepiece vocabs, a leading space for whisper's BPE. */
     private fun opensWord(text: String): Boolean =
-        text.startsWith(WORD_START) || text.isNotEmpty() && text[0].isWhitespace()
+        text.startsWith(WORD_START) || text[0].isWhitespace()
+
+    /** A pure separator (only whitespace or markers) is not a word and has no span a group may inherit. */
+    private fun hasWordText(text: String): Boolean =
+        text.any { !it.isWhitespace() && it != WORD_START.single() }
 }
 
 /**

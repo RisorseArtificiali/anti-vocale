@@ -91,6 +91,59 @@ class TimedWordsTest {
     }
 
     @Test
+    fun `a bare separator token opens no word`() {
+        // Whisper can emit the bare-space piece (GPT-2 id 220) as the
+        // stream's first token: it detokenizes to nothing, so it must not
+        // open a group. The word count gate would refuse every such stream.
+        val words = TimedWords.ofCue(
+            "alpha beta",
+            listOf(TimedToken(" ", 100, 140), TimedToken(" alpha", 140, 800), TimedToken(" beta", 1000, 1800)),
+        )!!
+        assertEquals(listOf(TimedWord(140, 800), TimedWord(1000, 1800)), words)
+    }
+
+    @Test
+    fun `the whisper-turbo probe stream yields measured words`() {
+        // wordtap-probe-9-turbo: the decoded sentence's simulated token
+        // stream, space-led pieces with Italian subword splits, the comma
+        // as a continuation, and the leading bare-space piece. Measured
+        // grouping must survive it; the first word's span is its own
+        // token's, not the separator's and not an estimate grid.
+        val tokens = listOf(
+            TimedToken(" ", 1199, 1205),
+            TimedToken(" Questa", 1205, 1750),
+            TimedToken(" è", 1750, 1810),
+            TimedToken(" una", 1810, 1900),
+            TimedToken(" prova", 1900, 2150),
+            TimedToken(" del", 2150, 2250),
+            TimedToken(" tocco", 2250, 2550),
+            TimedToken(" sulla", 2550, 2700),
+            TimedToken(" parola", 2700, 3000),
+            TimedToken(",", 3000, 3060),
+            TimedToken(" tocca", 3060, 3300),
+            TimedToken(" la", 3300, 3400),
+            TimedToken(" parola", 3400, 3700),
+            TimedToken(" do", 3700, 3800),
+            TimedToken("nine", 3800, 4050),
+            TimedToken(" per", 4050, 4200),
+            TimedToken(" rias", 4200, 4400),
+            TimedToken("colta", 4400, 4700),
+            TimedToken("re", 4700, 4900),
+            TimedToken(" questo", 4900, 5100),
+            TimedToken(" punto", 5100, 6077),
+        )
+        val words = TimedWords.ofCue(
+            "Questa è una prova del tocco sulla parola, tocca la parola donine per riascoltare questo punto",
+            tokens,
+        )
+        assertEquals(16, words?.size)
+        assertEquals(TimedWord(1205, 1750), words!![0])
+        assertEquals("the comma rides its word", 3060L, words[7].endMs)
+        assertEquals(TimedWord(4200, 4900), words[13])
+        assertEquals(TimedWord(5100, 6077), words[15])
+    }
+
+    @Test
     fun `the cue-envelope estimate spreads words evenly`() {
         val words = TimedWords.proportionalEstimate("alpha beta gamma", 0, 3000)!!
         assertEquals(
