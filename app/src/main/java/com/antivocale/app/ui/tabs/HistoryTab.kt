@@ -771,6 +771,7 @@ fun HistoryTab(
     val showLanguageChip by viewModel.languageChipEnabled.collectAsState()
     val reRunLanguages by viewModel.offeredLanguageCodes.collectAsState()
     val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
+    val wordTapSeekEnabled by viewModel.wordTapSeek.collectAsState()
     // TASK-898: one-minute tick driving the rows' relative-time labels:
     // the per-row remember(timestamp, minuteTick) refreshes the string at
     // most once a minute instead of re-running the formatter per emission.
@@ -1178,6 +1179,7 @@ fun HistoryTab(
                         showLanguageChip = showLanguageChip,
                         reRunLanguages = reRunLanguages,
                         showTechnicalDetails = showTechnicalDetails,
+                        wordTapSeek = wordTapSeekEnabled,
                         minuteTick = minuteTick,
                         onNavigateToSettings = onNavigateToSettings,
                         onOpenLanguageSetting = onOpenLanguageSetting,
@@ -1557,6 +1559,10 @@ fun LogEntryItem(
      *  a call site that forgets the pass-through must be a compile error,
      *  not a silently dropped diagnostics line. */
     showTechnicalDetails: Boolean,
+    /** TASK-939: render the word-tap seek read-along surface. No default:
+     *  a call site that forgets the pass-through must be a compile error,
+     *  not a silently dead arm. */
+    wordTapSeek: Boolean,
     /** TASK-898: the tab's one-minute tick, keying the relative-time
      *  remember so the label refreshes at most once a minute. No default,
      *  like its siblings. */
@@ -1830,12 +1836,15 @@ fun LogEntryItem(
                         // timing, and the displayed text must align onto the
                         // cues word for word (the punctuation pass breaks
                         // count alignment on some rows; those stay read-only).
+                        // TASK-939: the whole surface is opt-in (default off);
+                        // while off, the transcript stays plain text.
                         val wordTaps by produceState<TranscriptWordTaps?>(
                             initialValue = null,
-                            rowSegmentsJson, displayResult, log.filePath,
+                            rowSegmentsJson, displayResult, log.filePath, wordTapSeek,
                         ) {
                             value = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                if (playback == null ||
+                                if (!wordTapSeek ||
+                                    playback == null ||
                                     !playbackFileExists(log.filePath)
                                 ) {
                                     return@withContext null
@@ -1860,9 +1869,9 @@ fun LogEntryItem(
                             container = MaterialTheme.colorScheme.primaryContainer,
                             onAutoSaveHintClick = onNavigateToSettings,
                             wordTaps = wordTaps,
-                            onWordTap = playback?.let { controller ->
+                            onWordTap = if (wordTapSeek) playback?.let { controller ->
                                 { startMs: Long -> controller.seekTo(log.taskId, log.filePath, startMs) }
-                            },
+                            } else null,
                         )
 
                         // TASK-121.4: the AI summary of a long transcript, when the
@@ -2430,6 +2439,8 @@ private fun LogEntryWithSwipe(
     showLanguageChip: Boolean = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
     reRunLanguages: Set<String> = emptySet(),
     showTechnicalDetails: Boolean = PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS,
+    /** TASK-939: the word-tap seek read-along gate; default OFF. */
+    wordTapSeek: Boolean = PreferencesManager.DEFAULT_WORD_TAP_SEEK,
     minuteTick: Long = 0L,
     onNavigateToSettings: (() -> Unit)? = null,
     onOpenLanguageSetting: (() -> Unit)? = null,
@@ -2545,6 +2556,7 @@ private fun LogEntryWithSwipe(
                 reRunLanguages = reRunLanguages,
                 onReRunWithLanguage = { code -> viewModel.reTranscribeWithLanguage(log, code, context) },
                 showTechnicalDetails = showTechnicalDetails,
+                wordTapSeek = wordTapSeek,
                         minuteTick = minuteTick,
             )
         }
@@ -2605,6 +2617,7 @@ private fun LogEntryWithSwipe(
                 reRunLanguages = reRunLanguages,
                 onReRunWithLanguage = { code -> viewModel.reTranscribeWithLanguage(log, code, context) },
                 showTechnicalDetails = showTechnicalDetails,
+                wordTapSeek = wordTapSeek,
                         minuteTick = minuteTick,
             )
         }
