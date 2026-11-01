@@ -171,6 +171,12 @@ interface PreferencesManager {
     val showRetranscribeButton: Flow<Boolean>
     /** TASK-800: show the Share… (format picker) button on result rows. */
     val advancedShareFormats: Flow<Boolean>
+    /**
+     * TASK-939: the word-tap seek read-along surface on expanded History
+     * rows. Off by default; while off the transcript stays plain text and
+     * taps only collapse, exactly as before TASK-928.
+     */
+    val wordTapSeek: Flow<Boolean>
     val memoryProtection: Flow<Boolean>
 
     /** TASK-274: consent gate for the exported automation receivers (Tasker surface). */
@@ -326,6 +332,9 @@ interface PreferencesManager {
     suspend fun saveAdvancedSharingEnabled(enabled: Boolean)
     suspend fun saveShowRetranscribeButton(enabled: Boolean)
     suspend fun saveAdvancedShareFormats(enabled: Boolean)
+
+    /** TASK-939: see [wordTapSeek]. */
+    suspend fun saveWordTapSeek(enabled: Boolean)
     suspend fun saveMemoryProtection(enabled: Boolean)
 
     /** TASK-274: see [externalAutomationEnabled]. */
@@ -508,6 +517,8 @@ interface PreferencesManager {
         const val DEFAULT_SHOW_TECHNICAL_DETAILS = false
         const val DEFAULT_ADVANCED_SHARING_ENABLED = false
         const val DEFAULT_SHOW_RETRANSCRIBE_BUTTON = true
+        /** TASK-939: the word-tap seek surface ships off; users opt in. */
+        const val DEFAULT_WORD_TAP_SEEK = false
         /** TASK-800 (GH #128 pt 3): the advanced Share… format picker on
          *  the result row; default OFF (the plain one-tap share is the
          *  reasonable default, the maintainer's UX direction). */

@@ -62,6 +62,7 @@ object BackupSettingsKeys {
         "voice_note_business_detection_enabled",
         "voice_note_detection_enabled",
         "voice_note_identity_enabled",
+        "word_tap_seek",
     )
 
     private val STRING = setOf(

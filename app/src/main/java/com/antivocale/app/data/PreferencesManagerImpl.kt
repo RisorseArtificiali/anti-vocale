@@ -100,6 +100,8 @@ class PreferencesManagerImpl(
         private val SHOW_TECHNICAL_DETAILS = booleanPreferencesKey("show_technical_details")
         private val ADVANCED_SHARING_ENABLED = booleanPreferencesKey("advanced_sharing_enabled")
         private val SHOW_RETRANSCRIBE_BUTTON = booleanPreferencesKey("show_retranscribe_button")
+        // TASK-939: the word-tap seek read-along gate.
+        private val WORD_TAP_SEEK = booleanPreferencesKey("word_tap_seek")
         private val ADVANCED_SHARE_FORMATS = booleanPreferencesKey("advanced_share_formats")
         // TASK-631: replaces the old force-load key with NO migration; that key's only
         // signal was an opt-out of the block, which the new default (no block) grants
@@ -191,6 +193,7 @@ class PreferencesManagerImpl(
         val advancedSharingEnabled: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         val showRetranscribeButton: Boolean = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         val advancedShareFormats: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS,
+        val wordTapSeek: Boolean = PreferencesManager.DEFAULT_WORD_TAP_SEEK,
         val memoryProtection: Boolean = PreferencesManager.DEFAULT_MEMORY_PROTECTION,
         val externalAutomationEnabled: Boolean = PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED,
         val openTranscribeEnabled: Boolean = PreferencesManager.DEFAULT_OPEN_TRANSCRIBE_ENABLED,
@@ -266,6 +269,7 @@ class PreferencesManagerImpl(
         advancedSharingEnabled = this[ADVANCED_SHARING_ENABLED] ?: PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         showRetranscribeButton = this[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         advancedShareFormats = this[ADVANCED_SHARE_FORMATS] ?: PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS,
+        wordTapSeek = this[WORD_TAP_SEEK] ?: PreferencesManager.DEFAULT_WORD_TAP_SEEK,
         memoryProtection = this[MEMORY_PROTECTION] ?: PreferencesManager.DEFAULT_MEMORY_PROTECTION,
         externalAutomationEnabled = this[EXTERNAL_AUTOMATION_ENABLED] ?: PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED,
         openTranscribeEnabled = this[OPEN_TRANSCRIBE_ENABLED] ?: PreferencesManager.DEFAULT_OPEN_TRANSCRIBE_ENABLED,
@@ -912,6 +916,16 @@ class PreferencesManagerImpl(
             preferences[SHOW_RETRANSCRIBE_BUTTON] = enabled
         }
         cache.updateAndGet { it.copy(showRetranscribeButton = enabled) }
+    }
+
+    override val wordTapSeek: Flow<Boolean> = dataStore.data.map { it[WORD_TAP_SEEK] ?: PreferencesManager.DEFAULT_WORD_TAP_SEEK }
+        .onStart { emit(cache.get().wordTapSeek) }
+
+    override suspend fun saveWordTapSeek(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[WORD_TAP_SEEK] = enabled
+        }
+        cache.updateAndGet { it.copy(wordTapSeek = enabled) }
     }
 
     override val advancedShareFormats: Flow<Boolean> = dataStore.data.map { it[ADVANCED_SHARE_FORMATS] ?: PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS }

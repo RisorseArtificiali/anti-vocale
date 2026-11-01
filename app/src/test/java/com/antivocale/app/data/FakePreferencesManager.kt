@@ -78,6 +78,7 @@ internal class FakePreferencesManager : PreferencesManager {
     val _advancedSharingEnabled = MutableStateFlow(false)
     val _showRetranscribeButton = MutableStateFlow(true)
     val _advancedShareFormats = MutableStateFlow(PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS)
+    val _wordTapSeek = MutableStateFlow(PreferencesManager.DEFAULT_WORD_TAP_SEEK)
     val _memoryProtection = MutableStateFlow(false)
     // TASK-274: consent gate for the exported automation receivers.
     val _externalAutomationEnabled = MutableStateFlow(PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED)
@@ -155,6 +156,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override val advancedSharingEnabled: Flow<Boolean> get() = _advancedSharingEnabled
     override val showRetranscribeButton: Flow<Boolean> get() = _showRetranscribeButton
     override val advancedShareFormats: Flow<Boolean> get() = _advancedShareFormats
+    override val wordTapSeek: Flow<Boolean> get() = _wordTapSeek
     override val memoryProtection: Flow<Boolean> get() = _memoryProtection
     override val externalAutomationEnabled: Flow<Boolean> get() = _externalAutomationEnabled
     override val openTranscribeEnabled: Flow<Boolean> get() = _openTranscribeEnabled
@@ -232,6 +234,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveAdvancedSharingEnabled(enabled: Boolean) { _advancedSharingEnabled.value = enabled }
     override suspend fun saveShowRetranscribeButton(enabled: Boolean) { _showRetranscribeButton.value = enabled }
     override suspend fun saveAdvancedShareFormats(enabled: Boolean) { _advancedShareFormats.value = enabled }
+    override suspend fun saveWordTapSeek(enabled: Boolean) { _wordTapSeek.value = enabled }
     override suspend fun saveMemoryProtection(enabled: Boolean) { _memoryProtection.value = enabled }
     override suspend fun saveExternalAutomationEnabled(enabled: Boolean) { _externalAutomationEnabled.value = enabled }
     override suspend fun saveOpenTranscribeEnabled(enabled: Boolean) { _openTranscribeEnabled.value = enabled }
