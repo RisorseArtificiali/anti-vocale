@@ -16,7 +16,8 @@ package com.antivocale.app.transcription
  * 2. Pause: a silence gap between consecutive tokens longer than
  *    [PAUSE_SPLIT_MS]. Covers models whose raw output carries no punctuation:
  *    inter-word gaps stay well under the threshold, sentence pauses exceed it.
- *    (Only duration-reporting models such as TDT produce nonzero gaps.)
+ *    (Nonzero gaps need per-token durations: TDT, and the built-in whisper
+ *    entries since their DTW token timestamps run.)
  * 3. Reading-speed cap: when a cue would exceed [MAX_CUE_MS], it closes at the
  *    token boundary closest to [TARGET_CUE_MS] into the cue. 15-17 chars/s is
  *    the comfortable subtitle reading speed; 7s is the ceiling a cue may reach

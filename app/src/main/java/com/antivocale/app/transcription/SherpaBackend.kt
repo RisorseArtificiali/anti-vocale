@@ -663,6 +663,14 @@ class SherpaBackend(
                     language = forcedLanguage(entry, variant, sherpaConfig.language),
                     task = "transcribe",
                     tailPaddings = entry.flags.whisperTailPaddings,
+                    // TASK-928: sherpa computes whisper token timestamps (cross-attention
+                    // DTW) only behind this flag, and its default is false: without it
+                    // every decode arrives timestamp-less, TimedTokens rejects the
+                    // result, and the cue chain degrades to one positional cue per
+                    // chunk (no sentence cues, no per-word timing). Exports without
+                    // attention outputs stay honest: empty weights yield empty
+                    // timestamps and the chain falls back exactly as before.
+                    enableTokenTimestamps = true,
                 ),
                 tokens = File(dir, requireNotNull(roles.tokens)).absolutePath,
                 modelType = entry.modelType,

@@ -512,6 +512,12 @@ object WhisperSupport : ModelFamilySupport {
                 decoder = "${record.dir}/${SherpaBackend.CANONICAL_DECODER}",
                 language = language,
                 task = task,
+                // Deliberately NO enableTokenTimestamps here, unlike the built-in
+                // engine: arbitrary imports can carry attention outputs whose
+                // head count mismatches the first forward, and sherpa then
+                // silently pads every trailing token with the LAST timestamp,
+                // persisting confident wrong word timing. Only the sha256-pinned
+                // built-in exports run the DTW path (review finding).
             ),
             // tokens must be passed even though OfflineWhisperModelConfig takes
             // no tokens path: the built-in whisper config passes it and the
