@@ -1055,6 +1055,8 @@
     <string name="retranscribe_active_badge">فعال</string>
     <string name="retranscribe_setting_title">دکمه رونویسی دوباره</string>
     <string name="retranscribe_setting_description">روی رونویسی‌های صوتی دکمه‌ای نشان می‌دهد تا با مدل دیگری دوباره امتحان کنید.</string>
+    <string name="word_tap_seek_title">ضربه روی واژه‌ها برای پرش</string>
+    <string name="word_tap_seek_description">در متن گسترش‌یافته، ضربه روی واژه، پخش را به لحظهٔ همان واژه می‌برد. به‌طور پیش‌فرض خاموش است.</string>
     <string name="advanced_share_formats_title">اشتراک به‌صورت…</string>
     <string name="advanced_share_formats_description">یک دکمه دوم «اشتراک…» به نتایج اضافه می‌کند که فرمت‌های زیرنویس و مهر زمانی را در کنار اشتراک متنی معمول پیشنهاد می‌دهد.</string>
 

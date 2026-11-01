@@ -155,7 +155,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.SWIPE_ACTION, SettingsSearchId.CONVERSATION_GROUPING,
                 SettingsSearchId.COMPACT_RESULT_ACTIONS, SettingsSearchId.TECHNICAL_DETAILS,
                 SettingsSearchId.LANGUAGE_CHIP, SettingsSearchId.RETRANSCRIBE,
-                SettingsSearchId.ADVANCED_SHARE_FORMATS),
+                SettingsSearchId.WORD_TAP_SEEK, SettingsSearchId.ADVANCED_SHARE_FORMATS),
             SettingsSearchGroup.INTEGRATIONS to listOf(
                 SettingsSearchId.SHARE_TARGETS, SettingsSearchId.SUBTITLE_TIMEOUT, SettingsSearchId.AUTOMATION_HUB,
                 SettingsSearchId.VOICE_NOTE_HUB,
@@ -349,7 +349,8 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.COMPACT_RESULT_ACTIONS,
                 SettingsSearchId.TECHNICAL_DETAILS,
                 SettingsSearchId.LANGUAGE_CHIP,
-                SettingsSearchId.RETRANSCRIBE, SettingsSearchId.ADVANCED_SHARE_FORMATS,
+                SettingsSearchId.RETRANSCRIBE, SettingsSearchId.WORD_TAP_SEEK,
+                SettingsSearchId.ADVANCED_SHARE_FORMATS,
             ),
             visibleIds(SettingsSearchSection.APPEARANCE, state()),
         )

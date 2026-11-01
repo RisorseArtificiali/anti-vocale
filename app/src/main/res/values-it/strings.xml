@@ -1056,6 +1056,8 @@
     <string name="retranscribe_active_badge">Attivo</string>
     <string name="retranscribe_setting_title">Pulsante Ri-trascrivi</string>
     <string name="retranscribe_setting_description">Mostra un pulsante sulle trascrizioni audio per riprovare con un modello diverso.</string>
+    <string name="word_tap_seek_title">Tocca le parole per spostarti</string>
+    <string name="word_tap_seek_description">Nel trascritto esteso, toccare una parola sposta la riproduzione al momento di quella parola. Disattivato per impostazione predefinita.</string>
     <string name="advanced_share_formats_title">Condividi come…</string>
     <string name="advanced_share_formats_description">Aggiunge un secondo pulsante Condividi… sui risultati che offre i formati sottotitoli e con timestamp, oltre alla normale condivisione in testo semplice.</string>
 

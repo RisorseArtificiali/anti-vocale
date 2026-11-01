@@ -148,6 +148,7 @@ fun SettingsTab(
     val advancedShareFormats by viewModel.advancedShareFormats.collectAsState()
     val compactResultActions by viewModel.compactResultActions.collectAsState()
     val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
+    val wordTapSeek by viewModel.wordTapSeek.collectAsState()
     // TASK-546: the chip flag (maintainer directive: the flag lives here).
     val languageChipEnabled by viewModel.languageChipEnabled.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
@@ -1515,6 +1516,20 @@ fun SettingsTab(
                     description = retranscribeDescription,
                     checked = showRetranscribeButton,
                     onCheckedChange = { viewModel.saveShowRetranscribeButton(it) }
+                )
+            }
+
+            // TASK-939: the word-tap seek read-along surface is opt-in,
+            // default off; off, expanded transcripts stay plain text.
+            val wordTapSeekTitle = stringResource(R.string.word_tap_seek_title)
+            val wordTapSeekDescription = stringResource(R.string.word_tap_seek_description)
+            SearchFilterRow(searchQuery, SettingsSearchId.WORD_TAP_SEEK, searchState) {
+                ToggleSettingCard(
+                    icon = Icons.Default.GraphicEq,
+                    title = wordTapSeekTitle,
+                    description = wordTapSeekDescription,
+                    checked = wordTapSeek,
+                    onCheckedChange = { viewModel.saveWordTapSeek(it) }
                 )
             }
 
@@ -3745,6 +3760,7 @@ internal enum class SettingsSearchId {
     // Appearance
     THEME, APP_ICON, APP_LANGUAGE, SWIPE_ACTION, CONVERSATION_GROUPING,
     COMPACT_RESULT_ACTIONS, TECHNICAL_DETAILS, LANGUAGE_CHIP, RETRANSCRIBE, ADVANCED_SHARE_FORMATS,
+    WORD_TAP_SEEK,
     // Advanced
     BATTERY_EXEMPTION, HUGGINGFACE_AUTH, PERFORMANCE_HUB,
     SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, VOICE_NOTE_HUB, PER_APP_SETTINGS,
@@ -4085,6 +4101,11 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     SettingsSearchCard(
         SettingsSearchId.RETRANSCRIBE, SettingsSearchSection.APPEARANCE,
         listOf(R.string.retranscribe_setting_title, R.string.retranscribe_setting_description),
+        group = SettingsSearchGroup.HISTORY,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.WORD_TAP_SEEK, SettingsSearchSection.APPEARANCE,
+        listOf(R.string.word_tap_seek_title, R.string.word_tap_seek_description),
         group = SettingsSearchGroup.HISTORY,
     ),
     SettingsSearchCard(

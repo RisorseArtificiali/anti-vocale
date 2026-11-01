@@ -1094,6 +1094,8 @@
     <string name="retranscribe_active_badge">Активна</string>
     <string name="retranscribe_setting_title">Кнопка повторного распознавания</string>
     <string name="retranscribe_setting_description">Показывать кнопку повторного распознавания другой моделью для готовых результатов.</string>
+    <string name="word_tap_seek_title">Коснитесь слова для перехода</string>
+    <string name="word_tap_seek_description">В развёрнутой расшифровке касание слова переводит воспроизведение на его момент. По умолчанию выключено.</string>
     <string name="advanced_share_formats_title">Поделиться как…</string>
     <string name="advanced_share_formats_description">Добавляет вторую кнопку Поделиться… в результатах, предлагающую форматы субтитров и с временными метками, помимо обычной отправки текста.</string>
 

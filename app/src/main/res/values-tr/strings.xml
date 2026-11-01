@@ -1092,6 +1092,8 @@
     <string name="retranscribe_active_badge">Etkin</string>
     <string name="retranscribe_setting_title">Yeniden Metne Çıkarma Düğmesi</string>
     <string name="retranscribe_setting_description">Sesli metin çıkarmalarında farklı bir modelle yeniden denemek için bir düğme göster.</string>
+    <string name="word_tap_seek_title">Sözcüklere dokunarak atla</string>
+    <string name="word_tap_seek_description">Genişletilmiş metinde bir sözcüğe dokunmak oynatmayı o sözcüğün anına taşır. Varsayılan olarak kapalı.</string>
     <string name="advanced_share_formats_title">Şu olarak paylaş…</string>
     <string name="advanced_share_formats_description">Sonuçlara, normal düz metin paylaşımına ek olarak altyazı ve zaman damgalı biçimler sunan ikinci bir Paylaş… düğmesi ekler.</string>
 

@@ -943,6 +943,8 @@
     <string name="retranscribe_active_badge">Actif</string>
     <string name="retranscribe_setting_title">Bouton de re-transcription</string>
     <string name="retranscribe_setting_description">Affiche un bouton sur les transcriptions audio pour réessayer avec un autre modèle.</string>
+    <string name="word_tap_seek_title">Toucher un mot pour avancer</string>
+    <string name="word_tap_seek_description">Dans la transcription développée, toucher un mot déplace la lecture à son moment. Désactivé par défaut.</string>
     <string name="advanced_share_formats_title">Partager au format…</string>
     <string name="advanced_share_formats_description">Ajoute un second bouton Partager… sur les résultats qui propose les formats sous-titres et horodatés, en plus du partage en texte brut habituel.</string>
     <string name="subtitles_found_title">Sous-titres trouvés</string>

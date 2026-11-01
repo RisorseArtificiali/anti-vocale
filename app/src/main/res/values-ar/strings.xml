@@ -926,6 +926,8 @@
     <string name="retranscribe_active_badge">نشط</string>
     <string name="retranscribe_setting_title">زر إعادة النسخ</string>
     <string name="retranscribe_setting_description">إظهار زر على عمليات نسخ الصوت لإعادة المحاولة بنموذج مختلف.</string>
+    <string name="word_tap_seek_title">النقر على الكلمات للانتقال</string>
+    <string name="word_tap_seek_description">في النص الموسّع، ينقلك النقر على كلمة إلى لحظتها في التشغيل. معطّل افتراضيًا.</string>
     <string name="advanced_share_formats_title">مشاركة بصيغة…</string>
     <string name="advanced_share_formats_description">يضيف زر «مشاركة…» ثانيًا إلى النتائج يوفر صيغ الترجمة المصاحبة والطابع الزمني، إضافة إلى مشاركة النص العادي الافتراضية.</string>
     <string name="subtitles_found_title">تم العثور على ترجمة مصاحبة</string>

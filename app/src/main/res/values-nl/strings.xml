@@ -1095,6 +1095,8 @@
     <string name="retranscribe_active_badge">Actief</string>
     <string name="retranscribe_setting_title">Knop Opnieuw transcriberen</string>
     <string name="retranscribe_setting_description">Toon op audiotranscripties een knop om het met een ander model opnieuw te proberen.</string>
+    <string name="word_tap_seek_title">Woorden tikken om te springen</string>
+    <string name="word_tap_seek_description">In een uitgeklapt transcript verplaatst een tik op een woord het afspelen naar het moment van dat woord. Standaard uit.</string>
     <string name="advanced_share_formats_title">Delen als…</string>
     <string name="advanced_share_formats_description">Voegt een tweede Delen…-knop toe aan resultaten die ondertitel- en tijdstempelformaten aanbiedt, naast de gebruikelijke tekstshare.</string>
 

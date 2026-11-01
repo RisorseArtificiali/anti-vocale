@@ -970,6 +970,8 @@
     <string name="retranscribe_active_badge">Aktiivinen</string>
     <string name="retranscribe_setting_title">Uudelleentranskriptio-painike</string>
     <string name="retranscribe_setting_description">Näyttää äänitranskriptioissa painikkeen, jolla voi yrittää uudelleen toisella mallilla.</string>
+    <string name="word_tap_seek_title">Napauta sanoja siirtyäksesi</string>
+    <string name="word_tap_seek_description">Laajennetussa transkriptiossa sanan napauttaminen siirtää toiston kyseisen sanan hetkeen. Oletuksena pois päältä.</string>
     <string name="advanced_share_formats_title">Jaa muodossa…</string>
     <string name="advanced_share_formats_description">Lisää tuloksiin toisen Jaa…-painikkeen, joka tarjoaa tekstitys- ja aikaleimamuodot tavallisen tekstinjaon lisäksi.</string>
     <string name="subtitles_found_title">Tekstitys löytyi</string>

@@ -1129,6 +1129,8 @@
     <string name="retranscribe_active_badge">Active</string>
     <string name="retranscribe_setting_title">Re-transcribe Button</string>
     <string name="retranscribe_setting_description">Show a button on audio transcriptions to retry with a different model.</string>
+    <string name="word_tap_seek_title">Tap Words to Seek</string>
+    <string name="word_tap_seek_description">In an expanded transcript, tapping a word moves audio playback to that word. Off by default.</string>
     <string name="advanced_share_formats_title">Share as…</string>
     <string name="advanced_share_formats_description">Adds a second Share… button on results that offers subtitle and timestamped formats, in addition to the default plain-text share.</string>
 

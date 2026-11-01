@@ -943,6 +943,8 @@
     <string name="retranscribe_active_badge">Ativo</string>
     <string name="retranscribe_setting_title">Botão re-transcrever</string>
     <string name="retranscribe_setting_description">Mostra um botão nas transcrições de áudio para tentar novamente com outro modelo.</string>
+    <string name="word_tap_seek_title">Toque em palavras para pular</string>
+    <string name="word_tap_seek_description">Na transcrição expandida, tocar uma palavra move a reprodução para o momento dela. Desativado por padrão.</string>
     <string name="advanced_share_formats_title">Compartilhar como…</string>
     <string name="advanced_share_formats_description">Adiciona um segundo botão Compartilhar… nos resultados que oferece formatos de legenda e com marcações de tempo, além do compartilhamento normal em texto simples.</string>
     <string name="subtitles_found_title">Legendas encontradas</string>

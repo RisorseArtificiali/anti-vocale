@@ -1099,6 +1099,8 @@
     <string name="retranscribe_active_badge">פעיל</string>
     <string name="retranscribe_setting_title">כפתור תמלול חוזר</string>
     <string name="retranscribe_setting_description">מציג כפתור על תמלולי אודיו לניסיון חוזר עם מודל אחר.</string>
+    <string name="word_tap_seek_title">הקשה על מילים לדילוג</string>
+    <string name="word_tap_seek_description">בתמלול המורחב, הקשה על מילה מזיזה את ההשמעה לרגע שלה. כבוי כברירת מחדל.</string>
     <string name="advanced_share_formats_title">שיתוף בתור…</string>
     <string name="advanced_share_formats_description">מוסיף לחצן שיתוף… שני בתוצאות שמציע פורמטים של כתוביות וחותמות זמן, בנוסף לשיתוף הטקסט הרגיל.</string>
 

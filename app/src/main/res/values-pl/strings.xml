@@ -1112,6 +1112,8 @@
     <string name="retranscribe_active_badge">Aktywny</string>
     <string name="retranscribe_setting_title">Przycisk ponownego przepisania</string>
     <string name="retranscribe_setting_description">Pokazuj przycisk na transkrypcjach audio, aby ponowić z innym modelem.</string>
+    <string name="word_tap_seek_title">Dotknij słowa, aby przewinąć</string>
+    <string name="word_tap_seek_description">W rozwiniętej transkrypcji dotknięcie słowa przewija odtwarzanie do jego momentu. Domyślnie wyłączone.</string>
     <string name="advanced_share_formats_title">Udostępnij jako…</string>
     <string name="advanced_share_formats_description">Dodaje drugi przycisk Udostępnij… w wynikach, oferujący formaty napisów i ze znacznikami czasu, oprócz zwykłego udostępniania tekstu.</string>
 

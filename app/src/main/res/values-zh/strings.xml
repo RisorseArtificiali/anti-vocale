@@ -930,6 +930,8 @@
     <string name="retranscribe_active_badge">使用中</string>
     <string name="retranscribe_setting_title">重新转写按钮</string>
     <string name="retranscribe_setting_description">在音频转写结果上显示一个按钮，可用其他模型重试。</string>
+    <string name="word_tap_seek_title">点击单词跳转播放</string>
+    <string name="word_tap_seek_description">在展开的转写文本中，点击某个单词可将播放跳转到该词的时间点。默认关闭。</string>
     <string name="advanced_share_formats_title">分享为…</string>
     <string name="advanced_share_formats_description">在结果上添加第二个“分享…”按钮，除默认的纯文本分享外，还提供字幕和带时间戳的格式。</string>
     <string name="subtitles_found_title">发现字幕</string>

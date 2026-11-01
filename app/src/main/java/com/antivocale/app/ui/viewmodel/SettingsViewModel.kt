@@ -629,6 +629,20 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /** TASK-939: the word-tap seek read-along gate; default off. */
+    val wordTapSeek: StateFlow<Boolean> = preferencesManager.wordTapSeek
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_WORD_TAP_SEEK
+        )
+
+    fun saveWordTapSeek(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveWordTapSeek(enabled)
+        }
+    }
+
     val memoryProtection: StateFlow<Boolean> = preferencesManager.memoryProtection
         .stateIn(
             scope = viewModelScope,
