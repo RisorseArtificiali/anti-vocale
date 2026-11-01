@@ -318,4 +318,53 @@ class ResultPlaybackControllerTest {
         assertFalse(playbackFileExists(null))
         assertFalse(playbackFileExists("$f.gone"))
     }
+
+    @Test
+    fun `a word tap on the active row seeks in place`() = runBlocking {
+        val file = audioFile()
+        controller.toggle("a", file)
+        val p = players.single()
+        p.preparedListener!!.onPrepared(p)
+        // The ticker's next tick reads the same position, so the state
+        // assertion is stable no matter which write lands first.
+        p.position = 2_500
+        controller.seekTo("a", file, 2_500)
+        assertTrue("seek landed on the live player", p.events.contains("seekTo:2500"))
+        assertEquals(2_500, controller.state.value?.positionMs)
+        assertEquals("a", controller.state.value?.taskId)
+        controller.release()
+    }
+
+    @Test
+    fun `a word tap on an idle row starts playback at the word`() = runBlocking {
+        val file = audioFile()
+        controller.seekTo("a", file, 2_500)
+        val p = players.single()
+        p.preparedListener!!.onPrepared(p)
+        // The seek rides the prepared listener BEFORE start: no prepare race
+        // can open playback from zero.
+        assertEquals(
+            "events=${p.events}",
+            listOf("params", "seekTo:2500", "start"), p.events)
+        assertEquals(true, controller.state.value?.playing)
+        controller.release()
+    }
+
+    @Test
+    fun `a word tap on a vanished file is an honest no-op`() = runBlocking {
+        controller.seekTo("a", "/nonexistent/path.opus", 1_000)
+        assertNull(controller.state.value)
+        assertTrue(players.isEmpty())
+        assertEquals(0, focus.grants)
+    }
+
+    @Test
+    fun `a word tap on a different row switches the player`() = runBlocking {
+        val file = audioFile()
+        controller.toggle("a", file)
+        players[0].preparedListener!!.onPrepared(players[0])
+        controller.seekTo("b", file, 500)
+        assertEquals("b", controller.state.value?.taskId)
+        controller.release()
+    }
 }

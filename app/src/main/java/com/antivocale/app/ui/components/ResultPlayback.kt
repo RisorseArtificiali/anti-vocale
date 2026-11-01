@@ -160,6 +160,29 @@ class ResultPlaybackController(
         if (start(taskId, filePath)) this.cues = cues else teardown()
     }
 
+    /**
+     * TASK-928: the word-tap seek. The active row seeks in place; an idle
+     * row STARTS at the word (the tap is the play intent), the position
+     * carried into [start] so no prepare race can drop it. A vanished file
+     * is the honest no-op, the [toggle] limit.
+     */
+    fun seekTo(taskId: String, filePath: String?, positionMs: Long) {
+        if (filePath == null || !playbackFileExists(filePath)) return
+        val target = positionMs.coerceAtLeast(0L)
+        if (_state.value?.taskId == taskId) {
+            val mp = player ?: return
+            // Contained like every native touch: an error-state seek tears
+            // down instead of crashing Main.
+            if (runCatching { mp.seekTo(target.toInt()) }.isFailure) {
+                teardown()
+                return
+            }
+            _state.value = _state.value?.copy(positionMs = target.toInt())
+        } else {
+            start(taskId, filePath, target)
+        }
+    }
+
     /** The expanded row's live cue push (the read-along flow): applies only
      *  while [taskId] is the active one, so a recycled row's stale cues
      *  cannot leak into another row's playback. */
@@ -191,8 +214,11 @@ class ResultPlaybackController(
     }
 
     /** True when the run started; false = focus refused or the player
-     *  could not be built (both leave the controller idle and torn down). */
-    private fun start(taskId: String, filePath: String): Boolean {
+     *  could not be built (both leave the controller idle and torn down).
+     *  [startAtMs] (TASK-928) seeks the prepared player BEFORE start, so a
+     *  word-tap on an idle row opens playback on that word; the capture is
+     *  local, no field for the prepare race to lose. */
+    private fun start(taskId: String, filePath: String, startAtMs: Long? = null): Boolean {
         teardown()
         // The loss callback hops to the controller's scope: the platform
         // delivers it on a binder thread, and MediaPlayer is not
@@ -202,7 +228,8 @@ class ResultPlaybackController(
         focusHandle = audioFocus.request { scope.launch { pause() } } ?: return false
         wantsPlayback = true
         _state.value = NowPlaying(
-            taskId = taskId, playing = false, positionMs = 0, durationMs = 0, speed = speed)
+            taskId = taskId, playing = false, positionMs = startAtMs?.toInt() ?: 0,
+            durationMs = 0, speed = speed)
         val created = runCatching {
             playerFactory().apply {
                 // The routing hint must not kill playback: a broken or
@@ -225,6 +252,9 @@ class ResultPlaybackController(
                     // setSpeed on a paused player restarts it on some OEMs.
                     runCatching {
                         mp.playbackParams = mp.playbackParams.setSpeed(speed)
+                    }
+                    if (startAtMs != null) {
+                        runCatching { mp.seekTo(startAtMs.toInt()) }
                     }
                     mp.start()
                     _state.value = _state.value?.copy(playing = true, durationMs = mp.duration)

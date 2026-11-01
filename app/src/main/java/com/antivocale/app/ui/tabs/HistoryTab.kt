@@ -1,6 +1,8 @@
 package com.antivocale.app.ui.tabs
 
 import com.antivocale.app.service.ResultNotificationFactory
+import com.antivocale.app.ui.components.TranscriptWordTaps
+import com.antivocale.app.util.SubtitleFormatter
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -1822,11 +1824,45 @@ fun LogEntryItem(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                        // TASK-928: the word-tap timeline, derived off-main
+                        // like the cues parse. Every gate is honest: the row's
+                        // audio must still exist, every cue must carry word
+                        // timing, and the displayed text must align onto the
+                        // cues word for word (the punctuation pass breaks
+                        // count alignment on some rows; those stay read-only).
+                        val wordTaps by produceState<TranscriptWordTaps?>(
+                            initialValue = null,
+                            rowSegmentsJson, displayResult, log.filePath,
+                        ) {
+                            value = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                if (playback == null ||
+                                    !playbackFileExists(log.filePath)
+                                ) {
+                                    return@withContext null
+                                }
+                                val cues =
+                                    com.antivocale.app.data.local.TimedSegmentsConverter
+                                        .fromJson(rowSegmentsJson)
+                                if (cues.isEmpty() || cues.any { it.words.isEmpty() }) {
+                                    return@withContext null
+                                }
+                                val aligned = SubtitleFormatter.alignPolishedText(displayResult, cues)
+                                    ?: return@withContext null
+                                TranscriptWordTaps.of(
+                                    displayResult,
+                                    aligned.flatMap { cue -> cue.words.map { it.startMs } },
+                                )
+                            }
+                        }
                         CappedTranscriptText(
                             text = displayResult,
                             searchQuery = searchQuery,
                             container = MaterialTheme.colorScheme.primaryContainer,
                             onAutoSaveHintClick = onNavigateToSettings,
+                            wordTaps = wordTaps,
+                            onWordTap = playback?.let { controller ->
+                                { startMs: Long -> controller.seekTo(log.taskId, log.filePath, startMs) }
+                            },
                         )
 
                         // TASK-121.4: the AI summary of a long transcript, when the

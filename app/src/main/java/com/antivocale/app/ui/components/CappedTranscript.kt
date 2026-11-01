@@ -3,6 +3,7 @@ package com.antivocale.app.ui.components
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -27,6 +29,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -104,6 +107,11 @@ internal fun highlightText(
  * every long transcript, when only the >30K case needed bounding).
  * Search highlights apply to the capped prefix only: a match beyond the
  * cap is reachable through Copy, a deliberate trade-off.
+ *
+ * TASK-928: [wordTaps] + [onWordTap] make each word a seek target (the
+ * History read-along). Null taps (or a null callback) render exactly the
+ * plain surface; the tap is a plain pointerInput, no per-word annotation,
+ * so the hot list surface gains nothing until a timed row expands.
  */
 @Composable
 internal fun CappedTranscriptText(
@@ -113,6 +121,8 @@ internal fun CappedTranscriptText(
     style: TextStyle = MaterialTheme.typography.bodyMedium,
     textColor: Color = Color.Unspecified,
     onAutoSaveHintClick: (() -> Unit)? = null,
+    wordTaps: TranscriptWordTaps? = null,
+    onWordTap: ((Long) -> Unit)? = null,
 ) {
     val highlightColor = MaterialTheme.colorScheme.tertiary
     val capped = text.length > MAX_RENDERED_TRANSCRIPT_CHARS
@@ -121,6 +131,9 @@ internal fun CappedTranscriptText(
         highlightText(rendered, searchQuery, highlightColor)
     }
     val indicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+    // The tap needs the laid-out text to turn a position into an offset; a
+    // plain state read, only touched in the tap handler.
+    var layoutResult by remember { mutableStateOf<androidx.compose.ui.text.TextLayoutResult?>(null) }
     if (capped) {
         // GH #94: position indicator + reading progress on the capped panel.
         // The indicator modifier sits on the wrapping Box (outer to the
@@ -145,9 +158,11 @@ internal fun CappedTranscriptText(
                 text = annotated,
                 style = style,
                 color = textColor,
+                onTextLayout = { layoutResult = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
+                    .wordTapPointer(wordTaps, onWordTap) { layoutResult }
                     .verticalScroll(state),
             )
         }
@@ -164,10 +179,12 @@ internal fun CappedTranscriptText(
             text = annotated,
             style = style,
             color = textColor,
+            onTextLayout = { layoutResult = it },
             modifier = Modifier
                 .fillMaxWidth()
                 .background(container.copy(alpha = 0.3f), shape = MaterialTheme.shapes.small)
-                .padding(8.dp),
+                .padding(8.dp)
+                .wordTapPointer(wordTaps, onWordTap) { layoutResult },
         )
     }
     if (capped) {
@@ -202,6 +219,27 @@ internal fun CappedTranscriptText(
                     .clickable(role = Role.Button) { onAutoSaveHintClick() }
                     .wrapContentSize(Alignment.CenterStart),
             )
+        }
+    }
+}
+
+/**
+ * TASK-928: the word-tap surface, attached ONLY when both the tap targets
+ * and the destination exist. Taps translate through the laid-out text to a
+ * character offset and from there to the word's start; taps between words
+ * and past the text are no-ops. Attached BEFORE verticalScroll so the
+ * scroll keeps drag priority and a swipe never fires a word.
+ */
+private fun Modifier.wordTapPointer(
+    taps: TranscriptWordTaps?,
+    onWordTap: ((Long) -> Unit)?,
+    layout: () -> androidx.compose.ui.text.TextLayoutResult?,
+): Modifier {
+    if (taps == null || onWordTap == null) return this
+    return pointerInput(taps, onWordTap) {
+        detectTapGestures { position ->
+            val textLayout = layout() ?: return@detectTapGestures
+            taps.startMsAt(textLayout.getOffsetForPosition(position))?.let(onWordTap)
         }
     }
 }
