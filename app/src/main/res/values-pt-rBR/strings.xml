@@ -1190,6 +1190,7 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">O banco de dados do histórico estava danificado e foi redefinido. Não foi possível preservar os arquivos danificados.</string>
     <string name="bundle_restore_download_active">Um download deste modelo ainda está em andamento. Espere terminar ou cancele e importe o pacote novamente.</string>
+    <string name="model_download_restore_active">Uma restauração deste modelo está em andamento. Espere terminar e baixe-o novamente.</string>
 
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Novidades</string>

@@ -990,7 +990,7 @@ internal class TestSpiOps(
         }
         val outcome = com.antivocale.app.data.ModelBundleTransfer.importBundle(
             context, file.inputStream().buffered(), importer,
-            downloadActive = { _, _ -> false },
+            claimRestoreVariant = { _, _ -> AutoCloseable { } },
             noFamilyError = "bundle model has no external import slot and matches no catalog variant",
         )
         return when (outcome) {

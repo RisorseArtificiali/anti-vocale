@@ -1352,6 +1352,7 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">Базу даних історії було пошкоджено та скинуто. Пошкоджені файли не вдалося зберегти.</string>
     <string name="bundle_restore_download_active">Завантаження цієї моделі ще триває. Дочекайтеся завершення або скасуйте його, потім імпортуйте пакет знову.</string>
+    <string name="model_download_restore_active">Відновлення цієї моделі триває. Дочекайтеся завершення та завантажте модель знову.</string>
 
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Що нового</string>

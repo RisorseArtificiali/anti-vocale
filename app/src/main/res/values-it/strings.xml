@@ -1328,6 +1328,7 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">Il database della cronologia era danneggiato ed è stato azzerato. Non è stato possibile conservare i file danneggiati.</string>
     <string name="bundle_restore_download_active">Un download di questo modello è ancora in corso. Attendine il termine o annullalo, poi importa di nuovo il pacchetto.</string>
+    <string name="model_download_restore_active">Un ripristino di questo modello è in corso. Attendi il termine, poi scaricalo di nuovo.</string>
 
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Novità</string>

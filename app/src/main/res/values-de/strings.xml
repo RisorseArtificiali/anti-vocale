@@ -1322,6 +1322,7 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">Die Verlaufsdatenbank war beschädigt und wurde zurückgesetzt. Die beschädigten Dateien konnten nicht gesichert werden.</string>
     <string name="bundle_restore_download_active">Ein Download dieses Modells läuft noch. Warte auf das Ende oder brich ihn ab und importiere das Paket dann erneut.</string>
+    <string name="model_download_restore_active">Eine Wiederherstellung dieses Modells läuft. Warte auf das Ende und lade es dann erneut herunter.</string>
 
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Neuigkeiten</string>

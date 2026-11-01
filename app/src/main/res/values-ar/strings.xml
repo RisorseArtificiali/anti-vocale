@@ -1219,6 +1219,7 @@
     <string name="voice_note_business_folder_card_desc">لقراءة الرسائل الصوتية، امنح مرة واحدة الوصول إلى المجلد الذي يحفظ فيه WhatsApp Business رسائله:</string>
     <string name="voice_note_business_folder_sheet_step3">مع تحديد مجلد WhatsApp Business Voice Notes (دون فتحه)، انقر استخدام هذا المجلد ثم السماح.</string>
     <string name="bundle_restore_download_active">لا يزال تنزيل هذا النموذج قيد التقدم. انتظر انتهاءه أو ألغِه ثم استورد الحزمة مرة أخرى.</string>
+    <string name="model_download_restore_active">تتم استعادة هذا النموذج الآن. انتظر انتهاءها ثم نزّله مرة أخرى.</string>
 
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">ما الجديد</string>

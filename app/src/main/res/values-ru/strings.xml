@@ -1351,6 +1351,7 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">База данных истории оказалась повреждена и была сброшена. Сохранить повреждённые файлы не удалось.</string>
     <string name="bundle_restore_download_active">Загрузка этой модели ещё идёт. Дождитесь её окончания или отмените, затем импортируйте пакет снова.</string>
+    <string name="model_download_restore_active">Восстановление этой модели выполняется. Дождитесь его окончания и скачайте модель снова.</string>
 
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Что нового</string>

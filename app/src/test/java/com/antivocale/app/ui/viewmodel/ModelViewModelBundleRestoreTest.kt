@@ -292,6 +292,63 @@ class ModelViewModelBundleRestoreTest {
         return dir
     }
 
+    // ---- (a3) the TASK-933 ordering invariant ----
+
+    @Test
+    fun `an in-flight download refuses the restore through the localized error`() = runTest {
+        // Download first: the registration flips isDownloading before any
+        // service work, which is the state the restore claim reads.
+        viewModel.startDownload("qwen3-asr", "0.6b-int8")
+        importBundle(bundleFrom(
+            qwen3SourceDir, "qwen3_asr",
+            entryId = "qwen3-asr", variantDir = "sherpa-onnx-qwen3-asr-0.6b-int8"))
+        await("restore refused as download-active") {
+            viewModel.externalImportState.value is ModelViewModel.ExternalImportState.Error
+        }
+        // Nothing landed, nothing recorded, and the refusal surfaces the
+        // localized reason at the import failure tail (not the raw
+        // exception text).
+        assertFalse(restoredDir().exists())
+        assertTrue(storedRecords().isEmpty())
+        assertEquals(
+            "str:${com.antivocale.app.R.string.bundle_restore_download_active}",
+            (viewModel.externalImportState.value
+                as ModelViewModel.ExternalImportState.Error).message)
+        // The refused restore leaves no marker and no scar on the download.
+        assertEquals(emptySet<String>(), viewModel.catalogStates.value["qwen3-asr"]?.restoringVariants)
+        assertEquals(
+            true,
+            viewModel.catalogStates.value["qwen3-asr"]?.variantDownloadStates
+                ?.get("0.6b-int8")?.isDownloading)
+    }
+
+    @Test
+    fun `a restore in progress refuses the download start until it releases`() = runTest {
+        // The claim seam is the only way to hold the marker mid-restore
+        // (the real landing is a sub-second rename with no pause point);
+        // everything under test here is the download start's behavior
+        // against that marker.
+        val claim = viewModel.claimRestoreVariant("qwen3-asr", "0.6b-int8")
+        try {
+            viewModel.startDownload("qwen3-asr", "0.6b-int8")
+            val state = viewModel.catalogStates.value["qwen3-asr"]
+            assertEquals(false, state?.variantDownloadStates?.get("0.6b-int8")?.isDownloading)
+            assertEquals(
+                "str:${com.antivocale.app.R.string.model_download_restore_active}",
+                state?.variantDownloadStates?.get("0.6b-int8")?.errorMessage)
+            assertEquals(setOf("0.6b-int8"), state?.restoringVariants)
+        } finally {
+            claim.close()
+        }
+        // Released: the same start now registers the download and clears
+        // the refused attempt's error.
+        viewModel.startDownload("qwen3-asr", "0.6b-int8")
+        val state = viewModel.catalogStates.value["qwen3-asr"]
+        assertEquals(true, state?.variantDownloadStates?.get("0.6b-int8")?.isDownloading)
+        assertEquals(null, state?.variantDownloadStates?.get("0.6b-int8")?.errorMessage)
+        assertEquals(emptySet<String>(), state?.restoringVariants)
+    }
+
     // ---- (b) the external fallback (unresolvable origin, resolvable type) ----
     @Test
     fun `a builtin-origin bundle with no resolvable entry falls back to the external import`() = runTest {

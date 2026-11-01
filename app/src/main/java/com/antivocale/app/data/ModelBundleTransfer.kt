@@ -40,8 +40,9 @@ object ModelBundleTransfer {
     }
 
     /** The restore refused because a download of the same variant is in
-     *  flight; the UI layer localizes the message (the data layer carries
-     *  no resources). */
+     *  flight: thrown by [claimRestoreVariant]'s implementation (the
+     *  ViewModel state owns the check) and localized at the UI failure
+     *  tail, since the data layer carries no resources. */
     class DownloadActiveException(val entryId: String, val variantName: String) :
         IllegalStateException("a download of $entryId/$variantName is in progress")
 
@@ -91,18 +92,23 @@ object ModelBundleTransfer {
 
     /**
      * The bundle-import core the ViewModel and the debug SPI share.
-     * [input] is the bundle zip; it is fully consumed. [downloadActive]
-     * guards the restore arm against a concurrent download of the same
-     * variant (the import mutex cannot see the download path); the debug
-     * SPI passes a no-op because a scripted trial controls both sides.
-     * [noFamilyError] is the localized message for the bundle whose type
-     * can neither restore nor import externally.
+     * [input] is the bundle zip; it is fully consumed.
+     * [claimRestoreVariant] guards the restore arm against a concurrent
+     * download of the same variant (the import mutex cannot see the
+     * download path): it must throw [DownloadActiveException] when a
+     * download of the variant is in flight, otherwise atomically mark
+     * the variant restore-in-progress in the same state the download
+     * start checks, and return the handle that clears the mark (the
+     * contract lives on the ViewModel's claim; see TASK-933 there). The
+     * debug SPI passes a no-op because a scripted trial controls both
+     * sides. [noFamilyError] is the localized message for the bundle
+     * whose type can neither restore nor import externally.
      */
     suspend fun importBundle(
         context: Context,
         input: InputStream,
         importer: ExternalModelImportOperations,
-        downloadActive: (entryId: String, variantName: String) -> Boolean,
+        claimRestoreVariant: (entryId: String, variantName: String) -> AutoCloseable,
         noFamilyError: String,
     ): Outcome {
         val staging = File(context.cacheDir, "bundle-import-${System.currentTimeMillis()}")
@@ -120,7 +126,7 @@ object ModelBundleTransfer {
             val linkedRef = linkedCatalogRefFor(params)
             if (linkedRef != null) {
                 return Outcome.Restored(
-                    restoreBuiltin(context, params, linkedRef, staging, downloadActive))
+                    restoreBuiltin(context, params, linkedRef, staging, claimRestoreVariant))
             }
             if (params.catalogEntryId != null) {
                 Log.i(TAG, "Bundle from entry '${params.catalogEntryId}' does not match this " +
@@ -197,45 +203,51 @@ object ModelBundleTransfer {
         params: ModelBundleCodec.RecordParams,
         ref: LinkedCatalogRef,
         staging: File,
-        downloadActive: (entryId: String, variantName: String) -> Boolean,
+        claimRestoreVariant: (entryId: String, variantName: String) -> AutoCloseable,
     ): String {
         val entry = BundledCatalog.byId(ref.catalogEntryId)
             ?: error("catalog entry vanished between identity and restore: ${ref.catalogEntryId}")
         val variant = entry.variants.firstOrNull { it.dirName == ref.variantDir }
             ?: error("catalog variant vanished between identity and restore: ${ref.catalogEntryId}/${ref.variantDir}")
-        // A concurrent download of the same variant writes into the dir the
-        // restore is about to replace: its open handles would keep writing
-        // into unlinked inodes and its sidecar-first writes could re-create
-        // paths inside the restored tree. The import mutex does not see the
-        // download path, so an in-flight download refuses the restore.
-        if (downloadActive(ref.catalogEntryId, variant.name)) {
-            throw DownloadActiveException(ref.catalogEntryId, variant.name)
-        }
-        val target = File(
-            SherpaModelManager.of(ref.catalogEntryId).getModelStorageDir(context), ref.variantDir)
-        // The restore replaces whatever partial/corrupt dir is there, so
-        // the end state is the same regardless of the target's prior
-        // content (the orphan sweep never deletes a current-named dir,
-        // which is exactly why a stale one must go here).
-        target.deleteRecursively()
-        target.parentFile?.mkdirs()
-        if (!ExternalModelImporter.moveDirInto(staging, target)) {
-            error("cannot move the restored files into $target")
-        }
+        // TASK-933 invariant: a download and a restore never share the
+        // variant dir. The claim is BOTH guards in one atomic step: it
+        // refuses a download already in flight (download-then-restore)
+        // and marks the variant so the download start refuses until the
+        // landing ends (restore-then-download). A check-then-act split
+        // of the two halves would re-open the window: a download
+        // starting between the check and the move writes over the
+        // freshly restored tree into a corrupt mixed dir. The release
+        // runs whenever the landing ends, failure included.
+        val claim = claimRestoreVariant(ref.catalogEntryId, variant.name)
         try {
-            // The validator pass is expected (the pins matched and the
-            // sidecar absence folds to complete in CatalogModelValidator);
-            // a failure is a plumbing bug and fails loudly rather than
-            // shipping a junk dir (the failure deletes the landed dir so
-            // the sweep has nothing to orphan).
-            check(CatalogModelValidator.isValidModelDir(target, variant.files.map { it.name })) {
-                "restored dir failed the catalog validator: $target"
-            }
-        } catch (e: IllegalStateException) {
+            val target = File(
+                SherpaModelManager.of(ref.catalogEntryId).getModelStorageDir(context), ref.variantDir)
+            // The restore replaces whatever partial/corrupt dir is there, so
+            // the end state is the same regardless of the target's prior
+            // content (the orphan sweep never deletes a current-named dir,
+            // which is exactly why a stale one must go here).
             target.deleteRecursively()
-            throw e
+            target.parentFile?.mkdirs()
+            if (!ExternalModelImporter.moveDirInto(staging, target)) {
+                error("cannot move the restored files into $target")
+            }
+            try {
+                // The validator pass is expected (the pins matched and the
+                // sidecar absence folds to complete in CatalogModelValidator);
+                // a failure is a plumbing bug and fails loudly rather than
+                // shipping a junk dir (the failure deletes the landed dir so
+                // the sweep has nothing to orphan).
+                check(CatalogModelValidator.isValidModelDir(target, variant.files.map { it.name })) {
+                    "restored dir failed the catalog validator: $target"
+                }
+            } catch (e: IllegalStateException) {
+                target.deleteRecursively()
+                throw e
+            }
+            Log.i(TAG, "Bundle restored as built-in: ${ref.catalogEntryId}/${ref.variantDir}")
+            return params.displayName ?: ref.variantDir
+        } finally {
+            claim.close()
         }
-        Log.i(TAG, "Bundle restored as built-in: ${ref.catalogEntryId}/${ref.variantDir}")
-        return params.displayName ?: ref.variantDir
     }
 }

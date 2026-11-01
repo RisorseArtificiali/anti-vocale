@@ -215,6 +215,13 @@ class ModelViewModel @Inject constructor(
         val variantToDelete: String? = null,
         val variantsNeedingExtraction: Set<String> = emptySet(),
         val orphanedVariants: Set<String> = emptySet(),
+        /** TASK-933: the variants a bundle restore is landing right now.
+         *  The exclusivity slot the download start checks in the SAME
+         *  atomic domain as isDownloading, so a restore claim and a
+         *  download registration cannot interleave onto one variant dir.
+         *  No UI reads it: the restore's progress lives in the external
+         *  import state. */
+        val restoringVariants: Set<String> = emptySet(),
         /** TASK-801: variant dirName -> the linked record's backendId, for the
          *  card's active dot when the record (not the catalog dir) is active. */
         val linkedVariantBackendIds: Map<String, String> = emptyMap()
@@ -1071,19 +1078,39 @@ class ModelViewModel @Inject constructor(
      * Starts a download for one catalog entry's variant via [ExtractionService].
      * The whole sherpa-onnx family (Parakeet, Whisper, Qwen3-ASR, Nemotron, GigaAM)
      * shares this single path; everything model-specific comes from the catalog.
+     *
+     * TASK-933: the registration and the restore-marker check share one
+     * atomic update (the claimRestoreVariant invariant): a bundle restore
+     * holding the variant refuses the download right here, with the error
+     * slot carrying the reason and no service dispatched.
      */
     fun startDownload(entryId: String, variantName: String, dismissDialog: Boolean = false, initialState: DownloadState = DownloadState.Connecting("")) {
-        updateEntry(entryId) { it.copy(
-            showDownloadDialog = if (dismissDialog) false else it.showDownloadDialog,
-            selectedVariant = variantName,
-            variantDownloadStates = it.variantDownloadStates + (variantName to VariantDownloadState(
-                downloadState = initialState,
-                downloadProgress = 0f,
-                isDownloading = true,
-                errorMessage = null,
-                partialDownload = null
-            ))
-        ) }
+        var restoreInProgress = false
+        updateEntry(entryId) {
+            if (variantName in it.restoringVariants) {
+                restoreInProgress = true
+                it.copy(
+                    showDownloadDialog = if (dismissDialog) false else it.showDownloadDialog,
+                    selectedVariant = variantName,
+                    variantDownloadStates = it.variantDownloadStates.updateVariant(variantName) {
+                        copy(errorMessage = ctx.getString(R.string.model_download_restore_active))
+                    },
+                )
+            } else {
+                it.copy(
+                    showDownloadDialog = if (dismissDialog) false else it.showDownloadDialog,
+                    selectedVariant = variantName,
+                    variantDownloadStates = it.variantDownloadStates + (variantName to VariantDownloadState(
+                        downloadState = initialState,
+                        downloadProgress = 0f,
+                        isDownloading = true,
+                        errorMessage = null,
+                        partialDownload = null
+                    ))
+                )
+            }
+        }
+        if (restoreInProgress) return
 
         val context = ctx
         val intent = ExtractionService.downloadIntent(context, entryId, variantName)
@@ -1557,6 +1584,37 @@ class ModelViewModel @Inject constructor(
     }
 
     /**
+     * TASK-933: atomically refuses-and-claims [variantName] for a bundle
+     * restore. The in-flight-download check and the restore marker flip
+     * inside ONE _catalogStates update, the same domain the download
+     * start registers in: whichever side moves second sees the other's
+     * marker and loses, so no download can start on the variant dir
+     * between the restore's check and its landing (and vice versa). The
+     * returned handle clears the marker; restoreBuiltin closes it when
+     * the landing ends either way. internal for the restore/ordering
+     * test, like the service's notification-band constant.
+     */
+    internal fun claimRestoreVariant(entryId: String, variantName: String): AutoCloseable {
+        var downloadActive = false
+        updateEntry(entryId) { state ->
+            if (state.variantDownloadStates[variantName]?.isDownloading == true) {
+                downloadActive = true
+                state
+            } else {
+                state.copy(restoringVariants = state.restoringVariants + variantName)
+            }
+        }
+        if (downloadActive) {
+            throw ModelBundleTransfer.DownloadActiveException(entryId, variantName)
+        }
+        return AutoCloseable {
+            updateEntry(entryId) { state ->
+                state.copy(restoringVariants = state.restoringVariants - variantName)
+            }
+        }
+    }
+
+    /**
      * TASK-742 (GH #124): the offline-transfer bundle import. The codec
      * verifies every sha256 into a staging dir under cacheDir (outside the
      * orphan sweep's filesRoot), the parsed record params come from the
@@ -1581,10 +1639,7 @@ class ModelViewModel @Inject constructor(
             input.use {
                 com.antivocale.app.data.ModelBundleTransfer.importBundle(
                     context, it, externalModelImporter,
-                    downloadActive = { entryId, variantName ->
-                        _catalogStates.value[entryId]?.variantDownloadStates
-                            ?.get(variantName)?.isDownloading == true
-                    },
+                    claimRestoreVariant = ::claimRestoreVariant,
                     noFamilyError = ctx.getString(R.string.bundle_restore_unsupported),
                 )
             }
@@ -1701,9 +1756,18 @@ class ModelViewModel @Inject constructor(
                         },
                         onFailure = { e ->
                             Log.e(TAG, "$label import failed", e)
-                            _externalImportState.value = ExternalImportState.Error(e.message ?: "unknown error")
+                            // The typed restore refusal comes from the shared
+                            // transfer core, whose exceptions carry no
+                            // resources; re-localize it at this UI boundary
+                            // (the 16-locale string the TASK-931 move
+                            // orphaned).
+                            val message =
+                                if (e is ModelBundleTransfer.DownloadActiveException)
+                                    ctx.getString(R.string.bundle_restore_download_active)
+                                else e.message ?: "unknown error"
+                            _externalImportState.value = ExternalImportState.Error(message)
                             _snackbarEvent.tryEmit(SnackbarEvent.Message(
-                                ctx.getString(R.string.external_import_failed, e.message ?: "")))
+                                ctx.getString(R.string.external_import_failed, message)))
                         },
                     )
             }

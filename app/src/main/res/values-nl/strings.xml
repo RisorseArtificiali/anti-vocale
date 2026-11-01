@@ -1338,6 +1338,7 @@
     </plurals>
     <string name="history_db_recovered_unpreserved">De geschiedenisdatabase was beschadigd en is opnieuw ingesteld. De beschadigde bestanden konden niet worden bewaard.</string>
     <string name="bundle_restore_download_active">Een download van dit model is nog bezig. Wacht tot die klaar is of annuleer hem en importeer het pakket opnieuw.</string>
+    <string name="model_download_restore_active">Een herstel van dit model is bezig. Wacht tot dat klaar is en download het daarna opnieuw.</string>
 
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Wat is er nieuw</string>
