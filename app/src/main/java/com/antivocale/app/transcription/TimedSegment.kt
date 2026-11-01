@@ -66,8 +66,11 @@ data class TimedWord(
  * tokens) and the cues serializer (plain path: tokens still ride the cue at
  * write time). A token carrying the U+2581 word-start marker opens the next
  * word, continuation tokens extend it, the same grouping SpeakerResplit's
- * split vote has always used. Null when the tokens cannot back every
- * whitespace word of [cueText]: the count equality is what makes index
+ * split vote has always used. Whisper's base64 tokens.txt decodes to tokens
+ * whose word starts are a literal leading space instead of the marker
+ * (symbol-table.cc only rewrites U+2581 for non-byte-BPE tables), so a
+ * whitespace-led token opens a word too. Null when the tokens cannot back
+ * every whitespace word of [cueText]: the count equality is what makes index
  * alignment to the rendered words sound, and a mismatch degrades instead of
  * timing words it cannot see.
  */
@@ -84,7 +87,7 @@ internal object TimedWords {
         var start = tokens.first().startMs
         var end = tokens.first().endMs
         for (token in tokens.drop(1)) {
-            if (token.text.startsWith(WORD_START)) {
+            if (opensWord(token.text)) {
                 spans.add(TimedWord(start, end))
                 start = token.startMs
                 end = token.endMs
@@ -96,6 +99,10 @@ internal object TimedWords {
         val wordCount = cueText.split(WHITESPACE).count { it.isNotBlank() }
         return spans.takeIf { it.size == wordCount }
     }
+
+    /** U+2581 for sentencepiece vocabs, a leading space for whisper's BPE. */
+    private fun opensWord(text: String): Boolean =
+        text.startsWith(WORD_START) || text.isNotEmpty() && text[0].isWhitespace()
 }
 
 /**
