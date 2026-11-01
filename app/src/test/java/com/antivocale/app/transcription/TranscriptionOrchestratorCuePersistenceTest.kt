@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -166,6 +167,41 @@ class TranscriptionOrchestratorCuePersistenceTest : TranscriptionOrchestratorTes
         // The honesty gate: no tokens, no word array, features stay hidden.
         assertTrue(cues[0].words.isEmpty())
         assertNotNull(row.segments)
+    }
+
+    @Test
+    fun `separator-bounded bare-piece decode persists measured words without the estimate flag`() = runTest {
+        // wordtap-probe-11's stream shape (Nemotron 3.5 streaming): word
+        // pieces carry no opener and the standalone space piece sits at the
+        // breaks. The whole-file arm must persist real word times, never the
+        // cue-envelope estimate the old grouping fell to.
+        val audioFile = temporaryFolder.newFile("audio.ogg")
+        stubSingleChunkPreprocessing(vadOn = true, filePath = audioFile.absolutePath)
+        coEvery { backend.transcribeAudioStreaming(any(), any(), any(), any()) } returns
+            Result.success(TranscriptionResult(
+                text = "alpha beta",
+                tokens = listOf(
+                    TimedToken(" ", 1199, 1199),
+                    TimedToken("al", 1199, 1199),
+                    TimedToken("pha", 1199, 1400),
+                    TimedToken(" ", 1400, 1400),
+                    TimedToken("be", 1400, 1400),
+                    TimedToken("ta", 1400, 1600),
+                ),
+            ))
+
+        val result = processRequest(audioFile.absolutePath)
+
+        assertTrue(result.isSuccess)
+        val row = lastPersistedRow()
+        val cues = TimedSegmentsConverter.fromJson(row.segments)
+        assertEquals(1, cues.size)
+        assertEquals(
+            listOf(TimedWord(1199, 1400), TimedWord(1400, 1600)),
+            cues[0].words,
+        )
+        assertFalse("measured timing never carries the estimate flag",
+            row.segments!!.contains("wordsEstimated"))
     }
 
     @Test

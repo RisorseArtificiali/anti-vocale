@@ -162,6 +162,34 @@ class TimedSegmentsConverterTest {
     }
 
     @Test
+    fun `separator-bounded bare-piece tokens derive measured words`() {
+        // wordtap-probe-11 (Nemotron 3.5 streaming, 2026-11-01): words whose
+        // pieces carry no opener (al|pha, be|ta) are separated by the vocab's
+        // standalone space piece. The separator closes the open word, so the
+        // stream measures 2 groups for 2 words and NO estimate flag rides.
+        val cue = TimedSegment(
+            startMs = 1199, endMs = 6077, text = "alpha beta",
+            tokens = listOf(
+                TimedToken(" ", 1199, 1199),
+                TimedToken("al", 1199, 1199),
+                TimedToken("pha", 1199, 1400),
+                TimedToken(" ", 1400, 1400),
+                TimedToken("be", 1400, 1400),
+                TimedToken("ta", 1400, 1600),
+            ),
+        )
+        val decoded = TimedSegmentsConverter.fromJson(TimedSegmentsConverter.toJson(listOf(cue))).single()
+        assertEquals(
+            listOf(
+                TimedWord(1199, 1400),
+                TimedWord(1400, 1600),
+            ),
+            decoded.words,
+        )
+        assertFalse(decoded.wordsEstimated)
+    }
+
+    @Test
     fun `a positional cue without tokens stays wordless`() {
         // Nothing measured backs the words; the estimate needs tokens that
         // failed grouping, not an empty set.
