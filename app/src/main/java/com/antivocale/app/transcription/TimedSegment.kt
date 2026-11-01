@@ -82,7 +82,12 @@ data class TimedWord(
  * timing words it cannot see. Tokens that carry no character (whisper's
  * bare-space piece, a lone U+2581) group nothing: they detokenize to no
  * text, so counting them as word starts (or letting their spans stretch a
- * group) invents a phantom word and fails the gate.
+ * group) invents a phantom word and fails the gate. They still CLOSE the
+ * open word: space-piece vocabs emit the bare separator exactly at word
+ * breaks whose next word starts with a bare piece (Nemotron 3.5 streaming,
+ * probe 2026-11-01: Questa|Q u e sta, donine|do ni ne), and ignoring that
+ * signal glued four words into their predecessors (12 groups vs 16),
+ * refusing measured timing the stream does carry.
  */
 internal object TimedWords {
 
@@ -92,19 +97,29 @@ internal object TimedWords {
     private const val WORD_START = "▁"
 
     fun ofCue(cueText: String, tokens: List<TimedToken>): List<TimedWord>? {
-        val worded = tokens.filter { hasWordText(it.text) }
-        if (worded.isEmpty()) return null
+        if (tokens.none { hasWordText(it.text) }) return null
         val spans = mutableListOf<TimedWord>()
-        var start = worded.first().startMs
-        var end = worded.first().endMs
-        for (token in worded.drop(1)) {
-            if (opensWord(token.text)) {
+        var start = -1L
+        var end = -1L
+        var afterSeparator = false
+        for (token in tokens) {
+            if (!hasWordText(token.text)) {
+                // Closes the open word; the next worded token opens a new
+                // one. No span is inherited either way.
+                afterSeparator = true
+                continue
+            }
+            if (start < 0) {
+                start = token.startMs
+                end = token.endMs
+            } else if (opensWord(token.text) || afterSeparator) {
                 spans.add(TimedWord(start, end))
                 start = token.startMs
                 end = token.endMs
             } else {
                 end = maxOf(end, token.endMs)
             }
+            afterSeparator = false
         }
         spans.add(TimedWord(start, end))
         val wordCount = cueText.split(WHITESPACE).count { it.isNotBlank() }

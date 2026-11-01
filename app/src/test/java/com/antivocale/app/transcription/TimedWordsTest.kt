@@ -144,6 +144,49 @@ class TimedWordsTest {
     }
 
     @Test
+    fun `the nemotron streaming probe stream yields measured words`() {
+        // wordtap-probe-11-logs, decoded on-device by Nemotron 3.5 streaming
+        // (desktop sherpa-onnx 2.0.1 repro, same model files): the greeting
+        // never enters the stream, word-start pieces are space-led BUT words
+        // that begin with a bare piece (Questa|Q u e sta, donine|do ni ne,
+        // riascoltare|ria sco l ta re) carry no opener, and the vocab emits
+        // the standalone space piece exactly at those word breaks. A
+        // separator must close the open word there, or four words glue into
+        // their predecessors (12 groups vs 16) and the row falls to the
+        // estimate. Ends follow the successor-start rule TimedTokens applies
+        // to a duration-less stream.
+        val starts = listOf(
+            1199, 1199, 1199, 1199, 1199, 1279, 1359, 1439, 1519, 1599,
+            1759, 2079, 2079, 2319, 2479, 2559, 2639, 2719, 2799, 3119,
+            3439, 3439, 3519, 3519, 3679, 3679, 3759, 3839, 3919, 4159,
+            4159, 4399, 4479, 4639, 4719, 4719, 4879, 4879, 4959, 5039,
+            5599, 5759, 5759, 5839,
+        )
+        val pieces = listOf(
+            " ", " ", "Q", "u", "e", "sta", " è", " una", " pro", "va",
+            " del", " t", "o", "cco", " su", "lla", " par", "o", "la", ",",
+            " t", "o", "c", "ca", " ", "la", " par", "o", "la", " ",
+            "do", "ni", "ne", " per", " ", "ria", "sco", "l", "ta", "re",
+            " questo", " ", "pu", "nto",
+        )
+        val tokens = pieces.mapIndexed { i, piece ->
+            val end = if (i + 1 < pieces.size) starts[i + 1] else starts.last() + 400
+            TimedToken(piece, starts[i].toLong(), end.toLong())
+        }
+        val words = TimedWords.ofCue(
+            "Questa è una prova del tocco sulla parola, tocca la parola donine per riascoltare questo punto",
+            tokens,
+        )
+        assertEquals(16, words?.size)
+        // The separator contributes no span: a word's end stays inside its
+        // own pieces, never reaching the separator's or the next word's time.
+        assertEquals(TimedWord(1199, 1359), words!![0])
+        assertEquals("donine opens at its own bare piece", TimedWord(4159, 4639), words[11])
+        assertEquals("riascoltare opens at its own bare piece", TimedWord(4719, 5599), words[13])
+        assertEquals(TimedWord(5759, 6239), words[15])
+    }
+
+    @Test
     fun `the cue-envelope estimate spreads words evenly`() {
         val words = TimedWords.proportionalEstimate("alpha beta gamma", 0, 3000)!!
         assertEquals(
