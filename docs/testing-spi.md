@@ -71,6 +71,7 @@ Set keys and value formats:
 | `vad` | `saveVadEnabled` | `true` or `false` (strict; anything else is an error) |
 | `freeze_protection` | `saveFreezeProtectionEnabled` | `true` or `false` (strict); the GH #67 scoped silent-keepalive toggle, DEFAULT `false` |
 | `refinement_enabled` | `saveRefinementEnabled` | `true` or `false` (GH #43 two-pass toggle) |
+| `word_tap_seek` | `saveWordTapSeek` | `true` or `false`; TASK-939 the word-tap seek read-along gate (default off) |
 | `speaker_labels_enabled` | `saveSpeakerLabelsEnabled` | `true` or `false` (GH #83 speaker labeling toggle) |
 | `speaker_id_enabled` | `saveSpeakerIdEnabled` | `true` or `false` (TASK-670 named speaker labels; default off, the privacy gate) |
 | `voice_note_identity_enabled` | `saveVoiceNoteIdentityEnabled` | `true` or `false` (TASK-735 voice-note identity listener gate; default off) |

@@ -250,6 +250,8 @@ internal class TestSpiOps(
         "interrupted_run_notifications" to preferences::saveInterruptedRunNotifications,
         "summarize" to preferences::saveSummarizeEnabled,
         "refinement_enabled" to preferences::saveRefinementEnabled,
+        // TASK-939: the word-tap seek gate (device trials flip it per row).
+        "word_tap_seek" to preferences::saveWordTapSeek,
         "speaker_labels_enabled" to preferences::saveSpeakerLabelsEnabled,
         // TASK-670: the named-labels privacy gate.
         "speaker_id_enabled" to preferences::saveSpeakerIdEnabled,
