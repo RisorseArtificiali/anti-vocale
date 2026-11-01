@@ -396,6 +396,7 @@ private fun shareInFormat(
             val signed = com.antivocale.app.util.TranscriptFileSaver.signedExport(
                 decision, sig.text, sig.position)
             if (decision.format != com.antivocale.app.util.SubtitleFormatter.Format.SRT &&
+                decision.format != com.antivocale.app.util.SubtitleFormatter.Format.SRT_WORD &&
                 decision.format != com.antivocale.app.util.SubtitleFormatter.Format.VTT
             ) {
                 return@runCatching ShareOutcome.Inline(signed)
@@ -2164,6 +2165,7 @@ fun LogEntryItem(
                                                     R.string.share_format_txt to com.antivocale.app.util.SubtitleFormatter.Format.TXT,
                                                     R.string.share_format_timed to com.antivocale.app.util.SubtitleFormatter.Format.TXT_TIMED,
                                                     R.string.share_format_srt to com.antivocale.app.util.SubtitleFormatter.Format.SRT,
+                                                    R.string.share_format_srt_word to com.antivocale.app.util.SubtitleFormatter.Format.SRT_WORD,
                                                     R.string.share_format_vtt to com.antivocale.app.util.SubtitleFormatter.Format.VTT,
                                                 ).forEach { (labelRes, fmt) ->
                                                     ShareFormatOption(

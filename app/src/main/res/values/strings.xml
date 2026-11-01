@@ -617,6 +617,7 @@
     <string name="share_format_txt">Plain text</string>
     <string name="share_format_timed">Text with timestamps</string>
     <string name="share_format_srt">Subtitles (.srt)</string>
+    <string name="share_format_srt_word">Word-timed subtitles (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">This entry has no timestamps stored; the timed options will share plain text.</string>
     <string name="saved_to_folder_nameless">Saved to %1$s</string>
@@ -1180,6 +1181,7 @@
     <string name="transcript_export_format_txt">Plain text</string>
     <string name="transcript_export_format_txt_timed">Timestamped text (experimental)</string>
     <string name="transcript_export_format_srt">SRT subtitles (experimental)</string>
+    <string name="transcript_export_format_srt_word">SRT subtitles with word timing (experimental)</string>
     <string name="transcript_export_format_vtt">WebVTT subtitles (experimental)</string>
     
     <string name="partial_transcript_label">Partial transcript</string>

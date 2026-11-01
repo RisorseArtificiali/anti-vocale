@@ -509,6 +509,7 @@
     <string name="share_format_txt">Texto sin formato</string>
     <string name="share_format_timed">Texto con marcas de tiempo</string>
     <string name="share_format_srt">Subtítulos (.srt)</string>
+    <string name="share_format_srt_word">Subtítulos con tiempos por palabra (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">Esta entrada no tiene marcas de tiempo guardadas; las opciones con tiempo compartirán texto sin formato.</string>
     <string name="default_prompt_title">Prompt predeterminado</string>
@@ -1011,6 +1012,7 @@
     <string name="transcript_export_format_txt">Texto plano</string>
     <string name="transcript_export_format_txt_timed">Texto con marcas de tiempo (experimental)</string>
     <string name="transcript_export_format_srt">Subtítulos SRT (experimental)</string>
+    <string name="transcript_export_format_srt_word">Subtítulos SRT con tiempos por palabra (experimental)</string>
     <string name="transcript_export_format_vtt">Subtítulos WebVTT (experimental)</string>
     <string name="settings_search_hint">Buscar ajustes…</string>
     <plurals name="settings_search_matches">

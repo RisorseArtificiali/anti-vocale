@@ -513,6 +513,7 @@
     <string name="share_format_txt">纯文本</string>
     <string name="share_format_timed">带时间戳的文本</string>
     <string name="share_format_srt">字幕（.srt）</string>
+    <string name="share_format_srt_word">逐词时间字幕（.srt）</string>
     <string name="share_format_vtt">WebVTT(.vtt)</string>
     <string name="share_format_no_cues">此条目未存储时间戳；带时间戳的选项将以纯文本分享。</string>
     <string name="saved_to_folder_nameless">已保存到 %1$s</string>
@@ -974,6 +975,7 @@
     <string name="transcript_export_format_txt">纯文本</string>
     <string name="transcript_export_format_txt_timed">带时间戳的文本（实验性）</string>
     <string name="transcript_export_format_srt">SRT 字幕（实验性）</string>
+    <string name="transcript_export_format_srt_word">带逐词时间的 SRT 字幕（实验性）</string>
     <string name="transcript_export_format_vtt">WebVTT 字幕（实验性）</string>
     <string name="partial_transcript_label">部分转写</string>
     <string name="decoded_of_total">已解码 %1$s/%2$s</string>

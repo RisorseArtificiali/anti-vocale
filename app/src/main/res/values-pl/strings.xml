@@ -601,6 +601,7 @@
     <string name="share_format_txt">Zwykły tekst</string>
     <string name="share_format_timed">Tekst ze znacznikami czasu</string>
     <string name="share_format_srt">Napisy (.srt)</string>
+    <string name="share_format_srt_word">Napisy z czasami słów (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">Ten wpis nie ma zapisanych znaczników czasu; opcje czasowe udostępnią zwykły tekst.</string>
 
@@ -1163,6 +1164,7 @@
     <string name="transcript_export_format_txt">Zwykły tekst</string>
     <string name="transcript_export_format_txt_timed">Tekst ze znacznikami czasu (eksperymentalny)</string>
     <string name="transcript_export_format_srt">Napisy SRT (eksperymentalne)</string>
+    <string name="transcript_export_format_srt_word">Napisy SRT z czasami słów (eksperymentalne)</string>
     <string name="transcript_export_format_vtt">Napisy WebVTT (eksperymentalne)</string>
     <string name="settings_search_hint">Szukaj w ustawieniach…</string>
     <plurals name="settings_search_matches">

@@ -4486,6 +4486,7 @@ private fun transcriptExportFormatLabel(format: SubtitleFormatter.Format): Strin
     SubtitleFormatter.Format.TXT -> stringResource(R.string.transcript_export_format_txt)
     SubtitleFormatter.Format.TXT_TIMED -> stringResource(R.string.transcript_export_format_txt_timed)
     SubtitleFormatter.Format.SRT -> stringResource(R.string.transcript_export_format_srt)
+    SubtitleFormatter.Format.SRT_WORD -> stringResource(R.string.transcript_export_format_srt_word)
     SubtitleFormatter.Format.VTT -> stringResource(R.string.transcript_export_format_vtt)
 }
 

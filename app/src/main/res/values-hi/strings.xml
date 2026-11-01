@@ -561,6 +561,7 @@
     <string name="share_format_txt">सादा पाठ</string>
     <string name="share_format_timed">टाइमस्टैम्प सहित पाठ</string>
     <string name="share_format_srt">सबटाइटल (.srt)</string>
+    <string name="share_format_srt_word">शब्द-समय वाले सबटाइटल (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">इस प्रविष्टि में कोई टाइमस्टैम्प संग्रहीत नहीं है; समय-संबंधी विकल्प सादा पाठ साझा करेंगे।</string>
 
@@ -1142,6 +1143,7 @@
     <string name="transcript_export_format_txt">सादा टेक्स्ट</string>
     <string name="transcript_export_format_txt_timed">टाइमस्टैम्प वाला टेक्स्ट (प्रायोगिक)</string>
     <string name="transcript_export_format_srt">SRT सबटाइटल (प्रायोगिक)</string>
+    <string name="transcript_export_format_srt_word">शब्द समय के साथ SRT सबटाइटल (प्रायोगिक)</string>
     <string name="transcript_export_format_vtt">WebVTT सबटाइटल (प्रायोगिक)</string>
     <string name="settings_search_hint">सेटिंग्स खोजें…</string>
     <plurals name="settings_search_matches">

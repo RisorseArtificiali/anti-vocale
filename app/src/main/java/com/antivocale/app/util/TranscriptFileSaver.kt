@@ -123,7 +123,7 @@ object TranscriptFileSaver {
     ): String = if (signature.isBlank()) decision.content else when (decision.format) {
         SubtitleFormatter.Format.TXT, SubtitleFormatter.Format.TXT_TIMED ->
             TranscriptSignature.apply(decision.content, signature, signaturePosition)
-        SubtitleFormatter.Format.SRT, SubtitleFormatter.Format.VTT ->
+        SubtitleFormatter.Format.SRT, SubtitleFormatter.Format.SRT_WORD, SubtitleFormatter.Format.VTT ->
             noteBlock(decision.format, signature, decision.content)
     }
 

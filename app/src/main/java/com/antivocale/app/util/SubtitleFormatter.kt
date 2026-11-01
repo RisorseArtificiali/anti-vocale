@@ -21,13 +21,15 @@ object SubtitleFormatter {
 
     /**
      * The auto-save file format. [extension] and [mime] drive the SAF file name
-     * and type; the three non-TXT entries need honest cue data, and the
+     * and type; the four non-TXT entries need honest cue data, and the
      * resolveExport fail-safe degrades them to plain txt when it is missing.
      */
     enum class Format(val extension: String, val mime: String) {
         TXT("txt", "text/plain"),
         TXT_TIMED("txt", "text/plain"),
         SRT("srt", MIME_SUBRIP),
+        /** TASK-928: the karaoke variant, sentence cues carrying per-word tags. */
+        SRT_WORD("srt", MIME_SUBRIP),
         VTT("vtt", MIME_VTT);
 
         companion object {
@@ -65,6 +67,7 @@ object SubtitleFormatter {
         return ExportDecision(selected, when (selected) {
             Format.TXT_TIMED -> timedTxt(segments)
             Format.SRT -> srt(segments)
+            Format.SRT_WORD -> srtWordTimed(segments)
             else -> vtt(segments)
         })
     }
@@ -78,12 +81,44 @@ object SubtitleFormatter {
     fun vtt(segments: List<TimedSegment>): String =
         renderCues(segments, decimal = ".", header = VTT_HEADER, numbered = false)
 
+    /**
+     * TASK-928: the word-timed SRT variant (karaoke). Sentence cues exactly
+     * like [srt]; each cue's text line carries a SubStation karaoke tag
+     * before every word so editors and libass players get word-level timing
+     * while the cue still reads as one sentence. A cue whose stored words do
+     * not back its text keeps plain text: the tags are optional metadata a
+     * plain SRT parser ignores.
+     */
+    fun srtWordTimed(segments: List<TimedSegment>): String =
+        renderCues(segments, decimal = ",", header = null, numbered = true) { karaokeLine(it) }
+
+    /**
+     * One cue's karaoke text line: a `{\kNN}` tag (NN = the word's duration
+     * in centiseconds, SubStation karaoke, covering the text up to the next
+     * tag) before every word. No word timing, or a count that does not match
+     * the cue text's words, falls back to the plain text.
+     */
+    private fun karaokeLine(segment: TimedSegment): String {
+        val words = segment.text.split(WHITESPACE).filter { it.isNotBlank() }
+        if (words.isEmpty() || segment.words.size != words.size) return segment.text
+        return with(StringBuilder(segment.text.length + words.size * 8)) {
+            words.forEachIndexed { index, word ->
+                if (index > 0) append(' ')
+                val centiseconds = ((segment.words[index].endMs - segment.words[index].startMs + 5) / 10)
+                    .coerceAtLeast(1)
+                append("{\\k").append(centiseconds).append('}').append(word)
+            }
+            toString()
+        }
+    }
+
     /** Shared SRT/VTT body: the two differ only in the decimal mark, the header, and cue numbering. */
     private fun renderCues(
         segments: List<TimedSegment>,
         decimal: String,
         header: String?,
         numbered: Boolean,
+        cueLine: (TimedSegment) -> String = { it.text },
     ): String = with(renderBuffer(segments)) {
         if (header != null) append(header).append('\n').append('\n')
         segments.forEachIndexed { index, segment ->
@@ -94,7 +129,7 @@ object SubtitleFormatter {
             // GH #83: speaker label at each TURN (the readable form; a label
             // on every cue would repeat the same name down a monologue).
             speakerPrefix(segments, index)?.let { append(it) }
-            append(segment.text).append('\n')
+            append(cueLine(segment)).append('\n')
         }
         toString()
     }

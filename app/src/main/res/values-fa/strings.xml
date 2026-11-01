@@ -780,6 +780,7 @@
     <string name="share_format_txt">متن ساده</string>
     <string name="share_format_timed">متن با مهر زمانی</string>
     <string name="share_format_srt">زیرنویس (.srt)</string>
+    <string name="share_format_srt_word">زیرنویس با زمان‌بندی کلمات (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">این مورد هیچ مهر زمانی ذخیره‌شده ندارد؛ گزینه‌های زمان‌دار متن ساده را به اشتراک می‌گذارند.</string>
     <string name="progressive_initial">در حال آماده‌سازی متن؛ نتیجه نهایی در پایان</string>
@@ -1147,6 +1148,7 @@
     <string name="transcript_export_format_txt">متن ساده</string>
     <string name="transcript_export_format_txt_timed">متن با مهر زمانی (آزمایشی)</string>
     <string name="transcript_export_format_srt">زیرنویس SRT (آزمایشی)</string>
+    <string name="transcript_export_format_srt_word">زیرنویس SRT با زمان‌بندی کلمات (آزمایشی)</string>
     <string name="transcript_export_format_vtt">زیرنویس WebVTT (آزمایشی)</string>
     <string name="settings_search_hint">جستجوی تنظیمات…</string>
     <plurals name="settings_search_matches">

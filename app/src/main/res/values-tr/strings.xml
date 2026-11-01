@@ -593,6 +593,7 @@
     <string name="share_format_txt">Düz metin</string>
     <string name="share_format_timed">Zaman damgalı metin</string>
     <string name="share_format_srt">Altyazılar (.srt)</string>
+    <string name="share_format_srt_word">Kelime zamanlı altyazılar (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">Bu kayıtta saklı zaman damgası yok; zaman damgalı seçenekler düz metin paylaşacak.</string>
 
@@ -1143,6 +1144,7 @@
     <string name="transcript_export_format_txt">Düz metin</string>
     <string name="transcript_export_format_txt_timed">Zaman damgalı metin (deneysel)</string>
     <string name="transcript_export_format_srt">SRT altyazıları (deneysel)</string>
+    <string name="transcript_export_format_srt_word">Kelime zamanlı SRT altyazıları (deneysel)</string>
     <string name="transcript_export_format_vtt">WebVTT altyazıları (deneysel)</string>
     <string name="settings_search_hint">Ayarları ara…</string>
     <plurals name="settings_search_matches">

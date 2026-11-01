@@ -615,6 +615,7 @@
     <string name="share_format_txt">Platte tekst</string>
     <string name="share_format_timed">Tekst met tijdstempels</string>
     <string name="share_format_srt">Ondertitels (.srt)</string>
+    <string name="share_format_srt_word">Ondertitels met wordtijden (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">Dit item heeft geen opgeslagen tijdstempels; de tijdstempelopties delen platte tekst.</string>
 
@@ -1146,6 +1147,7 @@
     <string name="transcript_export_format_txt">Platte tekst</string>
     <string name="transcript_export_format_txt_timed">Tekst met tijdstempels (experimenteel)</string>
     <string name="transcript_export_format_srt">SRT-ondertitels (experimenteel)</string>
+    <string name="transcript_export_format_srt_word">SRT-ondertitels met wordtijden (experimenteel)</string>
     <string name="transcript_export_format_vtt">WebVTT-ondertitels (experimenteel)</string>
 
     <string name="partial_transcript_label">Gedeeltelijke transcriptie</string>

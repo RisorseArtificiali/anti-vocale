@@ -53,6 +53,51 @@ class SubtitleFormatterTest {
         assertEquals("1\n00:00:00,000 --> 00:00:00,999\nx\n", srt)
     }
 
+    /** TASK-928: one word timed cue plus one untimed one (the mixed-row case). */
+    private val wordTimedCues = listOf(
+        TimedSegment(
+            startMs = 0, endMs = 4_000, text = "prima frase",
+            words = listOf(
+                com.antivocale.app.transcription.TimedWord(0, 2_450),
+                com.antivocale.app.transcription.TimedWord(2_500, 3_900),
+            ),
+        ),
+        TimedSegment(startMs = 4_000, endMs = 6_000, text = "senza tempi"),
+    )
+
+    @Test
+    fun srtWordTimed_sentenceCuesCarryKaraokeTags() {
+        // TASK-928: sentence cue shape unchanged (number, timecode); the text
+        // line carries a SubStation karaoke tag per word (centiseconds).
+        val expected = "1\n00:00:00,000 --> 00:00:04,000\n" +
+            "{\\k245}prima {\\k140}frase\n\n" +
+            "2\n00:00:04,000 --> 00:00:06,000\nsenza tempi\n"
+        assertEquals(expected, SubtitleFormatter.srtWordTimed(wordTimedCues))
+    }
+
+    @Test
+    fun srtWordTimed_wordCountMismatch_keepsPlainCueText() {
+        val mismatched = listOf(
+            TimedSegment(0, 1_000, "due parole qui",
+                words = listOf(com.antivocale.app.transcription.TimedWord(0, 1_000))),
+        )
+        val srt = SubtitleFormatter.srtWordTimed(mismatched)
+        assertTrue("untimed cue stays plain", srt.contains("\ndue parole qui\n"))
+    }
+
+    @Test
+    fun resolveExport_srtWordTimes_throughTheFailSafeGate() {
+        val decision = SubtitleFormatter.resolveExport(
+            SubtitleFormatter.Format.SRT_WORD, "plain", wordTimedCues, failedChunkCount = 0)
+        assertEquals(SubtitleFormatter.Format.SRT_WORD, decision.format)
+        assertTrue("karaoke tags survive the gate", decision.content.contains("{\\k245}prima"))
+        // No cues at all: the timed format degrades to plain txt like its siblings.
+        val degraded = SubtitleFormatter.resolveExport(
+            SubtitleFormatter.Format.SRT_WORD, "plain", emptyList(), failedChunkCount = 0)
+        assertEquals(SubtitleFormatter.Format.TXT, degraded.format)
+        assertEquals("plain", degraded.content)
+    }
+
     @Test
     fun resolveExport_txtDefault_neverTouchesContent() {
         val decision = SubtitleFormatter.resolveExport(
