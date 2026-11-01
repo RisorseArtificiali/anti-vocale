@@ -107,7 +107,45 @@ class SpeakerResplitTest {
         assertNull(outcome.tier)
         // Unsplit, tokens consumed; no fallbackSpeaker passed, so the id
         // waits for the caller's label (same geometry, honest labeling).
-        assertEquals(listOf(cue.copy(tokens = emptyList(), speaker = null)), outcome.cues)
+        // TASK-928: the shipped cue keeps its real word timing even when it
+        // was never straddling (the tokens are about to drop).
+        assertEquals(
+            listOf(cue.copy(
+                tokens = emptyList(),
+                speaker = null,
+                words = listOf(
+                    com.antivocale.app.transcription.TimedWord(0, 800),
+                    com.antivocale.app.transcription.TimedWord(1000, 1800),
+                    com.antivocale.app.transcription.TimedWord(2000, 2800),
+                    com.antivocale.app.transcription.TimedWord(3000, 4000),
+                ),
+            )),
+            outcome.cues,
+        )
+    }
+
+    @Test
+    fun `word-boundary halves slice the exact token spans`() {
+        val outcome = SpeakerResplit.resplit(cue, fourWordTokens(), straddle)
+        val (first, second) = outcome.cues
+        // TASK-928: each half carries ITS OWN words, sliced from the input
+        // spans (alpha 0..800; beta+gamma+delta 1000..4000).
+        assertEquals(listOf(com.antivocale.app.transcription.TimedWord(0, 800)), first.words)
+        assertEquals(
+            listOf(
+                com.antivocale.app.transcription.TimedWord(1000, 1800),
+                com.antivocale.app.transcription.TimedWord(2000, 2800),
+                com.antivocale.app.transcription.TimedWord(3000, 4000),
+            ),
+            second.words,
+        )
+    }
+
+    @Test
+    fun `proportional tier-two halves never persist word timing`() {
+        val outcome = SpeakerResplit.resplit(cue, emptyList(), straddle)
+        // TASK-928: a proportional estimate is not honest word timing.
+        assertTrue(outcome.cues.all { it.words.isEmpty() })
     }
 
     @Test

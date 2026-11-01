@@ -1,6 +1,8 @@
 package com.antivocale.app.data.local
 
 import com.antivocale.app.transcription.TimedSegment
+import com.antivocale.app.transcription.TimedToken
+import com.antivocale.app.transcription.TimedWord
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -60,5 +62,57 @@ class TimedSegmentsConverterTest {
         assertNull(TimedSegmentsConverter.fromJson(legacyNamedId).single().speakerName)
         val blankName = """[{"startMs":0,"endMs":10,"text":"x","speakerName":""}]"""
         assertNull(TimedSegmentsConverter.fromJson(blankName).single().speakerName)
+    }
+
+    @Test
+    fun `word timing round-trips and legacy rows stay untimed`() {
+        // TASK-928: the flat pair list survives the read on new rows;
+        // pre-feature rows carry no key and read back untimed.
+        val timed = listOf(
+            TimedSegment(0, 2000, "ciao mondo", words = listOf(
+                TimedWord(0, 500),
+                TimedWord(600, 1900),
+            )),
+            TimedSegment(2000, 3000, "senza"),
+        )
+        assertEquals(timed, TimedSegmentsConverter.fromJson(TimedSegmentsConverter.toJson(timed)))
+        val legacy = """[{"startMs":0,"endMs":10,"text":"vecchia"}]"""
+        assertEquals(emptyList<TimedWord>(),
+            TimedSegmentsConverter.fromJson(legacy).single().words)
+    }
+
+    @Test
+    fun `tokens on the cue derive the persisted word timing`() {
+        // TASK-928: the plain (non-diarized) path arrives here with the
+        // transient tokens still attached; the serializer derives the words
+        // at the write boundary.
+        val cue = TimedSegment(
+            startMs = 0, endMs = 1800, text = "alpha beta",
+            tokens = listOf(
+                TimedToken("▁alpha", 0, 800),
+                TimedToken("▁beta", 1000, 1800),
+            ),
+        )
+        val decoded = TimedSegmentsConverter.fromJson(TimedSegmentsConverter.toJson(listOf(cue))).single()
+        assertEquals(
+            listOf(
+                TimedWord(0, 800),
+                TimedWord(1000, 1800),
+            ),
+            decoded.words,
+        )
+        // The transient tokens themselves never serialize (the GH #92 contract).
+        assertEquals(emptyList<TimedToken>(), decoded.tokens)
+    }
+
+    @Test
+    fun `a malformed words array reads back untimed`() {
+        // Odd pair count: an end would have to be guessed; drop, don't guess.
+        val odd = """[{"startMs":0,"endMs":10,"text":"x","words":[5]}]"""
+        assertEquals(emptyList<TimedWord>(),
+            TimedSegmentsConverter.fromJson(odd).single().words)
+        val inverted = """[{"startMs":0,"endMs":10,"text":"x","words":[500,100]}]"""
+        assertEquals(emptyList<TimedWord>(),
+            TimedSegmentsConverter.fromJson(inverted).single().words)
     }
 }

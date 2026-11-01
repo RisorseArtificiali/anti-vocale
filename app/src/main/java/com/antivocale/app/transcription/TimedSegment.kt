@@ -28,6 +28,12 @@ data class TimedSegment(
      *  by design: never serialized, consumed by the speaker re-split in the
      *  same pass that labels the cue, then irrelevant. */
     val tokens: List<TimedToken> = emptyList(),
+    /** TASK-928: one [TimedWord] per whitespace word of [text], ABSOLUTE ms,
+     *  index-aligned with the text's words (count-validated at derivation).
+     *  Empty on every row written before the feature, on models without
+     *  token timestamps, and on re-split halves whose only timing would be
+     *  a proportional estimate (bogus timing never persists). */
+    val words: List<TimedWord> = emptyList(),
 )
 
 /**
@@ -42,6 +48,55 @@ data class TimedToken(
     val startMs: Long,
     val endMs: Long,
 )
+
+/**
+ * TASK-928: one word of a cue's text with its timing. Times are ABSOLUTE ms
+ * from the audio start, like the cue's own. The text is not carried: the
+ * list is index-aligned with the cue text's whitespace words, and a stale
+ * text copy would drift from the rendered words.
+ */
+data class TimedWord(
+    val startMs: Long,
+    val endMs: Long,
+)
+
+/**
+ * TASK-928: the ONE derivation of per-word timing from a cue's tokens, shared
+ * by the speaker re-split (which must attach it before dropping the transient
+ * tokens) and the cues serializer (plain path: tokens still ride the cue at
+ * write time). A token carrying the U+2581 word-start marker opens the next
+ * word, continuation tokens extend it, the same grouping SpeakerResplit's
+ * split vote has always used. Null when the tokens cannot back every
+ * whitespace word of [cueText]: the count equality is what makes index
+ * alignment to the rendered words sound, and a mismatch degrades instead of
+ * timing words it cannot see.
+ */
+internal object TimedWords {
+
+    private val WHITESPACE = Regex("\\s+")
+
+    /** Same normalization the builder and the re-split apply. */
+    private const val WORD_START = "▁"
+
+    fun ofCue(cueText: String, tokens: List<TimedToken>): List<TimedWord>? {
+        if (tokens.isEmpty()) return null
+        val spans = mutableListOf<TimedWord>()
+        var start = tokens.first().startMs
+        var end = tokens.first().endMs
+        for (token in tokens.drop(1)) {
+            if (token.text.startsWith(WORD_START)) {
+                spans.add(TimedWord(start, end))
+                start = token.startMs
+                end = token.endMs
+            } else {
+                end = maxOf(end, token.endMs)
+            }
+        }
+        spans.add(TimedWord(start, end))
+        val wordCount = cueText.split(WHITESPACE).count { it.isNotBlank() }
+        return spans.takeIf { it.size == wordCount }
+    }
+}
 
 /**
  * GH #92: maps sherpa's [com.k2fsa.sherpa.onnx.OfflineRecognizerResult] arrays
