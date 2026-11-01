@@ -264,11 +264,11 @@
           "files": [
             {
               "name": "turbo-encoder-attn.int8.onnx",
-              "sha256": "9ac75655b15ba5b7ed4b56925ee66acf0e448ed5581a541a1d01c809a85f4895"
+              "sha256": "91721641a9b3046dd8313f2c004e92fd0d84b6adf249f51621b355d2bf172909"
             },
             {
               "name": "turbo-decoder-attn.int8.onnx",
-              "sha256": "8a80ea7867c6d8a6789a492c1c3d2783d3dd0d74735536e90c2b584f99366f83"
+              "sha256": "ec505229df826f5c44606d492f4cf7f2b6e547257d0bbb4885592a59f2c985db"
             },
             {
               "name": "turbo-tokens.txt",
@@ -285,7 +285,7 @@
             "resourceKey": "whisper_medium_description"
           },
           "dirName": "sherpa-onnx-whisper-medium",
-          "estimatedSizeMB": 950,
+          "estimatedSizeMB": 949,
           "languages": [
             "af",
             "am",
@@ -396,11 +396,11 @@
           "files": [
             {
               "name": "medium-encoder-attn.int8.onnx",
-              "sha256": "2820d142f4beae2a68b9bc4a1fa9e8214c1e0e41206d6c421a2d5176797474f6"
+              "sha256": "948cae8d7737e890284f49066c7862a8b953fce747fb3b0655b4061b12114567"
             },
             {
               "name": "medium-decoder-attn.int8.onnx",
-              "sha256": "a5426d3d8e856cc6b2defffb23238726c30999aa43cce603731c131fc7d78623"
+              "sha256": "d5f2d75269aa63c8d604e39d24e440d541091ccda3b2100aef7b06c85bef597c"
             },
             {
               "name": "medium-tokens.txt",
@@ -528,11 +528,11 @@
           "files": [
             {
               "name": "small-encoder-attn.int8.onnx",
-              "sha256": "0b52b96e4e880ba7e170a970c64845f63691c953714149bafdb3884eb2367819"
+              "sha256": "5475fce1b3152f6f5c2e3bcef3c87ccf99e2618f3550dc64cab254d82dad80a0"
             },
             {
               "name": "small-decoder-attn.int8.onnx",
-              "sha256": "99a450e39581aab1571f46a4f9cb9572c29ee1155bc5fdf033f99eb8917a76b7"
+              "sha256": "63233cc33d6c11ae514467a69132de87cc61e6b28d3dab40cdf8b0e3060a3439"
             },
             {
               "name": "small-tokens.txt",

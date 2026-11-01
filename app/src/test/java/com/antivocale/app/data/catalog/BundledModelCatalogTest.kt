@@ -163,7 +163,7 @@ class BundledModelCatalogTest {
             byName.getValue("small").files.map { it.name },
         )
         assertEquals(1037L, byName.getValue("turbo").estimatedSizeMB)
-        assertEquals(950L, byName.getValue("medium").estimatedSizeMB)
+        assertEquals(949L, byName.getValue("medium").estimatedSizeMB)
         assertEquals(938L, byName.getValue("distil-large-v3-it").estimatedSizeMB)
         assertEquals("pantinor/sherpa-onnx-whisper-small", byName.getValue("small").source.repo)
     }
