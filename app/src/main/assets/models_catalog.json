@@ -153,7 +153,7 @@
             "resourceKey": "whisper_turbo_description"
           },
           "dirName": "sherpa-onnx-whisper-turbo",
-          "estimatedSizeMB": 988,
+          "estimatedSizeMB": 1037,
           "languages": [
             "af",
             "am",
@@ -263,12 +263,12 @@
           },
           "files": [
             {
-              "name": "turbo-encoder.int8.onnx",
-              "sha256": "b02dcdf54f348741e93fe732b67d933c8dcb6735655f710640143081db38878b"
+              "name": "turbo-encoder-attn.int8.onnx",
+              "sha256": "9ac75655b15ba5b7ed4b56925ee66acf0e448ed5581a541a1d01c809a85f4895"
             },
             {
-              "name": "turbo-decoder.int8.onnx",
-              "sha256": "20accd02388482eb3a46bd615631adfdc85e1eb2c7db9ea3f02a40ffe6b81547"
+              "name": "turbo-decoder-attn.int8.onnx",
+              "sha256": "8a80ea7867c6d8a6789a492c1c3d2783d3dd0d74735536e90c2b584f99366f83"
             },
             {
               "name": "turbo-tokens.txt",
@@ -285,7 +285,7 @@
             "resourceKey": "whisper_medium_description"
           },
           "dirName": "sherpa-onnx-whisper-medium",
-          "estimatedSizeMB": 903,
+          "estimatedSizeMB": 950,
           "languages": [
             "af",
             "am",
@@ -395,12 +395,12 @@
           },
           "files": [
             {
-              "name": "medium-encoder.int8.onnx",
-              "sha256": "1c54582b4d829de0089f6cb63bbbdb3bf7555398bacaf855fbecf1a84dfd193e"
+              "name": "medium-encoder-attn.int8.onnx",
+              "sha256": "2820d142f4beae2a68b9bc4a1fa9e8214c1e0e41206d6c421a2d5176797474f6"
             },
             {
-              "name": "medium-decoder.int8.onnx",
-              "sha256": "595d00a338a365a7bfa0ca7f296cabc639583bef770ab6130df90f49a6412747"
+              "name": "medium-decoder-attn.int8.onnx",
+              "sha256": "a5426d3d8e856cc6b2defffb23238726c30999aa43cce603731c131fc7d78623"
             },
             {
               "name": "medium-tokens.txt",
@@ -417,7 +417,7 @@
             "resourceKey": "whisper_small_description"
           },
           "dirName": "sherpa-onnx-whisper-small",
-          "estimatedSizeMB": 358,
+          "estimatedSizeMB": 378,
           "languages": [
             "af",
             "am",
