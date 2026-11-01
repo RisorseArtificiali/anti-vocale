@@ -220,7 +220,7 @@ class ModelViewModelBundleLinkTest {
     private fun whisperSmallDir(): File {
         val dir = File(SherpaModelManager.of("whisper").getModelStorageDir(mockContext), "sherpa-onnx-whisper-small")
         dir.mkdirs()
-        listOf("small-encoder.int8.onnx", "small-decoder.int8.onnx", "small-tokens.txt")
+        listOf("small-encoder-attn.int8.onnx", "small-decoder-attn.int8.onnx", "small-tokens.txt")
             .forEach { File(dir, it).writeText("placeholder") }
         return dir
     }

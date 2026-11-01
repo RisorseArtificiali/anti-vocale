@@ -157,13 +157,13 @@ class BundledModelCatalogTest {
         assertEquals(30, whisper.flags.maxAudioDurationSeconds)
         val byName = whisper.variants.associateBy { it.name }
         assertEquals("sherpa-onnx-whisper-small", byName.getValue("small").dirName)
-        assertEquals(358L, byName.getValue("small").estimatedSizeMB)
+        assertEquals(378L, byName.getValue("small").estimatedSizeMB)
         assertEquals(
-            listOf("small-encoder.int8.onnx", "small-decoder.int8.onnx", "small-tokens.txt"),
+            listOf("small-encoder-attn.int8.onnx", "small-decoder-attn.int8.onnx", "small-tokens.txt"),
             byName.getValue("small").files.map { it.name },
         )
-        assertEquals(988L, byName.getValue("turbo").estimatedSizeMB)
-        assertEquals(903L, byName.getValue("medium").estimatedSizeMB)
+        assertEquals(1037L, byName.getValue("turbo").estimatedSizeMB)
+        assertEquals(950L, byName.getValue("medium").estimatedSizeMB)
         assertEquals(938L, byName.getValue("distil-large-v3-it").estimatedSizeMB)
         assertEquals("pantinor/sherpa-onnx-whisper-small", byName.getValue("small").source.repo)
     }

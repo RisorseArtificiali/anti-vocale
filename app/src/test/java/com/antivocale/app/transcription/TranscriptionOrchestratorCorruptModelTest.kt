@@ -122,7 +122,7 @@ class TranscriptionOrchestratorCorruptModelTest : TranscriptionOrchestratorTestB
         assertFalse("no sibling: the flag must stay off",
             (error as TranscriptionException.CorruptModelFiles).switchedToSibling)
         assertTrue("the message must name the failing file",
-            error!!.message!!.contains("turbo-encoder.int8.onnx"))
+            error!!.message!!.contains("turbo-encoder-attn.int8.onnx"))
         assertTrue("the message must say corrupted",
             error.message!!.contains("corrupted"))
         assertTrue("the message must say re-download",

@@ -131,8 +131,8 @@ class ModelViewModelDemotionTest {
         )
         dir.mkdirs()
         listOf(
-            "small-encoder.int8.onnx",
-            "small-decoder.int8.onnx",
+            "small-encoder-attn.int8.onnx",
+            "small-decoder-attn.int8.onnx",
             "small-tokens.txt",
         ).forEach { File(dir, it).writeText("placeholder") }
         return dir

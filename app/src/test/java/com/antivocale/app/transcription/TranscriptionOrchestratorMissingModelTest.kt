@@ -119,9 +119,9 @@ class TranscriptionOrchestratorMissingModelTest : TranscriptionOrchestratorTestB
         assertFalse("no sibling: the flag must stay off",
             (error as TranscriptionException.MissingModelFiles).switchedToSibling)
         assertTrue("the message must name the vanished file",
-            error!!.message!!.contains("turbo-decoder.int8.onnx"))
+            error!!.message!!.contains("turbo-decoder-attn.int8.onnx"))
         assertFalse("the message must name ONLY the absent file (the subset, not the whole catalog)",
-            error.message!!.contains("turbo-encoder"))
+            error.message!!.contains("turbo-encoder-attn"))
         assertTrue("the message must say missing",
             error.message!!.contains("missing"))
         assertTrue("the message must say re-download",

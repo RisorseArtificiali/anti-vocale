@@ -118,11 +118,11 @@ class DownloadClearIntegrationTest {
         try {
             File(dir, "small-tokens.txt").writeText("tokens")
 
-            val encoder = File(dir, "small-encoder.int8.onnx")
+            val encoder = File(dir, "small-encoder-attn.int8.onnx")
             encoder.writeText("x".repeat(2_000_000))
             ResumeDownloadHelper.sizeSidecar(encoder).writeText("900000000")
 
-            val decoder = File(dir, "small-decoder.int8.onnx")
+            val decoder = File(dir, "small-decoder-attn.int8.onnx")
             decoder.writeText("x".repeat(2_000_000))
             ResumeDownloadHelper.sizeSidecar(decoder).writeText("900000000")
 
@@ -142,11 +142,11 @@ class DownloadClearIntegrationTest {
             tokens.writeText("tokens data")
             ResumeDownloadHelper.sizeSidecar(tokens).writeText("11")
 
-            val encoder = File(dir, "small-encoder.int8.onnx")
+            val encoder = File(dir, "small-encoder-attn.int8.onnx")
             encoder.writeText("x".repeat(1000))
             ResumeDownloadHelper.sizeSidecar(encoder).writeText("1000")
 
-            val decoder = File(dir, "small-decoder.int8.onnx")
+            val decoder = File(dir, "small-decoder-attn.int8.onnx")
             decoder.writeText("x".repeat(1000))
             ResumeDownloadHelper.sizeSidecar(decoder).writeText("1000")
 
@@ -163,8 +163,8 @@ class DownloadClearIntegrationTest {
         dir.mkdirs()
         try {
             File(dir, "small-tokens.txt").writeText("tokens")
-            File(dir, "small-encoder.int8.onnx").writeText("x".repeat(100))
-            File(dir, "small-decoder.int8.onnx").writeText("x".repeat(100))
+            File(dir, "small-encoder-attn.int8.onnx").writeText("x".repeat(100))
+            File(dir, "small-decoder-attn.int8.onnx").writeText("x".repeat(100))
 
             assertNotNull(
                 "Files without sidecars (extracted/sideloaded) should be valid",

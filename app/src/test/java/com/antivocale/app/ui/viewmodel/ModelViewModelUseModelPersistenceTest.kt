@@ -140,8 +140,8 @@ class ModelViewModelUseModelPersistenceTest {
         )
         dir.mkdirs()
         listOf(
-            "small-encoder.int8.onnx",
-            "small-decoder.int8.onnx",
+            "small-encoder-attn.int8.onnx",
+            "small-decoder-attn.int8.onnx",
             "small-tokens.txt",
         ).forEach { File(dir, it).writeText("placeholder") }
         return dir
@@ -222,7 +222,7 @@ class ModelViewModelUseModelPersistenceTest {
             "sherpa-onnx-whisper-small",
         )
         dir.mkdirs()
-        File(dir, "small-encoder.int8.onnx").writeText("placeholder")
+        File(dir, "small-encoder-attn.int8.onnx").writeText("placeholder")
 
         val events = mutableListOf<ModelViewModel.SnackbarEvent>()
         val collector = launch { viewModel.snackbarEvent.collect { events.add(it) } }
