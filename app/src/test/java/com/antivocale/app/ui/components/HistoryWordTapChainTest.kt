@@ -1,6 +1,8 @@
 package com.antivocale.app.ui.components
 
 import com.antivocale.app.data.local.TimedSegmentsConverter
+import com.antivocale.app.transcription.TimedSegment
+import com.antivocale.app.transcription.TimedWord
 import com.antivocale.app.util.SubtitleFormatter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -43,6 +45,39 @@ class HistoryWordTapChainTest {
         for (i in words.indices) {
             while (offset < resultText.length && resultText[offset].isWhitespace()) offset++
             val wordStart = words[i][0]
+            val wordEnd = offset + words[i].length - 1
+            assertEquals("word $i '${words[i]}' taps its own start",
+                starts[i], taps!!.startMsAt(offset))
+            assertEquals("word $i '${words[i]}' taps its own start at its last char",
+                starts[i], taps!!.startMsAt(wordEnd))
+            offset += words[i].length
+        }
+    }
+
+    @Test
+    fun `every displayed word taps its own start on the measured probe row`() {
+        // The row the same decode persists after the separator-boundary fix
+        // (wordtap-probe-11's Nemotron stream measures 16 groups): real word
+        // spans replace the estimate grid, so the tap contract holds on
+        // measured boundaries with no flag.
+        val measured = listOf(
+            TimedWord(1199, 1359), TimedWord(1359, 1439), TimedWord(1439, 1519),
+            TimedWord(1519, 1759), TimedWord(1759, 2079), TimedWord(2079, 2479),
+            TimedWord(2479, 2639), TimedWord(2639, 3439), TimedWord(3439, 3679),
+            TimedWord(3679, 3759), TimedWord(3759, 4159), TimedWord(4159, 4639),
+            TimedWord(4639, 4719), TimedWord(4719, 5599), TimedWord(5599, 5759),
+            TimedWord(5759, 6239),
+        )
+        val cues = listOf(TimedSegment(1199, 6239, resultText, words = measured))
+        val aligned = SubtitleFormatter.alignPolishedText(resultText, cues)
+        assertNotNull("count and letters alignment hold on the measured row", aligned)
+        val starts = aligned!!.flatMap { cue -> cue.words.map { it.startMs } }
+        val taps = TranscriptWordTaps.of(resultText, starts)
+        val words = resultText.split(Regex("\\s+")).filter { it.isNotBlank() }
+        assertEquals("measured words back every displayed word", words.size, starts.size)
+        var offset = 0
+        for (i in words.indices) {
+            while (offset < resultText.length && resultText[offset].isWhitespace()) offset++
             val wordEnd = offset + words[i].length - 1
             assertEquals("word $i '${words[i]}' taps its own start",
                 starts[i], taps!!.startMsAt(offset))
