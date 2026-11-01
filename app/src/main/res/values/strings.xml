@@ -1242,6 +1242,7 @@
     <string name="refinement_model_description">The model the second pass uses. Leave on inherit to use your active model.</string>
     <string name="refinement_model_inherit">Inherit active model</string>
     <string name="refinement_description">Stream an instant preview with the fast model, then refine it with the selected model in the background</string>
+    <string name="refinement_description_dynamic">Stream an instant preview with %1$s, then refine it with %2$s in the background</string>
     <string name="refinement_locked_reason">Download a second model to enable two-pass transcription</string>
     <string name="language_chip_setting_note">Only the Whisper and SenseVoice models can detect the language.</string>
     <string name="technical_details_title">Show technical details</string>

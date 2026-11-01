@@ -40,6 +40,7 @@ class SettingsSearchRegistryTest {
         summarizeOn = summarizeOn,
         batteryExemptionOffered = batteryExemptionOffered,
         refinementOn = refinementOn,
+        refinementAvailable = refinementOn,
         speakerIdEnabled = speakerIdEnabled,
         transcriptionHintRes = transcriptionHintRes,
     )

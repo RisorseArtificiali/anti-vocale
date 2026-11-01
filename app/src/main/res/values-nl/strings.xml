@@ -1208,6 +1208,7 @@
     <string name="refinement_model_description">Het model van de tweede ronde. Laat op Overnemen staan om je actieve model te gebruiken.</string>
     <string name="refinement_model_inherit">Actief model overnemen</string>
     <string name="refinement_description">Stream een directe voorbeeldweergave met het snelle model en verfijn die daarna op de achtergrond met het gekozen model</string>
+    <string name="refinement_description_dynamic">Stream een directe voorbeeldweergave met %1$s en verfijn die daarna op de achtergrond met %2$s</string>
     <string name="refinement_locked_reason">Download een tweede model om tweerondetranscriptie in te schakelen</string>
     <string name="language_chip_setting_note">Alleen de modellen Whisper en SenseVoice kunnen de taal detecteren.</string>
     <string name="technical_details_title">Technische details tonen</string>

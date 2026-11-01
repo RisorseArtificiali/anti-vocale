@@ -1070,6 +1070,7 @@
     <string name="refinement_model_description">Toisen vaiheen käyttämä malli. Jätä valinnaksi Peri aktiivinen malli, jolloin käytetään aktiivista malliasi.</string>
     <string name="refinement_model_inherit">Peri aktiivinen malli</string>
     <string name="refinement_description">Näytä välitön esikatselu nopealla mallilla ja hienosäädä se valitulla mallilla taustalla</string>
+    <string name="refinement_description_dynamic">Näytä välitön esikatselu mallilla %1$s ja hienosäädä se mallilla %2$s taustalla</string>
     <string name="refinement_locked_reason">Lataa toinen malli ottaaksesi käyttöön kaksivaiheisen transkription</string>
     <string name="language_chip_setting_note">Vain Whisper- ja SenseVoice-mallit voivat tunnistaa kielen.</string>
     <string name="technical_details_title">Näytä tekniset tiedot</string>

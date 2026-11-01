@@ -1222,6 +1222,7 @@
     <string name="transcription_refined_from">Уточнено з %1$s</string>
     <string name="refinement_title">Двопрохідна розшифровка</string>
     <string name="refinement_description">Спочатку миттєвий перегляд швидкою моделлю, потім уточнення у фоні обраною моделлю</string>
+    <string name="refinement_description_dynamic">Спочатку миттєвий перегляд моделлю %1$s, потім уточнення у фоні моделлю %2$s</string>
     <string name="refinement_locked_reason">Завантажте другу модель, щоб увімкнути двопрохідну розшифровку</string>
     <string name="curated_why_distil_it">Налаштований для італійської: найточніший вибір</string>
     <string name="curated_why_parakeet">Дуже швидкий (приблизно у 17 разів) і досі дуже точний</string>

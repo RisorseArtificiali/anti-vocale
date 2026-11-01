@@ -1198,6 +1198,7 @@
     <string name="transcription_refined_from">Verfeinert von %1$s</string>
     <string name="refinement_title">Zweistufige Transkription</string>
     <string name="refinement_description">Zeigt sofort eine Vorschau mit dem schnellen Modell und verfeinert sie im Hintergrund mit dem ausgewählten Modell</string>
+    <string name="refinement_description_dynamic">Zeigt sofort eine Vorschau mit %1$s und verfeinert sie im Hintergrund mit %2$s</string>
     <string name="refinement_locked_reason">Lade ein zweites Modell herunter, um die zweistufige Transkription zu aktivieren</string>
     <string name="curated_why_distil_it">Für Italienisch feinabgestimmt: die genaueste Wahl</string>
     <string name="curated_why_parakeet">Sehr schnell (etwa 17x) und dennoch sehr genau</string>

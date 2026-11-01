@@ -480,6 +480,13 @@ class SettingsViewModel @Inject constructor(
      *  when no candidate resolves. */
     private val _fastBackendId = MutableStateFlow<String?>(null)
     val fastBackendId: StateFlow<String?> = _fastBackendId.asStateFlow()
+
+    /** TASK-937: the refine target the gate resolved (pin if usable, else
+     *  the selected backend) from the SAME combine as [fastBackendId], so
+     *  the card's two-pass description names exactly what will run. */
+    private val _refinementTargetBackendId = MutableStateFlow<String?>(null)
+    val refinementTargetBackendId: StateFlow<String?> =
+        _refinementTargetBackendId.asStateFlow()
     fun saveRefinementModelBackendId(backendId: String) {
         viewModelScope.launch {
             try {
@@ -1039,7 +1046,17 @@ class SettingsViewModel @Inject constructor(
                                 .resolveActiveModelPath(getApplication<Application>()) != null
                         }.getOrDefault(false)
                     _fastBackendId.value = fastId
-                    _refinementAvailable.value = pinUsable && fastId != null
+                    // TASK-937: available implies a resolved fast arm (the
+                    // same assignment block); the card description pairs the
+                    // two arms from these sibling flows.
+                    _refinementTargetBackendId.value = accurate
+                    // TASK-937 review: the remote-offload accurate side never
+                    // two-passes (the policy returns null for it), so the
+                    // gate locks there instead of advertising a dead toggle.
+                    val accurateIsRemoteOffload =
+                        accurate == com.antivocale.app.transcription.RemoteOmnivoiceBackend.BACKEND_ID
+                    _refinementAvailable.value =
+                        pinUsable && fastId != null && !accurateIsRemoteOffload
                 }
         }
         // Load text size from preferences (TASK-576)

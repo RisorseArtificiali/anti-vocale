@@ -1220,6 +1220,7 @@
     <string name="transcription_refined_from">Ulepszone z %1$s</string>
     <string name="refinement_title">Transkrypcja dwuetapowa</string>
     <string name="refinement_description">Pokaż natychmiast podgląd szybkim modelem, a następnie ulepsz go w tle wybranym modelem</string>
+    <string name="refinement_description_dynamic">Pokaż natychmiast podgląd modelem %1$s, a następnie ulepsz go w tle modelem %2$s</string>
     <string name="refinement_locked_reason">Pobierz drugi model, aby włączyć transkrypcję dwuetapową</string>
     <string name="curated_why_distil_it">Dostrojony do włoskiego: najdokładniejszy wybór</string>
     <string name="curated_why_parakeet">Bardzo szybki (około 17x) i wciąż bardzo dokładny</string>

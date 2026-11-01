@@ -490,6 +490,7 @@ fun SettingsTab(
             summarizeOn = summarizeOn,
             batteryExemptionOffered = offerBatteryExemption,
             refinementOn = refinementEnabled && refinementAvailable,
+            refinementAvailable = refinementAvailable,
             speakerIdEnabled = speakerIdEnabled,
             transcriptionHintRes = transcriptionHintRes,
         )
@@ -849,7 +850,47 @@ fun SettingsTab(
 
             // GH #43: two-pass transcription (instant preview, then refine).
             val refinementTitle = stringResource(R.string.refinement_title)
-            val refinementDescription = stringResource(R.string.refinement_description)
+            // TASK-937 (maintainer trial): "the fast model" was undefined now
+            // that the fast arm auto-resolves (streaming preferred, else the
+            // smallest installed besides the target); the available-state
+            // description NAMES both arms so the user sees who runs what.
+            // Both arm ids come from the gate's own combine (the target
+            // rule lives in the ViewModel, exactly where the runtime
+            // resolves it); available implies a resolved fast arm because
+            // the same assignment block sets both.
+            val refinementFastId by viewModel.fastBackendId.collectAsState()
+            val refinementTargetId by viewModel.refinementTargetBackendId.collectAsState()
+            // TASK-937 simplify: one collector set for the whole card; the
+            // picker below reuses these instead of recollecting.
+            val refinementInstalled by viewModel.installedBackends.collectAsState()
+            val refinementPinned by viewModel.refinementModelBackendId.collectAsState()
+
+            @androidx.compose.runtime.Composable
+            fun refinementArmLabel(id: String): String {
+                refinementInstalled.firstOrNull { it.backendId == id }
+                    ?.displayName?.let { return it }
+                // Same stale-fallback rule as the picker: the catalog family
+                // title, never a raw backend id in a user-facing sentence.
+                val res = androidx.compose.runtime.remember(id) {
+                    runCatching {
+                        com.antivocale.app.transcription.CatalogVariantUi.of(id).titleResId
+                    }.getOrNull()
+                }
+                return res?.let { stringResource(it) } ?: id
+            }
+
+            val refinementFast = refinementFastId
+            val refinementTarget = refinementTargetId
+            val refinementDescription =
+                if (refinementFast != null && refinementTarget != null && refinementAvailable) {
+                    stringResource(
+                        R.string.refinement_description_dynamic,
+                        refinementArmLabel(refinementFast),
+                        refinementArmLabel(refinementTarget),
+                    )
+                } else {
+                    stringResource(R.string.refinement_description)
+                }
             // TASK-932: the locked state names its own fix (the language-chip
             // note pattern: the why-unavailable line rides supportingText).
             val refinementLockedReason = stringResource(R.string.refinement_locked_reason)
@@ -873,8 +914,8 @@ fun SettingsTab(
                 // active backend (the pre-feature behavior).
                 if (refinementEnabled && refinementAvailable) {
                     SearchFilterRow(searchQuery, SettingsSearchId.REFINEMENT_MODEL, searchState) {
-                    val installed by viewModel.installedBackends.collectAsState()
-                    val pinned by viewModel.refinementModelBackendId.collectAsState()
+                    val installed = refinementInstalled
+                    val pinned = refinementPinned
                     SectionCard(
                         icon = Icons.Default.Tune,
                         title = stringResource(R.string.refinement_model_title),
@@ -3757,6 +3798,8 @@ internal data class SettingsSearchState(
     val batteryExemptionOffered: Boolean,
     /** TASK-740.1: the two-pass is on AND can run; the refine-model card renders. */
     val refinementOn: Boolean,
+    /** TASK-937: which description variant the two-pass card renders. */
+    val refinementAvailable: Boolean,
     /** The TASK-670 privacy switch: the speaker-identities card exists. */
     val speakerIdEnabled: Boolean,
     /** The one hint line the transcription-language card renders, if any. */
@@ -3872,7 +3915,19 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     // refinement card.
     SettingsSearchCard(
         SettingsSearchId.REFINEMENT, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.refinement_title, R.string.refinement_description),
+        // TASK-937: state-dependent like MODEL_STATUS: the tree renders ONE
+        // description variant, and the vocabulary must not match text the
+        // tree does not show (the ghost-match class the registry bans).
+        res = { state ->
+            listOf(
+                R.string.refinement_title,
+                if (state.refinementAvailable) {
+                    R.string.refinement_description_dynamic
+                } else {
+                    R.string.refinement_description
+                },
+            )
+        },
         group = SettingsSearchGroup.DECODING,
     ),
     SettingsSearchCard(
