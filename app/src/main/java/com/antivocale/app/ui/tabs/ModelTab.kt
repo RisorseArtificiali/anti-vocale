@@ -959,8 +959,19 @@ fun ModelTab(
                     // TASK-925 (GH #124 reopen 2): the picked folder holds
                     // several .zip bundles; a row's tap imports that one,
                     // dismiss cancels with nothing imported.
+                    fun dismissBundleChooser() {
+                        // TASK-933: the non-consuming exits give the pick's
+                        // persisted read grant back, the same TASK-761
+                        // hygiene the consuming paths enforce through
+                        // importBundle. Every row shares the one picked
+                        // tree, so its single release covers the chooser.
+                        bundlePick?.firstOrNull()?.let {
+                            com.antivocale.app.util.TreeUris.releasePersistableReadGrant(context, it.treeUri)
+                        }
+                        bundlePick = null
+                    }
                     AlertDialog(
-                        onDismissRequest = { bundlePick = null },
+                        onDismissRequest = { dismissBundleChooser() },
                         title = { Text(stringResource(R.string.external_bundles_pick_title)) },
                         text = {
                             Column {
@@ -975,7 +986,7 @@ fun ModelTab(
                         },
                         confirmButton = {},
                         dismissButton = {
-                            TextButton(onClick = { bundlePick = null }) {
+                            TextButton(onClick = { dismissBundleChooser() }) {
                                 Text(stringResource(android.R.string.cancel))
                             }
                         },
