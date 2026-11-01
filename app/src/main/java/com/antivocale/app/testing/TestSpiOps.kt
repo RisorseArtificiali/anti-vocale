@@ -188,6 +188,9 @@ internal class TestSpiOps(
             .put("showRetranscribeButton", preferences.showRetranscribeButton.first())
             .put("groupLogsByConversation", preferences.groupLogsByConversation.first())
             .put("showTechnicalDetails", preferences.showTechnicalDetails.first())
+            // TASK-939: the word-tap seek read-along gate (device trials
+            // seed it before expanding a row).
+            .put("wordTapSeek", preferences.wordTapSeek.first())
             .put("vadAdvisoryDismissed", preferences.vadAdvisoryDismissed.first())
             .put("onboardingCompleted", preferences.onboardingCompleted.first())
             // TASK-685: the seeded Models-filter favorite (null = untouched,

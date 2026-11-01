@@ -128,7 +128,6 @@ class PreferencesManagerTest {
             PreferencesManager.defaultThreadCount(Runtime.getRuntime().availableProcessors()),
             PreferencesManager.DEFAULT_THREAD_COUNT)
     }
-}
 
     // TASK-939: the word-tap seek read-along gate ships off; users opt in.
     @Test
@@ -145,3 +144,4 @@ class PreferencesManagerTest {
         fake.saveWordTapSeek(false)
         assertFalse(fake.wordTapSeek.first())
     }
+}
