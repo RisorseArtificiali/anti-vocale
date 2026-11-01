@@ -527,12 +527,12 @@
           },
           "files": [
             {
-              "name": "small-encoder.int8.onnx",
-              "sha256": "4cbe7b22fa9026b843b60a68640c747de05bafb1a11b57edc0e66c232d9f33a9"
+              "name": "small-encoder-attn.int8.onnx",
+              "sha256": "0b52b96e4e880ba7e170a970c64845f63691c953714149bafdb3884eb2367819"
             },
             {
-              "name": "small-decoder.int8.onnx",
-              "sha256": "acad50b5c782696e91b55914cc5ab4f756f1532f76e22aa6fc615f39fb69a8ee"
+              "name": "small-decoder-attn.int8.onnx",
+              "sha256": "99a450e39581aab1571f46a4f9cb9572c29ee1155bc5fdf033f99eb8917a76b7"
             },
             {
               "name": "small-tokens.txt",
