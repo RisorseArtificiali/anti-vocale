@@ -149,6 +149,38 @@ class SpeakerResplitTest {
     }
 
     @Test
+    fun `a marker-less stream ships the flagged cue-envelope estimate`() {
+        // Parakeet's BPE: tokens exist but carry no word-start marker, so
+        // measured grouping fails; the unsplit cue leaves with flagged
+        // estimated timing (timing only, the split decision untouched) and
+        // no transient tokens.
+        val subword = listOf(
+            TimedToken("al", 0, 400),
+            TimedToken("pha", 400, 800),
+            TimedToken("bet", 800, 1400),
+            TimedToken("a", 1400, 1800),
+        )
+        val jitter = listOf(
+            DiarizedSegment(0f, 3.8f, 0, 0.9f),
+            DiarizedSegment(3.8f, 4.0f, 1, 0.9f),
+        )
+        val outcome = SpeakerResplit.resplit(cue, subword, jitter)
+        assertNull(outcome.tier)
+        val shipped = outcome.cues.single()
+        assertEquals(emptyList<TimedToken>(), shipped.tokens)
+        assertTrue(shipped.wordsEstimated)
+        assertEquals(
+            listOf(
+                com.antivocale.app.transcription.TimedWord(0, 1000),
+                com.antivocale.app.transcription.TimedWord(1000, 2000),
+                com.antivocale.app.transcription.TimedWord(2000, 3000),
+                com.antivocale.app.transcription.TimedWord(3000, 4000),
+            ),
+            shipped.words,
+        )
+    }
+
+    @Test
     fun `a surrounding overlap has no interior boundary, honest mix`() {
         val surrounding = listOf(DiarizedSegment(0f, 10f, 1, 0.9f))
         val outcome = SpeakerResplit.resplit(cue, fourWordTokens(), surrounding)

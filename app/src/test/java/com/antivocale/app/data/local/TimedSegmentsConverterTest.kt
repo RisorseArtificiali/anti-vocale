@@ -4,7 +4,9 @@ import com.antivocale.app.transcription.TimedSegment
 import com.antivocale.app.transcription.TimedToken
 import com.antivocale.app.transcription.TimedWord
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TimedSegmentsConverterTest {
@@ -114,5 +116,58 @@ class TimedSegmentsConverterTest {
         val inverted = """[{"startMs":0,"endMs":10,"text":"x","words":[500,100]}]"""
         assertEquals(emptyList<TimedWord>(),
             TimedSegmentsConverter.fromJson(inverted).single().words)
+    }
+
+    @Test
+    fun `marker-less tokens derive the flagged estimate`() {
+        // TASK-928 round 2: Parakeet's BPE tokens carry no word-start
+        // marker, so measured grouping refuses and the cue-envelope estimate
+        // persists under wordsEstimated (both endpoints measured, interior
+        // interpolated).
+        val cue = TimedSegment(
+            startMs = 0, endMs = 1800, text = "alpha beta",
+            tokens = listOf(
+                TimedToken("alpha", 0, 800),
+                TimedToken("bet", 800, 1400),
+                TimedToken("a", 1400, 1800),
+            ),
+        )
+        val decoded = TimedSegmentsConverter.fromJson(TimedSegmentsConverter.toJson(listOf(cue))).single()
+        assertEquals(listOf(TimedWord(0, 900), TimedWord(900, 1800)), decoded.words)
+        assertTrue(decoded.wordsEstimated)
+        // The flag round-trips, so the karaoke export keeps refusing after a
+        // restart and tap-to-seek keeps accepting.
+        assertEquals(decoded, TimedSegmentsConverter.fromJson(TimedSegmentsConverter.toJson(listOf(decoded))).single())
+    }
+
+    @Test
+    fun `measured word timing never carries the estimate flag`() {
+        val measured = listOf(
+            TimedSegment(
+                startMs = 0, endMs = 1800, text = "alpha beta",
+                tokens = listOf(
+                    TimedToken("▁alpha", 0, 800),
+                    TimedToken("▁beta", 1000, 1800),
+                ),
+            ),
+        )
+        val decoded = TimedSegmentsConverter.fromJson(TimedSegmentsConverter.toJson(measured)).single()
+        assertEquals(listOf(TimedWord(0, 800), TimedWord(1000, 1800)), decoded.words)
+        assertFalse(decoded.wordsEstimated)
+        // A legacy row with words but no flag reads back measured.
+        val legacy = """[{"startMs":0,"endMs":10,"text":"x","words":[5,10]}]"""
+        val legacyDecoded = TimedSegmentsConverter.fromJson(legacy).single()
+        assertTrue(legacyDecoded.words.isNotEmpty())
+        assertFalse(legacyDecoded.wordsEstimated)
+    }
+
+    @Test
+    fun `a positional cue without tokens stays wordless`() {
+        // Nothing measured backs the words; the estimate needs tokens that
+        // failed grouping, not an empty set.
+        val positional = TimedSegment(0, 6000, "solo senza tokens")
+        val decoded = TimedSegmentsConverter.fromJson(TimedSegmentsConverter.toJson(listOf(positional))).single()
+        assertEquals(emptyList<TimedWord>(), decoded.words)
+        assertFalse(decoded.wordsEstimated)
     }
 }

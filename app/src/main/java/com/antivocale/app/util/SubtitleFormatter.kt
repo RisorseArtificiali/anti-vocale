@@ -95,10 +95,13 @@ object SubtitleFormatter {
     /**
      * One cue's karaoke text line: a `{\kNN}` tag (NN = the word's duration
      * in centiseconds, SubStation karaoke, covering the text up to the next
-     * tag) before every word. No word timing, or a count that does not match
-     * the cue text's words, falls back to the plain text.
+     * tag) before every word. No word timing, a count that does not match
+     * the cue text's words, or ESTIMATED word timing (the cue-envelope
+     * interpolation carries no marker into an interchange file, so its
+     * per-word claims would read as measured) falls back to the plain text.
      */
     private fun karaokeLine(segment: TimedSegment): String {
+        if (segment.wordsEstimated) return segment.text
         val words = segment.text.split(WHITESPACE).filter { it.isNotBlank() }
         if (words.isEmpty() || segment.words.size != words.size) return segment.text
         return with(StringBuilder(segment.text.length + words.size * 8)) {

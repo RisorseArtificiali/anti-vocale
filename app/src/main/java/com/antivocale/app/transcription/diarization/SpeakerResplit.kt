@@ -93,20 +93,35 @@ object SpeakerResplit {
     /**
      * TASK-928: the cue leaves this pass as shipped (speaker id applied, the
      * transient tokens dropped), keeping its real word timing when the
-     * tokens backed every word. A proportional estimate is never persisted:
-     * no tokens means no [TimedWord]s.
+     * tokens backed every word. When the tokens exist but cannot be grouped
+     * (a marker-less subword stream, Parakeet's BPE), the cue-envelope
+     * estimate rides under [TimedSegment.wordsEstimated]: the estimate is
+     * TIMING only, never the split decision, and a positional cue (no
+     * tokens) stays wordless. The splitAt halves keep the stricter rule:
+     * their SILENCE_GAP timing is double-estimated (proportional plus the
+     * split point) and never persists.
      */
     private fun TimedSegment.untimedCopy(
         cueTokens: List<TimedToken>,
         speaker: Int?,
         mixed: Boolean = false,
-    ): TimedSegment = copy(
-        speaker = speaker,
-        mixedSpeakers = mixed,
-        speakerName = if (mixed) null else speakerName,
-        tokens = emptyList(),
-        words = TimedWords.ofCue(text, cueTokens).orEmpty(),
-    )
+    ): TimedSegment {
+        val words = TimedWords.ofCue(text, cueTokens)
+        val (finalWords, estimated) = when {
+            words != null -> words to false
+            cueTokens.isNotEmpty() ->
+                (TimedWords.proportionalEstimate(text, startMs, endMs).orEmpty()) to true
+            else -> emptyList<TimedWord>() to false
+        }
+        return copy(
+            speaker = speaker,
+            mixedSpeakers = mixed,
+            speakerName = if (mixed) null else speakerName,
+            tokens = emptyList(),
+            words = finalWords,
+            wordsEstimated = estimated,
+        )
+    }
 
     private fun mixed(cue: TimedSegment, cueTokens: List<TimedToken>) = Outcome(
         listOf(cue.untimedCopy(cueTokens, speaker = null, mixed = true)),

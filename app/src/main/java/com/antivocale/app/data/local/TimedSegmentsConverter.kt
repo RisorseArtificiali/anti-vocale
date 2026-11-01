@@ -33,12 +33,26 @@ object TimedSegmentsConverter {
             // TASK-928: per-word timing, flat [startMs,endMs,...]. The plain
             // (non-diarized) path still carries the cue's transient tokens
             // here, so the derivation happens at the write boundary; the
-            // re-split attached its own (and dropped tokens). The key rides
-            // only when every word is honestly timed.
-            val words = segment.words.ifEmpty {
+            // re-split attached its own (and dropped tokens). Measured
+            // grouping first; when the tokens exist but cannot be grouped
+            // (a marker-less subword stream), the cue-envelope estimate
+            // rides under the wordsEstimated flag. A positional cue (no
+            // tokens) stays wordless: nothing measured backs the words.
+            val derived = segment.words.ifEmpty {
                 segment.tokens.takeIf { it.isNotEmpty() }
                     ?.let { TimedWords.ofCue(segment.text, it) }
                     .orEmpty()
+            }
+            val words: List<TimedWord>
+            val estimated: Boolean
+            if (derived.isNotEmpty()) {
+                words = derived
+                estimated = segment.wordsEstimated
+            } else {
+                val estimate = segment.tokens.takeIf { it.isNotEmpty() }
+                    ?.let { TimedWords.proportionalEstimate(segment.text, segment.startMs, segment.endMs) }
+                words = estimate.orEmpty()
+                estimated = words.isNotEmpty()
             }
             if (words.isNotEmpty()) {
                 val flat = JSONArray()
@@ -46,6 +60,7 @@ object TimedSegmentsConverter {
                     flat.put(word.startMs).put(word.endMs)
                 }
                 cue.put("words", flat)
+                if (estimated) cue.put("wordsEstimated", true)
             }
             array.put(cue)
         }
@@ -77,6 +92,9 @@ object TimedSegmentsConverter {
                             // list. A malformed or odd-length array drops the
                             // words rather than guessing an end.
                             words = readWords(item.optJSONArray("words")),
+                            // TASK-928: the estimate marker; absent on
+                            // measured rows and rows before the flag.
+                            wordsEstimated = item.optBoolean("wordsEstimated", false),
                         )
                     )
                 }

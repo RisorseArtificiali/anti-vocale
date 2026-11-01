@@ -34,6 +34,13 @@ data class TimedSegment(
      *  token timestamps, and on re-split halves whose only timing would be
      *  a proportional estimate (bogus timing never persists). */
     val words: List<TimedWord> = emptyList(),
+    /** TASK-928: [words] is the cue-envelope estimate ([TimedWords
+     *  .proportionalEstimate]) for a marker-less token stream, not measured
+     *  grouping. Both endpoints stay measured; the interior placement is
+     *  interpolated. Consumers that need measured boundaries only (the
+     *  karaoke export) refuse estimated words; tap-to-seek accepts them.
+     *  False on every measured-words row and on rows before the feature. */
+    val wordsEstimated: Boolean = false,
 )
 
 /**
@@ -98,6 +105,27 @@ internal object TimedWords {
         spans.add(TimedWord(start, end))
         val wordCount = cueText.split(WHITESPACE).count { it.isNotBlank() }
         return spans.takeIf { it.size == wordCount }
+    }
+
+    /**
+     * The cue-envelope estimate for a token stream whose words cannot be
+     * grouped (a subword tokenizer with no word-start markers, Parakeet's
+     * BPE): every whitespace word spreads evenly over the cue's span. Both
+     * endpoints are measured token/cue boundaries; only the interior
+     * placement is interpolated, so the caller must persist the result under
+     * [TimedSegment.wordsEstimated]. Null when there is nothing to distribute
+     * or the span is not positive: never a fabricated word count.
+     */
+    fun proportionalEstimate(cueText: String, startMs: Long, endMs: Long): List<TimedWord>? {
+        val wordCount = cueText.split(WHITESPACE).count { it.isNotBlank() }
+        if (wordCount == 0 || endMs <= startMs) return null
+        val step = (endMs - startMs) / wordCount
+        return List(wordCount) { i ->
+            // The last word closes at the cue's measured end, not at a
+            // rounding remainder of the even step.
+            val end = if (i == wordCount - 1) endMs else startMs + step * (i + 1)
+            TimedWord(startMs + step * i, end)
+        }
     }
 
     /** U+2581 for sentencepiece vocabs, a leading space for whisper's BPE. */

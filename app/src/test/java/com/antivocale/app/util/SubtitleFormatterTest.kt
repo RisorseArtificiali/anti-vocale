@@ -86,6 +86,26 @@ class SubtitleFormatterTest {
     }
 
     @Test
+    fun srtWordTimed_estimatedWords_keepPlainCueText() {
+        // TASK-928 round 2: the cue-envelope estimate has no marker in an
+        // interchange file, so its per-word claims would read as measured.
+        // Only measured word timing exports karaoke tags.
+        val estimated = listOf(
+            TimedSegment(
+                startMs = 0, endMs = 2_000, text = "prima seconda",
+                words = listOf(
+                    com.antivocale.app.transcription.TimedWord(0, 1_000),
+                    com.antivocale.app.transcription.TimedWord(1_000, 2_000),
+                ),
+                wordsEstimated = true,
+            ),
+        )
+        val srt = SubtitleFormatter.srtWordTimed(estimated)
+        assertTrue("estimated cue stays plain", srt.contains("\nprima seconda\n"))
+        assertTrue("no karaoke tags ship", !srt.contains("{\\k"))
+    }
+
+    @Test
     fun resolveExport_srtWordTimes_throughTheFailSafeGate() {
         val decision = SubtitleFormatter.resolveExport(
             SubtitleFormatter.Format.SRT_WORD, "plain", wordTimedCues, failedChunkCount = 0)

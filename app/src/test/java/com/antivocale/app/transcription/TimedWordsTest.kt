@@ -9,7 +9,8 @@ import org.junit.Test
  * Marker (or leading-whitespace, whisper's BPE) grouping opens words,
  * continuation tokens extend them, and a group count that cannot back
  * every whitespace word of the cue text is null (index alignment is the
- * whole contract).
+ * whole contract). The cue-envelope estimate for marker-less streams is
+ * its own function with its own refusals.
  */
 class TimedWordsTest {
 
@@ -87,5 +88,30 @@ class TimedWordsTest {
                 listOf(TimedToken("alpha", 0, 800), TimedToken("beta", 1000, 1800)),
             )
         )
+    }
+
+    @Test
+    fun `the cue-envelope estimate spreads words evenly`() {
+        val words = TimedWords.proportionalEstimate("alpha beta gamma", 0, 3000)!!
+        assertEquals(
+            listOf(TimedWord(0, 1000), TimedWord(1000, 2000), TimedWord(2000, 3000)),
+            words,
+        )
+    }
+
+    @Test
+    fun `the estimate closes the last word at the cue end`() {
+        val words = TimedWords.proportionalEstimate("alpha beta gamma", 0, 2500)!!
+        assertEquals(
+            listOf(TimedWord(0, 833), TimedWord(833, 1666), TimedWord(1666, 2500)),
+            words,
+        )
+    }
+
+    @Test
+    fun `the estimate refuses an empty text or a non-positive span`() {
+        assertNull(TimedWords.proportionalEstimate("   ", 0, 3000))
+        assertNull(TimedWords.proportionalEstimate("alpha", 500, 500))
+        assertNull(TimedWords.proportionalEstimate("alpha", 800, 500))
     }
 }
