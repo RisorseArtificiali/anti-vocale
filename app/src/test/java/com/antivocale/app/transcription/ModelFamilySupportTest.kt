@@ -323,6 +323,17 @@ class ModelFamilySupportTest {
         assertEquals("whisper-tokens.txt", plan["tokens.txt"])
     }
 
+    @Test
+    fun `whisper import config leaves sherpa token timestamps off`() {
+        // The built-in engine enables them (SherpaBackend); arbitrary imports
+        // stay on the untimed path: a mismatched-attention export would pad
+        // trailing tokens with the last timestamp and persist wrong timing.
+        val config = WhisperSupport.buildModelConfig(
+            record(ModelFamily.WHISPER, languages = listOf("it")),
+            numThreads = 4, provider = "cpu", languageOverride = "")
+        assertTrue(config.whisper?.enableTokenTimestamps != true)
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun `whisper plan rejects a joiner-like file that entered role matching`() {
         val support = ModelFamilySupport.forFamily(ModelFamily.WHISPER)
