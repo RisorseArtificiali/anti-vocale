@@ -74,12 +74,12 @@ class SherpaBackendRolesTest {
     fun `whisper distil-large-v3 prefixed names resolve`() {
         val roles = SherpaBackend.resolveRoles(variant(
             "distil-large-v3-it",
-            "distil-large-v3-it-encoder.int8.onnx",
-            "distil-large-v3-it-decoder.int8.onnx",
+            "distil-large-v3-it-encoder-attn.int8.onnx",
+            "distil-large-v3-it-decoder-attn.int8.onnx",
             "distil-large-v3-it-tokens.txt",
         ))
-        assertEquals("distil-large-v3-it-encoder.int8.onnx", roles.encoder)
-        assertEquals("distil-large-v3-it-decoder.int8.onnx", roles.decoder)
+        assertEquals("distil-large-v3-it-encoder-attn.int8.onnx", roles.encoder)
+        assertEquals("distil-large-v3-it-decoder-attn.int8.onnx", roles.decoder)
         assertEquals("distil-large-v3-it-tokens.txt", roles.tokens)
     }
 

@@ -550,7 +550,7 @@
           },
           "badgeKey": "best_italian_badge",
           "dirName": "sherpa-onnx-whisper-distil-large-v3-it",
-          "estimatedSizeMB": 938,
+          "estimatedSizeMB": 984,
           "languages": [
             "it"
           ],
@@ -561,11 +561,11 @@
           "files": [
             {
               "name": "distil-large-v3-it-encoder.int8.onnx",
-              "sha256": "f049fb181a314ae40bdd27f8ec8b04d8c87414b43d932533bc0832319bac51b9"
+              "sha256": "4b8475b5987acbf5c787927c1e516c9e0e0b051a332c6f2810338a6853be7895"
             },
             {
               "name": "distil-large-v3-it-decoder.int8.onnx",
-              "sha256": "0b6d5e44fb9f65d274e635e4ae7fba3b2b41710a51424af71ee3978976d8d9a1"
+              "sha256": "a507a8afe20ae96a5ce33fc0b122eca8de3a428222a7ae44084041e31018ea2a"
             },
             {
               "name": "distil-large-v3-it-tokens.txt",
