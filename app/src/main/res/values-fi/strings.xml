@@ -839,11 +839,11 @@
     <string name="model_info_notes_whisper_turbo">Lähes large-v3-tason laatua kohtuullisella nopeudella. Sopii hyvin monikielisille käyttäjille.</string>
     <string name="model_info_best_for_whisper_medium">Keskikokoinen monikielinen malli</string>
     <string name="model_info_notes_whisper_medium">Hyvä tasapaino tarkkuuden ja resurssien käytön välillä.</string>
-    <string name="model_info_best_for_distil_it">Paras tarkkuus italian kielellä (4,3 %% WER)</string>
+    <string name="model_info_best_for_distil_it">Paras tarkkuus italian kielellä (3,5 %% WER)</string>
     <string name="model_info_notes_distil_it">Vain italia. Korkein tarkkuus italiankielisille ääniviesteille. Aseta tarkkuus nopeuden edelle.</string>
     <string name="model_info_best_for_qwen3">Automaattinen kielen tunnistus 59 kielellä</string>
     <string name="model_info_notes_qwen3">Laajin kielikattavuus. Huomaa: yli 30 sekunnin äänet katkaistaan. Vain ARM64-laitteet.</string>
-    <string name="model_info_best_for_parakeet">Nopein transkriptio (17,6-kertaa nopeampi kuin Whisper, 5,4 %% WER)</string>
+    <string name="model_info_best_for_parakeet">Nopein transkriptio (4,0 %% WER italiaksi)</string>
     <string name="model_info_notes_parakeet">Ei äänen pituusrajoitusta. VAD:aa ei tarvita. Paras nopeutta arvostaville.</string>
     <string name="model_info_best_for_gigaam">Paras tarkkuus venäjän kielellä suoraan laitteella</string>
     <string name="model_info_notes_gigaam">Vain venäjä. Malli tuottaa välimerkit ja isot kirjaimet itse.</string>

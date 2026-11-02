@@ -799,11 +799,11 @@
     <string name="model_info_notes_whisper_turbo">以中等速度提供接近 large-v3 的质量。适合多语言用户。</string>
     <string name="model_info_best_for_whisper_medium">中等规模多语言模型</string>
     <string name="model_info_notes_whisper_medium">在准确度与资源占用之间取得了良好平衡。</string>
-    <string name="model_info_best_for_distil_it">意大利语准确度最佳（4.3%% WER）</string>
+    <string name="model_info_best_for_distil_it">意大利语准确度最佳（3.5%% WER）</string>
     <string name="model_info_notes_distil_it">仅支持意大利语。对意大利语语音消息的准确度最高。优先考虑准确度而非速度。</string>
     <string name="model_info_best_for_qwen3">59 种语言自动检测</string>
     <string name="model_info_notes_qwen3">语言覆盖最广。注意：会截断超过 30 秒的音频。仅支持 ARM64 设备。</string>
-    <string name="model_info_best_for_parakeet">转写速度最快（比 Whisper 快 17.6 倍，词错率 5.4%%）</string>
+    <string name="model_info_best_for_parakeet">转写速度最快（意大利语词错率 4.0%%）</string>
     <string name="model_info_notes_parakeet">无音频时长限制。无需 VAD。最适合注重速度的用户。</string>
     <string name="model_info_best_for_gigaam">设备端俄语准确率最佳</string>
     <string name="model_info_notes_gigaam">仅支持俄语。原生输出标点与大小写。</string>

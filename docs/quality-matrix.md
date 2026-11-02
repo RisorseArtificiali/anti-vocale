@@ -9,7 +9,8 @@ on the same FLEURS test clips and compute the error rate the same way.
   without spaces.
 - **Measurement**: 2026-11-01, 40 FLEURS test clips per (model, language),
   sherpa-onnx 2.0.1, harness `eval/fleurs_bench.py` (commit
-  `424fcb43`), on an Apple M3 Pro. Full data:
+  `424fcb43`), on an Apple M3 Pro; the Distil Italian row was added
+  2026-11-02 with the same harness, clips, and machine. Full data:
   `eval/results/quality-matrix-2026-11-01.json`.
 - **Caveat**: numbers are comparable within our script only. Our WER
   normalization differs from published FLEURS benchmarks and from other
@@ -22,7 +23,7 @@ on the same FLEURS test clips and compute the error rate the same way.
 |---|---|---|
 | French | Parakeet TDT | 8.22 |
 | Dutch | Whisper Turbo | 8.29 |
-| Italian | Whisper Turbo | 3.46 |
+| Italian | Whisper Turbo / Whisper Distil Italian | 3.46 |
 | German | Whisper Turbo | 6.01 |
 | Spanish | Whisper Turbo | 2.42 |
 | Portuguese | Whisper Turbo | 4.10 |
@@ -41,21 +42,25 @@ on the same FLEURS test clips and compute the error rate the same way.
 | Hebrew | Whisper Turbo | 39.80 |
 | English | Whisper Turbo | 5.72 |
 
-Leaders: Parakeet TDT in French; Whisper Turbo in 18 of 20 measured languages; GigaAM v3 in Russian.
+Leaders: Parakeet TDT in French; Whisper Turbo in 17 of 20 measured languages outright, tied for best in Italian; Whisper Distil Italian ties Whisper Turbo in Italian; GigaAM v3 in Russian.
+Speed on this harness (median RTF): Parakeet TDT 0.05 vs Whisper Distil Italian 0.18 (the fastest Whisper here); the device-measured gap is wider still.
+Italian, every measured model (WER): Parakeet TDT 3.95, Whisper Distil Italian 3.46, Whisper Small 8.00, Whisper Turbo 3.46.
+<!-- claim-pins: whisper-distil-it-attn=3.46 parakeet-stock-int8=3.95 (scripts/check-model-sizes.sh reads this line; do not reword inside the block) -->
 <!-- winners table END -->
 
 ## Reading the table
 
 Russian has a dedicated specialist: GigaAM v3 is both the best and by far
-the smallest download. Hindi is the weakest pair for every model we
+the smallest download. Italian is the measured tie in the table above, and
+the distilled Italian Whisper decodes faster than Turbo on this harness, so
+it stays the Italian pick. Hindi is the weakest pair for every model we
 measured; if Hindi matters to you, tell us (we track it).
 
 ## Speed is a different axis
 
 WER says nothing about speed. Parakeet is dramatically faster than any
-Whisper variant on-device (the device-measured reference: Distil Italian,
-the fastest Whisper variant we ship, decodes at roughly a seventeenth of
-Parakeet's speed). If your language
+Whisper variant; the speed line under the table carries the measured gap on
+this harness, and the device-measured gap is wider still. If your language
 scores close between the two, Parakeet's speed is the tiebreaker. The
 streaming model (Nemotron 3.5) trades some accuracy for text appearing in
 real time.
@@ -63,10 +68,7 @@ real time.
 ## What we did not measure
 
 Qwen3-ASR and the streaming Nemotron backend are absent from this matrix
-(the harness does not drive those backend kinds yet); both are tracked. The
-distilled Italian Whisper model was not re-measured in this run (our earlier
-real-clip evaluation had it as the Italian leader; that used a different
-clip set and normalization, so it is not comparable with these rows).
+(the harness does not drive those backend kinds yet); both are tracked.
 
 ## When this changes
 

@@ -23,7 +23,7 @@ Detailed inventory of models currently used by Anti-Vocale. Built-ins below; the
 
 ### Whisper Distil Large V3 IT
 - **Source:** pantinor/* mirror (models_catalog.json)
-- **Size:** 938 MB
+- **Size:** 984 MB
 - **Format:** ONNX int8 (encoder + decoder)
 - **Languages:** Italian only
 - **Architecture:** Distilled Whisper large-v3, Italian fine-tuned
@@ -31,17 +31,17 @@ Detailed inventory of models currently used by Anti-Vocale. Built-ins below; the
 
 ### Whisper Small int8
 - **Source:** pantinor/* mirror (models_catalog.json)
-- **Size:** 358 MB
+- **Size:** 378 MB
 - **Languages:** 101 languages
 
 ### Whisper Turbo int8
 - **Source:** pantinor/* mirror (models_catalog.json)
-- **Size:** 988 MB
+- **Size:** 1037 MB
 - **Languages:** 101 languages
 
 ### Whisper Medium int8
 - **Source:** pantinor/* mirror (models_catalog.json)
-- **Size:** 903 MB
+- **Size:** 949 MB
 - **Languages:** 101 languages
 
 ### Qwen3-ASR 0.6b int8

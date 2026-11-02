@@ -560,11 +560,11 @@
           },
           "files": [
             {
-              "name": "distil-large-v3-it-encoder.int8.onnx",
+              "name": "distil-large-v3-it-encoder-attn.int8.onnx",
               "sha256": "4b8475b5987acbf5c787927c1e516c9e0e0b051a332c6f2810338a6853be7895"
             },
             {
-              "name": "distil-large-v3-it-decoder.int8.onnx",
+              "name": "distil-large-v3-it-decoder-attn.int8.onnx",
               "sha256": "a507a8afe20ae96a5ce33fc0b122eca8de3a428222a7ae44084041e31018ea2a"
             },
             {

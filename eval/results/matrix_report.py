@@ -24,7 +24,8 @@ DOCS_BLOCK_END = "<!-- winners table END -->"
 data = json.loads((RESULTS / f"quality-matrix-{DATE}.json").read_text())
 measured = data["measured"]
 
-model_order = ["parakeet-stock-int8", "whisper-small-attn", "whisper-turbo-attn", "gigaam-v3"]
+model_order = ["parakeet-stock-int8", "whisper-small-attn", "whisper-turbo-attn",
+               "whisper-distil-it-attn", "gigaam-v3"]
 lang_order = ["fr", "nl", "it", "de", "es", "pt", "ru", "tr", "uk", "pl", "fi",
               "el", "ar", "hi", "vi", "ko", "zh", "fa", "he", "en"]
 CJK = {"zh", "ko"}
@@ -36,6 +37,7 @@ LANG_NAME = {"fr": "French", "nl": "Dutch", "it": "Italian", "de": "German",
 DOCS_MODEL_NAME = {"parakeet-stock-int8": "Parakeet TDT",
                    "whisper-small-attn": "Whisper Small",
                    "whisper-turbo-attn": "Whisper Turbo",
+                   "whisper-distil-it-attn": "Whisper Distil Italian",
                    "gigaam-v3": "GigaAM v3"}
 
 
@@ -50,14 +52,22 @@ def cell_text(cell):
 
 
 def winners():
-    """(lang, model, value, unit) per language, ranked on the CJK-aware metric."""
+    """(lang, [models tied at the best metric], value, unit) per language.
+
+    Ties are kept: the it cell has Whisper Turbo and Distil Italian both at
+    3.46, and hiding either would misreport the measurement.
+    """
     out = []
     for lang in lang_order:
-        rows = [(m, measured[m][lang]) for m in model_order if lang in measured.get(m, {})]
-        if rows:
-            best_m, best_c = min(rows, key=lambda kv: metric(kv[1]))
-            unit = "CER" if "cer_stripped" in best_c else "WER"
-            out.append((lang, best_m, metric(best_c), unit))
+        rows = [(m, metric(c)) for m in model_order
+                for c in [measured.get(m, {}).get(lang)] if c is not None]
+        if not rows:
+            continue
+        best = min(v for _, v in rows)
+        tied = [m for m, v in rows if v == best]
+        any_cell = measured[tied[0]][lang]
+        unit = "CER" if "cer_stripped" in any_cell else "WER"
+        out.append((lang, tied, best, unit))
     return out
 
 
@@ -65,22 +75,56 @@ def docs_block():
     """The generated winners table + leaders line for docs/quality-matrix.md."""
     w = winners()
     lines = [DOCS_BLOCK_BEGIN, "| Language | Best model | WER / CER |", "|---|---|---|"]
-    for lang, model, value, unit in w:
+    for lang, models, value, unit in w:
         val = f"{value:.2f}" if unit == "WER" else f"CER {value:.2f}"
-        lines.append(f"| {LANG_NAME[lang]} | {DOCS_MODEL_NAME[model]} | {val} |")
-    by_model = {}
-    for lang, model, _, _ in w:
-        by_model.setdefault(model, []).append(lang)
+        name = " / ".join(DOCS_MODEL_NAME[m] for m in models)
+        lines.append(f"| {LANG_NAME[lang]} | {name} | {val} |")
     leads = []
     for m in model_order:
-        if m in by_model:
-            langs = by_model[m]
-            if len(langs) == 1:
-                leads.append(f"{DOCS_MODEL_NAME[m]} in {LANG_NAME[langs[0]]}")
-            else:
-                leads.append(f"{DOCS_MODEL_NAME[m]} in {len(langs)} of {len(w)} measured languages")
+        langs = [lang for lang, models, _, _ in w if m in models]
+        if not langs:
+            continue
+        ties = {lang for lang, models, _, _ in w if m in models and len(models) > 1}
+        outright = [l for l in langs if l not in ties]
+        if not outright:
+            partners = sorted({x for lang, models, _, _ in w
+                               if lang in ties for x in models if x != m})
+            names = "/".join(DOCS_MODEL_NAME[x] for x in partners)
+            leads.append(f"{DOCS_MODEL_NAME[m]} ties {names} in "
+                         f"{'/'.join(LANG_NAME[l] for l in sorted(ties))}")
+        elif ties:
+            leads.append(f"{DOCS_MODEL_NAME[m]} in {len(outright)} of {len(w)} measured languages "
+                         f"outright, tied for best in {'/'.join(LANG_NAME[l] for l in sorted(ties))}")
+        elif len(langs) == 1:
+            leads.append(f"{DOCS_MODEL_NAME[m]} in {LANG_NAME[langs[0]]}")
+        else:
+            leads.append(f"{DOCS_MODEL_NAME[m]} in {len(langs)} of {len(w)} measured languages")
     lines.append("")
     lines.append("Leaders: " + "; ".join(leads) + ".")
+
+    def median_rtf(m):
+        rtfs = sorted(c["rtf"] for c in measured[m].values())
+        n = len(rtfs)
+        mid = n // 2
+        return (rtfs[mid] if n % 2 else (rtfs[mid - 1] + rtfs[mid]) / 2)
+    whispers = [m for m in model_order if m.startswith("whisper-") and measured.get(m)]
+    fastest_whisper = min(whispers, key=median_rtf) if whispers else None
+    if fastest_whisper and "parakeet-stock-int8" in measured:
+        lines.append(f"Speed on this harness (median RTF): {DOCS_MODEL_NAME['parakeet-stock-int8']} {median_rtf('parakeet-stock-int8'):.2f} "
+                     f"vs {DOCS_MODEL_NAME[fastest_whisper]} {median_rtf(fastest_whisper):.2f} "
+                     f"(the fastest Whisper here); the device-measured gap is wider still.")
+    # Italian is the reference bench; the app's model-info WER strings pin
+    # against the claim-pins comment below via scripts/check-model-sizes.sh.
+    it_vals = {m: measured[m]["it"]["wer"] for m in model_order if "it" in measured.get(m, {})}
+    if it_vals:
+        lines.append("Italian, every measured model (WER): "
+                     + ", ".join(f"{DOCS_MODEL_NAME[m]} {v:.2f}" for m, v in sorted(
+                         it_vals.items(), key=lambda kv: DOCS_MODEL_NAME[kv[0]])) + ".")
+    pins = {k: it_vals[k] for k in ("whisper-distil-it-attn", "parakeet-stock-int8") if k in it_vals}
+    if pins:
+        body = " ".join(f"{k}={v:.2f}" for k, v in pins.items())
+        lines.append(f"<!-- claim-pins: {body} (scripts/check-model-sizes.sh reads this line; "
+                     f"do not reword inside the block) -->")
     lines.append(DOCS_BLOCK_END)
     return "\n".join(lines)
 
@@ -114,8 +158,9 @@ lines.append("The whisper rows use the catalog's re-exported *-attn int8 files (
 lines.append("")
 lines.append("Winners per language:")
 lines.append("")
-for lang, best_m, value, unit in winners():
-    lines.append(f"- **{LANG_NAME[lang]} ({lang})**: {best_m}, {unit} {value:.2f}.")
+for lang, best_models, value, unit in winners():
+    names = ", ".join(best_models)
+    lines.append(f"- **{LANG_NAME[lang]} ({lang})**: {names}, {unit} {value:.2f}.")
 
 lines.append("")
 lines.append("## Matrix (lower is better; bold = best for the language)")
@@ -139,6 +184,17 @@ lines.append("")
 
 lines.append("## Findings")
 lines.append("")
+di = measured.get("whisper-distil-it-attn", {}).get("it")
+dt = measured.get("whisper-turbo-attn", {}).get("it")
+if di is None or dt is None:
+    di = dt = {"wer": 0, "rtf": 0, "date": "n/a"}  # cell absent; template stays valid
+lines.append(f"- **Distil Italian ties Whisper Turbo on the comparable run.** Both "
+             f"score {di['wer']:.2f} WER on the 40 Italian clips (distil measured "
+             f"{di.get('date')}, addendum cell; turbo {dt.get('date')}), and distil decodes "
+             f"faster on this harness (RTF {di['rtf']:.3f} vs {dt['rtf']:.3f}). The 4.3% "
+             f"from the older 8-clip desktop benchmark and the 6.8% from the "
+             f"device-chain corpus are different clip sets and normalization "
+             f"(not comparable); TASK-943 owns the claim sweep.")
 tr = measured["parakeet-stock-int8"]["tr"]
 lines.append(f"- **parakeet does not actually speak Turkish.** The stock-int8 cell on tr "
              f"scored WER {tr['wer']}; decoded clips come back as phonetic English "

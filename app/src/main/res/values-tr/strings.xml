@@ -955,11 +955,11 @@
     <string name="model_info_notes_whisper_turbo">Orta hızda large-v3 kalitesine yakın. Çok dilli kullanıcılar için iyi.</string>
     <string name="model_info_best_for_whisper_medium">Orta boy çok dilli model</string>
     <string name="model_info_notes_whisper_medium">Doğruluk ve kaynak kullanımı arasında iyi denge.</string>
-    <string name="model_info_best_for_distil_it">En iyi İtalyanca doğruluk (4.3%% WER)</string>
+    <string name="model_info_best_for_distil_it">En iyi İtalyanca doğruluk (3.5%% WER)</string>
     <string name="model_info_notes_distil_it">Yalnızca İtalyanca. İtalyanca sesli mesajlar için en yüksek doğruluk. Hızdan çok doğruluğa öncelik verin.</string>
     <string name="model_info_best_for_qwen3">59 dilli otomatik algılama</string>
     <string name="model_info_notes_qwen3">En geniş dil kapsamı. Not: 30 saniyeden uzun sesleri keser. Yalnızca ARM64 cihazlar.</string>
-    <string name="model_info_best_for_parakeet">En hızlı metin çıkarma (Whisper\'dan 17,6 kat hızlı, 5.4%% WER)</string>
+    <string name="model_info_best_for_parakeet">En hızlı metin çıkarma (İtalyanca için 4.0%% WER)</string>
     <string name="model_info_notes_parakeet">Ses uzunluğu sınırı yok. VAD gerekmez. Hızı öncelik eden kullanıcılar için en iyisi.</string>
 <string name="model_info_best_for_gigaam">Cihazda en iyi Rusça doğruluk</string>
 <string name="model_info_notes_gigaam">Yalnızca Rusça. Yerel noktalama ve büyük harf kullanımı.</string>

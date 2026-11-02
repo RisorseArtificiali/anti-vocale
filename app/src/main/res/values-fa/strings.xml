@@ -920,11 +920,11 @@
     <string name="model_info_notes_whisper_turbo">کیفیتی نزدیک به large-v3 با سرعتی متوسط. برای کاربران چندزبانه مناسب است.</string>
     <string name="model_info_best_for_whisper_medium">مدل چندزبانه متوسط</string>
     <string name="model_info_notes_whisper_medium">تعادل خوب بین دقت و مصرف منابع.</string>
-    <string name="model_info_best_for_distil_it">بهترین دقت ایتالیایی (4.3%% WER)</string>
+    <string name="model_info_best_for_distil_it">بهترین دقت ایتالیایی (3.5%% WER)</string>
     <string name="model_info_notes_distil_it">فقط ایتالیایی. بالاترین دقت برای پیام‌های صوتی ایتالیایی. دقت مهم‌تر از سرعت.</string>
     <string name="model_info_best_for_qwen3">تشخیص خودکار در 59 زبان</string>
     <string name="model_info_notes_qwen3">وسیع‌ترین پوشش زبانی. توجه: صداهای بلندتر از 30 ثانیه را قطع می‌کند. فقط دستگاه‌های ARM64.</string>
-    <string name="model_info_best_for_parakeet">سریع‌ترین رونویسی (17.6x سریع‌تر از Whisper، 5.4%% WER)</string>
+    <string name="model_info_best_for_parakeet">سریع‌ترین رونویسی (WER 4.0%% در ایتالیایی)</string>
     <string name="model_info_notes_parakeet">بدون محدودیت طول صدا. VAD لازم نیست. برای کسانی که سرعت برایشان اولویت است.</string>
     <string name="model_info_best_for_gigaam">بهترین دقت روسی روی دستگاه</string>
     <string name="model_info_notes_gigaam">فقط روسی. نشانه‌گذاری و بزرگ‌نویسی بومی.</string>

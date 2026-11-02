@@ -40,9 +40,9 @@ Mallit eroavat toisistaan koon, nopeuden, kielikattavuuden ja tarkkuuden mukaan.
 |---|---|---|---|
 | Parakeet TDT stock int8 | 640 Mt | 25 eurooppalaista | Nopea ja kevyt; oletussuositus |
 | Parakeet TDT SmoothQuant | 862 Mt | 25 eurooppalaista | Oletusta raskaampi; tarvitsee enemmän RAM-muistia |
-| Whisper Turbo | 1037 Mt | 99 | Paras tasapaino Whisper-malliperheessä |
-| Whisper Medium | 949 Mt | 99 | Hitaampi kuin Turbo, ei parempi useimmille äänille |
-| Whisper Small | 378 Mt | 99 | Kevyin Whisper-malli; kohtuullinen laatu |
+| Whisper Turbo | 1037 Mt | 101 | Paras tasapaino Whisper-malliperheessä |
+| Whisper Medium | 949 Mt | 101 | Hitaampi kuin Turbo, ei parempi useimmille äänille |
+| Whisper Small | 378 Mt | 101 | Kevyin Whisper-malli; kohtuullinen laatu |
 | Whisper Distil Italian | 984 Mt | Vain italia | Sisäänrakennetun joukon paras italian tarkkuus |
 | Qwen3-ASR | 938 Mt | Monikielinen | Vaihtoehtoinen arkkitehtuuri |
 | Nemotron streaming | 640 Mt | Monikielinen | Näyttää tekstin puhuessasi (streaming) |

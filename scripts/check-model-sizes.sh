@@ -186,11 +186,17 @@ for label, (e, v) in [('turbo', ('whisper', 'turbo')), ('medium', ('whisper', 'm
 if f'int8 ({size_of("sherpa-onnx", "stock-int8")} MB), SmoothQuant ({size_of("sherpa-onnx", "smoothquant")} MB)' not in mc:
     errors.append('docs/model-catalog.md: Parakeet variants line does not match the catalog')
 
-# User-guide manuals: whisper rows keep English labels; the language count
-# cell must not carry the stale 101.
+# User-guide manuals: whisper rows keep English labels; the size and the
+# language-count cells must both match the catalog (the count is whatever
+# the catalog declares, not a hand-pinned number).
 UG_SIZE = re.compile(r'\|\s*(\d+)\s*(MB|Mo|МБ|Mt|Мб)\b')
-ug_want = {'Turbo': size_of('whisper', 'turbo'), 'Medium': size_of('whisper', 'medium'),
-           'Small': size_of('whisper', 'small'), 'Distil Italian': size_of('whisper', 'distil-large-v3-it')}
+ug_rows = [('Turbo', 'turbo'), ('Medium', 'medium'), ('Small', 'small'),
+           ('Distil Italian', 'distil-large-v3-it')]
+ug_want_size = {r: size_of('whisper', v) for r, v in ug_rows}
+ug_want_count = {r: len(next(x for x in catalog['models'] if x['id'] == 'whisper')
+                          and next(v for v in next(m for m in catalog['models'] if m['id'] == 'whisper')['variants']
+                                   if v['name'] == r_)['languages'])
+                 for r, r_ in ug_rows}
 for p in sorted((repo / 'docs/user-guide').glob('*/*.md')):
     if p.name == 'README.md':
         continue
@@ -198,14 +204,61 @@ for p in sorted((repo / 'docs/user-guide').glob('*/*.md')):
         m = re.match(r'^\|\s*Whisper (Turbo|Medium|Small|Distil Italian)\s*\|', line)
         if not m:
             continue
+        label = m.group(1)
         s = UG_SIZE.search(line)
-        want = ug_want[m.group(1)]
+        want = ug_want_size[label]
         if not s:
-            errors.append(f'{p.relative_to(repo)}: Whisper {m.group(1)} row has no size')
+            errors.append(f'{p.relative_to(repo)}: Whisper {label} row has no size')
         elif int(s.group(1)) != want:
-            errors.append(f'{p.relative_to(repo)}: Whisper {m.group(1)} says {s.group(1)}, catalog says {want}')
-        if re.search(r'\b101\b', line):
-            errors.append(f'{p.relative_to(repo)}: Whisper {m.group(1)} row still says 101 languages')
+            errors.append(f'{p.relative_to(repo)}: Whisper {label} says {s.group(1)}, catalog says {want}')
+        cells = [c.strip() for c in line.split('|')]
+        count_cell = cells[3] if len(cells) > 3 else ''
+        cm = re.match(r'^(\d+)', count_cell)
+        # The Distil row names its language instead of a count; only the
+        # three numeric rows carry a checkable count.
+        if label != 'Distil Italian':
+            if not cm:
+                errors.append(f'{p.relative_to(repo)}: Whisper {label} row has no language count')
+            elif int(cm.group(1)) != ug_want_count[label]:
+                errors.append(f'{p.relative_to(repo)}: Whisper {label} count {cm.group(1)}, catalog says {ug_want_count[label]}')
+
+# Claim pins: the app's model-info WER strings must carry the matrix numbers
+# emitted in the generated claim-pins comment of docs/quality-matrix.md (the
+# committed artifact; the raw JSON lives outside git). Locale decimal commas
+# are allowed; the default locale must carry the number at all. Any number
+# in the string may match so a later added figure cannot break the pin.
+CLAIM_PINS = {
+    'model_info_best_for_distil_it': 'whisper-distil-it-attn',
+    'model_info_best_for_parakeet': 'parakeet-stock-int8',
+}
+pins_line = next((l for l in (repo / 'docs/quality-matrix.md').read_text().splitlines()
+                  if '<!-- claim-pins:' in l), '')
+pin_vals = dict(re.findall(r'(\S+)=(\d+\.\d+)', pins_line))
+if not pin_vals:
+    errors.append('docs/quality-matrix.md: generated claim-pins comment missing; '
+                  'regenerate with matrix_report.py --docs-page')
+for res, key in CLAIM_PINS.items():
+    if key not in pin_vals:
+        # A partially regenerated comment would silently unpin one claim.
+        errors.append(f'docs/quality-matrix.md: claim-pins comment lacks {key}')
+        continue
+    want = f'{float(pin_vals[key]):.1f}'
+    for p in sorted((repo / 'app/src/main/res').glob('values*/strings.xml')):
+        text = p.read_text()
+        bodies = [m.group(2) for m in string_re.finditer(text)
+                  if f'name="{res}"' in m.group(0)]
+        if not bodies:
+            if p.parent.name == 'values':
+                errors.append(f'{p.relative_to(repo)}: {res} missing')
+            continue
+        nums = re.findall(r'(\d+[.,]\d+)\s*%%', bodies[0])
+        if not nums:
+            if p.parent.name == 'values':
+                errors.append(f'{p.relative_to(repo)}: {res} carries no WER number')
+            continue
+        if not any(abs(float(n.replace(',', '.')) - float(want)) <= 0.05 for n in nums):
+            errors.append(f'{p.relative_to(repo)}: {res} numbers {nums} do not include the '
+                          f'matrix value {want}%')
 
 if errors:
     print('model size drift:')

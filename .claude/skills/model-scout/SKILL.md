@@ -28,7 +28,7 @@ Verify against source files before each run:
 - **Previous reports**: Check `docs/scout-reports/` for historical context
 
 **Known baseline** (verify during run):
-- ASR built-in: Parakeet TDT 0.6b v3 (640MB stock-int8, 862MB smoothquant default, 25 EU langs), Whisper Small/Turbo/Medium (101 langs), Whisper Distil Large V3 IT (938MB), Qwen3-ASR 0.6b (938MB, 59 langs), Nemotron 3.5 (streaming, OnlineRecognizer, 45 langs), GigaAM v3 (Russian)
+- ASR built-in: Parakeet TDT 0.6b v3 (640MB stock-int8 default, 862MB smoothquant, 25 EU langs), Whisper Small/Turbo/Medium (101 langs), Whisper Distil Large V3 IT (984MB), Qwen3-ASR 0.6b (938MB, 59 langs), Nemotron 3.5 (streaming, OnlineRecognizer, 45 langs), GigaAM v3 (Russian)
 - External families: Transducer / Whisper / CTC / SenseVoice / Canary / Moonshine / Dolphin (user-imported plus community catalog; seven families)
 - LLM: Gemma 4 via `.litertlm` through `LlmTranscriptionBackend` (the working audio path; Gemma 4 E2B and E4B variants)
 - Frameworks: sherpa-onnx (pinned via `.sherpa-version`), LiteRT-LM
@@ -101,7 +101,7 @@ Save to `docs/scout-reports/YYYY-MM-DD.md`. Create directory if needed.
 1. **Evidence over speculation**: every finding must have a verifiable source URL. Never fabricate model names, sizes, or benchmarks.
 2. **Honest confidence**: if quality in the claimed language cannot be verified, state so explicitly. Unverified quality is the norm for long-tail languages; say it, do not soften it.
 3. **No marketing language**: use neutral, technical assessments. No "groundbreaking" or "state-of-the-art" without citing benchmarks.
-4. **Size is contextual**: our ASR models range from ~300MB to 988MB built-in; community-catalog models may reasonably go larger if the family supports it. Don't arbitrarily label models "too large" without comparing to what we already ship or catalog.
+4. **Size is contextual**: our ASR models range from ~300MB to 1GB built-in; community-catalog models may reasonably go larger if the family supports it. Don't arbitrarily label models "too large" without comparing to what we already ship or catalog.
 5. **Integration realism**: account for the full path. For built-in candidates: model download, ONNX conversion, sherpa-onnx integration, JNI bridge, ProGuard rules, UI changes, testing. For catalog candidates: the community-model-conversion pipeline (export, validation, the REQUIRED device-validation pass, catalog entry, docs, GH close-out).
 6. **Parallel execution**: always run CRW scrapes and searches concurrently to minimize wall-clock time.
 7. **Historical awareness**: reference previous scout reports when available.

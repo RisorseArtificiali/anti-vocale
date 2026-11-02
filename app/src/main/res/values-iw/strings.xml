@@ -961,11 +961,11 @@
     <string name="model_info_notes_whisper_turbo">איכות קרובה ל-large-v3 במהירות בינונית. מתאים למשתמשים רב-לשוניים.</string>
     <string name="model_info_best_for_whisper_medium">מודל רב-לשוני בינוני</string>
     <string name="model_info_notes_whisper_medium">איזון טוב בין דיוק לצריכת משאבים.</string>
-    <string name="model_info_best_for_distil_it">דיוק האיטלקית הטוב ביותר (4.3%% WER)</string>
+    <string name="model_info_best_for_distil_it">דיוק האיטלקית הטוב ביותר (3.5%% WER)</string>
     <string name="model_info_notes_distil_it">איטלקית בלבד. הדיוק הגבוה ביותר להודעות קוליות באיטלקית. מעדיף דיוק על פני מהירות.</string>
     <string name="model_info_best_for_qwen3">זיהוי אוטומטי ב-59 שפות</string>
     <string name="model_info_notes_qwen3">כיסוי השפות הרחב ביותר. שים לב: קוטע אודיו שאורכו מעל 30 שניות. למכשירי ARM64 בלבד.</string>
-    <string name="model_info_best_for_parakeet">התמלול המהיר ביותר (פי 17.6 מהר יותר מ-Whisper, 5.4%% WER)</string>
+    <string name="model_info_best_for_parakeet">התמלול המהיר ביותר (4.0%% WER באיטלקית)</string>
     <string name="model_info_notes_parakeet">ללא מגבלת אורך אודיו. VAD אינו נחוץ. הטוב ביותר למי שמעדיף מהירות.</string>
     <string name="model_info_best_for_gigaam">דיוק הרוסית הטוב ביותר במכשיר</string>
     <string name="model_info_notes_gigaam">רוסית בלבד. פיסוק ואותיות רישיות מקוריים.</string>

@@ -796,11 +796,11 @@ model_info_best_for_whisper_turbo,Balanced multilingual ASR with auto-detection,
 model_info_notes_whisper_turbo,Near large-v3 quality at moderate speed. Good for multilingual users.,plain,
 model_info_best_for_whisper_medium,Mid-size multilingual model,plain,
 model_info_notes_whisper_medium,Good balance between accuracy and resource usage.,plain,
-model_info_best_for_distil_it,Best Italian accuracy (4.3%% WER),formatted,keep verbatim: ['%%']
+model_info_best_for_distil_it,Best Italian accuracy (3.5%% WER),formatted,keep verbatim: ['%%']
 model_info_notes_distil_it,Italian-only. Highest accuracy for Italian voice messages. Prioritize accuracy over speed.,plain,
 model_info_best_for_qwen3,59-language auto-detection,plain,
 model_info_notes_qwen3,Broadest language coverage. Note: truncates audio longer than 30 seconds. ARM64 devices only.,plain,
-model_info_best_for_parakeet,"Fastest transcription (17.6x faster than Whisper, 5.4%% WER)",formatted,keep verbatim: ['%%']
+model_info_best_for_parakeet,Fastest transcription (4.0%% WER in Italian),formatted,keep verbatim: ['%%']
 model_info_notes_parakeet,No audio length limit. VAD not needed. Best for users who prioritize speed.,plain,
 model_info_best_for_gigaam,Best Russian accuracy on-device,plain,
 model_info_notes_gigaam,Russian only. Native punctuation and capitalization.,plain,

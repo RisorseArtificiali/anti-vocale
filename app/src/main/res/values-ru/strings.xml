@@ -955,11 +955,11 @@
     <string name="model_info_notes_whisper_turbo">Качество почти как у large-v3 при умеренной скорости. Подходит для многоязычных пользователей.</string>
     <string name="model_info_best_for_whisper_medium">Многоязычная модель среднего размера</string>
     <string name="model_info_notes_whisper_medium">Хороший баланс между точностью и потреблением ресурсов.</string>
-    <string name="model_info_best_for_distil_it">Лучшая точность для итальянского (WER 4.3%%)</string>
+    <string name="model_info_best_for_distil_it">Лучшая точность для итальянского (WER 3.5%%)</string>
     <string name="model_info_notes_distil_it">Только итальянский. Максимальная точность для итальянских голосовых сообщений. Приоритет: точность, а не скорость.</string>
     <string name="model_info_best_for_qwen3">Автоопределение для 59 языков</string>
     <string name="model_info_notes_qwen3">Самое широкое покрытие языков. Внимание: обрезает аудио длиннее 30 секунд. Только устройства ARM64.</string>
-    <string name="model_info_best_for_parakeet">Самое быстрое распознавание (в 17,6 раза быстрее Whisper, WER 5.4%%)</string>
+    <string name="model_info_best_for_parakeet">Самое быстрое распознавание (WER 4.0%% для итальянского)</string>
     <string name="model_info_notes_parakeet">Без ограничения длительности аудио. VAD не требуется. Лучший выбор для тех, кому важна скорость.</string>
     <string name="model_info_best_for_gigaam">Лучшая точность для русского языка на устройстве</string>
     <string name="model_info_notes_gigaam">Только русский. Собственная пунктуация и заглавные буквы.</string>

@@ -977,11 +977,11 @@
     <string name="model_info_notes_whisper_turbo">Kwaliteit bijna op large-v3-niveau bij gematigde snelheid. Goed voor meertalige gebruikers.</string>
     <string name="model_info_best_for_whisper_medium">Meertalig model van middelgrote klasse</string>
     <string name="model_info_notes_whisper_medium">Goede balans tussen nauwkeurigheid en verbruik.</string>
-    <string name="model_info_best_for_distil_it">Beste Italiaanse nauwkeurigheid (4,3%% WER)</string>
+    <string name="model_info_best_for_distil_it">Beste Italiaanse nauwkeurigheid (3,5%% WER)</string>
     <string name="model_info_notes_distil_it">Alleen Italiaans. Hoogste nauwkeurigheid voor Italiaanse spraakberichten. Kies voor nauwkeurigheid boven snelheid.</string>
     <string name="model_info_best_for_qwen3">Autodetectie in 59 talen</string>
     <string name="model_info_notes_qwen3">Breedste talendekking. Let op: audio langer dan 30 seconden wordt afgekapt. Alleen ARM64-apparaten.</string>
-    <string name="model_info_best_for_parakeet">Snelste transcriptie (17,6x sneller dan Whisper, 5,4%% WER)</string>
+    <string name="model_info_best_for_parakeet">Snelste transcriptie (4,0%% WER in het Italiaans)</string>
     <string name="model_info_notes_parakeet">Geen limiet op audiolengte. VAD niet nodig. Het beste voor wie snelheid vooropstelt.</string>
 <string name="model_info_best_for_gigaam">Beste Russische nauwkeurigheid op het apparaat</string>
 <string name="model_info_notes_gigaam">Alleen Russisch. Eigen interpunctie en hoofdletters.</string>

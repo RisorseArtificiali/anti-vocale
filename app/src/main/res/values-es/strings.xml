@@ -816,11 +816,11 @@
     <string name="model_info_notes_whisper_turbo">Calidad cercana a large-v3 a velocidad moderada. Bueno para usuarios multilingües.</string>
     <string name="model_info_best_for_whisper_medium">Modelo multilingüe de tamaño medio</string>
     <string name="model_info_notes_whisper_medium">Buen equilibrio entre precisión y recursos.</string>
-    <string name="model_info_best_for_distil_it">Mejor precisión en italiano (4,3%% WER)</string>
+    <string name="model_info_best_for_distil_it">Mejor precisión en italiano (3,5%% WER)</string>
     <string name="model_info_notes_distil_it">Solo italiano. Máxima precisión para mensajes de voz en italiano. Prioriza precisión sobre velocidad.</string>
     <string name="model_info_best_for_qwen3">Detección automática en 59 idiomas</string>
     <string name="model_info_notes_qwen3">Mayor cobertura de idiomas. Nota: trunca audio de más de 30 segundos. Solo ARM64.</string>
-    <string name="model_info_best_for_parakeet">Transcripción más rápida (17,6x más rápido que Whisper, 5,4%% WER)</string>
+    <string name="model_info_best_for_parakeet">Transcripción más rápida (4,0%% WER en italiano)</string>
     <string name="model_info_notes_parakeet">Sin límite de duración. VAD innecesario. Ideal si priorizas la velocidad.</string>
     <string name="model_info_best_for_gigaam">Mejor precisión en ruso en el dispositivo</string>
     <string name="model_info_notes_gigaam">Solo ruso. Puntuación y mayúsculas nativas.</string>

@@ -799,11 +799,11 @@
     <string name="model_info_notes_whisper_turbo">جودة قريبة من large-v3 بسرعة معتدلة. مناسب لمستخدمي اللغات المتعددة.</string>
     <string name="model_info_best_for_whisper_medium">نموذج متعدد اللغات متوسط الحجم</string>
     <string name="model_info_notes_whisper_medium">توازن جيد بين الدقة واستخدام الموارد.</string>
-    <string name="model_info_best_for_distil_it">أفضل دقة للإيطالية (4.3%% WER)</string>
+    <string name="model_info_best_for_distil_it">أفضل دقة للإيطالية (3.5%% WER)</string>
     <string name="model_info_notes_distil_it">للإيطالية فقط. أعلى دقة للرسائل الصوتية الإيطالية. يقدّم الدقة على السرعة.</string>
     <string name="model_info_best_for_qwen3">اكتشاف تلقائي لـ 59 لغة</string>
     <string name="model_info_notes_qwen3">أوسع تغطية لغوية. ملاحظة: يقصّ الصوت الأطول من 30 ثانية. لأجهزة ARM64 فقط.</string>
-    <string name="model_info_best_for_parakeet">أسرع نسخ (أسرع بمقدار 17.6 مرة من Whisper، و5.4%% WER)</string>
+    <string name="model_info_best_for_parakeet">أسرع نسخ (WER بنسبة 4.0%% في الإيطالية)</string>
     <string name="model_info_notes_parakeet">بلا حد لمدة الصوت. لا حاجة إلى VAD. الأفضل لمن يضعون السرعة في المقام الأول.</string>
     <string name="model_info_best_for_gigaam">أفضل دقة للروسية على الجهاز</string>
     <string name="model_info_notes_gigaam">للروسية فقط. ترقيم وحروف كبيرة مدمجة في النموذج.</string>
