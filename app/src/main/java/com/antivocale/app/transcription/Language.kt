@@ -92,10 +92,14 @@ object Language {
 
     // ==================== Per-backend language sets ====================
 
-    /** Whisper Small/Turbo/Medium: 99 languages (OpenAI Whisper model card). */
+    /** Whisper Small/Turbo/Medium: 99 languages. TASK-944 audit: the shipped
+     *  ONNX encoders carry all_language_codes metadata (turbo 100 incl. yue,
+     *  small/medium 99); eo and ug are in neither set (pinning them made
+     *  sherpa exit the process), so they are trimmed. yue is a turbo-only
+     *  product call, deliberately not added. */
     val WHISPER_MULTILINGUAL: Set<String> = setOf(
         "af", "am", "ar", "as", "az", "ba", "be", "bg", "bn", "bo",
-        "br", "bs", "ca", "cs", "cy", "da", "de", "el", "en", "eo",
+        "br", "bs", "ca", "cs", "cy", "da", "de", "el", "en",
         "es", "et", "eu", "fa", "fi", "fo", "fr", "gl", "gu", "ha",
         "haw", "he", "hi", "hr", "ht", "hu", "hy", "id", "is", "it",
         "ja", "jw", "ka", "kk", "km", "kn", "ko", "la", "lb", "ln",
@@ -103,7 +107,7 @@ object Language {
         "mt", "my", "ne", "nl", "nn", "no", "oc", "pa", "pl", "ps",
         "pt", "ro", "ru", "sa", "sd", "si", "sk", "sl", "sn", "so",
         "sq", "sr", "su", "sv", "sw", "ta", "te", "tg", "th", "tk",
-        "tl", "tr", "tt", "ug", "uk", "ur", "uz", "vi", "yi", "yo",
+        "tl", "tr", "tt", "uk", "ur", "uz", "vi", "yi", "yo",
         "zh",
     )
 

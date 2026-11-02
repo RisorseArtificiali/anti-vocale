@@ -32,17 +32,17 @@ Detailed inventory of models currently used by Anti-Vocale. Built-ins below; the
 ### Whisper Small int8
 - **Source:** pantinor/* mirror (models_catalog.json)
 - **Size:** 378 MB
-- **Languages:** 101 languages
+- **Languages:** 99 languages
 
 ### Whisper Turbo int8
 - **Source:** pantinor/* mirror (models_catalog.json)
 - **Size:** 1037 MB
-- **Languages:** 101 languages
+- **Languages:** 99 languages
 
 ### Whisper Medium int8
 - **Source:** pantinor/* mirror (models_catalog.json)
 - **Size:** 949 MB
-- **Languages:** 101 languages
+- **Languages:** 99 languages
 
 ### Qwen3-ASR 0.6b int8
 - **Source:** pinned to the pantinor/* mirrors in models_catalog.json; verify in the catalog

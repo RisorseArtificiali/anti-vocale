@@ -28,7 +28,7 @@ Verify against source files before each run:
 - **Previous reports**: Check `docs/scout-reports/` for historical context
 
 **Known baseline** (verify during run):
-- ASR built-in: Parakeet TDT 0.6b v3 (640MB stock-int8 default, 862MB smoothquant, 25 EU langs), Whisper Small/Turbo/Medium (101 langs), Whisper Distil Large V3 IT (984MB), Qwen3-ASR 0.6b (938MB, 59 langs), Nemotron 3.5 (streaming, OnlineRecognizer, 45 langs), GigaAM v3 (Russian)
+- ASR built-in: Parakeet TDT 0.6b v3 (640MB stock-int8 default, 862MB smoothquant, 25 EU langs), Whisper Small/Turbo/Medium (99 langs), Whisper Distil Large V3 IT (984MB), Qwen3-ASR 0.6b (938MB, 59 langs), Nemotron 3.5 (streaming, OnlineRecognizer, 45 langs), GigaAM v3 (Russian)
 - External families: Transducer / Whisper / CTC / SenseVoice / Canary / Moonshine / Dolphin (user-imported plus community catalog; seven families)
 - LLM: Gemma 4 via `.litertlm` through `LlmTranscriptionBackend` (the working audio path; Gemma 4 E2B and E4B variants)
 - Frameworks: sherpa-onnx (pinned via `.sherpa-version`), LiteRT-LM

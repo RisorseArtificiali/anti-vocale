@@ -40,9 +40,9 @@ Anti-Vocale 在您的 Android 设备上完全离线地转写语音消息。音�
 |---|---|---|---|
 | Parakeet TDT stock int8 | 640 MB | 25 种欧洲语言 | 快速轻量；默认推荐 |
 | Parakeet TDT SmoothQuant | 862 MB | 25 种欧洲语言 | 比默认版本更重；需要更多内存 |
-| Whisper Turbo | 1037 MB | 101 种 | Whisper 家族中综合最均衡 |
-| Whisper Medium | 949 MB | 101 种 | 比 Turbo 慢，对多数音频并没有更好 |
-| Whisper Small | 378 MB | 101 种 | 最轻量的 Whisper；质量不错 |
+| Whisper Turbo | 1037 MB | 99 种 | Whisper 家族中综合最均衡 |
+| Whisper Medium | 949 MB | 99 种 | 比 Turbo 慢，对多数音频并没有更好 |
+| Whisper Small | 378 MB | 99 种 | 最轻量的 Whisper；质量不错 |
 | Whisper Distil Italian | 984 MB | 仅意大利语 | 内置模型中意大利语准确率最高 |
 | Qwen3-ASR | 938 MB | 多语言 | 另一种架构 |
 | Nemotron streaming | 640 MB | 多语言 | 边说边显示文字（流式）|
