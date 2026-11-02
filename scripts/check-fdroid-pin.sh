@@ -40,7 +40,7 @@ fi
 # 2. Open MRs (bot or ours): their ADDED blocks build the NEXT release; a
 #    stale pin there fails the build even when master is fixed (the GH #175
 #    case lived in the checkupdates-bot MR, not on master).
-python3 - "$WANT" <<'PYCHECK' && bot_ok=1 || bot_ok=0
+python3 - "$WANT" <<'PYCHECK' || bot_bad=1
 import json, sys, urllib.request
 
 want = sys.argv[1]
@@ -70,7 +70,7 @@ if not bad:
     print("OK: all open fdroiddata MRs pin %s" % want)
 sys.exit(bad)
 PYCHECK
-if [ "$bot_ok" -ne 0 ]; then
+if [ "${bot_bad:-0}" -ne 0 ]; then
     echo "FAIL: see the MR findings above"
     failures=$((failures+1))
 fi
