@@ -925,10 +925,7 @@ fun HistoryTab(
         // config-change recreation must not cancel a live dialog).
         com.antivocale.app.ui.dialogs.DuplicateFoundDialog(
             modelName = hit.modelName,
-            onOpen = {
-                viewModel.clearPendingBrowseDuplicate()
-                viewModel.highlightLogEntry(hit.existingTaskId)
-            },
+            onOpen = { viewModel.onBrowseDuplicateOpen(hit.existingTaskId) },
             onReprocess = {
                 viewModel.clearPendingBrowseDuplicate()
                 hit.continueRequest()

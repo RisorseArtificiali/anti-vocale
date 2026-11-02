@@ -640,6 +640,10 @@ class ShareReceiverActivity : ComponentActivity() {
             showErrorToast(getString(R.string.transcription_failed))
             // TASK-927 review V3: this exit bypasses every normal endFlow
             // arm; account the slot (or finish, single case) here.
+            // TASK-934 sibling: the staged copy has no consumer now.
+            appScope.launch(Dispatchers.IO) {
+                SharedAudioHandler.deleteStagedCopy(localPath)
+            }
             endFlow()
             return
         }
@@ -792,6 +796,12 @@ class ShareReceiverActivity : ComponentActivity() {
      *  to a dismiss outside the buttons (the conservative arm). */
     internal fun onDuplicateOpen(entry: PendingDialog.Duplicate) {
         removePendingDialog(entry)
+        // TASK-934: the Open arm enqueues nothing, so the staged copy in
+        // shared_audio has no consumer; reclaim it now (the 24h sweep would
+        // otherwise park it for a day).
+        appScope.launch(Dispatchers.IO) {
+            SharedAudioHandler.deleteStagedCopy(entry.localPath)
+        }
         startActivity(Intent(this, MainActivity::class.java).apply {
             putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, entry.existingTaskId)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -824,6 +834,11 @@ class ShareReceiverActivity : ComponentActivity() {
     /** The chooser's dismiss arm (the platform dialog's cancel listener). */
     internal fun onExternalChooserCancel(entry: PendingDialog.ExternalChooser) {
         removePendingDialog(entry)
+        // TASK-934 sibling: the chooser's dismiss enqueues nothing, so the
+        // staged copy has no consumer; reclaim it now (24h sweep backstop).
+        appScope.launch(Dispatchers.IO) {
+            SharedAudioHandler.deleteStagedCopy(entry.localPath)
+        }
         endFlow()
     }
 

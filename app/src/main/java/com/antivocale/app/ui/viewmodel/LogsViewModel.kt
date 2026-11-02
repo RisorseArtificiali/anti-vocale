@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import java.util.concurrent.ConcurrentHashMap
 import com.antivocale.app.util.SubtitleFormatter
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import android.content.Intent
 import android.net.Uri
@@ -175,6 +176,10 @@ class LogsViewModel @Inject constructor(
     private val orchestrator: TranscriptionOrchestrator,
     /** TASK-842 browse arm: the duplicate lookup (shares the guard). */
     private val duplicateGuard: VoiceNoteDuplicateGuard,
+    /** TASK-934: the staged-copy reclaims survive a ViewModel clear (a tap
+     *  followed by leaving History must not cancel the delete; viewModelScope
+     *  would). Tests omit this parameter; production gets @ApplicationScope. */
+    @com.antivocale.app.di.ApplicationScope private val appScope: CoroutineScope = CoroutineScope(Dispatchers.IO),
 ) : ViewModel() {
     companion object {
         private const val TAG = "LogsViewModel"
@@ -207,6 +212,9 @@ class LogsViewModel @Inject constructor(
         val isRough: Boolean,
         val modelDisplayName: String,
         val onConfirm: () -> Unit,
+        /** Decline (TASK-934): reclaims what the arming side staged. The
+         *  retranscribe arm passes null (its file is the row's original). */
+        val onCancel: (() -> Unit)? = null,
     )
 
     private val _pendingLongAudioWarning = MutableStateFlow<LongAudioWarning?>(null)
@@ -219,7 +227,9 @@ class LogsViewModel @Inject constructor(
     }
 
     fun cancelLongAudioWarning() {
+        val warning = _pendingLongAudioWarning.value ?: return
         _pendingLongAudioWarning.value = null
+        warning.onCancel?.invoke()
     }
 
     val logs: StateFlow<List<LogEntry>> = logDao.getAll()
@@ -476,6 +486,7 @@ class LogsViewModel @Inject constructor(
                         _pendingBrowseDuplicate.value = PendingBrowseDuplicate(
                             existingTaskId = hit.row.taskId,
                             modelName = hit.modelName,
+                            localPath = localPath,
                             continueRequest = {
                                 continueBrowseIntake(
                                     appContext, localPath, localizedContext, contentHash)
@@ -507,12 +518,16 @@ class LogsViewModel @Inject constructor(
     /**
      * TASK-842 browse arm: a duplicate hit at browse intake, held for the
      * History tab's dialog. [continueRequest] resumes the intake past the
-     * guard (the reprocess arm); [existingTaskId] names the row to open.
+     * guard (the reprocess arm); [existingTaskId] names the row to open;
+     * [localPath] is the staged copy, which the Open arm must reclaim
+     * (TASK-934: it enqueues nothing, so nothing else consumes it).
      */
     data class PendingBrowseDuplicate(
         val existingTaskId: String,
         /** The matched run's model, for the dialog copy. */
         val modelName: String,
+        /** The staged copy in shared_audio; deleted by the Open arm. */
+        val localPath: String,
         val continueRequest: () -> Unit,
         /** Completes when either dialog arm runs; the multi-pick intake
          *  loop awaits it before starting the next file (review V1). */
@@ -535,6 +550,26 @@ class LogsViewModel @Inject constructor(
             pending.resolved.complete(Unit)
             _pendingBrowseDuplicate.value = null
         }
+    }
+
+    /**
+     * TASK-934: the dialog's Open arm (and its dismiss-outside alias). The
+     * pick enqueues nothing, so the staged copy in shared_audio has no
+     * consumer; delete it now instead of parking it until the 24h sweep.
+     * The reprocess arm keeps the file (its enqueue consumes it) and goes
+     * through [clearPendingBrowseDuplicate] instead.
+     */
+    fun onBrowseDuplicateOpen(existingTaskId: String) {
+        // Highlight even when the slot was already consumed (a stale tap or
+        // a recomposition racing a clear must still navigate, review F4).
+        _pendingBrowseDuplicate.value?.let { pending ->
+            pending.resolved.complete(Unit)
+            _pendingBrowseDuplicate.value = null
+            appScope.launch(Dispatchers.IO) {
+                SharedAudioHandler.deleteStagedCopy(pending.localPath)
+            }
+        }
+        highlightLogEntry(existingTaskId)
     }
 
     /** The browse intake past the duplicate guard (both the no-hit path and
@@ -569,7 +604,17 @@ class LogsViewModel @Inject constructor(
                     ?: preferencesManager.transcriptionBackend.first(),
                 localPath,
                 localizedContext,
-            ) { enqueueBrowse(appContext, localPath, localizedContext, contentHash) }
+                proceed = { enqueueBrowse(appContext, localPath, localizedContext, contentHash) },
+                // TASK-934: declining the advisory orphans the staged copy
+                // (nothing enqueues), so the browse arm reclaims it. A
+                // displaced earlier advisory chains its own reclaim (its
+                // dialog never showed).
+                onDecline = {
+                    appScope.launch(Dispatchers.IO) {
+                        SharedAudioHandler.deleteStagedCopy(localPath)
+                    }
+                },
+            )
         }
     }
 
@@ -579,7 +624,13 @@ class LogsViewModel @Inject constructor(
      * stance). Duration probe fails OPEN (0s, no advisory): the hard
      * ceilings inside preprocessing still protect every path.
      */
-    private suspend fun longAudioGate(backendId: String?, filePath: String, context: Context, proceed: () -> Unit) {
+    private suspend fun longAudioGate(
+        backendId: String?,
+        filePath: String,
+        context: Context,
+        proceed: () -> Unit,
+        onDecline: (() -> Unit)? = null,
+    ) {
         // Off-main ALWAYS: callers arrive on either dispatcher and the probe
         // is a container parse (code-review: the extraction had dropped the
         // retranscribe path's withContext(IO) wrapper).
@@ -617,6 +668,12 @@ class LogsViewModel @Inject constructor(
             return
         }
         val previous = _pendingLongAudioWarning.value
+        val declineChain: (() -> Unit)? = onDecline?.let { decline ->
+            {
+                previous?.onCancel?.invoke()
+                decline()
+            }
+        }
         _pendingLongAudioWarning.value = LongAudioWarning(
             durationMinutes = decision.durationMinutes.toInt(),
             estimateMinutes = decision.estimateMinutes,
@@ -626,6 +683,7 @@ class LogsViewModel @Inject constructor(
                 previous?.onConfirm?.invoke()
                 proceed()
             },
+            onCancel = declineChain,
         )
     }
 
@@ -1035,9 +1093,9 @@ class LogsViewModel @Inject constructor(
             return
         }
         val appContext = context.applicationContext
-        longAudioGate(backendId, filePath, appContext) {
+        longAudioGate(backendId, filePath, appContext, proceed = {
             dispatchTranscription(originalEntry, backendId, filePath, appContext, languageOverride)
-        }
+        })
     }
 
     private fun dispatchTranscription(

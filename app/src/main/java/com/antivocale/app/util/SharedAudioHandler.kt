@@ -386,6 +386,16 @@ object SharedAudioHandler {
      * @param context Application context
      * @param maxAgeMs Maximum age in milliseconds (default: 24 hours)
      */
+    /**
+     * TASK-934: best-effort reclaim of one already-staged copy. Every
+     * non-enqueue arm (duplicate Open, chooser cancel/gone, advisory
+     * decline) calls this on an IO coroutine; a failure parks the file for
+     * the [cleanupOldFiles] sweep instead of throwing into the arm.
+     */
+    fun deleteStagedCopy(path: String) {
+        runCatching { File(path).delete() }
+    }
+
     fun cleanupOldFiles(context: Context, maxAgeMs: Long = 24 * 60 * 60 * 1000L) {
         try {
             val outputDir = File(context.filesDir, SHARED_AUDIO_DIR)

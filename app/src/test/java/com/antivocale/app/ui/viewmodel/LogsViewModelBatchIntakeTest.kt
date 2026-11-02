@@ -24,6 +24,7 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,6 +56,9 @@ class LogsViewModelBatchIntakeTest {
         every {
             SharedAudioHandler.copyToAppStorage(any(), any(), any(), any())
         } returns SharedAudioHandler.CopyResult.Success("/tmp/browse-copy")
+        // The reclaim helper must run for real or the TASK-934 deletion
+        // test would assert against a no-op stub.
+        every { SharedAudioHandler.deleteStagedCopy(any()) } answers { callOriginal() }
         coEvery { duplicateGuard.hashOnIo(any()) } returns "hash"
         coEvery { duplicateGuard.lookup(any(), any(), any(), any()) } returnsMany listOf(
             hit("task-1", "model-a"),
@@ -76,6 +80,8 @@ class LogsViewModelBatchIntakeTest {
 
     @After
     fun tearDown() {
+        stagedFile?.delete()
+        stagedFile = null
         unmockkAll()
         Dispatchers.resetMain()
     }
@@ -189,5 +195,52 @@ class LogsViewModelBatchIntakeTest {
     fun `empty pick is a no-op`() = runBlocking {
         viewModel.transcribeLocalFiles(mockk<Context>(relaxed = true), emptyList())
         assertEquals(null, viewModel.pendingBrowseDuplicate.value)
+    }
+
+    /** A duplicate dialog over a REAL temp file, so the Open arm's deletion
+     *  (TASK-934) has something observable to reclaim. Removed in @After. */
+    private var stagedFile: java.io.File? = null
+
+    private fun stagedRealFile(): java.io.File {
+        val staged = kotlin.io.path.createTempFile("task934").toFile()
+        staged.writeText("x")
+        stagedFile = staged
+        every {
+            SharedAudioHandler.copyToAppStorage(any(), any(), any(), any())
+        } returns SharedAudioHandler.CopyResult.Success(staged.absolutePath)
+        return staged
+    }
+
+    @Test
+    fun `TASK-934 the open arm deletes the staged copy`() = runBlocking {
+        val staged = stagedRealFile()
+        viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
+        withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it != null } }
+
+        viewModel.onBrowseDuplicateOpen("task-1")
+        withTimeout(5000) {
+            while (staged.exists()) delay(20)
+        }
+        assertEquals(null, viewModel.pendingBrowseDuplicate.value)
+    }
+
+    @Test
+    fun `TASK-934 the reprocess arm keeps the staged copy for the enqueue`() = runBlocking {
+        val staged = stagedRealFile()
+        stubSubtitleProbe()
+        viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
+        val hit = withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it != null } }!!
+
+        viewModel.clearPendingBrowseDuplicate()
+        hit.continueRequest()
+        withTimeout(5000) {
+            verify(timeout = 1000) {
+                SubtitleChoice.offerIfTracks(
+                    any(), any(), eq(staged.absolutePath), any(), any(), any(), any())
+            }
+        }
+        // The probe owns the request (stubbed true) and the file survives
+        // for the flow that consumes it.
+        assertTrue(staged.exists())
     }
 }
