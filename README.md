@@ -40,6 +40,10 @@ What keeps that honest is the verification bar: every code change passes the aut
 
 Everything the app can transcribe with, on one page: bundled models with sizes, languages, speed notes, and the community imports, each linked back to the original model it comes from. See [docs/model-catalog.md](docs/model-catalog.md).
 
+## Which model for your language
+
+Measured by us, not declared by vendors: the per-language error rates of every model we ship, same clips, same harness. See [docs/quality-matrix.md](docs/quality-matrix.md).
+
 ## Features
 
 ### Privacy & offline first
@@ -153,25 +157,25 @@ Long transcripts are split into pages you can read without leaving the notificat
 
 | Model | Size | Notes |
 |-------|------|-------|
-| **Gemma 4 E2B** | 2.6GB | Recommended, newest generation, best for most devices |
-| **Gemma 4 E4B** | 3.7GB | Newest generation, higher quality |
-| **Gemma 3n E2B** | 3.3GB | Previous generation |
-| **Gemma 3n E4B** | 4.2GB | Previous generation |
+| **Gemma 4 E2B** | 2.5GB | Recommended, newest generation, best for most devices |
+| **Gemma 4 E4B** | 3.5GB | Newest generation, higher quality |
+| **Gemma 3n E2B** | 3.5GB | Previous generation |
+| **Gemma 3n E4B** | 4.7GB | Previous generation |
 
 ### ASR (Encoder-Decoder)
 
 | Model | Size | Languages | Notes |
 |-------|------|-----------|-------|
-| **Whisper Small** | ~358MB | 99 | Only for low-spec devices |
-| **Whisper Turbo** | ~988MB | 99 | Near large-v3 quality, best value |
-| **Whisper Medium** | ~903MB | 99 | Best for Italian and other languages |
-| **Distil Italian** | ~939MB | Italian | Fastest Whisper variant, optimized for Italian |
+| **Whisper Small** | ~378MB | 99 | Only for low-spec devices |
+| **Whisper Turbo** | ~1037MB | 99 | Near large-v3 quality; the measured quality leader in most languages |
+| **Whisper Medium** | ~949MB | 99 | Largest non-distilled variant, slower than Turbo |
+| **Distil Italian** | ~984MB | Italian | Fastest Whisper variant, optimized for Italian |
 
 ### ASR (Transducer)
 
 | Model | Size | Languages | Notes |
 |-------|------|-----------|-------|
-| **Parakeet TDT (stock int8)** | ~640MB | 25 European | The default: best device-measured quality of the built-ins and the lightest full multilingual option (inputs over 1 minute are chunked and stitched, sized to free RAM; see [FAQ](FAQ.md)) |
+| **Parakeet TDT (stock int8)** | ~640MB | 25 European | The default: fastest and lightest full multilingual option, close to Whisper Turbo in most languages we measured (inputs over 1 minute are chunked and stitched, sized to free RAM; see [FAQ](FAQ.md)) |
 | **Parakeet TDT (SmoothQuant)** | ~862MB | 25 European | Alternative to the default (the default through 1.13.x) |
 | **GigaAM v3** | ~326MB | Russian | Best Russian accuracy, native punctuation |
 | **Qwen3-ASR 0.6B** | ~938MB | 30 + 22 zh | 30 languages + 22 Chinese dialects; poor Italian accuracy |
@@ -182,7 +186,7 @@ Import any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice, Canary, Moon
 
 ### Italian ASR Benchmark
 
-[Full 4-model comparison](scripts/benchmark/README.md) on 8 Italian FLEURS samples (101.6s audio, desktop ffmpeg-chain harness):
+[Full 4-model comparison](scripts/benchmark/README.md) on 8 Italian FLEURS samples (101.6s audio, desktop ffmpeg-chain harness), plus the [20-language measured matrix](docs/quality-matrix.md):
 
 | Model | WER | Speed | Size |
 |-------|-----|-------|------|
@@ -215,7 +219,7 @@ Common questions (model limits, chunking, queue behavior, where to find transcri
 
 - Android device with 4GB+ RAM
 - Android 8.0 (API 26) or higher
-- 500MB+ free storage (model size varies, up to 4.2GB for Gemma 3n E4B / 3.7GB for Gemma 4 E4B)
+- 500MB+ free storage (model size varies, up to 4.7GB for Gemma 3n E4B / 3.5GB for Gemma 4 E4B)
 
 ### Install
 

@@ -154,19 +154,19 @@
     <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
     <string name="parakeet_smoothquant_description">~862МБ • 25 мов • Альтернатива типовій</string>
     <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
-    <string name="parakeet_stock_description">~640МБ • 25 мов • Типова: найкраща якість за вимірюваннями на пристрої</string>
+    <string name="parakeet_stock_description">~640МБ • 25 мов • Типова: найшвидший багатомовний варіант</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper</string>
     <string name="whisper_description">Багатомовне розпізнавання мовлення</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~358МБ • Нижча точність, особливо на шумному аудіо • Ненадійне автовизначення мови (типово мова застосунку) • Лише для слабких пристроїв</string>
+    <string name="whisper_small_description">~378МБ • Нижча точність, особливо на шумному аудіо • Ненадійне автовизначення мови (типово мова застосунку) • Лише для слабких пристроїв</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
-    <string name="whisper_turbo_description">~988МБ • Якість близька до large-v3 • Збалансована багатомовна</string>
+    <string name="whisper_turbo_description">~1037МБ • Якість близька до large-v3 • Збалансована багатомовна</string>
     <string name="whisper_medium_title">Whisper Medium</string>
-    <string name="whisper_medium_description">~903МБ • Добра точність • Багатомовна</string>
+    <string name="whisper_medium_description">~949МБ • Добра точність • Багатомовна</string>
     <string name="whisper_distil_large_v3_title">Distil Italian</string>
-    <string name="whisper_distil_large_v3_description">~939МБ • 2 шари декодера • Найшвидша • Оптимізована для італійської</string>
+    <string name="whisper_distil_large_v3_description">~984МБ • 2 шари декодера • Найшвидша • Оптимізована для італійської</string>
     <string name="whisper_download">Завантажити Whisper</string>
     <string name="whisper_download_confirm_title">Завантажити %1$s?</string>
     <string name="whisper_download_confirm_message">Буде завантажено ~%1$dМБ. Whisper забезпечує чудову багатомовну підтримку з належною пунктуацією.</string>
@@ -762,19 +762,19 @@
     <string name="speed_comparison_header_speed">Швидкість</string>
     <string name="speed_comparison_header_quality">Якість італійської</string>
     <string name="speed_comparison_small_name">Whisper Small</string>
-    <string name="speed_comparison_small_size">~358МБ</string>
+    <string name="speed_comparison_small_size">~378МБ</string>
     <string name="speed_comparison_small_speed">1.0x</string>
     <string name="speed_comparison_small_quality">Задовільна</string>
     <string name="speed_comparison_turbo_name">Whisper Turbo</string>
-    <string name="speed_comparison_turbo_size">~988МБ</string>
+    <string name="speed_comparison_turbo_size">~1037МБ</string>
     <string name="speed_comparison_turbo_speed">1.3x</string>
     <string name="speed_comparison_turbo_quality">Добра</string>
     <string name="speed_comparison_medium_name">Whisper Medium</string>
-    <string name="speed_comparison_medium_size">~903МБ</string>
+    <string name="speed_comparison_medium_size">~949МБ</string>
     <string name="speed_comparison_medium_speed">0.5x</string>
     <string name="speed_comparison_medium_quality">Добра</string>
     <string name="speed_comparison_distil_it_name">Distil Italian</string>
-    <string name="speed_comparison_distil_it_size">~939МБ</string>
+    <string name="speed_comparison_distil_it_size">~984МБ</string>
     <string name="speed_comparison_distil_it_speed">~1.8x</string>
     <string name="speed_comparison_distil_it_quality">Найкраща італійська</string>
     <string name="speed_comparison_distil_it_note">Найкраща італійська</string>
@@ -792,7 +792,7 @@
     <string name="speed_comparison_gigaam_speed">Швидка</string>
     <string name="speed_comparison_gigaam_quality">Лише російська</string>
     <string name="speed_comparison_nemotron_name">Nemotron 3.5</string>
-    <string name="speed_comparison_nemotron_size">~600МБ</string>
+    <string name="speed_comparison_nemotron_size">~640МБ</string>
     <string name="speed_comparison_nemotron_speed">Потокова</string>
     <string name="speed_comparison_nemotron_quality">Експериментальна</string>
     <string name="fastest_badge">Найшвидша</string>

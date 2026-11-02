@@ -2,7 +2,7 @@ Anti-Vocale transkriboi WhatsAppin, Telegramin ja muiden viestisovellusten ään
 
 SISÄÄNRAKENNETUT MALLIT
 
-- Parakeet TDT (suositeltu): nopea, 25 eurooppalaista kieltä. Kaksi versiota: korkealaatuinen (862MB) tai kevyt (464MB)
+- Parakeet TDT (suositeltu): nopea, 25 eurooppalaista kieltä. Kaksi versiota: korkealaatuinen (862MB) tai kevyt (640MB)
 - Whisper Turbo: 99 kieltä, tasapaino nopeuden ja laadun välillä
 - Whisper Distil Italian: paras italian laatu, viritetty ääniviesteille
 - Whisper Medium / Small: tarkempi tulos tai pienempi lataus
@@ -41,6 +41,6 @@ Apache 2.0. Lähdekoodi: https://github.com/RisorseArtificiali/anti-vocale
 
 VAATIMUKSET
 
-Android 8.0+ | Suositus: vähintään 4GB RAM | 326MB-1GB tallennustilaa per malli
+Android 8.0+ | Suositus: vähintään 4GB RAM | 326MB-4.7GB tallennustilaa per malli
 
 HUOM: Joillakin aggressiivista virransäästöä käyttävillä puhelimilla (Realme, OnePlus, Vivo) avaa sovellus kerran äänen jakamisen jälkeen, jotta transkriptio ehtii valmistua.

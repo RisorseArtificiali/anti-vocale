@@ -2,7 +2,7 @@ Anti-Vocale 可直接在你的 Android 设备上转写来自 WhatsApp、Telegram
 
 内置模型
 
-- Parakeet TDT（推荐）：速度快，支持 25 种欧洲语言。两种版本：高质量（862MB）或紧凑版（464MB）
+- Parakeet TDT（推荐）：速度快，支持 25 种欧洲语言。两种版本：高质量（862MB）或紧凑版（640MB）
 - Whisper Turbo：99 种语言，速度与质量兼顾
 - Whisper Distil Italian：意大利语质量最佳，专为语音消息调优
 - Whisper Medium / Small：更高准确度或更小下载体积
@@ -41,6 +41,6 @@ Apache 2.0 许可证。源代码：https://github.com/RisorseArtificiali/anti-vo
 
 系统要求
 
-Android 8.0+ | 建议 4GB 以上内存 | 每个模型需 326MB-1GB 存储空间
+Android 8.0+ | 建议 4GB 以上内存 | 每个模型需 326MB-4.7GB 存储空间
 
 注意：在部分电池优化激进的手机上（Realme、OnePlus、Vivo），分享音频后请打开一次应用，以便转写能够完成。

@@ -2,7 +2,7 @@ Anti-Vocale trascrive i messaggi vocali di WhatsApp, Telegram e altre app di mes
 
 MODELLI INCLUSI
 
-- Parakeet TDT (consigliato): veloce, 25 lingue europee. Due varianti: alta qualità (862MB) o compatta (464MB)
+- Parakeet TDT (consigliato): veloce, 25 lingue europee. Due varianti: alta qualità (862MB) o compatta (640MB)
 - Whisper Turbo: 99 lingue, buon equilibrio velocità/qualità
 - Whisper Distil Italian: la migliore qualità in italiano, ottimizzato per vocali
 - Whisper Medium / Small: più accuratezza o download più leggero
@@ -44,6 +44,6 @@ Licenza Apache 2.0. Codice sorgente: https://github.com/RisorseArtificiali/anti-
 
 REQUISITI
 
-Android 8.0+ | 4GB+ di RAM consigliati | 326MB-1GB di spazio per modello
+Android 8.0+ | 4GB+ di RAM consigliati | 326MB-4.7GB di spazio per modello
 
 NOTA: su alcuni telefoni con gestori batteria aggressivi (Realme, OnePlus, Vivo), apri l'app una volta dopo la condivisione per completare la trascrizione; la protezione in background aiuta le esecuzioni lunghe a schermo spento.

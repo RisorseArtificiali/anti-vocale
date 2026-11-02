@@ -87,6 +87,9 @@ jobs:
       - name: Check sherpa version sync (issue #38)
         run: ./scripts/check-sherpa-sync.sh
 
+      - name: Check model size claims match the catalog (TASK-923)
+        run: ./scripts/check-model-sizes.sh
+
       - name: Fetch sherpa-onnx AAR
         run: ./scripts/fetch-sherpa-aar.sh
 

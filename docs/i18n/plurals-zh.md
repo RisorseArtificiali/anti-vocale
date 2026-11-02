@@ -1,6 +1,6 @@
 # Plural rules for values-zh
 
-Extracted 2026-10-24 from values/strings.xml (1084 strings, 13 plural keys).
+Extracted 2026-11-02 from values/strings.xml (1111 strings, 14 plural keys).
 
 CLDR cardinal categories for zh: **other**
 
@@ -19,5 +19,6 @@ Every plural key in the package must supply exactly these quantities:
 - `conversation_group_count`: `other`
 - `subtitle_import_skipped_cues`: `other`
 - `folder_watch_period_value`: `other`
+- `catchup_digest_text`: `other`
 
 No locale-specific plural lint traps apply.

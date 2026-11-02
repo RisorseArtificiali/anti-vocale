@@ -39,11 +39,11 @@ Modeller boyut, hız, dil kapsamı ve doğruluk bakımından farklıdır. Model 
 | Model | Boyut | Diller | Notlar |
 |---|---|---|---|
 | Parakeet TDT stock int8 | 640 MB | 25 Avrupa | Hızlı ve hafif; varsayılan öneri |
-| Parakeet TDT SmoothQuant | 862 MB | 25 Avrupa | Daha doğru ama daha ağır; daha çok RAM ister |
-| Whisper Turbo | 988 MB | 101 | Whisper ailesindeki en iyi denge |
-| Whisper Medium | 903 MB | 101 | Turbo'dan yavaş, çoğu ses için daha iyi değil |
-| Whisper Small | 358 MB | 101 | En hafif Whisper; makul kalite |
-| Whisper Distil Italian | 938 MB | Yalnızca İtalyanca | Yerleşik kümedeki en iyi İtalyanca doğruluğu |
+| Parakeet TDT SmoothQuant | 862 MB | 25 Avrupa | Varsayilandan daha ağır; daha çok RAM ister |
+| Whisper Turbo | 1037 MB | 99 | Whisper ailesindeki en iyi denge |
+| Whisper Medium | 949 MB | 99 | Turbo'dan yavaş, çoğu ses için daha iyi değil |
+| Whisper Small | 378 MB | 99 | En hafif Whisper; makul kalite |
+| Whisper Distil Italian | 984 MB | Yalnızca İtalyanca | Yerleşik kümedeki en iyi İtalyanca doğruluğu |
 | Qwen3-ASR | 938 MB | Çok dilli | Alternatif mimari |
 | Nemotron streaming | 640 MB | Çok dilli | Siz konuşurken metni gösterir (streaming) |
 | GigaAM v3 | 326 MB | Rusça | Rusça uzmanı |

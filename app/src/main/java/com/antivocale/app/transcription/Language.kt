@@ -120,11 +120,13 @@ object Language {
         "sw", "ta", "th", "tr", "uk", "ur", "uz", "vi", "zh",
     )
 
-    /** Parakeet TDT: 25 languages (NVIDIA model card). */
+    /** Parakeet TDT: 25 languages per the NVIDIA model card (which lists
+     *  neither tr nor no, and does list lt and mt). Mirrors the catalog
+     *  entry's languages array; pinned equal by BundledModelCatalogTest. */
     val PARAKEET: Set<String> = setOf(
         "de", "en", "es", "fr", "it", "nl", "pl", "pt", "ro", "ru",
-        "sv", "tr", "uk", "cs", "bg", "hr", "da", "fi", "el", "hu",
-        "no", "sk", "sl", "et", "lv",
+        "sv", "uk", "cs", "bg", "hr", "da", "fi", "el", "hu",
+        "sk", "sl", "et", "lv", "lt", "mt",
     )
 
     /** GigaAM v3: Russian only (E2E RNNT, Sber). */

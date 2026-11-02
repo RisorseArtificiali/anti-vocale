@@ -2,7 +2,7 @@ Anti-Vocale transcribes voice messages from WhatsApp, Telegram, and other messag
 
 BUILT-IN MODELS
 
-- Parakeet TDT (recommended): fast, 25 European languages. Two variants: high-quality (862MB) or compact (464MB)
+- Parakeet TDT (recommended): fast, 25 European languages. Two variants: high-quality (862MB) or compact (640MB)
 - Whisper Turbo: 99 languages, balanced speed and quality
 - Whisper Distil Italian: best Italian quality, tuned for voice messages
 - Whisper Medium / Small: more accuracy or smaller download
@@ -44,6 +44,6 @@ Apache 2.0. Source code: https://github.com/RisorseArtificiali/anti-vocale
 
 REQUIREMENTS
 
-Android 8.0+ | 4GB+ RAM recommended | 326MB-1GB storage per model
+Android 8.0+ | 4GB+ RAM recommended | 326MB-4.7GB storage per model
 
 NOTE: on some phones with aggressive battery savers (Realme, OnePlus, Vivo), open the app once after sharing audio so the transcription can finish; the Background transcription protection setting helps keep long runs alive with the screen off.

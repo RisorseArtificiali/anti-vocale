@@ -133,6 +133,13 @@ jobs:
       - name: Sherpa sync check (6 sync points including the F-Droid recipe)
         run: ./scripts/check-sherpa-sync.sh
 
+      # TASK-923: user-facing size claims (app strings, store listings,
+      # README tables) are copies of the catalog's estimatedSizeMB; the
+      # fastlane listings shipped 464MB for a 640MB model and the strings
+      # kept pre-re-export Whisper sizes until this check existed.
+      - name: Model size claims match the catalog
+        run: ./scripts/check-model-sizes.sh
+
       # TASK-784 review: record the CHECKOUT's HEAD, not github.sha. On
       # schedule events github.sha is the trigger-time HEAD while the
       # artifacts build from this fresh checkout a moment later; the tag

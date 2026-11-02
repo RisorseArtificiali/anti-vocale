@@ -48,7 +48,7 @@ OPEN SOURCE
 Apache 2.0. Source code: https://github.com/RisorseArtificiali/anti-vocale
 
 REQUIREMENTS
-Android 8.0+ | 4GB+ RAM recommended | 326MB to 4.2GB of storage depending on the model
+Android 8.0+ | 4GB+ RAM recommended | 326MB to 4.7GB of storage depending on the model
 
 ---
 
@@ -69,7 +69,7 @@ COME FUNZIONA
 3. Copiala o rimandala in chat con un tocco
 
 PENSATO PER L'ITALIANO
-- Italiano di prima classe (Whisper Distil Italian, 939MB): messo a punto proprio sui messaggi vocali, la scelta se trascrivi quasi solo in italiano
+- Italiano di prima classe (Whisper Distil Italian, 984MB): messo a punto proprio sui messaggi vocali, la scelta se trascrivi quasi solo in italiano
 - Veloce e leggero (Parakeet TDT, consigliato): l'italiano è tra le sue 25 lingue europee; due dimensioni (862MB alta qualità, 640MB compatto)
 - 99 lingue con Whisper Turbo, se ti serve di tutto
 - Testo in tempo reale (Nemotron 3.5, 45 lingue): le parole appaiono mentre vengono dette
@@ -100,7 +100,7 @@ OPEN SOURCE
 Licenza Apache 2.0. Codice sorgente: https://github.com/RisorseArtificiali/anti-vocale
 
 REQUISITI
-Android 8.0+ | 4GB+ di RAM consigliati | Da 326MB a 4.2GB di spazio in base al modello
+Android 8.0+ | 4GB+ di RAM consigliati | Da 326MB a 4.7GB di spazio in base al modello
 
 ---
 
@@ -151,7 +151,7 @@ OPEN SOURCE
 Apache 2.0. Quellcode: https://github.com/RisorseArtificiali/anti-vocale
 
 VORAUSSETZUNGEN
-Android 8.0+ | 4 GB+ RAM empfohlen | 326 MB bis 4,2 GB Speicher je nach Modell
+Android 8.0+ | 4 GB+ RAM empfohlen | 326 MB bis 4,7 GB Speicher je nach Modell
 
 ---
 
@@ -202,7 +202,7 @@ OPEN SOURCE
 Apache 2.0. Code source : https://github.com/RisorseArtificiali/anti-vocale
 
 CONFIGURATION REQUISE
-Android 8.0+ | 4 Go de RAM recommandés | 326 Mo à 4,2 Go d'espace selon le modèle
+Android 8.0+ | 4 Go de RAM recommandés | 326 Mo à 4,7 Go d'espace selon le modèle
 
 ---
 
@@ -253,7 +253,7 @@ CÓDIGO ABIERTO
 Apache 2.0. Código fuente: https://github.com/RisorseArtificiali/anti-vocale
 
 REQUISITOS
-Android 8.0+ | 4 GB+ de RAM recomendados | De 326 MB a 4,2 GB de espacio según el modelo
+Android 8.0+ | 4 GB+ de RAM recomendados | De 326 MB a 4,7 GB de espacio según el modelo
 
 ---
 
@@ -304,7 +304,7 @@ CÓDIGO ABERTO
 Apache 2.0. Código-fonte: https://github.com/RisorseArtificiali/anti-vocale
 
 REQUISITOS
-Android 8.0+ | 4 GB+ de RAM recomendados | De 326 MB a 4,2 GB de espaço conforme o modelo
+Android 8.0+ | 4 GB+ de RAM recomendados | De 326 MB a 4,7 GB de espaço conforme o modelo
 
 ---
 
@@ -355,7 +355,7 @@ Anti-Vocaleは、WhatsAppやTelegramなどあらゆるアプリのボイスメ�
 Apache 2.0。ソースコード: https://github.com/RisorseArtificiali/anti-vocale
 
 必要環境
-Android 8.0以上 | RAM 4GB以上推奨 | モデルにより326MB〜4.2GBの空き容量
+Android 8.0以上 | RAM 4GB以上推奨 | モデルにより326MB〜4.7GBの空き容量
 
 ---
 
@@ -406,7 +406,7 @@ Anti-Vocale은 WhatsApp, Telegram 등 모든 앱의 음성 메시지를 휴대�
 Apache 2.0. 소스 코드: https://github.com/RisorseArtificiali/anti-vocale
 
 요구 사항
-Android 8.0 이상 | RAM 4GB 이상 권장 | 모델에 따라 326MB~4.2GB 저장 공간
+Android 8.0 이상 | RAM 4GB 이상 권장 | 모델에 따라 326MB~4.7GB 저장 공간
 
 ---
 
@@ -457,7 +457,7 @@ Anti-Vocale 在手机本地直接把 WhatsApp、Telegram 等任何应用的语�
 Apache 2.0。源代码：https://github.com/RisorseArtificiali/anti-vocale
 
 要求
-Android 8.0 以上 | 建议 4GB 以上内存 | 依模型不同需要 326MB 至 4.2GB 存储空间
+Android 8.0 以上 | 建议 4GB 以上内存 | 依模型不同需要 326MB 至 4.7GB 存储空间
 
 ---
 
@@ -509,7 +509,7 @@ Anti-Vocale расшифровывает голосовые сообщения �
 Apache 2.0. Исходный код: https://github.com/RisorseArtificiali/anti-vocale
 
 ТРЕБОВАНИЯ
-Android 8.0+ | Рекомендуется 4 ГБ+ ОЗУ | От 326 МБ до 4,2 ГБ памяти в зависимости от модели
+Android 8.0+ | Рекомендуется 4 ГБ+ ОЗУ | От 326 МБ до 4,7 ГБ памяти в зависимости от модели
 
 ---
 
@@ -560,7 +560,7 @@ OPEN SOURCE
 Apache 2.0. Broncode: https://github.com/RisorseArtificiali/anti-vocale
 
 VEREISTEN
-Android 8.0+ | 4 GB+ RAM aanbevolen | 326 MB tot 4,2 GB opslag afhankelijk van het model
+Android 8.0+ | 4 GB+ RAM aanbevolen | 326 MB tot 4,7 GB opslag afhankelijk van het model
 
 ---
 
@@ -611,7 +611,7 @@ OPEN SOURCE
 Apache 2.0. Kod źródłowy: https://github.com/RisorseArtificiali/anti-vocale
 
 WYMAGANIA
-Android 8.0+ | Zalecane 4 GB+ RAM | Od 326 MB do 4,2 GB pamięci w zależności od modelu
+Android 8.0+ | Zalecane 4 GB+ RAM | Od 326 MB do 4,7 GB pamięci w zależności od modelu
 
 ---
 
@@ -662,7 +662,7 @@ AÇIK KAYNAK
 Apache 2.0. Kaynak kodu: https://github.com/RisorseArtificiali/anti-vocale
 
 GEREKSİNİMLER
-Android 8.0+ | 4 GB+ RAM önerilir | Modele göre 326 MB ile 4,2 GB depolama
+Android 8.0+ | 4 GB+ RAM önerilir | Modele göre 326 MB ile 4,7 GB depolama
 
 ---
 
@@ -713,7 +713,7 @@ Android 8.0+ | 4 GB+ RAM önerilir | Modele göre 326 MB ile 4,2 GB depolama
 Apache 2.0. الكود المصدري: https://github.com/RisorseArtificiali/anti-vocale
 
 المتطلبات
-أندرويد 8.0 أو أحدث | يُنصح بذاكرة 4 جيجابايت أو أكثر | من 326 ميجابايت إلى 4.2 جيجابايت حسب النموذج
+أندرويد 8.0 أو أحدث | يُنصح بذاكرة 4 جيجابايت أو أكثر | من 326 ميجابايت إلى 4.7 جيجابايت حسب النموذج
 
 ---
 
@@ -764,7 +764,7 @@ Anti-Vocale व्हाट्सएप, टेलीग्राम और ह�
 Apache 2.0. सोर्स कोड: https://github.com/RisorseArtificiali/anti-vocale
 
 आवश्यकताएं
-Android 8.0+ | 4GB+ RAM अनुशंसित | मॉडल के अनुसार 326MB से 4.2GB तक स्टोरेज
+Android 8.0+ | 4GB+ RAM अनुशंसित | मॉडल के अनुसार 326MB से 4.7GB तक स्टोरेज
 
 ---
 

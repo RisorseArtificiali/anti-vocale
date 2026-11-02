@@ -410,10 +410,10 @@ Future versions will support direct download from HuggingFace within the app.
 ### Model Requirements
 
 For **audio transcription**, you need a **multimodal model** that supports audio:
-- ✅ **Gemma 4 E2B** (2.6GB) - Recommended, newest generation
-- ✅ **Gemma 4 E4B** (3.7GB) - Higher quality, newest generation
-- ✅ **Gemma 3n E2B** (3.3GB) - Previous generation
-- ✅ **Gemma 3n E4B** (4.2GB) - Previous generation
+- ✅ **Gemma 4 E2B** (2.5GB) - Recommended, newest generation
+- ✅ **Gemma 4 E4B** (3.5GB) - Higher quality, newest generation
+- ✅ **Gemma 3n E2B** (3.5GB) - Previous generation
+- ✅ **Gemma 3n E4B** (4.7GB) - Previous generation
 - ❌ **Gemma3 1B** - Text only, no audio support
 
 The model file must have `.litertlm` extension for LiteRT-LM multimodal inference.

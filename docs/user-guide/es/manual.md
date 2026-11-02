@@ -39,11 +39,11 @@ Los modelos difieren en tamaño, velocidad, cobertura de idiomas y precisión. L
 | Modelo | Tamaño | Idiomas | Notas |
 |---|---|---|---|
 | Parakeet TDT stock int8 | 640 MB | 25 europeas | Rápido y ligero; la recomendación por defecto |
-| Parakeet TDT SmoothQuant | 862 MB | 25 europeas | Más preciso, más pesado; necesita más RAM |
-| Whisper Turbo | 988 MB | 101 | El mejor equilibrio de la familia Whisper |
-| Whisper Medium | 903 MB | 101 | Más lento que Turbo, no es mejor para la mayoría del audio |
-| Whisper Small | 358 MB | 101 | El Whisper más ligero; calidad decente |
-| Whisper Distil Italian | 938 MB | Solo italiano | La mejor precisión en italiano del conjunto integrado |
+| Parakeet TDT SmoothQuant | 862 MB | 25 europeas | Más pesado que el predeterminado; necesita más RAM |
+| Whisper Turbo | 1037 MB | 99 | El mejor equilibrio de la familia Whisper |
+| Whisper Medium | 949 MB | 99 | Más lento que Turbo, no es mejor para la mayoría del audio |
+| Whisper Small | 378 MB | 99 | El Whisper más ligero; calidad decente |
+| Whisper Distil Italian | 984 MB | Solo italiano | La mejor precisión en italiano del conjunto integrado |
 | Qwen3-ASR | 938 MB | Multilingüe | Arquitectura alternativa |
 | Nemotron streaming | 640 MB | Multilingüe | Muestra el texto mientras hablas (en streaming) |
 | GigaAM v3 | 326 MB | Ruso | Especialista en ruso |

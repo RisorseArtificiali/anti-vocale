@@ -129,19 +129,19 @@
     <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
     <string name="parakeet_smoothquant_description">~862 MB • 25 Sprachen • Alternative zum Standard</string>
     <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
-    <string name="parakeet_stock_description">~640 MB • 25 Sprachen • Standard: beste gemessene Gerätequalität</string>
+    <string name="parakeet_stock_description">~640 MB • 25 Sprachen • Standard: schnellste mehrsprachige Option</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper</string>
     <string name="whisper_description">Mehrsprachige Spracherkennung</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~358 MB • Geringere Genauigkeit, besonders bei verrauschtem Audio • Unzuverlässige Spracherkennung (standardmäßig Ihre App-Sprache) • Nur für leistungsschwache Geräte</string>
+    <string name="whisper_small_description">~378 MB • Geringere Genauigkeit, besonders bei verrauschtem Audio • Unzuverlässige Spracherkennung (standardmäßig Ihre App-Sprache) • Nur für leistungsschwache Geräte</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
-    <string name="whisper_turbo_description">~988 MB • Fast large-v3-Qualität • Ausgewogen mehrsprachig</string>
+    <string name="whisper_turbo_description">~1037 MB • Fast large-v3-Qualität • Ausgewogen mehrsprachig</string>
     <string name="whisper_medium_title">Whisper Medium</string>
-    <string name="whisper_medium_description">~903 MB • Gute Genauigkeit • Mehrsprachig</string>
+    <string name="whisper_medium_description">~949 MB • Gute Genauigkeit • Mehrsprachig</string>
     <string name="whisper_distil_large_v3_title">Distil Italian</string>
-    <string name="whisper_distil_large_v3_description">~939 MB • 2 Decoder-Schichten • Am schnellsten • Für Italienisch optimiert</string>
+    <string name="whisper_distil_large_v3_description">~984 MB • 2 Decoder-Schichten • Am schnellsten • Für Italienisch optimiert</string>
     <string name="whisper_download">Whisper herunterladen</string>
     <string name="whisper_download_confirm_title">%1$s herunterladen?</string>
     <string name="whisper_download_confirm_message">Dies lädt etwa %1$d MB herunter. Whisper bietet ausgezeichnete mehrsprachige Unterstützung mit korrekter Zeichensetzung.</string>
@@ -721,19 +721,19 @@
     <string name="speed_comparison_header_speed">Geschwindigkeit</string>
     <string name="speed_comparison_header_quality">Italienisch-Qualität</string>
     <string name="speed_comparison_small_name">Whisper Small</string>
-    <string name="speed_comparison_small_size">~358MB</string>
+    <string name="speed_comparison_small_size">~378MB</string>
     <string name="speed_comparison_small_speed">1.0x</string>
     <string name="speed_comparison_small_quality">Ausreichend</string>
     <string name="speed_comparison_turbo_name">Whisper Turbo</string>
-    <string name="speed_comparison_turbo_size">~988MB</string>
+    <string name="speed_comparison_turbo_size">~1037MB</string>
     <string name="speed_comparison_turbo_speed">1.3x</string>
     <string name="speed_comparison_turbo_quality">Gut</string>
     <string name="speed_comparison_medium_name">Whisper Medium</string>
-    <string name="speed_comparison_medium_size">~903MB</string>
+    <string name="speed_comparison_medium_size">~949MB</string>
     <string name="speed_comparison_medium_speed">0.5x</string>
     <string name="speed_comparison_medium_quality">Gut</string>
     <string name="speed_comparison_distil_it_name">Distil Italian</string>
-    <string name="speed_comparison_distil_it_size">~939MB</string>
+    <string name="speed_comparison_distil_it_size">~984MB</string>
     <string name="speed_comparison_distil_it_speed">~1.8x</string>
     <string name="speed_comparison_distil_it_quality">Bestes Italienisch</string>
     <string name="speed_comparison_distil_it_note">Bestes Italienisch</string>
@@ -751,7 +751,7 @@
     <string name="speed_comparison_gigaam_speed">Schnell</string>
     <string name="speed_comparison_gigaam_quality">Nur Russisch</string>
     <string name="speed_comparison_nemotron_name">Nemotron 3.5</string>
-    <string name="speed_comparison_nemotron_size">~600MB</string>
+    <string name="speed_comparison_nemotron_size">~640MB</string>
     <string name="speed_comparison_nemotron_speed">Streaming</string>
     <string name="speed_comparison_nemotron_quality">Experimentell</string>
     <string name="fastest_badge">Am schnellsten</string>

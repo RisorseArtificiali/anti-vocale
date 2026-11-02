@@ -37,7 +37,6 @@
         "ro",
         "ru",
         "sv",
-        "tr",
         "uk",
         "cs",
         "bg",
@@ -46,11 +45,12 @@
         "fi",
         "el",
         "hu",
-        "no",
         "sk",
         "sl",
         "et",
-        "lv"
+        "lv",
+        "lt",
+        "mt"
       ],
       "variants": [
         {

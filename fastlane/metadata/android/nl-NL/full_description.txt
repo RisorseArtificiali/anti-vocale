@@ -2,7 +2,7 @@ Anti-Vocale transcribeert spraakberichten van WhatsApp, Telegram en andere chat-
 
 INGEBOUWDE MODELLEN
 
-- Parakeet TDT (aanbevolen): snel, 25 Europese talen. Twee varianten: hoge kwaliteit (862MB) of compact (464MB)
+- Parakeet TDT (aanbevolen): snel, 25 Europese talen. Twee varianten: hoge kwaliteit (862MB) of compact (640MB)
 - Whisper Turbo: 99 talen, gebalanceerde snelheid en kwaliteit
 - Whisper Distil Italian: beste Italiaanse kwaliteit, afgestemd op spraakberichten
 - Whisper Medium / Small: meer nauwkeurigheid of kleinere download
@@ -42,6 +42,6 @@ Apache 2.0. Broncode: https://github.com/RisorseArtificiali/anti-vocale
 
 VEREISTEN
 
-Android 8.0+ | 4GB+ RAM aanbevolen | 326MB-1GB opslag per model
+Android 8.0+ | 4GB+ RAM aanbevolen | 326MB-4.7GB opslag per model
 
 LET OP: op sommige telefoons met agressieve batterijbespaarders (Realme, OnePlus, Vivo), open de app één keer na het delen van audio zodat de transcriptie kan afmaken.

@@ -4,7 +4,7 @@ Anti-Vocale は、WhatsApp や Telegram などのメッセージアプリから�
 
 内蔵モデル
 
-- Parakeet TDT（推奨）：高速、ヨーロッパ 25 言語対応。高品質版（862MB）とコンパクト版（464MB）の 2 種類
+- Parakeet TDT（推奨）：高速、ヨーロッパ 25 言語対応。高品質版（862MB）とコンパクト版（640MB）の 2 種類
 - Whisper Turbo：99 言語対応、速度と品質のバランスに優れる
 - Whisper Distil Italian：イタリア語で最高品質、ボイスメッセージ向けに調整
 - Whisper Medium / Small：より高い精度、またはより小さいダウンロード容量
@@ -46,6 +46,6 @@ Apache 2.0。ソースコード: https://github.com/RisorseArtificiali/anti-voca
 
 動作要件
 
-Android 8.0 以降｜メモリ 4GB 以上推奨｜モデルごとに 326MB〜1GB のストレージ
+Android 8.0 以降｜メモリ 4GB 以上推奨｜モデルごとに 326MB〜4.7GB のストレージ
 
 注意：激しいバッテリー節約機能を持つ一部の端末（Realme、OnePlus、Vivo など）では、音声を共有した後にアプリを一度開くと文字起こしが完了します。バックグラウンド文字起こし保護設定は、画面オフでも長時間の処理を継続するのに役立ちます。

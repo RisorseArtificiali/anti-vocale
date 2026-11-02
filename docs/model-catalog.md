@@ -4,7 +4,7 @@ Every model Anti-Vocale can transcribe with, on one page: download sizes, suppor
 
 Bundled models are downloaded on demand inside the app. Community models are one-tap imports (**Model tab > Advanced > Import from catalog**) and the list grows without app updates. Any other sherpa-onnx model can also be imported by URL or from a folder ([import formats](external-models.md)).
 
-Speed context for everything below: measured by us on an Italian voice-message test set with the desktop eval harness (2026-05), your device and your language will differ. The in-app benchmark tab measures the models you have installed on your own hardware.
+Speed context for everything below: measured by us on an Italian voice-message test set with the desktop eval harness (2026-05), your device and your language will differ. The in-app benchmark tab measures the models you have installed on your own hardware. Quality context by language: the same harness family runs every bundled model on FLEURS clips per language, and the [per-language quality matrix](quality-matrix.md) shows which model leads where.
 
 ## Bundled models
 
@@ -24,10 +24,10 @@ Four sizes of the classic. Whisper Turbo is the strong multilingual all-rounder 
 
 | Variant | Size | Languages | Original |
 |---|---|---|---|
-| turbo | 988 MB | 99 | [openai/whisper-large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) |
-| medium | 903 MB | 99 | [openai/whisper-medium](https://huggingface.co/openai/whisper-medium) |
-| small | 358 MB | 99 | [openai/whisper-small](https://huggingface.co/openai/whisper-small) |
-| distil-large-v3-it | 938 MB | Italian | [bofenghuang/whisper-large-v3-distil-it-v0.2](https://huggingface.co/bofenghuang/whisper-large-v3-distil-it-v0.2) |
+| turbo | 1037 MB | 99 | [openai/whisper-large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) |
+| medium | 949 MB | 99 | [openai/whisper-medium](https://huggingface.co/openai/whisper-medium) |
+| small | 378 MB | 99 | [openai/whisper-small](https://huggingface.co/openai/whisper-small) |
+| distil-large-v3-it | 984 MB | Italian | [bofenghuang/whisper-large-v3-distil-it-v0.2](https://huggingface.co/bofenghuang/whisper-large-v3-distil-it-v0.2) |
 
 - Audio limit: 30 s per segment, split automatically
 - Distil-large-v3-it scored the best Italian accuracy on our internal desktop benchmark set (4.3% WER); on the device corpus (11 real clips, app chain) it lands at 6.8%, behind Parakeet int8 (4.48%), at roughly a seventeenth of Parakeet's speed
