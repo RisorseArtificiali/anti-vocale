@@ -1392,18 +1392,22 @@ private fun CatalogModelSection(
     // contract forbids it) rides the default variant's OWN title AND its
     // own args, computed only on that branch, so a slot-bearing fallback
     // title can never reach a bare render with mismatched entry-level args.
-    val entryTitle = remember(entry) { entry.resourceTitlePair() }
-    val entryTitleResId = entryTitle?.first
-        ?: remember(entry) { CatalogVariantUi.of(entry.id).titleResId }
+    // The resolve and its fallback land in ONE remembered pair (never split,
+    // per resourceTitlePair's contract): the entry's own resource title with
+    // its args, or the default variant's title with ITS OWN args on the
+    // contract-forbidden non-resource branch.
+    val entryTitleResolved = remember(entry) {
+        entry.resourceTitlePair()
+            ?: CatalogVariantUi.of(entry.id).let { it.titleResId to it.titleFormatArgs }
+    }
+    val entryTitleResId = entryTitleResolved.first
     val entryDescriptionResId = (entry.description as? CatalogDisplay.Resource)?.key?.let { CatalogStringKeys.resolve(it) }
     // TASK-946: catalog displays may format catalog-derived values (the
     // language count; a variant's download size) in their declared slot
     // order (see PlaceholderSlot); the args DERIVE from the catalog here
     // instead of riding the string as hand-pinned literals that drift on
     // model updates (the 52/53/59 split).
-    val entryTitleFormatArgs = remember(entry) {
-        entryTitle?.second ?: CatalogVariantUi.of(entry.id).titleFormatArgs
-    }
+    val entryTitleFormatArgs = entryTitleResolved.second
     // The render site consumes this pair through placeholderAwareStringResource
     // (titleResId + args in one resolve), never as a bare getString.
     // TASK-949 note: the sibling DESCRIPTION resolve has no fallback tier on
@@ -1658,9 +1662,8 @@ private fun CatalogModelSection(
     // Delete confirmation dialog
     if (state.showDeleteDialog) {
         val variant = state.variantToDelete?.let { CatalogVariantUi.of(entry.id, it) }
-        val variantDisplayName = variant?.let {
-            placeholderAwareStringResource(it.titleResId, it.titleFormatArgs)
-        } ?: placeholderAwareStringResource(entryTitleResId, entryTitleFormatArgs)
+        val variantDisplayName = variant?.let { it.titleRes() }
+            ?: placeholderAwareStringResource(entryTitleResId, entryTitleFormatArgs)
         val isVariantActive = (isEntryActive && variant != null && savedPath?.endsWith(variant.dirName) == true) ||
             (variant != null && activeBackendId == state.linkedVariantBackendIds[variant.dirName])
         DeleteConfirmationDialog(

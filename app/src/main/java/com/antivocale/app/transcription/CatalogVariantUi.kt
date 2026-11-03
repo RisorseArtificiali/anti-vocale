@@ -21,6 +21,19 @@ fun CatalogEntry.titleFormatArgs(): List<Any> = displayFormatArgs(display)
 
 fun CatalogEntry.descriptionFormatArgs(): List<Any> = displayFormatArgs(description)
 
+/**
+ * TASK-949: the ONE entry-level title resolve. The resId and the format args
+ * come back PAIRED so a call site cannot split them (the mismatch class the
+ * ModelTab fallback carried before this task). Null when the entry display is
+ * a literal or absent: the caller owns its fallback title and must pair the
+ * fallback with its OWN args (e.g. [CatalogVariantUi.titleFormatArgs]), never
+ * with the entry's.
+ */
+fun CatalogEntry.resourceTitlePair(): Pair<Int, List<Any>>? =
+    (display as? CatalogDisplay.Resource)?.let {
+        CatalogStringKeys.resolve(it.key) to titleFormatArgs()
+    }
+
 private fun CatalogEntry.displayFormatArgs(display: CatalogDisplay?): List<Any> {
     val slots = (display as? CatalogDisplay.Resource)?.placeholders ?: return emptyList()
     return slots.formatArgs(defaultVariant.estimatedSizeMB, languages.size)

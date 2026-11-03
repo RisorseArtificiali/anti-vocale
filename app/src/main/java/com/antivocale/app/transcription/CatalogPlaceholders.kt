@@ -1,9 +1,6 @@
 package com.antivocale.app.transcription
 
 import android.content.Context
-import com.antivocale.app.data.catalog.CatalogDisplay
-import com.antivocale.app.data.catalog.CatalogEntry
-import com.antivocale.app.data.catalog.CatalogStringKeys
 
 /**
  * TASK-949: the non-composable Context resolvers of the placeholder
@@ -32,16 +29,3 @@ fun Context.variantTitle(ui: CatalogVariantUi): String =
 /** The [ModelVariant] member: same resolve, the variant's own title slots. */
 fun Context.variantTitle(v: ModelVariant): String =
     placeholderAwareString(v.titleResId, v.titleFormatArgs)
-
-/**
- * TASK-949: the ONE entry-level title resolve. The resId and the format args
- * come back PAIRED so a call site cannot split them (the mismatch class the
- * ModelTab fallback carried before this task). Null when the entry display is
- * a literal or absent: the caller owns its fallback title and must pair the
- * fallback with its OWN args (e.g. [CatalogVariantUi.titleFormatArgs]), never
- * with the entry's.
- */
-fun CatalogEntry.resourceTitlePair(): Pair<Int, List<Any>>? =
-    (display as? CatalogDisplay.Resource)?.let {
-        CatalogStringKeys.resolve(it.key) to titleFormatArgs()
-    }

@@ -6,17 +6,12 @@ import com.antivocale.app.transcription.CatalogVariantUi
 import com.antivocale.app.transcription.ModelVariant
 
 /**
- * TASK-946: the ONE resolution for a display string whose placeholders (if
- * any) come from the catalog. The argument list comes from the policy
- * owners in the transcription package (CatalogEntry.titleFormatArgs /
- * descriptionFormatArgs, ModelVariant.titleFormatArgs /
- * descriptionFormatArgs) and is empty when the display declares no slots,
- * so a site resolving through these wrappers always formats every slot the
- * string carries.
- *
- * The non-composable Context twins (placeholderAwareString, variantTitle)
- * live in transcription/CatalogPlaceholders.kt since TASK-949, beside
- * CatalogVariantUi; only the Compose-bound forms stay here.
+ * TASK-946: the ONE composable resolution for a display string whose
+ * placeholders (if any) come from the catalog; see transcription/
+ * CatalogPlaceholders.kt for the policy (args come from the CatalogVariantUi.kt
+ * owners; an empty list resolves the string plainly). The non-composable
+ * Context twins live there since TASK-949; only the Compose-bound forms
+ * stay here.
  */
 @Composable
 fun placeholderAwareStringResource(resId: Int, formatArgs: List<Any>): String =

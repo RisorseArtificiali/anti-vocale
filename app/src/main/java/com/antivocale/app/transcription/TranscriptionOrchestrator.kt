@@ -1843,11 +1843,9 @@ class TranscriptionOrchestrator @Inject constructor(
             entry = entry,
             preference = languagePref,
         )
-        val label = when (val d = entry.display) {
-            is CatalogDisplay.Resource -> context.placeholderAwareString(
-                CatalogStringKeys.resolve(d.key), entry.titleFormatArgs())
-            is CatalogDisplay.Literal -> d.text
-        }
+        val label = entry.resourceTitlePair()
+            ?.let { (resId, args) -> context.placeholderAwareString(resId, args) }
+            ?: (entry.display as? CatalogDisplay.Literal)?.text.orEmpty()
         suspend fun loadOn(path: String): Result<Unit> = configureSherpaBackend(
             backendId = descriptor.backendId,
             modelPath = path,
