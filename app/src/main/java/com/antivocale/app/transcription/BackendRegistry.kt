@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.map
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.antivocale.app.ui.components.countAwareString
+import com.antivocale.app.ui.components.placeholderAwareString
 
 /**
  * Immutable metadata about one transcription backend, tying together the two
@@ -152,12 +152,12 @@ internal fun variantAwareDisplayName(
     val familyResId = descriptor.displayNameResId
         ?: return descriptor.deriveDisplayName(context, savedPath ?: "")
     val entry = BundledCatalog.byId(descriptor.backendId)
-    // TASK-760: a countPlaceholder display formats the entry's language
+    // TASK-760: a placeholder-bearing display formats the entry's language
     // count (the same derivation the Model tab card uses). An entry without
     // a catalog record keeps the ORIGINAL precedence: the family label wins
     // (the llm backend's fixed localized name must not fall to the file
     // name), so the entry checks below stay gated on it.
-    val family = context.countAwareString(familyResId, entry?.titleCountArg())
+    val family = context.placeholderAwareString(familyResId, entry?.titleFormatArgs().orEmpty())
     if (entry == null || entry.variants.size <= 1) return family
     val dirName = savedPath?.takeUnless { it.isBlank() }?.let { File(it).name } ?: return family
     // Strict dir-name match (SherpaModelManager.isValidModelDir's scan idiom):
@@ -165,7 +165,7 @@ internal fun variantAwareDisplayName(
     // path with the wrong variant.
     val variant = entry.variants.firstOrNull { it.dirName == dirName } ?: return family
     val variantUi = CatalogVariantUi.of(entry.id, variant.name)
-    val variantTitle = context.countAwareString(variantUi.titleResId, variantUi.titleFormatArg())
+    val variantTitle = context.placeholderAwareString(variantUi.titleResId, variantUi.titleFormatArgs)
     return if (variantTitle.contains(family, ignoreCase = true)) variantTitle else "$family $variantTitle"
 }
 

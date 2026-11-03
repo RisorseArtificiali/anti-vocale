@@ -6,7 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.antivocale.app.data.catalog.BundledCatalog
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,11 +15,13 @@ import io.mockk.every
 import io.mockk.mockk
 
 /**
- * TASK-767: pins the countPlaceholder policy owners. The derivation (which
- * display formats the language count, and WHICH count) lives in these
+ * TASK-767/946: pins the placeholder policy owners. The derivation (which
+ * display formats which catalog values, and in WHICH order) lives in these
  * extensions alone; a change here changes every render site at once, so
  * the mapping is pinned against the REAL catalog instead of through
  * string snapshots (the ModelViewModelUseModelPersistenceTest attach idiom).
+ * The arg lists also pin the SLOT ORDER (size first, count second) that the
+ * locale strings' %1$d/%2$d positions require.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -46,22 +47,27 @@ class CountArgPolicyTest {
     fun `a countPlaceholder display yields the entry's language count`() {
         val qwen3 = BundledCatalog.byId(BuiltInBackendIds.QWEN3_ASR)!!
         val expected = qwen3.languages.size
-        assertEquals(expected, qwen3.titleCountArg())
-        assertEquals(expected, qwen3.descriptionCountArg())
+        assertEquals(listOf<Any>(expected), qwen3.titleFormatArgs())
+        assertEquals(listOf<Any>(expected), qwen3.descriptionFormatArgs())
     }
 
     @Test
-    fun `plain entries resolve without an argument`() {
+    fun `plain entries resolve without arguments`() {
         val parakeet = BundledCatalog.byId(BuiltInBackendIds.PARAKEET)!!
-        assertNull(parakeet.titleCountArg())
-        assertNull(parakeet.descriptionCountArg())
+        assertEquals(emptyList<Any>(), parakeet.titleFormatArgs())
+        assertEquals(emptyList<Any>(), parakeet.descriptionFormatArgs())
     }
 
     @Test
-    fun `a variant's own language set is the variant-scoped count`() {
+    fun `a variant's args list is size first and count second`() {
         val variant = CatalogVariantUi.forEntry(BuiltInBackendIds.QWEN3_ASR).first()
-        assertEquals(variant.supportedLanguageCodes.size, variant.descriptionFormatArg())
-        assertNull(variant.titleFormatArg())
+        // The 0.6b description declares both slots: the args order must match
+        // the string's %1$d (size) then %2$d (count) positions, so the pinned
+        // pair IS the order proof.
+        assertEquals(
+            listOf<Any>(variant.estimatedSizeMB, variant.supportedLanguageCodes.size),
+            variant.descriptionFormatArgs)
+        assertEquals(emptyList<Any>(), variant.titleFormatArgs)
     }
 
     @Test
@@ -69,16 +75,9 @@ class CountArgPolicyTest {
         // TASK-942: entry-level prefix (the default variant's size)…
         val nemotron = BundledCatalog.byId(BuiltInBackendIds.NEMOTRON)!!
         assertEquals(
-            nemotron.defaultVariant.estimatedSizeMB, nemotron.descriptionSizeArg())
-        assertNull(nemotron.descriptionCountArg())
-        // …and the variant-scoped twin (the variant's OWN size + count).
-        val qwen3Variant = CatalogVariantUi.forEntry(BuiltInBackendIds.QWEN3_ASR).first()
-        assertEquals(qwen3Variant.estimatedSizeMB, qwen3Variant.descriptionSizeArg())
-        assertEquals(
-            qwen3Variant.supportedLanguageCodes.size, qwen3Variant.descriptionFormatArg())
-        // A plain description carries neither slot.
+            listOf<Any>(nemotron.defaultVariant.estimatedSizeMB), nemotron.descriptionFormatArgs())
+        // A plain description carries no slot at all.
         val whisper = BundledCatalog.byId(BuiltInBackendIds.WHISPER)!!
-        assertNull(whisper.descriptionSizeArg())
-        assertNull(whisper.descriptionCountArg())
+        assertEquals(emptyList<Any>(), whisper.descriptionFormatArgs())
     }
 }

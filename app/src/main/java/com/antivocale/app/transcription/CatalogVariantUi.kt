@@ -5,43 +5,37 @@ import com.antivocale.app.data.catalog.CatalogDisplay
 import com.antivocale.app.data.catalog.CatalogEntry
 import com.antivocale.app.data.catalog.CatalogStringKeys
 import com.antivocale.app.data.catalog.CatalogVariant
+import com.antivocale.app.data.catalog.PlaceholderSlot
 
 /**
- * TASK-767: the ONE owner of countPlaceholder rendering policy. A display
- * that asks for the count gets the entry's language count as its format
- * argument; every other display resolves plainly. The extensions live on
+ * TASK-946: the ONE owner of placeholder rendering policy. A display's slot
+ * list is mapped to format arguments in slot order (PlaceholderSlot's
+ * ordinal order is the format order), so the args a render site passes
+ * always match the string's positional specifiers. The extensions live on
  * the ENTRY (not the display) so a display/entry mismatch pair cannot be
- * written; render sites pass the result to countAwareStringResource /
- * countAwareString, which keeps the forgotten-arg bug unrepresentable.
+ * written; render sites pass the result to placeholderAwareStringResource /
+ * placeholderAwareString, and an empty list resolves the string plainly.
  */
-fun CatalogEntry.titleCountArg(): Int? =
-    (display as? CatalogDisplay.Resource)?.takeIf { it.countPlaceholder }?.let { languages.size }
+fun CatalogEntry.titleFormatArgs(): List<Any> = displayFormatArgs(display)
 
-fun CatalogEntry.descriptionCountArg(): Int? =
-    (description as? CatalogDisplay.Resource)?.takeIf { it.countPlaceholder }?.let { languages.size }
+fun CatalogEntry.descriptionFormatArgs(): List<Any> = displayFormatArgs(description)
+
+private fun CatalogEntry.displayFormatArgs(display: CatalogDisplay?): List<Any> {
+    val slots = (display as? CatalogDisplay.Resource)?.placeholders ?: return emptyList()
+    return slotArgs(slots, defaultVariant.estimatedSizeMB, languages.size)
+}
 
 /**
- * TASK-942: the size twin. A sizePlaceholder description formats the catalog's
- * [CatalogEntry.defaultVariant] download size; the number lives in
- * models_catalog.json and only ever reaches the string as a format argument.
+ * The ONE slot-to-value mapping (see PlaceholderSlot): the args come back
+ * in slot order, reading whatever size and count the caller's scope owns.
  */
-fun CatalogEntry.descriptionSizeArg(): Long? =
-    (description as? CatalogDisplay.Resource)?.takeIf { it.sizePlaceholder }
-        ?.let { defaultVariant.estimatedSizeMB }
-
-/** The variant-scoped member of the same family: a countPlaceholder
- *  description counts the variant's OWN language set (the narrower truth
- *  a variant can declare). */
-fun ModelVariant.descriptionFormatArg(): Int? =
-    if (countPlaceholder) supportedLanguageCodes.size else null
-
-/** The variant-scoped size twin: the variant's OWN catalog size. */
-fun ModelVariant.descriptionSizeArg(): Long? =
-    if (sizePlaceholder) estimatedSizeMB else null
-
-/** The variant-scoped title twin (an inherited or own title may format). */
-fun ModelVariant.titleFormatArg(): Int? =
-    if (titleCountPlaceholder) supportedLanguageCodes.size else null
+private fun slotArgs(slots: List<PlaceholderSlot>, sizeMB: Long, count: Int): List<Any> =
+    if (slots.isEmpty()) emptyList() else slots.map { slot ->
+        when (slot) {
+            PlaceholderSlot.SIZE -> sizeMB
+            PlaceholderSlot.COUNT -> count
+        }
+    }
 
 
 /**
@@ -62,9 +56,14 @@ data class CatalogVariantUi(
     override val descriptionResId: Int,
     override val estimatedSizeMB: Long,
     override val supportedLanguageCodes: Set<String>,
-    override val countPlaceholder: Boolean = false,
-    override val sizePlaceholder: Boolean = false,
-    override val titleCountPlaceholder: Boolean = false,
+    /**
+     * The resolved display's slot lists, private because the consumed
+     * abstraction is the derived formatArgs (a consumer reading the raw
+     * slots could rebuild a divergent slot-to-value mapping, the class
+     * TASK-946 closed).
+     */
+    private val descriptionPlaceholders: List<PlaceholderSlot> = emptyList(),
+    private val titlePlaceholders: List<PlaceholderSlot> = emptyList(),
     val badgeKey: String? = null,
     /** TASK-365: the repo is HuggingFace-gated (the add-token warning row). */
     val requiresAuth: Boolean = false,
@@ -75,6 +74,19 @@ data class CatalogVariantUi(
      */
     val singleFileName: String? = null,
 ) : ModelVariant {
+
+    /**
+     * The variant-scoped members of the placeholder policy: each slot reads
+     * the variant's OWN truth (its size; its language set, the narrower
+     * truth a variant can declare).
+     */
+    override val descriptionFormatArgs: List<Any>
+        get() = slotArgs(descriptionPlaceholders, estimatedSizeMB, supportedLanguageCodes.size)
+
+    /** The title twin (an inherited or own title may declare slots). */
+    override val titleFormatArgs: List<Any>
+        get() = slotArgs(titlePlaceholders, estimatedSizeMB, supportedLanguageCodes.size)
+
 
     companion object {
         private fun entry(entryId: String): CatalogEntry =
@@ -87,29 +99,31 @@ data class CatalogVariantUi(
             return CatalogStringKeys.resolve(key)
         }
 
-        private fun fromVariant(entry: CatalogEntry, variant: CatalogVariant): CatalogVariantUi =
-            CatalogVariantUi(
+        private fun fromVariant(entry: CatalogEntry, variant: CatalogVariant): CatalogVariantUi {
+            // The inherited/own chains, resolved once: the variant's OWN
+            // display when declared, the entry's otherwise.
+            val titleDisplay = variant.title ?: entry.display
+            val descriptionDisplay = variant.description ?: entry.description
+            return CatalogVariantUi(
                 backendId = entry.id,
                 variantName = variant.name,
                 dirName = variant.dirName,
-                titleResId = resolveDisplay(variant.title ?: entry.display, "${entry.id}/${variant.name} title"),
-                descriptionResId = resolveDisplay(variant.description ?: entry.description, "${entry.id}/${variant.name} description"),
-                countPlaceholder = ((variant.description ?: entry.description) as? CatalogDisplay.Resource)?.countPlaceholder == true,
-                // TASK-942: the size rides the same inherited/own chain as the
-                // count; an entry-level sizePlaceholder covers the variants
-                // that inherit the entry description (nemotron/gigaam/whistle).
-                sizePlaceholder = ((variant.description ?: entry.description) as? CatalogDisplay.Resource)?.sizePlaceholder == true,
-                // TASK-767 review: symmetric with the description chain -
-                // the variant's OWN title when declared, the entry display
-                // otherwise; either may format the count.
-                titleCountPlaceholder = ((variant.title ?: entry.display)
-                    as? CatalogDisplay.Resource)?.countPlaceholder == true,
+                titleResId = resolveDisplay(titleDisplay, "${entry.id}/${variant.name} title"),
+                descriptionResId = resolveDisplay(descriptionDisplay, "${entry.id}/${variant.name} description"),
+                // The resolved display's ONE slot list (an entry-level
+                // declaration covers the variants that inherit the entry
+                // description, e.g. nemotron's size; the qwen3 count title).
+                descriptionPlaceholders = (descriptionDisplay as? CatalogDisplay.Resource)
+                    ?.placeholders ?: emptyList(),
+                titlePlaceholders = (titleDisplay as? CatalogDisplay.Resource)
+                    ?.placeholders ?: emptyList(),
                 requiresAuth = variant.requiresAuth,
                 singleFileName = variant.files.singleOrNull()?.name,
                 estimatedSizeMB = variant.estimatedSizeMB,
                 supportedLanguageCodes = entry.languagesFor(variant).toSet(),
                 badgeKey = variant.badgeKey,
             )
+        }
 
         /** All variants of a built-in entry, in catalog order. */
         fun forEntry(entryId: String): List<CatalogVariantUi> {

@@ -68,10 +68,8 @@ import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.CatalogVariantUi
-import com.antivocale.app.transcription.titleCountArg
-import com.antivocale.app.transcription.descriptionCountArg
-import com.antivocale.app.transcription.descriptionSizeArg
-import com.antivocale.app.transcription.titleFormatArg
+import com.antivocale.app.transcription.titleFormatArgs
+import com.antivocale.app.transcription.descriptionFormatArgs
 import com.antivocale.app.transcription.Language
 import androidx.compose.ui.graphics.Color
 import com.antivocale.app.util.DeviceCompatibility
@@ -101,9 +99,8 @@ import com.antivocale.app.ui.components.ModelInfoOverlay
 import com.antivocale.app.benchmark.BenchmarkState
 import com.antivocale.app.ui.viewmodel.BenchmarkViewModel
 import com.antivocale.app.ui.viewmodel.ModelViewModel
-import com.antivocale.app.ui.components.countAwareString
-import com.antivocale.app.ui.components.countAwareStringResource
-import com.antivocale.app.ui.components.sizeAwareStringResource
+import com.antivocale.app.ui.components.placeholderAwareString
+import com.antivocale.app.ui.components.placeholderAwareStringResource
 import com.antivocale.app.util.FeedbackHelper
 
 /**
@@ -1391,20 +1388,17 @@ private fun CatalogModelSection(
         ?.let { CatalogStringKeys.resolve(it) }
         ?: CatalogVariantUi.of(entry.id).titleResId
     val entryDescriptionResId = (entry.description as? CatalogDisplay.Resource)?.key?.let { CatalogStringKeys.resolve(it) }
-    // TASK-760: catalog displays may format the entry's language count; the
-    // value DERIVES from the catalog here instead of riding the string as a
-    // hand-pinned literal that drifts on model updates (the 52/53/59 split).
-    // TASK-767: the flag-to-count policy lives in titleCountArg/
-    // descriptionCountArg; the arms resolve through countAwareStringResource.
-    val entryTitleCountArg = remember(entry) { entry.titleCountArg() }
-    val entryDescriptionCountArg = remember(entry) { entry.descriptionCountArg() }
-    // TASK-942: a sizePlaceholder entry description (nemotron/gigaam/whistle)
-    // formats the default variant's catalog size instead of a baked literal.
-    val entryDescriptionSizeArg = remember(entry) { entry.descriptionSizeArg() }
+    // TASK-946: catalog displays may format catalog-derived values (the
+    // language count; a variant's download size) in their declared slot
+    // order (see PlaceholderSlot); the args DERIVE from the catalog here
+    // instead of riding the string as hand-pinned literals that drift on
+    // model updates (the 52/53/59 split).
+    val entryTitleFormatArgs = remember(entry) { entry.titleFormatArgs() }
+    val entryDescriptionFormatArgs = remember(entry) { entry.descriptionFormatArgs() }
     // TASK-796: the entry title carries FLAG EMOJI for its languages when
     // it is monolingual/few-language (the shared LanguageFlags.titled;
     // multilingual entries render the title unchanged).
-    val entryTitleWithFlags = remember(entry, entryTitleResId, entryTitleCountArg) {
+    val entryTitleWithFlags = remember(entry) {
         LanguageFlags.titled("", entry.variants.flatMap(entry::languagesFor))
     }
 
@@ -1437,14 +1431,15 @@ private fun CatalogModelSection(
                     // and the Active pill.
                     Column {
                         Text(
-                            text = entryTitleWithFlags + countAwareStringResource(entryTitleResId, entryTitleCountArg),
+                            text = entryTitleWithFlags + placeholderAwareStringResource(
+                                entryTitleResId, entryTitleFormatArgs),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         if (entryDescriptionResId != null) {
                             Text(
-                                text = sizeAwareStringResource(
-                                    entryDescriptionResId, entryDescriptionSizeArg, entryDescriptionCountArg),
+                                text = placeholderAwareStringResource(
+                                    entryDescriptionResId, entryDescriptionFormatArgs),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1555,7 +1550,7 @@ private fun CatalogModelSection(
                             benchmarkViewModel.startBenchmark(
                                 entry.id,
                                 path,
-                                context.countAwareString(variant.titleResId, variant.titleFormatArg())
+                                context.placeholderAwareString(variant.titleResId, variant.titleFormatArgs)
                             )
                         }
                         }
@@ -1614,8 +1609,8 @@ private fun CatalogModelSection(
     if (state.showDownloadDialog) {
         val selectedName = state.selectedVariant?.let {
             val v = CatalogVariantUi.of(entry.id, it)
-            countAwareStringResource(v.titleResId, v.titleFormatArg())
-        } ?: countAwareStringResource(entryTitleResId, entryTitleCountArg)
+            placeholderAwareStringResource(v.titleResId, v.titleFormatArgs)
+        } ?: placeholderAwareStringResource(entryTitleResId, entryTitleFormatArgs)
         val isExtract = state.selectedVariant != null && state.variantsNeedingExtraction.contains(state.selectedVariant)
         val sizeMb = state.selectedVariant?.let { CatalogVariantUi.of(entry.id, it).estimatedSizeMB.toInt() } ?: 0
         // TASK-427: advise before the download, from the same budget the
@@ -1648,8 +1643,8 @@ private fun CatalogModelSection(
     if (state.showDeleteDialog) {
         val variant = state.variantToDelete?.let { CatalogVariantUi.of(entry.id, it) }
         val variantDisplayName = variant?.let {
-            countAwareStringResource(it.titleResId, it.titleFormatArg())
-        } ?: countAwareStringResource(entryTitleResId, entryTitleCountArg)
+            placeholderAwareStringResource(it.titleResId, it.titleFormatArgs)
+        } ?: placeholderAwareStringResource(entryTitleResId, entryTitleFormatArgs)
         val isVariantActive = (isEntryActive && variant != null && savedPath?.endsWith(variant.dirName) == true) ||
             (variant != null && activeBackendId == state.linkedVariantBackendIds[variant.dirName])
         DeleteConfirmationDialog(

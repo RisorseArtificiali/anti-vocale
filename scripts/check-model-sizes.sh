@@ -48,11 +48,12 @@ def size_of(entry_id, variant):
 # TASK-942: the size/count prefix is no longer baked into locale strings; the
 # number arrives as a format argument fed from the catalog at render time. The
 # prefixed target list is DERIVED from the catalog walk (description flags
-# sizePlaceholder/countPlaceholder), so a new prefixed entry is covered the
-# moment the catalog declares it; the guard verifies per locale:
-#   - the %1$d specifier (size slot) survives;
-#   - the %2$d specifier (count slot) survives where the same display
-#     declares countPlaceholder;
+# sizePlaceholder/countPlaceholder; the app parser normalizes the same two
+# flags into one ordered slot list, TASK-946), so a new prefixed entry is
+# covered the moment the catalog declares it; the guard verifies per locale:
+#   - one positional specifier per declared slot survives, in the slot list's
+#     order (size first = %1$d, count second = %2$d);
+#   - no specifier beyond the declared slots survives;
 #   - no OTHER digit run remains after the slots are stripped, except the
 #     allowlisted claim literals below (a stray digit is a stale baked copy,
 #     the drift class this file exists to catch). Unit-token vocabulary is
@@ -64,8 +65,12 @@ for m in catalog['models']:
     for holder in [m] + m.get('variants', []):
         desc = holder.get('description', {})
         key = desc.get('resourceKey') if isinstance(desc, dict) else None
-        if key and isinstance(key, str) and desc.get('sizePlaceholder'):
-            PREFIXED[key] = (m['id'], holder.get('name'), bool(desc.get('countPlaceholder')))
+        if key and isinstance(key, str):
+            # The same canonical order the app parser derives (size, count).
+            slots = [s for s, flag in (('size', 'sizePlaceholder'),
+                                       ('count', 'countPlaceholder')) if desc.get(flag)]
+            if slots:
+                PREFIXED[key] = (m['id'], holder.get('name'), slots)
 # claim-text digits that are NOT catalog data (model names, layer counts)
 DIGIT_ALLOWLIST = {
     'whisper_turbo_description': ['3'],        # "large-v3"
@@ -88,19 +93,21 @@ errors = []
 
 for p in sorted((repo / 'app/src/main/res').glob('values*/strings.xml')):
     bodies = {m.group(1): m.group(2) for m in string_re.finditer(p.read_text())}
-    for name, (_e, _v, wants_count) in PREFIXED.items():
+    for name, (_e, _v, slots) in PREFIXED.items():
         body = bodies.get(name)
         if body is None:
             errors.append(f'{p.relative_to(repo)}: {name} missing')
             continue
-        stripped = body.replace('%1$d', '').replace('%2$d', '')
-        if '%1$d' not in body:
-            errors.append(f'{p.relative_to(repo)}: {name} lost the %1$d size specifier')
-        if wants_count and '%2$d' not in body:
-            errors.append(f'{p.relative_to(repo)}: {name} lost the %2$d count specifier')
-        if not wants_count and '%2$d' in body:
-            errors.append(f'{p.relative_to(repo)}: {name} carries a stray %2$d the catalog '
-                          f'does not declare (renders as a literal "%2$d")')
+        stripped = body
+        for i in range(len(slots) + 1):
+            stripped = stripped.replace(f'%{i + 1}$d', '')
+        for i, slot in enumerate(slots):
+            if f'%{i + 1}$d' not in body:
+                errors.append(f'{p.relative_to(repo)}: {name} lost the %{i + 1}$d {slot} specifier')
+        stray = f'%{len(slots) + 1}$d'
+        if stray in body:
+            errors.append(f'{p.relative_to(repo)}: {name} carries a stray {stray} the catalog '
+                          f'does not declare (renders as a literal "{stray}")')
         allowed = DIGIT_ALLOWLIST.get(name, [])
         # ASCII digits only: \d would match a locale's native-digit rendering
         # of an allowlisted literal (fa/hi) and fail a correct translation.

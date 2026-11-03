@@ -13,18 +13,22 @@ import org.robolectric.annotation.Config
 import java.util.Locale
 
 /**
- * TASK-942: the model-description size/count prefix is a format argument fed
- * from the catalog at render time. This guard pins the same two facts the
+ * TASK-942/946: the model-description size/count prefix is a format argument
+ * fed from the catalog at render time. This guard pins the same facts the
  * bash guard (scripts/check-model-sizes.sh) checks statically, plus the
- * round-trip bash cannot do: in EVERY shipped locale the prefixed
- * descriptions keep their %1$d (size) and %2$d (count) specifiers, and
- * formatting them with the REAL catalog values renders those exact values.
- * A translation that hardcodes a number, or drops a specifier (a runtime
- * MissingFormatArgumentException class), fails here.
+ * round-trip bash cannot do: in EVERY shipped locale every slot-bearing
+ * description keeps one positional specifier per declared slot (the slot at
+ * position i owns %i+1$d; size=%1$d, count=%2$d) and no stray specifier
+ * beyond them, and formatting with the REAL catalog values renders those
+ * exact values. A translation that hardcodes a number, or drops a specifier
+ * (a runtime MissingFormatArgumentException class), fails here.
  *
- * The target list is DERIVED from the bundled catalog's placeholder flags
- * (same walk as the bash guard): a description the catalog declares
- * sizePlaceholder is covered here the moment the catalog declares it.
+ * The target list is DERIVED from the bundled catalog's ONE slot list
+ * (CatalogDisplay.Resource.placeholders; same flags the bash guard reads
+ * and the parser normalizes): a description the catalog gives any slot is
+ * covered here the moment the catalog declares it. Slot-bearing TITLES are
+ * not derived here; the qwen3 count title (the only family today) stays
+ * pinned by Qwen3CatalogCountGuardTest.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -32,7 +36,7 @@ class ModelSizePlaceholderGuardTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
-    /** One derived target: the resource, its entry/variant, the count source. */
+    /** One derived target: the resource, its entry/variant, the slot sources. */
     private data class Target(
         val res: Int,
         /** The catalog's own key for this resource (the anti-vacuity pin). */
@@ -42,20 +46,26 @@ class ModelSizePlaceholderGuardTest {
         /** The count slot's catalog source: languagesFor(variant), the same
          *  set the render site's count arg carries. */
         val languages: List<String>,
-        val wantsCount: Boolean,
+        /** The declared slots in format order (see PlaceholderSlot). */
+        val slots: List<PlaceholderSlot>,
     )
 
     private val prefixed: List<Target> = BundledCatalog.entries().flatMap { entry ->
         buildList {
-            (entry.description as? CatalogDisplay.Resource)?.takeIf { it.sizePlaceholder }?.let { d ->
-                add(Target(CatalogStringKeys.resolve(d.key), d.key, entry.id,
-                    entry.defaultVariant.name, entry.defaultVariant.languages.ifEmpty { entry.languages },
-                    d.countPlaceholder))
+            fun add(key: String, variantName: String, languages: List<String>, slots: List<PlaceholderSlot>) =
+                add(Target(CatalogStringKeys.resolve(key), key, entry.id, variantName, languages, slots))
+            // Entry-level description: the render site's count source is the
+            // ENTRY's language list (CatalogEntry.descriptionFormatArgs).
+            (entry.description as? CatalogDisplay.Resource)
+                ?.takeIf { it.placeholders.isNotEmpty() }?.let { d ->
+                add(d.key, entry.defaultVariant.name, entry.languages, d.placeholders)
             }
+            // Variant-level description: the variant's OWN set when declared
+            // (languagesFor), matching CatalogVariantUi.descriptionFormatArgs.
             entry.variants.forEach { v ->
-                (v.description as? CatalogDisplay.Resource)?.takeIf { it.sizePlaceholder }?.let { d ->
-                    add(Target(CatalogStringKeys.resolve(d.key), d.key, entry.id,
-                        v.name, v.languages.ifEmpty { entry.languages }, d.countPlaceholder))
+                (v.description as? CatalogDisplay.Resource)
+                    ?.takeIf { it.placeholders.isNotEmpty() }?.let { d ->
+                    add(d.key, v.name, v.languages.ifEmpty { entry.languages }, d.placeholders)
                 }
             }
         }
@@ -67,8 +77,8 @@ class ModelSizePlaceholderGuardTest {
         "parakeet_stock_description", "parakeet_smoothquant_description",
         "whisper_small_description", "whisper_turbo_description",
         "whisper_medium_description", "whisper_distil_large_v3_description",
-        "qwen3_asr_0_6b_description", "nemotron_description",
-        "gigaam_description", "whistle_description",
+        "qwen3_asr_0_6b_description", "qwen3_asr_description",
+        "nemotron_description", "gigaam_description", "whistle_description",
     )
 
     private fun sizeOf(entryId: String, variantName: String): Long =
@@ -76,44 +86,41 @@ class ModelSizePlaceholderGuardTest {
             ?: error("bundled catalog is missing $entryId/$variantName")
 
     @Test
-    fun `the derivation covers exactly the shipped prefixed descriptions`() {
+    fun `the derivation covers exactly the shipped slot-bearing descriptions`() {
         // A catalog flag edit that drops or adds a description off the
         // derivation must fail loudly, not pass vacuously.
         assertEquals(expectedKeys, prefixed.map { it.key }.toSet())
     }
 
     @Test
-    fun `the prefixed descriptions keep their specifiers and format the catalog values`() {
+    fun `the slot-bearing descriptions keep their specifiers and format the catalog values`() {
         ShippedLocales.tags().forEach { tag ->
             val c = ShippedLocales.contextFor(context, tag)
             prefixed.forEach { target ->
                 val size = sizeOf(target.entryId, target.variantName)
                 val raw = c.getString(target.res)
-                assertTrue("$tag: ${target.res} lost the %1\$d size specifier: $raw",
-                    raw.contains("%1\$d"))
-                if (target.wantsCount) {
-                    val count = target.languages.size
-                    assertTrue("$tag: ${target.res} lost the %2\$d count specifier: $raw",
-                        raw.contains("%2\$d"))
-                    // fa and friends render the FORMATTED values in the locale's
-                    // own digit system, so the expectation goes through the same
-                    // String.format the app renders with.
-                    val formatted = c.getString(target.res, size, count)
-                    val sizeDigits = String.format(Locale.forLanguageTag(tag), "%d", size)
-                    val countDigits = String.format(Locale.forLanguageTag(tag), "%d", count)
-                    assertTrue("$tag: ${target.res} formatted without catalog size $sizeDigits: $formatted",
-                        formatted.contains(sizeDigits))
-                    assertTrue("$tag: ${target.res} formatted without catalog count $countDigits: $formatted",
-                        formatted.contains(countDigits))
-                } else {
-                    // A stray %2$d on a size-only string renders the literal
-                    // text to the user (one-arg format never throws).
-                    assertTrue("$tag: ${target.res} carries a stray %2\$d count specifier: $raw",
-                        !raw.contains("%2\$d"))
-                    val formatted = c.getString(target.res, size)
-                    val sizeDigits = String.format(Locale.forLanguageTag(tag), "%d", size)
-                    assertTrue("$tag: ${target.res} formatted without catalog size $sizeDigits: $formatted",
-                        formatted.contains(sizeDigits))
+                // One positional specifier per declared slot, none beyond.
+                target.slots.forEachIndexed { i, slot ->
+                    assertTrue("$tag: ${target.res} lost the %${i + 1}\$d ${slot} specifier: $raw",
+                        raw.contains("%${i + 1}\$d"))
+                }
+                val stray = "%${target.slots.size + 1}\$d"
+                assertTrue("$tag: ${target.res} carries a stray $stray specifier the catalog " +
+                    "does not declare (renders as literal text): $raw", !raw.contains(stray))
+                // fa and friends render the FORMATTED values in the locale's
+                // own digit system, so the expectation goes through the same
+                // String.format the app renders with.
+                val args: List<Any> = target.slots.map { slot ->
+                    when (slot) {
+                        PlaceholderSlot.SIZE -> size
+                        PlaceholderSlot.COUNT -> target.languages.size
+                    }
+                }
+                val formatted = c.getString(target.res, *args.toTypedArray())
+                target.slots.forEachIndexed { i, slot ->
+                    val digits = String.format(Locale.forLanguageTag(tag), "%d", args[i])
+                    assertTrue("$tag: ${target.res} formatted without the catalog $slot value " +
+                        "$digits: $formatted", formatted.contains(digits))
                 }
             }
         }

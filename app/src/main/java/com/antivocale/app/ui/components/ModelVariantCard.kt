@@ -23,9 +23,6 @@ import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.transcription.ModelVariant
-import com.antivocale.app.transcription.descriptionFormatArg
-import com.antivocale.app.transcription.descriptionSizeArg
-import com.antivocale.app.transcription.titleFormatArg
 import com.antivocale.app.util.formatFileSize
 
 // ==================== Download Button State ====================
@@ -147,12 +144,16 @@ fun ModelVariantCard(
                     // variants, and the download state lives in the button
                     // and progress row below.
                     Column {
+                        // Cached per variant: the card recomposes on every
+                        // download-progress tick (the state is rebuilt inline).
+                        val titleArgs = remember(state.variant) { state.variant.titleFormatArgs }
+                        val descriptionArgs = remember(state.variant) { state.variant.descriptionFormatArgs }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            val plainTitle = countAwareStringResource(
-                                state.variant.titleResId, state.variant.titleFormatArg())
+                            val plainTitle = placeholderAwareStringResource(
+                                state.variant.titleResId, titleArgs)
                             Text(
                                 text = LanguageFlags.titled(
                                     plainTitle, state.variant.supportedLanguageCodes),
@@ -180,12 +181,11 @@ fun ModelVariantCard(
                             }
                         }
                         Text(
-                            // TASK-942: the size/count prefix is catalog data;
+                            // TASK-946: the size/count prefix is catalog data;
                             // the locale string carries only the claim sentence.
-                            text = sizeAwareStringResource(
+                            text = placeholderAwareStringResource(
                                 state.variant.descriptionResId,
-                                state.variant.descriptionSizeArg(),
-                                state.variant.descriptionFormatArg()),
+                                descriptionArgs),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

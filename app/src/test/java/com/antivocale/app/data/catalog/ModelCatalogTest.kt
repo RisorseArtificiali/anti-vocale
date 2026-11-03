@@ -143,6 +143,37 @@ class ModelCatalogTest {
         assertEquals(CatalogDisplay.Resource("parakeet_smoothquant_title"), parakeet.display)
     }
 
+    // ---- placeholder slot list (TASK-946) ----
+
+    @Test
+    fun `the placeholder flags normalize into one canonical-order slot list`() {
+        // The wire format stays the two booleans; the ONE list is derived at
+        // parse, size first (formats %1$d) and count second (%2$d).
+        fun slots(doc: String) = (ModelCatalogJson.parseCatalog(doc).single().description
+            as CatalogDisplay.Resource).placeholders
+        val both = """{"schemaVersion":1,"models":[{"id":"x","runtime":"offline","modelType":"nemo_transducer","family":"TRANSDUCER","display":{"resourceKey":"parakeet_name"},"description":{"resourceKey":"d","sizePlaceholder":true,"countPlaceholder":true},"variants":[{"name":"v","dirName":"d","estimatedSizeMB":1,"source":{"kind":"url","template":"https://x/{file}"},"files":["a.onnx"]}]}]}"""
+        assertEquals(listOf(PlaceholderSlot.SIZE, PlaceholderSlot.COUNT), slots(both))
+
+        val countOnly = both.replace("\"sizePlaceholder\":true,", "")
+        assertEquals(listOf(PlaceholderSlot.COUNT), slots(countOnly))
+
+        val neither = countOnly.replace(",\"countPlaceholder\":true", "")
+        assertEquals(emptyList<PlaceholderSlot>(), slots(neither))
+    }
+
+    @Test
+    fun `an out-of-order or duplicated slot list is rejected`() {
+        // The order is enforced in code (the Resource constructor), not by
+        // convention: a list the parser or a test builds in any other order
+        // fails construction instead of rendering swapped args.
+        assertTrue(runCatching {
+            CatalogDisplay.Resource("k", listOf(PlaceholderSlot.COUNT, PlaceholderSlot.SIZE))
+        }.isFailure)
+        assertTrue(runCatching {
+            CatalogDisplay.Resource("k", listOf(PlaceholderSlot.SIZE, PlaceholderSlot.SIZE))
+        }.isFailure)
+    }
+
     @Test
     fun `schema version mismatch is rejected`() {
         assertTrue(runCatching { ModelCatalogJson.parseCatalog(builtInDoc.replace("1", "2", ignoreCase = false)) }.isFailure)

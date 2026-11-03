@@ -286,14 +286,13 @@ object ModelCatalogJson {
             val key = raw.optString("resourceKey", "")
             if (key.isNotBlank()) CatalogDisplay.Resource(
                 key,
-                // TASK-760: the display string formats the entry's language
-                // COUNT (%1$d); the render sites derive it from the catalog
-                // instead of a hand-pinned literal that drifts on updates.
-                raw.optBoolean("countPlaceholder", false),
-                // TASK-942: the description formats the variant's catalog
-                // download size (%1$d); the render sites feed estimatedSizeMB
-                // so a size bump never touches locale strings again.
-                raw.optBoolean("sizePlaceholder", false),
+                // The wire format stays the JSON booleans; the ONE slot list
+                // is derived here, the argument order being the canonical
+                // (format) order.
+                listOfNotNull(
+                    PlaceholderSlot.SIZE.takeIf { raw.optBoolean("sizePlaceholder", false) },
+                    PlaceholderSlot.COUNT.takeIf { raw.optBoolean("countPlaceholder", false) },
+                ),
             )
             else CatalogDisplay.Literal(raw.optString("text", ""))
         }
@@ -310,6 +309,18 @@ object ModelCatalogJson {
 }
 
 /**
+ * One format slot a catalog display may declare. TASK-946: the ONE
+ * placeholder representation (the parallel countPlaceholder/sizePlaceholder
+ * boolean paths are gone). Ordinal order IS the format-argument order: a
+ * display's [CatalogDisplay.Resource.placeholders] lists slots lowest-ordinal
+ * first, so the slot at position i formats the string's i+1-th positional
+ * specifier (size=%1$d, count=%2$d). [ModelCatalogJson] builds the list in
+ * this order and [CatalogDisplay.Resource] rejects any other order, so an
+ * args/placeholder mismatch is unrepresentable in code.
+ */
+enum class PlaceholderSlot { SIZE, COUNT }
+
+/**
  * One way to surface a display string. Built-in entries use [CatalogDisplay.Resource]
  * (a localized R.string by NAME); external entries always use [CatalogDisplay.Literal]
  * (the exact text from the user's JSON, shown regardless of locale).
@@ -317,9 +328,15 @@ object ModelCatalogJson {
 sealed interface CatalogDisplay {
     data class Resource(
         val key: String,
-        val countPlaceholder: Boolean = false,
-        val sizePlaceholder: Boolean = false,
-    ) : CatalogDisplay
+        /** The format slots this display consumes, in ordinal (format) order. */
+        val placeholders: List<PlaceholderSlot> = emptyList(),
+    ) : CatalogDisplay {
+        init {
+            require(placeholders == placeholders.distinct().sorted()) {
+                "display $key: placeholder slots must be unique and in ordinal (format) order: $placeholders"
+            }
+        }
+    }
     data class Literal(val text: String) : CatalogDisplay
 }
 
