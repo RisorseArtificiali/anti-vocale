@@ -202,6 +202,8 @@ internal fun variantAwareDisplayName(
  *  - [com.antivocale.app.service.ExtractionService] (downloads keyed by entry id)
  *  - [OomBreadcrumbRecorder] (TASK-679: display-name derivation for the
  *    resident engines the breadcrumb and the memory panel name)
+ *  - [com.antivocale.app.benchmark.BenchmarkManager] (TASK-955: busy/init
+ *    failure messages name the backend through variantAwareDisplayName)
  */
 @Singleton
 class BackendRegistry @Inject constructor(
