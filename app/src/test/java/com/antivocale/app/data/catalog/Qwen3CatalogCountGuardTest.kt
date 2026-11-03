@@ -1,6 +1,7 @@
 package com.antivocale.app.data.catalog
 
 import com.antivocale.app.testing.RepoFiles
+import com.antivocale.app.testing.ShippedLocales
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -32,41 +33,35 @@ class Qwen3CatalogCountGuardTest {
         BundledCatalog.byId(BuiltInBackendIds.QWEN3_ASR)?.languages?.size
             ?: error("bundled catalog is missing qwen3-asr")
 
-    /** The shipped locale set, derived from values-* dirs (the RepoFiles locator). */
-    private fun shippedLocales(): List<String> {
-        val res = RepoFiles.resolve("src/main/res")
-        val localeShape = Regex("[a-z]{2,3}(-[A-Za-z0-9]{2,8})?")
-        val tags = res.listFiles { f -> f.isDirectory }
-            ?.map { it.name }
-            ?.filter { it.startsWith("values-") }
-            ?.map { it.removePrefix("values-").replace("-r", "-") }
-            // only locale dirs: a future values-night overlay is not a locale
-            ?.filter { localeShape.matches(it) } ?: emptyList()
-        return (listOf("en") + tags).distinct()
-    }
+    private fun sizeOf060b(): Long =
+        BundledCatalog.byId(BuiltInBackendIds.QWEN3_ASR)?.variant("0.6b-int8")?.estimatedSizeMB
+            ?: error("bundled catalog is missing qwen3-asr/0.6b-int8")
 
-    private fun contextFor(tag: String): Context {
-        val config = android.content.res.Configuration(context.resources.configuration)
-        config.setLocale(Locale.forLanguageTag(tag))
-        return context.createConfigurationContext(config)
-    }
+    private fun shippedLocales(): List<String> = ShippedLocales.tags()
+
+    private fun contextFor(tag: String): Context = ShippedLocales.contextFor(context, tag)
 
     @Test
     fun `the placeholder strings format the catalog count in every locale`() {
         shippedLocales().forEach { tag ->
             val c = contextFor(tag)
+            // TASK-942: the 0.6b description gained a size slot (%1$d) ahead
+            // of the count slot (%2$d); the other two stay count-only.
+            val size = sizeOf060b()
+            val sizedCount = R.string.qwen3_asr_0_6b_description to size
             listOf(
-                R.string.qwen3_asr_title,
-                R.string.qwen3_asr_description,
-                R.string.qwen3_asr_0_6b_description,
-            ).forEach { res ->
+                R.string.qwen3_asr_title to null,
+                R.string.qwen3_asr_description to null,
+                sizedCount,
+            ).forEach { (res, sizeArg) ->
                 val raw = c.getString(res)
                 assertTrue("$tag: $res lost the %1\$d placeholder: $raw", raw.contains("%1\$d"))
                 // fa and friends render the FORMATTED value in the locale's
                 // own digit system ("۵۹"), so the expectation goes through
                 // the same String.format the app renders with.
                 val digits = String.format(Locale.forLanguageTag(tag), "%d", count)
-                val formatted = c.getString(res, count)
+                val formatted = if (sizeArg != null) c.getString(res, sizeArg, count)
+                                else c.getString(res, count)
                 assertTrue("$tag: $res formatted without the catalog count ($digits): $formatted",
                     formatted.contains(digits))
             }

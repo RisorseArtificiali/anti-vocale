@@ -12,6 +12,8 @@ interface ModelVariant {
     val descriptionResId: Int
     /** TASK-760: the description formats [supportedLanguageCodes]'s size. */
     val countPlaceholder: Boolean get() = false
+    /** TASK-942: the description formats [estimatedSizeMB] (%1$d). */
+    val sizePlaceholder: Boolean get() = false
     /** TASK-761 review: an INHERITED title may format the count as well. */
     val titleCountPlaceholder: Boolean get() = false
     val dirName: String

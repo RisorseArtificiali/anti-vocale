@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.R
 import com.antivocale.app.testing.RepoFiles
+import com.antivocale.app.testing.ShippedLocales
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,20 +34,12 @@ class FormattedResourcesPipelineTest {
     private fun repoFile(relative: String): File = RepoFiles.resolve(relative)
 
     /** The shipped locale set, derived from values-* dirs (plus the default). */
-    private fun shippedLocales(): List<String> {
-        val dirs = repoFile("src/main/res").listFiles { f -> f.isDirectory }
-            ?.map { it.name } ?: emptyList()
-        val tags = dirs.filter { it.startsWith("values-") }
-            .map { it.removePrefix("values-").replace("-r", "-") }
-        return (listOf("en") + tags).distinct()
-    }
+    // The shared shipped-locale owner (TASK-942 review: the three per-class
+    // copies had diverged; this one lacked the locale-shape filter).
+    private fun shippedLocales(): List<String> = ShippedLocales.tags()
 
-    private fun contextFor(tag: String): Context {
-        val base = ApplicationProvider.getApplicationContext<Context>()
-        val config = android.content.res.Configuration(base.resources.configuration)
-        config.setLocale(Locale.forLanguageTag(tag))
-        return base.createConfigurationContext(config)
-    }
+    private fun contextFor(tag: String): Context =
+        ShippedLocales.contextFor(ApplicationProvider.getApplicationContext(), tag)
 
     /**
      * Representative args for a template's specifiers, positional or not

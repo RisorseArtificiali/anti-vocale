@@ -290,6 +290,10 @@ object ModelCatalogJson {
                 // COUNT (%1$d); the render sites derive it from the catalog
                 // instead of a hand-pinned literal that drifts on updates.
                 raw.optBoolean("countPlaceholder", false),
+                // TASK-942: the description formats the variant's catalog
+                // download size (%1$d); the render sites feed estimatedSizeMB
+                // so a size bump never touches locale strings again.
+                raw.optBoolean("sizePlaceholder", false),
             )
             else CatalogDisplay.Literal(raw.optString("text", ""))
         }
@@ -311,7 +315,11 @@ object ModelCatalogJson {
  * (the exact text from the user's JSON, shown regardless of locale).
  */
 sealed interface CatalogDisplay {
-    data class Resource(val key: String, val countPlaceholder: Boolean = false) : CatalogDisplay
+    data class Resource(
+        val key: String,
+        val countPlaceholder: Boolean = false,
+        val sizePlaceholder: Boolean = false,
+    ) : CatalogDisplay
     data class Literal(val text: String) : CatalogDisplay
 }
 

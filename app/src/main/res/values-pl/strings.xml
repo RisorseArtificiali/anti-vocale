@@ -150,21 +150,21 @@
     <string name="parakeet_download_confirm_title">Pobrać Parakeet TDT?</string>
     <string name="parakeet_download_confirm_message">To pobierze ok. %1$dMB. Parakeet jest szybszy, ale mniej dokładny niż Gemma w transkrypcji.</string>
     <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
-    <string name="parakeet_smoothquant_description">~862MB • 25 języków • Alternatywa dla domyślnego</string>
+    <string name="parakeet_smoothquant_description">~%1$dMB • %2$d języków • Alternatywa dla domyślnego</string>
     <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
-    <string name="parakeet_stock_description">~640MB • 25 języków • Domyślny: najszybsza opcja wielojęzyczna</string>
+    <string name="parakeet_stock_description">~%1$dMB • %2$d języków • Domyślny: najszybsza opcja wielojęzyczna</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper</string>
     <string name="whisper_description">Wielojęzyczne rozpoznawanie mowy</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~378MB • Niższa dokładność, zwłaszcza na zaszumionym audio • Niewiarygodna automatyczna detekcja języka (domyślnie język aplikacji) • Tylko dla słabszych urządzeń</string>
+    <string name="whisper_small_description">~%1$dMB • Niższa dokładność, zwłaszcza na zaszumionym audio • Niewiarygodna automatyczna detekcja języka (domyślnie język aplikacji) • Tylko dla słabszych urządzeń</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
-    <string name="whisper_turbo_description">~1037MB • Jakość bliska large-v3 • Zrównoważony wielojęzyczny</string>
+    <string name="whisper_turbo_description">~%1$dMB • Jakość bliska large-v3 • Zrównoważony wielojęzyczny</string>
     <string name="whisper_medium_title">Whisper Medium</string>
-    <string name="whisper_medium_description">~949MB • Dobra dokładność • Wielojęzyczny</string>
+    <string name="whisper_medium_description">~%1$dMB • Dobra dokładność • Wielojęzyczny</string>
     <string name="whisper_distil_large_v3_title">Distil Italian</string>
-    <string name="whisper_distil_large_v3_description">~984MB • 2 warstwy dekodera • Najszybszy • Zoptymalizowany pod włoski</string>
+    <string name="whisper_distil_large_v3_description">~%1$dMB • 2 warstwy dekodera • Najszybszy • Zoptymalizowany pod włoski</string>
     <string name="whisper_download">Pobierz Whisper</string>
     <string name="whisper_download_confirm_title">Pobrać %1$s?</string>
     <string name="whisper_download_confirm_message">To pobierze ok. %1$dMB. Whisper zapewnia znakomite wsparcie wielojęzyczne z poprawną interpunkcją.</string>
@@ -175,7 +175,7 @@
     <string name="qwen3_asr_title">Qwen3-ASR (%1$d języków)</string>
     <string name="qwen3_asr_description">%1$d języków</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938MB • %1$d języków</string>
+    <string name="qwen3_asr_0_6b_description">~%1$dMB • %2$d języków</string>
     <string name="qwen3_asr_download_confirm_title">Pobrać %1$s?</string>
     <string name="qwen3_asr_download">Pobierz Qwen3-ASR</string>
     <string name="qwen3_asr_delete_message">Usunąć model Qwen3-ASR?</string>
@@ -185,7 +185,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (strumieniowanie)</string>
-    <string name="nemotron_description">~640MB • Streaming • Jakość zamiast szybkości</string>
+    <string name="nemotron_description">~%1$dMB • Streaming • Jakość zamiast szybkości</string>
     <string name="nemotron_download_confirm_title">Pobrać %1$s?</string>
     <string name="nemotron_download_confirm_message">To pobierze ok. %1$dMB. Nemotron 3.5 to wielojęzyczny strumieniowy model ASR.</string>
     <string name="nemotron_download">Pobierz Nemotron</string>
@@ -195,10 +195,10 @@
 
     <!-- GigaAM v3 model -->
     <string name="gigaam_title">GigaAM v3</string>
-    <string name="gigaam_description">~326MB • Szybki • Rosyjski ASR z interpunkcją</string>
+    <string name="gigaam_description">~%1$dMB • Szybki • Rosyjski ASR z interpunkcją</string>
     <string name="gigaam_name">GigaAM v3</string>
     <string name="whistle_name">Whistle (17 MB)</string>
-    <string name="whistle_description">~17MB • Bardzo szybki • 7 języków, wykrywane automatycznie</string>
+    <string name="whistle_description">~%1$dMB • Bardzo szybki • %2$d języków, wykrywane automatycznie</string>
     <string name="benchmark_unsupported_engine">Benchmark nie jest obslugiwany dla tego silnika</string>
     <string name="model_info_best_for_whistle">Najszybszy start na urządzeniu: 17 MB, 7 języków, natychmiastowy pierwszy tekst</string>
     <string name="model_info_notes_whistle">Mniejsza dokładność niż Parakeet w języku włoskim; muzyka może zostać zapisana jako tekst (brak filtra muzyki)</string>
@@ -760,37 +760,29 @@
     <string name="speed_comparison_header_speed">Szybkość</string>
     <string name="speed_comparison_header_quality">Jakość włoskiego</string>
     <string name="speed_comparison_small_name">Whisper Small</string>
-    <string name="speed_comparison_small_size">~378MB</string>
     <string name="speed_comparison_small_speed">1.0x</string>
     <string name="speed_comparison_small_quality">Przeciętna</string>
     <string name="speed_comparison_turbo_name">Whisper Turbo</string>
-    <string name="speed_comparison_turbo_size">~1037MB</string>
     <string name="speed_comparison_turbo_speed">1.3x</string>
     <string name="speed_comparison_turbo_quality">Dobra</string>
     <string name="speed_comparison_medium_name">Whisper Medium</string>
-    <string name="speed_comparison_medium_size">~949MB</string>
     <string name="speed_comparison_medium_speed">0.5x</string>
     <string name="speed_comparison_medium_quality">Dobra</string>
     <string name="speed_comparison_distil_it_name">Distil Italian</string>
-    <string name="speed_comparison_distil_it_size">~984MB</string>
     <string name="speed_comparison_distil_it_speed">~1.8x</string>
     <string name="speed_comparison_distil_it_quality">Najlepszy włoski</string>
     <string name="speed_comparison_distil_it_note">Najlepszy włoski</string>
     <string name="speed_comparison_parakeet_name">Parakeet TDT</string>
-    <string name="speed_comparison_parakeet_size">~640MB</string>
     <string name="speed_comparison_parakeet_speed">~17x</string>
     <string name="speed_comparison_parakeet_quality">Bardzo dobra</string>
     <string name="speed_comparison_parakeet_note">Zalecany</string>
     <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
-    <string name="speed_comparison_qwen3_size">~938MB</string>
     <string name="speed_comparison_qwen3_speed">~2x</string>
     <string name="speed_comparison_qwen3_quality">%1$d języków, zmienna</string>
     <string name="speed_comparison_gigaam_name">GigaAM v3</string>
-    <string name="speed_comparison_gigaam_size">~326MB</string>
     <string name="speed_comparison_gigaam_speed">Szybki</string>
     <string name="speed_comparison_gigaam_quality">Tylko rosyjski</string>
     <string name="speed_comparison_nemotron_name">Nemotron 3.5</string>
-    <string name="speed_comparison_nemotron_size">~640MB</string>
     <string name="speed_comparison_nemotron_speed">Strumieniowanie</string>
     <string name="speed_comparison_nemotron_quality">Eksperymentalny</string>
     <string name="fastest_badge">Najszybszy</string>

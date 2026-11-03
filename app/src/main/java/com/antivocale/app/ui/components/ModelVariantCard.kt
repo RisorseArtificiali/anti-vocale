@@ -24,6 +24,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.transcription.ModelVariant
 import com.antivocale.app.transcription.descriptionFormatArg
+import com.antivocale.app.transcription.descriptionSizeArg
 import com.antivocale.app.transcription.titleFormatArg
 import com.antivocale.app.util.formatFileSize
 
@@ -179,8 +180,12 @@ fun ModelVariantCard(
                             }
                         }
                         Text(
-                            text = countAwareStringResource(
-                                state.variant.descriptionResId, state.variant.descriptionFormatArg()),
+                            // TASK-942: the size/count prefix is catalog data;
+                            // the locale string carries only the claim sentence.
+                            text = sizeAwareStringResource(
+                                state.variant.descriptionResId,
+                                state.variant.descriptionSizeArg(),
+                                state.variant.descriptionFormatArg()),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

@@ -59,7 +59,9 @@
             "resourceKey": "parakeet_smoothquant_title"
           },
           "description": {
-            "resourceKey": "parakeet_smoothquant_description"
+            "resourceKey": "parakeet_smoothquant_description",
+            "sizePlaceholder": true,
+            "countPlaceholder": true
           },
           "dirName": "parakeet-tdt-0.6b-v3-smoothquant",
           "estimatedSizeMB": 862,
@@ -92,7 +94,9 @@
             "resourceKey": "parakeet_stock_title"
           },
           "description": {
-            "resourceKey": "parakeet_stock_description"
+            "resourceKey": "parakeet_stock_description",
+            "sizePlaceholder": true,
+            "countPlaceholder": true
           },
           "dirName": "parakeet-tdt-0.6b-v3-int8",
           "estimatedSizeMB": 640,
@@ -150,7 +154,8 @@
             "resourceKey": "whisper_turbo_title"
           },
           "description": {
-            "resourceKey": "whisper_turbo_description"
+            "resourceKey": "whisper_turbo_description",
+            "sizePlaceholder": true
           },
           "dirName": "sherpa-onnx-whisper-turbo",
           "estimatedSizeMB": 1037,
@@ -280,7 +285,8 @@
             "resourceKey": "whisper_medium_title"
           },
           "description": {
-            "resourceKey": "whisper_medium_description"
+            "resourceKey": "whisper_medium_description",
+            "sizePlaceholder": true
           },
           "dirName": "sherpa-onnx-whisper-medium",
           "estimatedSizeMB": 949,
@@ -410,7 +416,8 @@
             "resourceKey": "whisper_small_title"
           },
           "description": {
-            "resourceKey": "whisper_small_description"
+            "resourceKey": "whisper_small_description",
+            "sizePlaceholder": true
           },
           "dirName": "sherpa-onnx-whisper-small",
           "estimatedSizeMB": 378,
@@ -540,7 +547,8 @@
             "resourceKey": "whisper_distil_large_v3_title"
           },
           "description": {
-            "resourceKey": "whisper_distil_large_v3_description"
+            "resourceKey": "whisper_distil_large_v3_description",
+            "sizePlaceholder": true
           },
           "badgeKey": "best_italian_badge",
           "dirName": "sherpa-onnx-whisper-distil-large-v3-it",
@@ -661,6 +669,7 @@
           },
           "description": {
             "resourceKey": "qwen3_asr_0_6b_description",
+            "sizePlaceholder": true,
             "countPlaceholder": true
           },
           "dirName": "sherpa-onnx-qwen3-asr-0.6b-int8",
@@ -707,7 +716,8 @@
         "resourceKey": "nemotron_name"
       },
       "description": {
-        "resourceKey": "nemotron_description"
+        "resourceKey": "nemotron_description",
+        "sizePlaceholder": true
       },
       "shareAlias": "com.antivocale.app.ShareNemotron",
       "storageDir": "nemotron",
@@ -807,7 +817,8 @@
         "resourceKey": "gigaam_name"
       },
       "description": {
-        "resourceKey": "gigaam_description"
+        "resourceKey": "gigaam_description",
+        "sizePlaceholder": true
       },
       "noteKey": "model_info_best_for_gigaam",
       "shareAlias": "com.antivocale.app.ShareGigaam",
@@ -867,7 +878,9 @@
         "resourceKey": "whistle_name"
       },
       "description": {
-        "resourceKey": "whistle_description"
+        "resourceKey": "whistle_description",
+        "sizePlaceholder": true,
+        "countPlaceholder": true
       },
       "storageDir": "whistle",
       "flags": {

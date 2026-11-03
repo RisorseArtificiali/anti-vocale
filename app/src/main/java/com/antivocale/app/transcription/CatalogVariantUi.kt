@@ -20,11 +20,24 @@ fun CatalogEntry.titleCountArg(): Int? =
 fun CatalogEntry.descriptionCountArg(): Int? =
     (description as? CatalogDisplay.Resource)?.takeIf { it.countPlaceholder }?.let { languages.size }
 
+/**
+ * TASK-942: the size twin. A sizePlaceholder description formats the catalog's
+ * [CatalogEntry.defaultVariant] download size; the number lives in
+ * models_catalog.json and only ever reaches the string as a format argument.
+ */
+fun CatalogEntry.descriptionSizeArg(): Long? =
+    (description as? CatalogDisplay.Resource)?.takeIf { it.sizePlaceholder }
+        ?.let { defaultVariant.estimatedSizeMB }
+
 /** The variant-scoped member of the same family: a countPlaceholder
  *  description counts the variant's OWN language set (the narrower truth
  *  a variant can declare). */
 fun ModelVariant.descriptionFormatArg(): Int? =
     if (countPlaceholder) supportedLanguageCodes.size else null
+
+/** The variant-scoped size twin: the variant's OWN catalog size. */
+fun ModelVariant.descriptionSizeArg(): Long? =
+    if (sizePlaceholder) estimatedSizeMB else null
 
 /** The variant-scoped title twin (an inherited or own title may format). */
 fun ModelVariant.titleFormatArg(): Int? =
@@ -50,6 +63,7 @@ data class CatalogVariantUi(
     override val estimatedSizeMB: Long,
     override val supportedLanguageCodes: Set<String>,
     override val countPlaceholder: Boolean = false,
+    override val sizePlaceholder: Boolean = false,
     override val titleCountPlaceholder: Boolean = false,
     val badgeKey: String? = null,
     /** TASK-365: the repo is HuggingFace-gated (the add-token warning row). */
@@ -81,6 +95,10 @@ data class CatalogVariantUi(
                 titleResId = resolveDisplay(variant.title ?: entry.display, "${entry.id}/${variant.name} title"),
                 descriptionResId = resolveDisplay(variant.description ?: entry.description, "${entry.id}/${variant.name} description"),
                 countPlaceholder = ((variant.description ?: entry.description) as? CatalogDisplay.Resource)?.countPlaceholder == true,
+                // TASK-942: the size rides the same inherited/own chain as the
+                // count; an entry-level sizePlaceholder covers the variants
+                // that inherit the entry description (nemotron/gigaam/whistle).
+                sizePlaceholder = ((variant.description ?: entry.description) as? CatalogDisplay.Resource)?.sizePlaceholder == true,
                 // TASK-767 review: symmetric with the description chain -
                 // the variant's OWN title when declared, the entry display
                 // otherwise; either may format the count.

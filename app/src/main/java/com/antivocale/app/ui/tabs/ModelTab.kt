@@ -70,6 +70,7 @@ import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.CatalogVariantUi
 import com.antivocale.app.transcription.titleCountArg
 import com.antivocale.app.transcription.descriptionCountArg
+import com.antivocale.app.transcription.descriptionSizeArg
 import com.antivocale.app.transcription.titleFormatArg
 import com.antivocale.app.transcription.Language
 import androidx.compose.ui.graphics.Color
@@ -102,6 +103,7 @@ import com.antivocale.app.ui.viewmodel.BenchmarkViewModel
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 import com.antivocale.app.ui.components.countAwareString
 import com.antivocale.app.ui.components.countAwareStringResource
+import com.antivocale.app.ui.components.sizeAwareStringResource
 import com.antivocale.app.util.FeedbackHelper
 
 /**
@@ -1396,6 +1398,9 @@ private fun CatalogModelSection(
     // descriptionCountArg; the arms resolve through countAwareStringResource.
     val entryTitleCountArg = remember(entry) { entry.titleCountArg() }
     val entryDescriptionCountArg = remember(entry) { entry.descriptionCountArg() }
+    // TASK-942: a sizePlaceholder entry description (nemotron/gigaam/whistle)
+    // formats the default variant's catalog size instead of a baked literal.
+    val entryDescriptionSizeArg = remember(entry) { entry.descriptionSizeArg() }
     // TASK-796: the entry title carries FLAG EMOJI for its languages when
     // it is monolingual/few-language (the shared LanguageFlags.titled;
     // multilingual entries render the title unchanged).
@@ -1438,7 +1443,8 @@ private fun CatalogModelSection(
                         )
                         if (entryDescriptionResId != null) {
                             Text(
-                                text = countAwareStringResource(entryDescriptionResId, entryDescriptionCountArg),
+                                text = sizeAwareStringResource(
+                                    entryDescriptionResId, entryDescriptionSizeArg, entryDescriptionCountArg),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -2512,6 +2518,18 @@ private fun ExternalModelCard(
  * Static model speed/quality comparison shown from the Whisper section header.
  * Pure informational content — no model state involved.
  */
+
+/** TASK-942: the table's size column is catalog data, composed per row
+ *  (the old speed_comparison_*_size strings baked one copy per locale). A
+ *  missing pair degrades to a dash instead of crashing composition: the
+ *  dialog is informational, and ModelSpeedRowsTest pins the eight pairs. */
+@Composable
+private fun catalogSpeedSize(entryId: String, variantName: String): String {
+    val size = BundledCatalog.byId(entryId)?.variant(variantName)?.estimatedSizeMB
+        ?: return stringResource(R.string.speed_comparison_size_missing)
+    return stringResource(R.string.speed_comparison_size_format, size)
+}
+
 @Composable
 private fun SpeedComparisonDialog(onDismiss: () -> Unit) {
     AlertDialog(
@@ -2571,21 +2589,21 @@ private fun SpeedComparisonDialog(onDismiss: () -> Unit) {
                         // Whisper Turbo (best Whisper speed/quality balance)
                         ComparisonRow(
                             name = stringResource(R.string.speed_comparison_turbo_name),
-                            size = stringResource(R.string.speed_comparison_turbo_size),
+                            size = catalogSpeedSize("whisper", "turbo"),
                             speed = stringResource(R.string.speed_comparison_turbo_speed),
                             quality = stringResource(R.string.speed_comparison_turbo_quality)
                         )
                         // Whisper Medium
                         ComparisonRow(
                             name = stringResource(R.string.speed_comparison_medium_name),
-                            size = stringResource(R.string.speed_comparison_medium_size),
+                            size = catalogSpeedSize("whisper", "medium"),
                             speed = stringResource(R.string.speed_comparison_medium_speed),
                             quality = stringResource(R.string.speed_comparison_medium_quality)
                         )
                         // Whisper Small
                         ComparisonRow(
                             name = stringResource(R.string.speed_comparison_small_name),
-                            size = stringResource(R.string.speed_comparison_small_size),
+                            size = catalogSpeedSize("whisper", "small"),
                             speed = stringResource(R.string.speed_comparison_small_speed),
                             quality = stringResource(R.string.speed_comparison_small_quality)
                         )
@@ -2593,7 +2611,7 @@ private fun SpeedComparisonDialog(onDismiss: () -> Unit) {
                         // Distil Italian (best Italian quality)
                         ComparisonRow(
                             name = stringResource(R.string.speed_comparison_distil_it_name),
-                            size = stringResource(R.string.speed_comparison_distil_it_size),
+                            size = catalogSpeedSize("whisper", "distil-large-v3-it"),
                             speed = stringResource(R.string.speed_comparison_distil_it_speed),
                             quality = stringResource(R.string.speed_comparison_distil_it_quality),
                             badge = stringResource(R.string.speed_comparison_distil_it_note),
@@ -2602,7 +2620,7 @@ private fun SpeedComparisonDialog(onDismiss: () -> Unit) {
                         // Parakeet TDT (recommended)
                         ComparisonRow(
                             name = stringResource(R.string.speed_comparison_parakeet_name),
-                            size = stringResource(R.string.speed_comparison_parakeet_size),
+                            size = catalogSpeedSize("sherpa-onnx", "stock-int8"),
                             speed = stringResource(R.string.speed_comparison_parakeet_speed),
                             quality = stringResource(R.string.speed_comparison_parakeet_quality),
                             badge = stringResource(R.string.speed_comparison_parakeet_note),
@@ -2615,7 +2633,7 @@ private fun SpeedComparisonDialog(onDismiss: () -> Unit) {
                             ?: error("bundled catalog is missing qwen3-asr")
                         ComparisonRow(
                             name = stringResource(R.string.speed_comparison_qwen3_name),
-                            size = stringResource(R.string.speed_comparison_qwen3_size),
+                            size = catalogSpeedSize("qwen3-asr", "0.6b-int8"),
                             speed = stringResource(R.string.speed_comparison_qwen3_speed),
                             quality = stringResource(
                                 R.string.speed_comparison_qwen3_quality, qwen3LanguageCount)
@@ -2623,14 +2641,14 @@ private fun SpeedComparisonDialog(onDismiss: () -> Unit) {
                         // GigaAM v3 (Russian)
                         ComparisonRow(
                             name = stringResource(R.string.speed_comparison_gigaam_name),
-                            size = stringResource(R.string.speed_comparison_gigaam_size),
+                            size = catalogSpeedSize("gigaam", "v3"),
                             speed = stringResource(R.string.speed_comparison_gigaam_speed),
                             quality = stringResource(R.string.speed_comparison_gigaam_quality)
                         )
                         // Nemotron (streaming, experimental)
                         ComparisonRow(
                             name = stringResource(R.string.speed_comparison_nemotron_name),
-                            size = stringResource(R.string.speed_comparison_nemotron_size),
+                            size = catalogSpeedSize("nemotron-streaming", "1120ms-int8"),
                             speed = stringResource(R.string.speed_comparison_nemotron_speed),
                             quality = stringResource(R.string.speed_comparison_nemotron_quality)
                         )

@@ -2,16 +2,20 @@
 # Check that user-facing model size claims match the catalog (TASK-923).
 # Run from anywhere; exits 1 listing every drift.
 #
-# The download size a user reads (app strings, store listings, README model
-# tables) is a copy of models_catalog.json estimatedSizeMB. Two classes have
-# shipped stale: the fastlane listings said 464MB for a 640MB model, and the
-# app strings kept pre-re-export Whisper sizes after TASK-938/940 repinned the
-# catalog. This check re-derives every copy from the catalog so the next one
-# is caught instead of published.
+# TASK-942 split the app strings: the size/count prefix is a format argument
+# fed from models_catalog.json at render time, so the app-string half of this
+# check verifies the FORMAT CONTRACT (the %1$d size slot and %2$d count slot
+# survive in every locale, bound to a unit token) instead of baked numbers;
+# the format round-trip is pinned by ModelSizePlaceholderGuardTest. Store
+# listings, README and docs tables still carry literal copies, and those are
+# still re-derived from the catalog here. History: the fastlane listings said
+# 464MB for a 640MB model, and the app strings kept pre-re-export Whisper
+# sizes after TASK-938/940 repinned the catalog.
 #
 # Covered surfaces:
-#   1. app/src/main/res/values*/strings.xml (every locale that carries a
-#      mapped resource)
+#   1. app/src/main/res/values*/strings.xml (format contract for the prefixed
+#      descriptions; baked-size literals for the whistle title/info line; the
+#      untranslatable speed_comparison_size_format)
 #   2. fastlane/metadata/android/*/full_description.txt (Parakeet sizes and
 #      the storage ceiling)
 #   3. README.md "Supported Models" tables (ASR + LLM) and the prerequisites
@@ -41,31 +45,40 @@ def size_of(entry_id, variant):
                     return v['estimatedSizeMB']
     raise SystemExit(f'catalog has no {entry_id}/{variant}')
 
-# resource key -> (entry id, variant name)
-MAPPED = {
-    'parakeet_stock_description': ('sherpa-onnx', 'stock-int8'),
-    'parakeet_smoothquant_description': ('sherpa-onnx', 'smoothquant'),
-    'speed_comparison_parakeet_size': ('sherpa-onnx', 'stock-int8'),
-    'whisper_small_description': ('whisper', 'small'),
-    'whisper_turbo_description': ('whisper', 'turbo'),
-    'whisper_medium_description': ('whisper', 'medium'),
-    'whisper_distil_large_v3_description': ('whisper', 'distil-large-v3-it'),
-    'speed_comparison_small_size': ('whisper', 'small'),
-    'speed_comparison_turbo_size': ('whisper', 'turbo'),
-    'speed_comparison_medium_size': ('whisper', 'medium'),
-    'speed_comparison_distil_it_size': ('whisper', 'distil-large-v3-it'),
-    'qwen3_asr_0_6b_description': ('qwen3-asr', '0.6b-int8'),
-    'speed_comparison_qwen3_size': ('qwen3-asr', '0.6b-int8'),
-    'nemotron_description': ('nemotron-streaming', '1120ms-int8'),
-    'speed_comparison_nemotron_size': ('nemotron-streaming', '1120ms-int8'),
-    'gigaam_description': ('gigaam', 'v3'),
-    'speed_comparison_gigaam_size': ('gigaam', 'v3'),
-    'whistle_description': ('whistle', 'v1'),
+# TASK-942: the size/count prefix is no longer baked into locale strings; the
+# number arrives as a format argument fed from the catalog at render time. The
+# prefixed target list is DERIVED from the catalog walk (description flags
+# sizePlaceholder/countPlaceholder), so a new prefixed entry is covered the
+# moment the catalog declares it; the guard verifies per locale:
+#   - the %1$d specifier (size slot) survives;
+#   - the %2$d specifier (count slot) survives where the same display
+#     declares countPlaceholder;
+#   - no OTHER digit run remains after the slots are stripped, except the
+#     allowlisted claim literals below (a stray digit is a stale baked copy,
+#     the drift class this file exists to catch). Unit-token vocabulary is
+#     deliberately NOT checked here: the JVM round-trip test
+#     (ModelSizePlaceholderGuardTest) feeds real catalog values, and a token
+#     list rots with every new locale.
+PREFIXED = {}
+for m in catalog['models']:
+    for holder in [m] + m.get('variants', []):
+        desc = holder.get('description', {})
+        key = desc.get('resourceKey') if isinstance(desc, dict) else None
+        if key and isinstance(key, str) and desc.get('sizePlaceholder'):
+            PREFIXED[key] = (m['id'], holder.get('name'), bool(desc.get('countPlaceholder')))
+# claim-text digits that are NOT catalog data (model names, layer counts)
+DIGIT_ALLOWLIST = {
+    'whisper_turbo_description': ['3'],        # "large-v3"
+    'whisper_distil_large_v3_description': ['2'],  # "2 decoder layers"
+}
+
+# Still BAKED literal sizes (no catalog render path yet): the whistle title
+# and the model-info best-for line carry 17 MB as claim text.
+BAKED = {
+    'whistle_name': ('whistle', 'v1'),
     'model_info_best_for_whistle': ('whistle', 'v1'),
 }
-expected = {k: size_of(e, v) for k, (e, v) in MAPPED.items()}
-MAPPED['whistle_name'] = ('whistle', 'v1')
-expected['whistle_name'] = size_of('whistle', 'v1')
+expected = {k: size_of(e, v) for k, (e, v) in BAKED.items()}
 
 # Localized megabyte suffixes seen in the tree: en/it MB, uk МБ, fi Mt, fr Mo.
 SIZE_RE = re.compile(r'(\d+)\s*(?:MB|МБ|Мб|Mt|Mo)\b')
@@ -74,20 +87,60 @@ string_re = re.compile(r'<string name="([^"]+)"[^>]*>([^<]*)</string>')
 errors = []
 
 for p in sorted((repo / 'app/src/main/res').glob('values*/strings.xml')):
-    for m in string_re.finditer(p.read_text()):
-        name, body = m.group(1), m.group(2)
-        if name not in expected:
+    bodies = {m.group(1): m.group(2) for m in string_re.finditer(p.read_text())}
+    for name, (_e, _v, wants_count) in PREFIXED.items():
+        body = bodies.get(name)
+        if body is None:
+            errors.append(f'{p.relative_to(repo)}: {name} missing')
             continue
-        toks = SIZE_RE.findall(body)
-        if not toks:
+        stripped = body.replace('%1$d', '').replace('%2$d', '')
+        if '%1$d' not in body:
+            errors.append(f'{p.relative_to(repo)}: {name} lost the %1$d size specifier')
+        if wants_count and '%2$d' not in body:
+            errors.append(f'{p.relative_to(repo)}: {name} lost the %2$d count specifier')
+        if not wants_count and '%2$d' in body:
+            errors.append(f'{p.relative_to(repo)}: {name} carries a stray %2$d the catalog '
+                          f'does not declare (renders as a literal "%2$d")')
+        allowed = DIGIT_ALLOWLIST.get(name, [])
+        # ASCII digits only: \d would match a locale's native-digit rendering
+        # of an allowlisted literal (fa/hi) and fail a correct translation.
+        for run in re.findall(r'[0-9]+', stripped):
+            if run not in allowed:
+                errors.append(f'{p.relative_to(repo)}: {name} carries a baked digit {run!r}; '
+                              f'numbers must come from the catalog slots')
+    for name in BAKED:
+        body = bodies.get(name)
+        if body is None:
             # A translation may legitimately drop the size; only the default
             # locale is required to carry it.
             if p.parent.name == 'values':
                 errors.append(f'{p.relative_to(repo)}: {name} carries no size token')
             continue
+        toks = SIZE_RE.findall(body)
+        if not toks:
+            # The default locale MUST keep the size claim; a translation that
+            # drops it may pass (the same leniency as the missing-string arm).
+            if p.parent.name == 'values':
+                errors.append(f'{p.relative_to(repo)}: {name} lost its size token')
+            continue
         want = str(expected[name])
         if toks[0] != want:
             errors.append(f'{p.relative_to(repo)}: {name} says {toks[0]}MB, catalog says {want}MB')
+    # Speed-comparison copies must not exist in locales (one pass with the
+    # bodies dict instead of a second file walk).
+    if p.parent.name != 'values' and any(
+            re.search(r'speed_comparison_(?:turbo|medium|small|distil_it|parakeet|qwen3|gigaam|nemotron)_size', name)
+            for name in bodies):
+        errors.append(f'{p.relative_to(repo)}: speed-comparison size copies must not exist in locales')
+
+# The speed-comparison table: one untranslatable format in the default file,
+# composed per row at render time.
+values_xml = (repo / 'app/src/main/res/values/strings.xml').read_text()
+m = re.search(r'<string name="speed_comparison_size_format" translatable="false">([^<]*)</string>', values_xml)
+if not m:
+    errors.append('values/strings.xml: speed_comparison_size_format missing or not translatable="false"')
+elif m.group(1) != '~%1$dMB':
+    errors.append(f'values/strings.xml: speed_comparison_size_format is {m.group(1)!r}, expected "~%1$dMB"')
 
 # Store listings: the Parakeet line names both variants' sizes.
 stock = size_of('sherpa-onnx', 'stock-int8')
@@ -265,5 +318,6 @@ if errors:
     for e in errors:
         print(' -', e)
     sys.exit(1)
-print(f'model sizes OK: {len(expected)} mapped string resources, locale copies, listings, guides and docs match the catalog')
+print(f'model sizes OK: {len(PREFIXED)} format-contract descriptions in every locale, '
+      f'{len(expected)} baked whistle literals, speed size_format, listings, guides and docs match the catalog')
 PYEOF

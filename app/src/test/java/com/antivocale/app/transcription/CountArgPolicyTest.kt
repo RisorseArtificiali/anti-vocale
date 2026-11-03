@@ -63,4 +63,22 @@ class CountArgPolicyTest {
         assertEquals(variant.supportedLanguageCodes.size, variant.descriptionFormatArg())
         assertNull(variant.titleFormatArg())
     }
+
+    @Test
+    fun `a sizePlaceholder description yields the catalog size`() {
+        // TASK-942: entry-level prefix (the default variant's size)…
+        val nemotron = BundledCatalog.byId(BuiltInBackendIds.NEMOTRON)!!
+        assertEquals(
+            nemotron.defaultVariant.estimatedSizeMB, nemotron.descriptionSizeArg())
+        assertNull(nemotron.descriptionCountArg())
+        // …and the variant-scoped twin (the variant's OWN size + count).
+        val qwen3Variant = CatalogVariantUi.forEntry(BuiltInBackendIds.QWEN3_ASR).first()
+        assertEquals(qwen3Variant.estimatedSizeMB, qwen3Variant.descriptionSizeArg())
+        assertEquals(
+            qwen3Variant.supportedLanguageCodes.size, qwen3Variant.descriptionFormatArg())
+        // A plain description carries neither slot.
+        val whisper = BundledCatalog.byId(BuiltInBackendIds.WHISPER)!!
+        assertNull(whisper.descriptionSizeArg())
+        assertNull(whisper.descriptionCountArg())
+    }
 }

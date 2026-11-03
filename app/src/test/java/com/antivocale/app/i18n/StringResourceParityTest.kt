@@ -64,11 +64,18 @@ class StringResourceParityTest {
      * voice_note_source_whatsapp(_business): the client brand names that
      * head the per-app voice-note sections; proper nouns, like the
      * AppInfoUtils display names that are deliberately not localized.
+     * speed_comparison_size_format (TASK-942): the speed table's size column
+     * is catalog data rendered through "~%1$dMB"; no translatable copy
+     * exists (the locale files carry no per-row size strings anymore).
      */
     @Test
     fun `untranslatable keys match the reviewed allowlist`() {
         val expected = setOf(
-            "app_name", "voice_note_source_whatsapp", "voice_note_source_whatsapp_business")
+            "app_name", "voice_note_source_whatsapp", "voice_note_source_whatsapp_business",
+            "speed_comparison_size_format",
+            // TASK-934/942 review: the dialog's missing-catalog dash, a
+            // punctuation placeholder with no words to translate.
+            "speed_comparison_size_missing")
         val actual = rawKeys(stringsFile("src/main/res/values/strings.xml"))
             .filterValues { it == "false" }.keys
         assertEquals(
