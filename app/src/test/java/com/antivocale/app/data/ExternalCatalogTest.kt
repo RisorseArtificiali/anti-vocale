@@ -187,7 +187,10 @@ class ExternalCatalogTest {
         // Finnish-NLP/whisper-large-finnish-v3, FLEURS fi 7.09 vs
         // turbo's 9.05; the on-device pass stays a separate gate,
         // hosted at pantinor/sherpa-onnx-whisper-large-finnish-v3)
-        assertEquals(33, entries.size)
+        // + canary 1b v2 dutch int8 (TASK-954: bnoordhuis' prebuilt
+        // conversion; our FLEURS nl measurement 6.08 vs turbo 8.29
+        // and 2.4x faster decode; device pass pending)
+        assertEquals(34, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
@@ -239,6 +242,8 @@ class ExternalCatalogTest {
             // TASK-769: the Finnish quality pick rides the same pin tripwire
             // as its siblings (family/modelType, file count, sha/size shape).
             Triple("finnish.json", "WHISPER" to "", 3),
+            // TASK-954: the Dutch quality pick, same tripwire.
+            Triple("dutch.json", "CANARY" to "", 3),
         ).forEach { (file, pin, fileCount) ->
             val obj = org.json.JSONObject(
                 RepoFiles.readText("src/main/assets/external-catalog/$file"))
@@ -271,6 +276,7 @@ class ExternalCatalogTest {
             "moonshine-ukrainian.json" to "uk",
             "moonshine-vietnamese.json" to "vi",
             "finnish.json" to "fi",
+            "dutch.json" to "nl",
         ).forEach { (file, lang) ->
             val obj = org.json.JSONObject(
                 RepoFiles.readText("src/main/assets/external-catalog/$file"))
@@ -295,8 +301,9 @@ class ExternalCatalogTest {
         assertEquals(ModelFamily.TRANSDUCER, persian[0].family)
         // "ry" is an inner substring of "Canary": word matching keeps it silent
         assertTrue(ExternalCatalog.filter(entries, "ry").isEmpty())
-        // a real name word still finds the four flash entries...
-        assertEquals(4, ExternalCatalog.filter(entries, "canary").size)
+        // a real name word still finds the four flash entries plus the
+        // Dutch 1B pick (TASK-954)...
+        assertEquals(5, ExternalCatalog.filter(entries, "canary").size)
         // ...and the "de" code surfaces every German-capable entry via
         // languages (TASK-596: orukeet now declares its full 24-language
         // set, so it joins the German results; TASK-855: transcribepsy

@@ -1,0 +1,31 @@
+{
+  "name": "Canary 1B v2 Dutch int8",
+  "family": "CANARY",
+  "modelType": "",
+  "languages": [
+    "nl"
+  ],
+  "options": {
+    "canary.language": "nl"
+  },
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/bnoordhuis/canary-1b-v2-sherpa-onnx-nl-int8/resolve/main/encoder.int8.onnx",
+      "sha256": "8342623508dcf97c81d48f930655bb26aeb05bae7ae9336cd0001e6f5f544888",
+      "size": 1161643089
+    },
+    {
+      "name": "decoder.int8.onnx",
+      "url": "https://huggingface.co/bnoordhuis/canary-1b-v2-sherpa-onnx-nl-int8/resolve/main/decoder.int8.onnx",
+      "sha256": "ac51ba4975dc058013b041142981a376105874eb267db8a5817952154a3b7e11",
+      "size": 223741759
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/bnoordhuis/canary-1b-v2-sherpa-onnx-nl-int8/resolve/main/tokens.txt",
+      "sha256": "2c9efe6104fd29522ea27ce0e3aef5d37c690af4e5a4232e643e23ca403ffea3",
+      "size": 208022
+    }
+  ]
+}

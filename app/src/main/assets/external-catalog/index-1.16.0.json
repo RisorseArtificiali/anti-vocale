@@ -1,6 +1,14 @@
 {
   "entries": [
     {
+      "name": "Canary 1B v2 Dutch int8",
+      "languages": [
+        "nl"
+      ],
+      "family": "CANARY",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/dutch.json"
+    },
+    {
       "name": "Canary Flash 180M (English)",
       "languages": [
         "en"
