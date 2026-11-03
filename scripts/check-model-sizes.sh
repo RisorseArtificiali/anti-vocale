@@ -359,3 +359,16 @@ if errors:
 print(f'model sizes OK: {len(PREFIXED)} format-contract descriptions and titles '
       f'in every locale, speed size_format, listings, guides and docs match the catalog')
 PYEOF
+
+# TASK-949 call-site contract: a catalog title/description resource may carry
+# format slots, so a bare getString(<something>titleResId) renders a literal
+# %1$d the moment a catalog flag turns on. The strings side is guarded above;
+# the call-site side is this grep. MainScreen.kt is allowlisted (its tabs are
+# the static nav enum, never slotted).
+if grep -rnE 'getString\(([a-zA-Z]+\.)?titleResId\)' app/src/main/java \
+    --include='*.kt' \
+  | grep -vE 'MainScreen\.kt|[/*] .*getString'; then
+  echo 'call-site drift: bare getString on a titleResId (a slot-bearing title renders a literal %1$d).'
+  echo 'Route it through placeholderAwareString/variantTitle (transcription/CatalogPlaceholders.kt).'
+  exit 1
+fi

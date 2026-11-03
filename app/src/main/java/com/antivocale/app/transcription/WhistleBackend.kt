@@ -75,6 +75,15 @@ class WhistleBackend @Inject constructor(
     )
 
     override val id: String = BuiltInBackendIds.WHISTLE
+    /**
+     * Deliberately not routed through the placeholder pipeline (TASK-949,
+     * cross-ref TASK-947): the primary user-facing surfaces resolve
+     * whistle_name via the registry with the catalog size arg; this literal
+     * remains the non-localized fallback for logs, exceptions and any
+     * surface still reading displayName raw (BenchmarkManager's busy-state
+     * message does today), and a Context-free constant must stay
+     * Context-free.
+     */
     override val displayName: String = "Whistle (Cactus, 17 MB)"
     override val supportsAudio: Boolean = true
     override val supportsText: Boolean = false

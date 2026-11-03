@@ -18,8 +18,7 @@ import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.RemoteOmnivoiceBackend
 import com.antivocale.app.transcription.TranscriptFuzzySearch
-import com.antivocale.app.ui.components.placeholderAwareString
-import com.antivocale.app.ui.components.variantTitle
+import com.antivocale.app.transcription.variantTitle
 import com.antivocale.app.ui.theme.ThemeMode
 import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType

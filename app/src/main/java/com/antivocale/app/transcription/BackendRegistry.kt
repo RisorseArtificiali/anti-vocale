@@ -15,8 +15,8 @@ import kotlinx.coroutines.flow.map
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.antivocale.app.ui.components.placeholderAwareString
-import com.antivocale.app.ui.components.variantTitle
+import com.antivocale.app.transcription.placeholderAwareString
+import com.antivocale.app.transcription.variantTitle
 
 /**
  * Immutable metadata about one transcription backend, tying together the two

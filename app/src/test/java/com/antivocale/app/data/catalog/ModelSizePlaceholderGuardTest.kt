@@ -31,6 +31,15 @@ import java.util.Locale
  * count); Qwen3CatalogCountGuardTest stays as the older qwen3 pin. The
  * non-catalog slotted claim (model_info_best_for_whistle, slots carried by
  * ModelInfo.bestForPlaceholders) remains the bash guard's static entry.
+ *
+ * TASK-949 invariant this test cannot mechanically prove but pins in prose:
+ * every resolve of a slot-bearing catalog title/description must go through
+ * the shared resolvers (Context.placeholderAwareString / Context.variantTitle
+ * in transcription/CatalogPlaceholders.kt; the @Composable twins
+ * placeholderAwareStringResource / titleRes in ui/components/
+ * PlaceholderStrings.kt), never a bare getString(titleResId). The bash guard
+ * covers the strings' side; this prose note covers the call sites' side
+ * (grep titleResId for new bare resolves when touching render code).
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])

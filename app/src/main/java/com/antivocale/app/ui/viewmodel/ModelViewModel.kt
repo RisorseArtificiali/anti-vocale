@@ -33,8 +33,7 @@ import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.ModelFamilySupport
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.CatalogVariantUi
-import com.antivocale.app.ui.components.placeholderAwareString
-import com.antivocale.app.ui.components.variantTitle
+import com.antivocale.app.transcription.variantTitle
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.ModelFamilyDetector
 import com.antivocale.app.transcription.SherpaModelDownloader

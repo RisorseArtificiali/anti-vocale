@@ -70,6 +70,7 @@ import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.CatalogVariantUi
 import com.antivocale.app.transcription.titleFormatArgs
 import com.antivocale.app.transcription.descriptionFormatArgs
+import com.antivocale.app.transcription.resourceTitlePair
 import com.antivocale.app.transcription.Language
 import androidx.compose.ui.graphics.Color
 import com.antivocale.app.util.DeviceCompatibility
@@ -99,8 +100,7 @@ import com.antivocale.app.ui.components.ModelInfoOverlay
 import com.antivocale.app.benchmark.BenchmarkState
 import com.antivocale.app.ui.viewmodel.BenchmarkViewModel
 import com.antivocale.app.ui.viewmodel.ModelViewModel
-import com.antivocale.app.ui.components.placeholderAwareString
-import com.antivocale.app.ui.components.variantTitle
+import com.antivocale.app.transcription.variantTitle
 import com.antivocale.app.ui.components.titleRes
 import com.antivocale.app.ui.components.placeholderAwareStringResource
 import com.antivocale.app.util.FeedbackHelper
@@ -1386,16 +1386,30 @@ private fun CatalogModelSection(
     val isEntryDemoted = entry.id in demotedBackendIds
     var showSpeedComparison by remember(entry.id) { mutableStateOf(false) }
 
-    val entryTitleResId = (entry.display as? CatalogDisplay.Resource)?.key
-        ?.let { CatalogStringKeys.resolve(it) }
-        ?: CatalogVariantUi.of(entry.id).titleResId
+    // TASK-949: the entry title resolves through resourceTitlePair (resId
+    // and args PAIRED, one policy owner). The defensive fallback (an entry
+    // whose display is not a resource, kept defensively though the catalog
+    // contract forbids it) rides the default variant's OWN title AND its
+    // own args, computed only on that branch, so a slot-bearing fallback
+    // title can never reach a bare render with mismatched entry-level args.
+    val entryTitle = remember(entry) { entry.resourceTitlePair() }
+    val entryTitleResId = entryTitle?.first
+        ?: remember(entry) { CatalogVariantUi.of(entry.id).titleResId }
     val entryDescriptionResId = (entry.description as? CatalogDisplay.Resource)?.key?.let { CatalogStringKeys.resolve(it) }
     // TASK-946: catalog displays may format catalog-derived values (the
     // language count; a variant's download size) in their declared slot
     // order (see PlaceholderSlot); the args DERIVE from the catalog here
     // instead of riding the string as hand-pinned literals that drift on
     // model updates (the 52/53/59 split).
-    val entryTitleFormatArgs = remember(entry) { entry.titleFormatArgs() }
+    val entryTitleFormatArgs = remember(entry) {
+        entryTitle?.second ?: CatalogVariantUi.of(entry.id).titleFormatArgs
+    }
+    // The render site consumes this pair through placeholderAwareStringResource
+    // (titleResId + args in one resolve), never as a bare getString.
+    // TASK-949 note: the sibling DESCRIPTION resolve has no fallback tier on
+    // purpose; the contract-forbidden non-Resource shape is defended where a
+    // slot-bearing title can actually exist (whistle_name), and the
+    // description path renders plain when its resId is null.
     val entryDescriptionFormatArgs = remember(entry) { entry.descriptionFormatArgs() }
     // TASK-796: the entry title carries FLAG EMOJI for its languages when
     // it is monolingual/few-language (the shared LanguageFlags.titled;

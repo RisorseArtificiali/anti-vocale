@@ -15,7 +15,7 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.CatalogVariantUi
-import com.antivocale.app.ui.components.placeholderAwareString
+import com.antivocale.app.transcription.placeholderAwareString
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.SherpaModelDownloader
 import com.antivocale.app.util.CrashReporter
