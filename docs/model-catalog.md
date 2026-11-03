@@ -59,6 +59,14 @@ Russian specialist transducer from SberDevices.
 - Original model: [ai-sage/GigaAM-v3](https://huggingface.co/ai-sage/GigaAM-v3)
 - Downloads from: [pantinor/gigaam-v3](https://huggingface.co/pantinor/gigaam-v3)
 
+### Whistle (Cactus)
+
+Tiny English-first engine from Cactus Compute: the smallest bundled model by far, built for fastest startup and instant first text rather than accuracy. A single `whistle.cact` file, no companion assets. ARM64 devices only (other ABIs and the fdroid flavor build the stub form under `-PwhistleEngineDisabled`).
+
+- Size: 17 MB; 7 languages (English first)
+- Original model: [Cactus-Compute/whistle](https://huggingface.co/Cactus-Compute/whistle)
+- Kotlin side: `WhistleNative` in `transcription/` (TASK-853); the JNI symbol contract is pinned by `WhistleJniSymbolSetTest`
+
 ### Gemma (LLM)
 
 A full language model rather than a dedicated transcriber: the only bundled model that can also summarize, reformat, and post-process the transcript, driven by a customizable prompt in Settings. Runs via LiteRT-LM; see the [user guide](user-guide/) for prompting.

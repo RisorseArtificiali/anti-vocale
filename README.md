@@ -170,6 +170,7 @@ Long transcripts are split into pages you can read without leaving the notificat
 | **Whisper Turbo** | ~1037MB | 99 | Near large-v3 quality; the measured quality leader in most languages |
 | **Whisper Medium** | ~949MB | 99 | Largest non-distilled variant, slower than Turbo |
 | **Distil Italian** | ~984MB | Italian | Fastest Whisper variant, optimized for Italian |
+| **Whistle** | ~17MB | 7 | Tiny English-first engine, fastest startup (ARM64) |
 
 ### ASR (Transducer)
 
@@ -178,7 +179,7 @@ Long transcripts are split into pages you can read without leaving the notificat
 | **Parakeet TDT (stock int8)** | ~640MB | 25 European | The default: fastest and lightest full multilingual option, close to Whisper Turbo in most languages we measured (inputs over 1 minute are chunked and stitched, sized to free RAM; see [FAQ](FAQ.md)) |
 | **Parakeet TDT (SmoothQuant)** | ~862MB | 25 European | Alternative to the default (the default through 1.13.x) |
 | **GigaAM v3** | ~326MB | Russian | Best Russian accuracy, native punctuation |
-| **Qwen3-ASR 0.6B** | ~938MB | 30 + 22 zh | 30 languages + 22 Chinese dialects; poor Italian accuracy |
+| **Qwen3-ASR 0.6B** | ~938MB | 59 | 59 languages incl. Chinese dialects; poor Italian accuracy |
 
 ### Custom Models (ONNX Sherpa)
 
@@ -200,7 +201,7 @@ Import any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice, Canary, Moon
 | Model | Size | Languages | Notes |
 |-------|------|-----------|-------|
 | **Nemotron 3.5** | ~640MB | 40+ | Cache-aware streaming transducer, auto-detect + native punctuation/casing |
-| **Qwen3-ASR 0.6B** | ~938MB | 30 + 22 zh | Streaming-capable; poor Italian accuracy |
+| **Qwen3-ASR 0.6B** | ~938MB | 59 | Streaming-capable; poor Italian accuracy |
 
 ### Build Flavors
 
@@ -262,6 +263,7 @@ AudioPreprocessor (16kHz mono WAV; chunk size per model family + free RAM)
     v
 TranscriptionOrchestrator
     |--- SherpaBackend (one engine; bundled catalog entries: Parakeet TDT, Whisper, Qwen3-ASR, GigaAM v3, Nemotron 3.5 streaming)
+    |--- WhistleBackend (Whistle native engine, tiny English-first)
     |--- ExternalSherpaBackend (user-imported models: Transducer/Whisper/CTC/SenseVoice/Canary/Moonshine/Dolphin)
     |--- LlmTranscriptionBackend (Gemma via LiteRT-LM)
     |
