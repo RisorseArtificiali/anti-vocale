@@ -1,0 +1,30 @@
+{
+  "name": "Whisper Large v3 Finnish int8 (sherpa, Finnish-NLP fine-tune)",
+  "family": "WHISPER",
+  "modelType": "",
+  "languages": ["fi"],
+  "options": {
+    "whisper.language": "fi",
+    "whisper.task": "transcribe"
+  },
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/sherpa-onnx-whisper-large-finnish-v3/resolve/main/encoder.int8.onnx",
+      "sha256": "c66b4236d822a88d6814e0a314c0cad9c12ca2ed8a0f22e38cbc5f1c745786c3",
+      "size": 766681404
+    },
+    {
+      "name": "decoder.pc-int8.onnx",
+      "url": "https://huggingface.co/pantinor/sherpa-onnx-whisper-large-finnish-v3/resolve/main/decoder.pc-int8.onnx",
+      "sha256": "83c497cabe9f9f1932839c7b95f5f439afe10baa031024c7fe18413c691b6afa",
+      "size": 1011267563
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/pantinor/sherpa-onnx-whisper-large-finnish-v3/resolve/main/tokens.txt",
+      "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+      "size": 816730
+    }
+  ]
+}

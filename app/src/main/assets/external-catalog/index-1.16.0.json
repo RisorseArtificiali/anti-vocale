@@ -251,6 +251,14 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/transcribepsy-eu.json"
     },
     {
+      "name": "Whisper Large v3 Finnish int8 (sherpa, Finnish-NLP fine-tune)",
+      "languages": [
+        "fi"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/finnish.json"
+    },
+    {
       "name": "Whisper Large v3 Turbo Arabic Dialectal (sherpa int8)",
       "languages": [
         "ar"

@@ -183,7 +183,11 @@ class ExternalCatalogTest {
         // FLEURS ko vs SenseVoice 8.44% and whisper-small 21.19%; the
         // entry promised quality it does not have on general speech.
         // Still importable by URL; SenseVoice is the ko path)
-        assertEquals(32, entries.size)
+        // + whisper large v3 finnish (TASK-769: our conversion of
+        // Finnish-NLP/whisper-large-finnish-v3, FLEURS fi 7.09 vs
+        // turbo's 9.05; the on-device pass stays a separate gate,
+        // hosted at pantinor/sherpa-onnx-whisper-large-finnish-v3)
+        assertEquals(33, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
@@ -232,6 +236,9 @@ class ExternalCatalogTest {
             Triple("moonshine-ukrainian.json", "MOONSHINE" to "", 3),
             Triple("moonshine-vietnamese.json", "MOONSHINE" to "", 3),
             Triple("arabic-small.json", "WHISPER" to "", 3),
+            // TASK-769: the Finnish quality pick rides the same pin tripwire
+            // as its siblings (family/modelType, file count, sha/size shape).
+            Triple("finnish.json", "WHISPER" to "", 3),
         ).forEach { (file, pin, fileCount) ->
             val obj = org.json.JSONObject(
                 RepoFiles.readText("src/main/assets/external-catalog/$file"))
@@ -263,6 +270,7 @@ class ExternalCatalogTest {
             "moonshine-spanish.json" to "es",
             "moonshine-ukrainian.json" to "uk",
             "moonshine-vietnamese.json" to "vi",
+            "finnish.json" to "fi",
         ).forEach { (file, lang) ->
             val obj = org.json.JSONObject(
                 RepoFiles.readText("src/main/assets/external-catalog/$file"))
