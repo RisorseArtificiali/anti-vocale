@@ -614,6 +614,7 @@
     <!-- Settings Tab - App icon (TASK-392) -->
     <string name="app_icon_title">ऐप आइकन</string>
     <string name="app_icon_note">बदलते समय कुछ लॉन्चर पर आइकन एक पल के लिए छिप सकता है; स्टोर लिस्टिंग में डिफ़ॉल्ट आइकन ही रहता है।</string>
+    <string name="app_icon_scope_note">यह विकल्प केवल लॉन्चर आइकन पर लागू होता है; नोटिफिकेशन और शेयर मेनू में ऐप का डिफ़ॉल्ट आइकन ही रहता है।</string>
     <string name="app_icon_variant_default">डिफ़ॉल्ट</string>
     <string name="app_icon_variant_wavecut">विच्छिन्न तरंग</string>
     <string name="app_icon_variant_crossed">काटी हुई तरंग</string>

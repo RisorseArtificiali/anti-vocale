@@ -4073,7 +4073,13 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     ),
     SettingsSearchCard(
         SettingsSearchId.APP_ICON, SettingsSearchSection.APPEARANCE,
-        listOf(R.string.app_icon_title),
+        // TASK-918: the picker's two notes ride the hub vocabulary so
+        // "launcher", "notifications" and "share" queries land on the
+        // owning card (the TASK-689 text-size lesson).
+        listOf(
+            R.string.app_icon_title, R.string.app_icon_note,
+            R.string.app_icon_scope_note,
+        ),
         group = SettingsSearchGroup.LOOK_AND_FEEL,
     ),
     SettingsSearchCard(

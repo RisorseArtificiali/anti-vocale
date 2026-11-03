@@ -617,6 +617,7 @@
     <!-- Settings Tab - App icon (TASK-392) -->
     <string name="app_icon_title">نماد برنامه</string>
     <string name="app_icon_note">تغییر نماد ممکن است در برخی لانچرها موقتاً آن را پنهان کند؛ صفحه فروشگاه نماد پیش‌فرض را نگه می‌دارد.</string>
+    <string name="app_icon_scope_note">این گزینه فقط برای نماد لانچر اعمال می‌شود؛ اعلان‌ها و منوی هم‌رسانی نماد پیش‌فرض برنامه را نگه می‌دارند.</string>
     <string name="app_icon_variant_default">پیش‌فرض</string>
     <string name="app_icon_variant_wavecut">موج صوتی قطع‌شده</string>
     <string name="app_icon_variant_crossed">موج صوتی خط‌خورده</string>

@@ -555,6 +555,7 @@
     <string name="theme_telegram">Telegram</string>
     <string name="app_icon_title">应用图标</string>
     <string name="app_icon_note">在某些启动器上切换图标可能导致图标短暂消失；商店页面始终显示默认图标。</string>
+    <string name="app_icon_scope_note">该样式仅应用于启动器图标；通知和分享菜单仍显示默认应用图标。</string>
     <string name="app_icon_variant_default">默认</string>
     <string name="app_icon_variant_wavecut">中断波形</string>
     <string name="app_icon_variant_crossed">交叉波形</string>

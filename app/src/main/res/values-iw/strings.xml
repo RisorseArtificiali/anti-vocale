@@ -647,6 +647,7 @@
     <!-- Settings Tab - App icon (TASK-392) -->
     <string name="app_icon_title">סמל האפליקציה</string>
     <string name="app_icon_note">החלפה עלולה להסתיר את הסמל לרגע קצר בחלק מהמשגרים; בעמוד החנות נשאר סמל ברירת המחדל.</string>
+    <string name="app_icon_scope_note">הסמל הנבחר חל על המשגר בלבד; ההתראות ותפריט השיתוף ממשיכים להציג את סמל ברירת המחדל של האפליקציה.</string>
     <string name="app_icon_variant_default">ברירת מחדל</string>
     <string name="app_icon_variant_wavecut">צורת גל קטועה</string>
     <string name="app_icon_variant_crossed">צורת גל מוצלבת</string>

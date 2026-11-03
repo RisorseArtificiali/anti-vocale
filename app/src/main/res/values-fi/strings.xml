@@ -575,6 +575,7 @@
     <string name="theme_telegram">Telegram</string>
     <string name="app_icon_title">Sovelluskuvake</string>
     <string name="app_icon_note">Vaihtaminen voi piilottaa kuvakkeen hetkellisesti joillakin käynnistimillä; kauppasivu säilyttää oletuskuvakkeen.</string>
+    <string name="app_icon_scope_note">Vaihtoehto koskee vain käynnistimen kuvaketta; ilmoitukset ja jakovalikko säilyttävät sovelluksen oletuskuvakkeen.</string>
     <string name="app_icon_variant_default">Oletus</string>
     <string name="app_icon_variant_wavecut">Keskeytetty aaltomuoto</string>
     <string name="app_icon_variant_crossed">Yliviivattu aaltomuoto</string>

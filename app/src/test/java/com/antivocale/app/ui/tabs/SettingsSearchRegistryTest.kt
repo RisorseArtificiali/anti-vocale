@@ -364,6 +364,15 @@ class SettingsSearchRegistryTest {
             ),
             res(SettingsSearchId.THEME, state()),
         )
+        // TASK-918: the picker screen's notes are the card's children, so
+        // they belong to its search vocabulary like any other child string.
+        assertEquals(
+            listOf(
+                R.string.app_icon_title, R.string.app_icon_note,
+                R.string.app_icon_scope_note,
+            ),
+            res(SettingsSearchId.APP_ICON, state()),
+        )
     }
 
     @Test

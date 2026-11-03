@@ -555,6 +555,7 @@
     <string name="theme_telegram">Telegram</string>
     <string name="app_icon_title">أيقونة التطبيق</string>
     <string name="app_icon_note">قد تختفي الأيقونة مؤقتًا على بعض مشغلات التطبيقات عند التبديل، بينما تحتفظ صفحة المتجر بالأيقونة الافتراضية.</string>
+    <string name="app_icon_scope_note">ينطبق هذا الخيار على أيقونة المشغّل فقط؛ تحتفظ الإشعارات وقائمة المشاركة بالأيقونة الافتراضية للتطبيق.</string>
     <string name="app_icon_variant_default">الافتراضي</string>
     <string name="app_icon_variant_wavecut">موجة صوتية متقطعة</string>
     <string name="app_icon_variant_crossed">موجة صوتية مشطوبة</string>

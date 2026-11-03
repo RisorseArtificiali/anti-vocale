@@ -552,6 +552,7 @@
     <!-- Settings Tab - App icon (TASK-392) -->
     <string name="app_icon_title">Icono de la aplicación</string>
     <string name="app_icon_note">Al cambiarlo, el icono puede desaparecer un momento en algunos lanzadores; la ficha de la tienda mantiene el icono predeterminado.</string>
+    <string name="app_icon_scope_note">La variante se aplica solo al icono del lanzador; las notificaciones y el menú para compartir mantienen el icono predeterminado de la aplicación.</string>
     <string name="app_icon_variant_default">Predeterminado</string>
     <string name="app_icon_variant_wavecut">Onda interrumpida</string>
     <string name="app_icon_variant_crossed">Onda tachada</string>

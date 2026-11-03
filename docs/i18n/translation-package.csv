@@ -124,19 +124,19 @@ parakeet_download,Download Parakeet TDT,plain,
 parakeet_download_confirm_title,Download Parakeet TDT?,plain,
 parakeet_download_confirm_message,This will download ~%1$dMB. Parakeet is faster but less accurate than Gemma for transcription.,formatted,keep verbatim: ['%1$d']
 parakeet_smoothquant_title,Parakeet TDT (SmoothQuant),plain,
-parakeet_smoothquant_description,~862MB • 25 languages • Alternative to the default,plain,
+parakeet_smoothquant_description,~%1$dMB • %2$d languages • Alternative to the default,formatted,"keep verbatim: ['%1$d', '%2$d']"
 parakeet_stock_title,Parakeet TDT (Stock int8),plain,
-parakeet_stock_description,~640MB • 25 languages • The default: fastest multilingual,plain,
+parakeet_stock_description,~%1$dMB • %2$d languages • The default: fastest multilingual,formatted,"keep verbatim: ['%1$d', '%2$d']"
 whisper_title,Whisper,plain,
 whisper_description,Multilingual speech recognition,plain,
 whisper_small_title,Whisper Small,plain,
-whisper_small_description,"~378MB • Lower accuracy, especially on noisy audio • Unreliable language auto-detection (defaults to your app language) • Only for low-spec devices",plain,
+whisper_small_description,"~%1$dMB • Lower accuracy, especially on noisy audio • Unreliable language auto-detection (defaults to your app language) • Only for low-spec devices",formatted,keep verbatim: ['%1$d']
 whisper_turbo_title,Whisper Turbo,plain,
-whisper_turbo_description,~1037MB • Near large-v3 quality • Balanced multilingual,plain,
+whisper_turbo_description,~%1$dMB • Near large-v3 quality • Balanced multilingual,formatted,keep verbatim: ['%1$d']
 whisper_medium_title,Whisper Medium,plain,
-whisper_medium_description,~949MB • Good accuracy • Multilingual,plain,
+whisper_medium_description,~%1$dMB • Good accuracy • Multilingual,formatted,keep verbatim: ['%1$d']
 whisper_distil_large_v3_title,Distil Italian,plain,
-whisper_distil_large_v3_description,~984MB • 2 decoder layers • Fastest • Optimized for Italian,plain,
+whisper_distil_large_v3_description,~%1$dMB • 2 decoder layers • Fastest • Optimized for Italian,formatted,keep verbatim: ['%1$d']
 whisper_download,Download Whisper,plain,
 whisper_download_confirm_title,Download %1$s?,formatted,keep verbatim: ['%1$s']
 whisper_download_confirm_message,This will download ~%1$dMB. Whisper provides excellent multilingual support with proper punctuation.,formatted,keep verbatim: ['%1$d']
@@ -145,7 +145,7 @@ whisper_extract_confirm_message,The model file is already downloaded. This will 
 qwen3_asr_title,Qwen3-ASR (%1$d languages),formatted,keep verbatim: ['%1$d']
 qwen3_asr_description,%1$d languages,formatted,keep verbatim: ['%1$d']
 qwen3_asr_0_6b_title,Qwen3-ASR 0.6B,plain,
-qwen3_asr_0_6b_description,~938MB • %1$d languages,formatted,keep verbatim: ['%1$d']
+qwen3_asr_0_6b_description,~%1$dMB • %2$d languages,formatted,"keep verbatim: ['%1$d', '%2$d']"
 qwen3_asr_download_confirm_title,Download %1$s?,formatted,keep verbatim: ['%1$s']
 qwen3_asr_download,Download Qwen3-ASR,plain,
 qwen3_asr_delete_message,Delete Qwen3-ASR model?,plain,
@@ -153,7 +153,7 @@ qwen3_asr_downloaded,%1$s downloaded successfully,formatted,keep verbatim: ['%1$
 qwen3_asr_deleted,%1$s deleted,formatted,keep verbatim: ['%1$s']
 nemotron_name,Nemotron 3.5,plain,
 nemotron_title,Nemotron 3.5 (streaming),plain,
-nemotron_description,~640MB • Streaming • Accuracy over speed,plain,
+nemotron_description,~%1$dMB • Streaming • Accuracy over speed,formatted,keep verbatim: ['%1$d']
 nemotron_download_confirm_title,Download %1$s?,formatted,keep verbatim: ['%1$s']
 nemotron_download_confirm_message,This will download ~%1$dMB. Nemotron 3.5 is a streaming multilingual ASR model.,formatted,keep verbatim: ['%1$d']
 nemotron_download,Download Nemotron,plain,
@@ -161,12 +161,12 @@ nemotron_delete_message,Delete Nemotron 3.5 model?,plain,
 nemotron_downloaded,%1$s downloaded successfully,formatted,keep verbatim: ['%1$s']
 nemotron_deleted,%1$s deleted,formatted,keep verbatim: ['%1$s']
 gigaam_title,GigaAM v3,plain,
-gigaam_description,~326MB • Fast • Russian ASR with punctuation,plain,
+gigaam_description,~%1$dMB • Fast • Russian ASR with punctuation,formatted,keep verbatim: ['%1$d']
 gigaam_name,GigaAM v3,plain,
-whistle_name,Whistle (17 MB),plain,
-whistle_description,"~17MB • Very fast • 7 languages, detected automatically",plain,
+whistle_name,Whistle (%1$d MB),formatted,keep verbatim: ['%1$d']
+whistle_description,"~%1$dMB • Very fast • %2$d languages, detected automatically",formatted,"keep verbatim: ['%1$d', '%2$d']"
 benchmark_unsupported_engine,Benchmarking is not supported for this engine,plain,
-model_info_best_for_whistle,"Fastest on-device start: 17 MB, 7 languages, instant first text",plain,
+model_info_best_for_whistle,"Fastest on-device start: %1$d MB, %2$d languages, instant first text",formatted,"keep verbatim: ['%1$d', '%2$d']"
 model_info_notes_whistle,Word accuracy trails Parakeet on Italian; music can transcribe as text (the engine has no music filter),plain,
 gigaam_download_confirm_title,Download GigaAM v3?,plain,
 gigaam_download_confirm_message,This will download ~%1$dMB. GigaAM v3 is a Russian-only ASR model from Sber with strong Russian accuracy.,formatted,keep verbatim: ['%1$d']
@@ -552,6 +552,7 @@ theme_whatsapp,WhatsApp,plain,
 theme_telegram,Telegram,plain,
 app_icon_title,App icon,plain,
 app_icon_note,Switching may briefly hide the icon on some launchers; the store listing keeps the default icon.,plain,
+app_icon_scope_note,The variant applies to the launcher icon only; notifications and the share sheet keep the default app icon.,plain,
 app_icon_variant_default,Default,plain,
 app_icon_variant_wavecut,Interrupted Waveform,plain,
 app_icon_variant_crossed,Crossed Waveform,plain,
@@ -636,37 +637,29 @@ speed_comparison_header_size,Size,plain,
 speed_comparison_header_speed,Speed,plain,
 speed_comparison_header_quality,Italian Quality,plain,
 speed_comparison_small_name,Whisper Small,plain,
-speed_comparison_small_size,~378MB,plain,
 speed_comparison_small_speed,1.0x,plain,
 speed_comparison_small_quality,Fair,plain,
 speed_comparison_turbo_name,Whisper Turbo,plain,
-speed_comparison_turbo_size,~1037MB,plain,
 speed_comparison_turbo_speed,1.3x,plain,
 speed_comparison_turbo_quality,Good,plain,
 speed_comparison_medium_name,Whisper Medium,plain,
-speed_comparison_medium_size,~949MB,plain,
 speed_comparison_medium_speed,0.5x,plain,
 speed_comparison_medium_quality,Good,plain,
 speed_comparison_distil_it_name,Distil Italian,plain,
-speed_comparison_distil_it_size,~984MB,plain,
 speed_comparison_distil_it_speed,~1.8x,plain,
 speed_comparison_distil_it_quality,Best Italian,plain,
 speed_comparison_distil_it_note,Best Italian,plain,
 speed_comparison_parakeet_name,Parakeet TDT,plain,
-speed_comparison_parakeet_size,~640MB,plain,
 speed_comparison_parakeet_speed,~17x,plain,
 speed_comparison_parakeet_quality,Very Good,plain,
 speed_comparison_parakeet_note,Recommended,plain,
 speed_comparison_qwen3_name,Qwen3-ASR,plain,
-speed_comparison_qwen3_size,~938MB,plain,
 speed_comparison_qwen3_speed,~2x,plain,
 speed_comparison_qwen3_quality,"%1$d langs, variable",formatted,keep verbatim: ['%1$d']
 speed_comparison_gigaam_name,GigaAM v3,plain,
-speed_comparison_gigaam_size,~326MB,plain,
 speed_comparison_gigaam_speed,Fast,plain,
 speed_comparison_gigaam_quality,Russian only,plain,
 speed_comparison_nemotron_name,Nemotron 3.5,plain,
-speed_comparison_nemotron_size,~640MB,plain,
 speed_comparison_nemotron_speed,Streaming,plain,
 speed_comparison_nemotron_quality,Experimental,plain,
 fastest_badge,Fastest,plain,
@@ -798,7 +791,7 @@ model_info_best_for_whisper_medium,Mid-size multilingual model,plain,
 model_info_notes_whisper_medium,Good balance between accuracy and resource usage.,plain,
 model_info_best_for_distil_it,Best Italian accuracy (3.5%% WER),formatted,keep verbatim: ['%%']
 model_info_notes_distil_it,Italian-only. Highest accuracy for Italian voice messages. Prioritize accuracy over speed.,plain,
-model_info_best_for_qwen3,59-language auto-detection,plain,
+model_info_best_for_qwen3,%1$d-language auto-detection,formatted,keep verbatim: ['%1$d']
 model_info_notes_qwen3,Broadest language coverage. Note: truncates audio longer than 30 seconds. ARM64 devices only.,plain,
 model_info_best_for_parakeet,Fastest transcription (4.0%% WER in Italian),formatted,keep verbatim: ['%%']
 model_info_notes_parakeet,No audio length limit. VAD not needed. Best for users who prioritize speed.,plain,

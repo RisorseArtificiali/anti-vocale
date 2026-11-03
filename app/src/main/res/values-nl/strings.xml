@@ -668,6 +668,7 @@
     <!-- Settings Tab - App icon (TASK-392) -->
     <string name="app_icon_title">App-pictogram</string>
     <string name="app_icon_note">Wisselen kan het pictogram op sommige launchers kort verbergen; de storevermelding houdt het standaardpictogram.</string>
+    <string name="app_icon_scope_note">De variant geldt alleen voor het launcher-pictogram; meldingen en het deelmenu behouden het standaardpictogram van de app.</string>
     <string name="app_icon_variant_default">Standaard</string>
     <string name="app_icon_variant_wavecut">Onderbroken golfvorm</string>
     <string name="app_icon_variant_crossed">Doorgestrepen golfvorm</string>

@@ -615,6 +615,7 @@
     <!-- Settings Tab - App icon (TASK-392) -->
     <string name="app_icon_title">App-Symbol</string>
     <string name="app_icon_note">Beim Wechsel kann das Symbol auf einigen Launchern kurz verschwinden; der Store-Eintrag behält das Standardsymbol.</string>
+    <string name="app_icon_scope_note">Die Variante gilt nur für das Launcher-Symbol; Benachrichtigungen und das Teilen-Menü behalten das Standardsymbol der App.</string>
     <string name="app_icon_variant_default">Standard</string>
     <string name="app_icon_variant_wavecut">Unterbrochene Wellenform</string>
     <string name="app_icon_variant_crossed">Durchgestrichene Wellenform</string>

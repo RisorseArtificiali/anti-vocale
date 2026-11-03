@@ -671,6 +671,7 @@
     <!-- Settings Tab - App icon (TASK-392) -->
     <string name="app_icon_title">App icon</string>
     <string name="app_icon_note">Switching may briefly hide the icon on some launchers; the store listing keeps the default icon.</string>
+    <string name="app_icon_scope_note">The variant applies to the launcher icon only; notifications and the share sheet keep the default app icon.</string>
     <string name="app_icon_variant_default">Default</string>
     <string name="app_icon_variant_wavecut">Interrupted Waveform</string>
     <string name="app_icon_variant_crossed">Crossed Waveform</string>

@@ -177,7 +177,18 @@ fun LauncherIconScreen(
                             }
                     }
                 }
-            }
+                }
+
+                // TASK-918: the alias flip the picker performs is
+                // launcher-only by Android design (the shade header and the
+                // share-target aliases read the static application icon, and
+                // ApplicationInfo.icon has no runtime setter); stated here
+                // once, not on the hub row.
+                Text(
+                    text = stringResource(R.string.app_icon_scope_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
         }
     }
 }

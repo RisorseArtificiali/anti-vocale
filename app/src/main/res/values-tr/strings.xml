@@ -646,6 +646,7 @@
     <!-- Settings Tab - App icon (TASK-392) -->
     <string name="app_icon_title">Uygulama simgesi</string>
     <string name="app_icon_note">Değiştirirken simge bazı başlatıcılarda kısa süre kaybolabilir; mağaza listesinde varsayılan simge kalır.</string>
+    <string name="app_icon_scope_note">Varyant yalnızca başlatıcı simgesi için geçerlidir; bildirimler ve paylaşım menüsü uygulamanın varsayılan simgesini korur.</string>
     <string name="app_icon_variant_default">Varsayılan</string>
     <string name="app_icon_variant_wavecut">Kesik dalga</string>
     <string name="app_icon_variant_crossed">Üstü çizili dalga</string>
