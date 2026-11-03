@@ -81,16 +81,22 @@ def extract() -> tuple[list[list[str]], list[tuple[str, dict[str, str]]], list[s
     return rows, plurals, warnings
 
 
-def main(tag: str) -> None:
-    if tag not in CLDR_CARDINALS:
-        print(f"unsupported locale tag {tag!r}; supported: {sorted(CLDR_CARDINALS)}")
-        raise SystemExit(2)
+def write_package_csv(
+    rows: list[list[str]],
+    plurals: list[tuple[str, dict[str, str]]],
+    out_dir: Path,
+) -> Path:
+    """Write the shared translation-package CSV into out_dir.
 
-    rows, plurals, warnings = extract()
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    # ONE shared package: the CSV never depends on the tag.
-    csv_path = OUT_DIR / "translation-package.csv"
+    Byte-stable by construction (TASK-950 freshness check depends on it):
+    newline="" keeps csv.writer's CRLF terminators intact, the CSV carries
+    no timestamps, and row order is strings.xml document order with plural
+    quantities sorted per key. scripts/check-translation-package.sh
+    regenerates through THIS function so the committed file is compared
+    against exactly what a real regeneration emits.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = out_dir / "translation-package.csv"
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["key", "english", "kind", "notes"])
@@ -99,6 +105,18 @@ def main(tag: str) -> None:
             for qty, text in sorted(items.items()):
                 w.writerow([f"{name} [{qty}]", text, "plural",
                             "supply only the quantities the locale table lists"])
+    return csv_path
+
+
+def main(tag: str) -> None:
+    if tag not in CLDR_CARDINALS:
+        print(f"unsupported locale tag {tag!r}; supported: {sorted(CLDR_CARDINALS)}")
+        raise SystemExit(2)
+
+    rows, plurals, warnings = extract()
+
+    # ONE shared package: the CSV never depends on the tag.
+    csv_path = write_package_csv(rows, plurals, OUT_DIR)
 
     wanted = CLDR_CARDINALS[tag]
     md = OUT_DIR / f"plurals-{tag}.md"

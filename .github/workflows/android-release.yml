@@ -90,6 +90,9 @@ jobs:
       - name: Check model size claims match the catalog (TASK-923)
         run: ./scripts/check-model-sizes.sh
 
+      - name: Check translation package freshness (TASK-950)
+        run: ./scripts/check-translation-package.sh
+
       - name: Fetch sherpa-onnx AAR
         run: ./scripts/fetch-sherpa-aar.sh
 

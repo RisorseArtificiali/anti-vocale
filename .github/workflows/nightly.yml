@@ -140,6 +140,12 @@ jobs:
       - name: Model size claims match the catalog
         run: ./scripts/check-model-sizes.sh
 
+      # TASK-950: docs/i18n/translation-package.csv is the volunteer
+      # translator hand-off derived from values/strings.xml; string edits
+      # drifted it silently until someone remembered to regenerate it.
+      - name: Translation package freshness
+        run: ./scripts/check-translation-package.sh
+
       # TASK-784 review: record the CHECKOUT's HEAD, not github.sha. On
       # schedule events github.sha is the trigger-time HEAD while the
       # artifacts build from this fresh checkout a moment later; the tag

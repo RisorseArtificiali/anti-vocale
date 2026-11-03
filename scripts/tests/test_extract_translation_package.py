@@ -75,6 +75,23 @@ class ExtractTranslationPackageTest(unittest.TestCase):
         self.assertEqual(["one", "other"], self.mod.CLDR_CARDINALS["fi"])
         self.assertEqual(6, len(self.mod.CLDR_CARDINALS["ar"]))
 
+    def test_write_package_csv_is_byte_stable_crlf(self):
+        # TASK-950: the freshness check regenerates through
+        # write_package_csv and compares bytes, so the CSV must keep
+        # csv.writer's CRLF terminators (a read_text/write_text rewrite
+        # normalizes 2000+ lines to LF) and be deterministic across runs.
+        rows, plurals, _ = self.mod.extract()
+        with tempfile.TemporaryDirectory() as td:
+            first = self.mod.write_package_csv(rows, plurals, Path(td))
+            data = first.read_bytes()
+            self.assertTrue(data.endswith(b"\r\n"))
+            self.assertEqual(data.count(b"\r\n"),
+                             len(data.splitlines()))  # every line CRLF
+            # header + 5 translatable strings + 2 plural quantities
+            self.assertEqual(8, len(data.splitlines()))
+            second = self.mod.write_package_csv(rows, plurals, Path(td))
+            self.assertEqual(data, second.read_bytes())
+
 
 if __name__ == "__main__":
     unittest.main()
