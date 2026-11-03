@@ -6,6 +6,7 @@ import com.antivocale.app.data.catalog.CatalogEntry
 import com.antivocale.app.data.catalog.CatalogStringKeys
 import com.antivocale.app.data.catalog.CatalogVariant
 import com.antivocale.app.data.catalog.PlaceholderSlot
+import com.antivocale.app.data.catalog.formatArgs
 
 /**
  * TASK-946: the ONE owner of placeholder rendering policy. A display's slot
@@ -22,20 +23,8 @@ fun CatalogEntry.descriptionFormatArgs(): List<Any> = displayFormatArgs(descript
 
 private fun CatalogEntry.displayFormatArgs(display: CatalogDisplay?): List<Any> {
     val slots = (display as? CatalogDisplay.Resource)?.placeholders ?: return emptyList()
-    return slotArgs(slots, defaultVariant.estimatedSizeMB, languages.size)
+    return slots.formatArgs(defaultVariant.estimatedSizeMB, languages.size)
 }
-
-/**
- * The ONE slot-to-value mapping (see PlaceholderSlot): the args come back
- * in slot order, reading whatever size and count the caller's scope owns.
- */
-private fun slotArgs(slots: List<PlaceholderSlot>, sizeMB: Long, count: Int): List<Any> =
-    if (slots.isEmpty()) emptyList() else slots.map { slot ->
-        when (slot) {
-            PlaceholderSlot.SIZE -> sizeMB
-            PlaceholderSlot.COUNT -> count
-        }
-    }
 
 
 /**
@@ -81,11 +70,11 @@ data class CatalogVariantUi(
      * truth a variant can declare).
      */
     override val descriptionFormatArgs: List<Any>
-        get() = slotArgs(descriptionPlaceholders, estimatedSizeMB, supportedLanguageCodes.size)
+        get() = descriptionPlaceholders.formatArgs(estimatedSizeMB, supportedLanguageCodes.size)
 
     /** The title twin (an inherited or own title may declare slots). */
     override val titleFormatArgs: List<Any>
-        get() = slotArgs(titlePlaceholders, estimatedSizeMB, supportedLanguageCodes.size)
+        get() = titlePlaceholders.formatArgs(estimatedSizeMB, supportedLanguageCodes.size)
 
 
     companion object {

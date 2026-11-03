@@ -25,10 +25,12 @@ import java.util.Locale
  *
  * The target list is DERIVED from the bundled catalog's ONE slot list
  * (CatalogDisplay.Resource.placeholders; same flags the bash guard reads
- * and the parser normalizes): a description the catalog gives any slot is
- * covered here the moment the catalog declares it. Slot-bearing TITLES are
- * not derived here; the qwen3 count title (the only family today) stays
- * pinned by Qwen3CatalogCountGuardTest.
+ * and the parser normalizes): a description or title the catalog gives any
+ * slot is covered here the moment the catalog declares it. TASK-947 extended
+ * the walk to titles (whistle_name's size slot joined qwen3_asr_title's
+ * count); Qwen3CatalogCountGuardTest stays as the older qwen3 pin. The
+ * non-catalog slotted claim (model_info_best_for_whistle, slots carried by
+ * ModelInfo.bestForPlaceholders) remains the bash guard's static entry.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -50,7 +52,8 @@ class ModelSizePlaceholderGuardTest {
         val slots: List<PlaceholderSlot>,
     )
 
-    private val prefixed: List<Target> = BundledCatalog.entries().flatMap { entry ->
+    private val prefixed: List<Target> = run {
+        val all = BundledCatalog.entries().flatMap { entry ->
         buildList {
             fun add(key: String, variantName: String, languages: List<String>, slots: List<PlaceholderSlot>) =
                 add(Target(CatalogStringKeys.resolve(key), key, entry.id, variantName, languages, slots))
@@ -68,17 +71,45 @@ class ModelSizePlaceholderGuardTest {
                     add(d.key, v.name, v.languages.ifEmpty { entry.languages }, d.placeholders)
                 }
             }
+            // TASK-947: titles join the derivation. Entry-level display (the
+            // family label; the registry and the orchestrator format it with
+            // entry.titleFormatArgs) and variant title (the cards, the
+            // overlay, the notification names), both matching
+            // CatalogVariantUi.titleFormatArgs.
+            (entry.display as? CatalogDisplay.Resource)
+                ?.takeIf { it.placeholders.isNotEmpty() }?.let { d ->
+                add(d.key, entry.defaultVariant.name, entry.languages, d.placeholders)
+            }
+            entry.variants.forEach { v ->
+                (v.title as? CatalogDisplay.Resource)
+                    ?.takeIf { it.placeholders.isNotEmpty() }?.let { d ->
+                    add(d.key, v.name, v.languages.ifEmpty { entry.languages }, d.placeholders)
+                }
+            }
         }
     }
 
+        // A key declared on two holders (whistle_name: entry display + the
+        // variant's own title) must carry the SAME slot list on both arms,
+        // or one arm silently guards a different contract than the other.
+        val byKey = all.groupBy { it.key }
+        byKey.forEach { (key, targets) ->
+            require(targets.all { it.slots == targets.first().slots }) {
+                "catalog placeholder $key declares disagreeing slot lists"
+            }
+        }
+        byKey.map { (_, targets) -> targets.first() }
+    }
+
     /** The derivation's expected coverage: the pins catch a flag edit that
-     *  silently moves a description off the guarded set. */
+     *  silently moves a description or title off the guarded set. */
     private val expectedKeys = setOf(
         "parakeet_stock_description", "parakeet_smoothquant_description",
         "whisper_small_description", "whisper_turbo_description",
         "whisper_medium_description", "whisper_distil_large_v3_description",
         "qwen3_asr_0_6b_description", "qwen3_asr_description",
         "nemotron_description", "gigaam_description", "whistle_description",
+        "qwen3_asr_title", "whistle_name",
     )
 
     private fun sizeOf(entryId: String, variantName: String): Long =
@@ -110,12 +141,9 @@ class ModelSizePlaceholderGuardTest {
                 // fa and friends render the FORMATTED values in the locale's
                 // own digit system, so the expectation goes through the same
                 // String.format the app renders with.
-                val args: List<Any> = target.slots.map { slot ->
-                    when (slot) {
-                        PlaceholderSlot.SIZE -> size
-                        PlaceholderSlot.COUNT -> target.languages.size
-                    }
-                }
+                // The shared mapping (TASK-946/947): the test certifies
+                // strings against exactly what production formats with.
+                val args: List<Any> = target.slots.formatArgs(size, target.languages.size)
                 val formatted = c.getString(target.res, *args.toTypedArray())
                 target.slots.forEachIndexed { i, slot ->
                     val digits = String.format(Locale.forLanguageTag(tag), "%d", args[i])

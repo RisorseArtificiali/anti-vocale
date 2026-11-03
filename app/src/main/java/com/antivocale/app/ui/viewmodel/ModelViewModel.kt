@@ -33,6 +33,8 @@ import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.ModelFamilySupport
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.CatalogVariantUi
+import com.antivocale.app.ui.components.placeholderAwareString
+import com.antivocale.app.ui.components.variantTitle
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.ModelFamilyDetector
 import com.antivocale.app.transcription.SherpaModelDownloader
@@ -481,7 +483,8 @@ class ModelViewModel @Inject constructor(
                     if (_uiState.value.modelName.isBlank()) {
                         autoSelectIfNotDemoted(entryId) { useModel(entryId, variantName) }
                     }
-                    val displayName = ctx.getString(CatalogVariantUi.of(entryId, variantName).titleResId)
+                    val variantUi = CatalogVariantUi.of(entryId, variantName)
+                    val displayName = ctx.variantTitle(variantUi)
                     viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.catalog_model_downloaded, displayName))) }
                 }
             },
@@ -1187,13 +1190,15 @@ class ModelViewModel @Inject constructor(
                 .firstOrNull(File::isFile)
         }
         if (file == null) {
-            val displayName = context.getString(CatalogVariantUi.of(entryId, variant.name).titleResId)
+            val variantUi = CatalogVariantUi.of(entryId, variant.name)
+            val displayName = context.variantTitle(variantUi)
             _snackbarEvent.tryEmit(SnackbarEvent.Message(
                 context.getString(R.string.model_use_missing_files, displayName)))
             return
         }
         modelActivator.activateLlm(file)
-        val displayName = context.getString(CatalogVariantUi.of(entryId, variant.name).titleResId)
+        val variantUi = CatalogVariantUi.of(entryId, variant.name)
+        val displayName = context.variantTitle(variantUi)
         val message = context.getString(R.string.model_selected_message, displayName)
         _uiState.update {
             it.copy(modelPath = file.absolutePath, modelName = displayName,
@@ -1234,7 +1239,8 @@ class ModelViewModel @Inject constructor(
             val modelPath = modelActivator.activateCatalog(
                 context, entryId, variantName, _catalogStates.value[entryId]?.modelPath)
             if (modelPath != null) {
-                val displayName = context.getString(CatalogVariantUi.of(entryId, variantName).titleResId)
+                val variantUi = CatalogVariantUi.of(entryId, variantName)
+                val displayName = context.variantTitle(variantUi)
                 val message = context.getString(R.string.model_selected_message, displayName)
                 _uiState.update {
                     it.copy(
@@ -1250,7 +1256,8 @@ class ModelViewModel @Inject constructor(
                 // No valid model directory resolved: previously a SILENT no-op, which
                 // left the previous backend preference (possibly a dangling external id)
                 // active while the user believed they had switched (TASK-342 defect 1).
-                val displayName = context.getString(CatalogVariantUi.of(entryId, variantName).titleResId)
+                val variantUi = CatalogVariantUi.of(entryId, variantName)
+                val displayName = context.variantTitle(variantUi)
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(
                     context.getString(R.string.model_use_missing_files, displayName)))
             }
@@ -1309,7 +1316,8 @@ class ModelViewModel @Inject constructor(
                     }
                 }
                 updateEntry(entryId) { it.copy(modelPath = activePath) }
-                val displayName = context.getString(CatalogVariantUi.of(entryId, variantName).titleResId)
+                val variantUi = CatalogVariantUi.of(entryId, variantName)
+                val displayName = context.variantTitle(variantUi)
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.catalog_model_deleted, displayName)))
             }
         }
@@ -1381,7 +1389,8 @@ class ModelViewModel @Inject constructor(
             }
         }
         if (deletedAny) {
-            val displayName = context.getString(CatalogVariantUi.of(entryId, variantName).titleResId)
+            val variantUi = CatalogVariantUi.of(entryId, variantName)
+            val displayName = context.variantTitle(variantUi)
             _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.catalog_model_deleted, displayName)))
         }
     }
@@ -1666,7 +1675,7 @@ class ModelViewModel @Inject constructor(
                 // bytes through the same code).
                 com.antivocale.app.data.ModelBundleTransfer.export(
                     dir, entry, variant.variantName,
-                    displayName = ctx.getString(variant.titleResId),
+                    displayName = ctx.variantTitle(variant),
                     variantDirName = variant.dirName,
                     appVersion = BuildConfig.VERSION_NAME, out = out)
             } ?: error("cannot open export target $uri")

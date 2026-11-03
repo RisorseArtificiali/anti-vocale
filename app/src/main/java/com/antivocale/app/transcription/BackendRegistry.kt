@@ -16,6 +16,7 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 import com.antivocale.app.ui.components.placeholderAwareString
+import com.antivocale.app.ui.components.variantTitle
 
 /**
  * Immutable metadata about one transcription backend, tying together the two
@@ -165,7 +166,7 @@ internal fun variantAwareDisplayName(
     // path with the wrong variant.
     val variant = entry.variants.firstOrNull { it.dirName == dirName } ?: return family
     val variantUi = CatalogVariantUi.of(entry.id, variant.name)
-    val variantTitle = context.placeholderAwareString(variantUi.titleResId, variantUi.titleFormatArgs)
+    val variantTitle = context.variantTitle(variantUi)
     return if (variantTitle.contains(family, ignoreCase = true)) variantTitle else "$family $variantTitle"
 }
 
@@ -279,7 +280,11 @@ class BackendRegistry @Inject constructor(
             },
             deriveDisplayName = { context, path ->
                 SherpaModelManager.of(entry.id).detectVariant(File(path).name)
-                    ?.let { variantName -> context.getString(CatalogVariantUi.of(entry.id, variantName).titleResId) }
+                    ?.let { variantName ->
+                        val variantUi = CatalogVariantUi.of(entry.id, variantName)
+                        // TASK-947: a slotted title formats its catalog args.
+                        context.variantTitle(variantUi)
+                    }
                     ?: File(path).name
             },
             modelPathFlow = { it.sherpaModelPath(entry.id) },

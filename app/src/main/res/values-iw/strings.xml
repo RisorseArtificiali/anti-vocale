@@ -193,10 +193,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~%1$dMB • מהיר • ASR ברוסית עם פיסוק</string>
     <string name="gigaam_name">GigaAM v3</string>
-    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_name">Whistle (%1$d MB)</string>
     <string name="whistle_description">~%1$d מ״ב • מהיר מאוד • %2$d שפות, זיהוי אוטומטי</string>
     <string name="benchmark_unsupported_engine">מדד ביצועים אינו נתמך עבור מנוע זה</string>
-    <string name="model_info_best_for_whistle">ההתחלה המהירה ביותר במכשיר: 17 מ״ב, 7 שפות, טקסט ראשון מיידי</string>
+    <string name="model_info_best_for_whistle">ההתחלה המהירה ביותר במכשיר: %1$d מ״ב, %2$d שפות, טקסט ראשון מיידי</string>
     <string name="model_info_notes_whistle">דיוק נמוך מ-Parakeet באיטלקית; מוזיקה עשויה להיתמלל כטקסט (אין מסנן מוזיקה)</string>
     <string name="gigaam_download_confirm_title">להוריד את GigaAM v3?</string>
     <string name="gigaam_download_confirm_message">פעולה זו תוריד כ-%1$dMB. GigaAM v3 הוא מודל ASR לרוסית בלבד של Sber עם דיוק גבוה ברוסית.</string>
@@ -955,7 +955,7 @@
     <string name="model_info_notes_whisper_medium">איזון טוב בין דיוק לצריכת משאבים.</string>
     <string name="model_info_best_for_distil_it">דיוק האיטלקית הטוב ביותר (3.5%% WER)</string>
     <string name="model_info_notes_distil_it">איטלקית בלבד. הדיוק הגבוה ביותר להודעות קוליות באיטלקית. מעדיף דיוק על פני מהירות.</string>
-    <string name="model_info_best_for_qwen3">זיהוי אוטומטי ב-59 שפות</string>
+    <string name="model_info_best_for_qwen3">זיהוי אוטומטי ב-%1$d שפות</string>
     <string name="model_info_notes_qwen3">כיסוי השפות הרחב ביותר. שים לב: קוטע אודיו שאורכו מעל 30 שניות. למכשירי ARM64 בלבד.</string>
     <string name="model_info_best_for_parakeet">התמלול המהיר ביותר (4.0%% WER באיטלקית)</string>
     <string name="model_info_notes_parakeet">ללא מגבלת אורך אודיו. VAD אינו נחוץ. הטוב ביותר למי שמעדיף מהירות.</string>

@@ -100,6 +100,8 @@ import com.antivocale.app.benchmark.BenchmarkState
 import com.antivocale.app.ui.viewmodel.BenchmarkViewModel
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 import com.antivocale.app.ui.components.placeholderAwareString
+import com.antivocale.app.ui.components.variantTitle
+import com.antivocale.app.ui.components.titleRes
 import com.antivocale.app.ui.components.placeholderAwareStringResource
 import com.antivocale.app.util.FeedbackHelper
 
@@ -1550,7 +1552,7 @@ private fun CatalogModelSection(
                             benchmarkViewModel.startBenchmark(
                                 entry.id,
                                 path,
-                                context.placeholderAwareString(variant.titleResId, variant.titleFormatArgs)
+                                context.variantTitle(variant)
                             )
                         }
                         }
@@ -1609,7 +1611,7 @@ private fun CatalogModelSection(
     if (state.showDownloadDialog) {
         val selectedName = state.selectedVariant?.let {
             val v = CatalogVariantUi.of(entry.id, it)
-            placeholderAwareStringResource(v.titleResId, v.titleFormatArgs)
+            v.titleRes()
         } ?: placeholderAwareStringResource(entryTitleResId, entryTitleFormatArgs)
         val isExtract = state.selectedVariant != null && state.variantsNeedingExtraction.contains(state.selectedVariant)
         val sizeMb = state.selectedVariant?.let { CatalogVariantUi.of(entry.id, it).estimatedSizeMB.toInt() } ?: 0

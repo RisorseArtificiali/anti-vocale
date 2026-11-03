@@ -17,12 +17,13 @@ import java.util.Locale
 /**
  * TASK-760: the qwen3 language count is DERIVED from the catalog at every
  * render site (the catalog displays carry countPlaceholder and the sites
- * format entry.languages.size), except model_info_best_for_qwen3, whose
- * overlay renders it as a hand-pinned literal. This guard closes the drift
- * class that shipped 52/53/59 in one release: in EVERY shipped locale the
- * three placeholder strings hold the %1$d specifier (a locale that kept a
- * literal is an unformatted site) and formatting with the catalog's count
- * yields exactly that count; the literal string keeps carrying it.
+ * format entry.languages.size). model_info_best_for_qwen3 started as a
+ * hand-pinned literal (the drift class that shipped 52/53/59 in one
+ * release) and TASK-947 converted it to a %1$d count placeholder rendered
+ * by the model-info overlay; this guard still closes that drift class: in
+ * EVERY shipped locale the placeholder strings hold the %1$d specifier (a
+ * locale that kept a literal is an unformatted site) and formatting with
+ * the catalog's count yields exactly that count.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -69,11 +70,11 @@ class Qwen3CatalogCountGuardTest {
     }
 
     @Test
-    fun `the model-info best-for literal keeps carrying the catalog count`() {
+    fun `the model-info best-for placeholder formats the catalog count`() {
         shippedLocales().forEach { tag ->
-            // the literal is hand-written in the XML (Latin digits by convention)
-            val digits = count.toString()
-            val s = contextFor(tag).getString(R.string.model_info_best_for_qwen3)
+            val s = contextFor(tag).getString(R.string.model_info_best_for_qwen3, count)
+            // fa and friends render the formatted value in their own digits.
+            val digits = String.format(Locale.forLanguageTag(tag), "%d", count)
             assertTrue("$tag: model_info_best_for_qwen3 lost the count ($digits): $s",
                 s.contains(digits))
         }

@@ -181,10 +181,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~%1$d МБ • Быстрая • Распознавание русской речи с пунктуацией</string>
     <string name="gigaam_name">GigaAM v3</string>
-    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_name">Whistle (%1$d MB)</string>
     <string name="whistle_description">~%1$d МБ • Очень быстро • %2$d языков, автоопределение</string>
     <string name="benchmark_unsupported_engine">Бенчмарк не поддерживается для этого движка</string>
-    <string name="model_info_best_for_whistle">Самый быстрый запуск на устройстве: 17 МБ, 7 языков, мгновенный первый текст</string>
+    <string name="model_info_best_for_whistle">Самый быстрый запуск на устройстве: %1$d МБ, %2$d языков, мгновенный первый текст</string>
     <string name="model_info_notes_whistle">Точность ниже Parakeet на итальянском; музыка может распознаться как текст (нет музыкального фильтра)</string>
     <string name="gigaam_download_confirm_title">Скачать GigaAM v3?</string>
     <string name="gigaam_download_confirm_message">Будет загружено ~%1$d МБ. GigaAM v3, модель распознавания речи только для русского языка от Сбера с высокой точностью для русского.</string>
@@ -949,7 +949,7 @@
     <string name="model_info_notes_whisper_medium">Хороший баланс между точностью и потреблением ресурсов.</string>
     <string name="model_info_best_for_distil_it">Лучшая точность для итальянского (WER 3.5%%)</string>
     <string name="model_info_notes_distil_it">Только итальянский. Максимальная точность для итальянских голосовых сообщений. Приоритет: точность, а не скорость.</string>
-    <string name="model_info_best_for_qwen3">Автоопределение для 59 языков</string>
+    <string name="model_info_best_for_qwen3">Автоопределение для %1$d языков</string>
     <string name="model_info_notes_qwen3">Самое широкое покрытие языков. Внимание: обрезает аудио длиннее 30 секунд. Только устройства ARM64.</string>
     <string name="model_info_best_for_parakeet">Самое быстрое распознавание (WER 4.0%% для итальянского)</string>
     <string name="model_info_notes_parakeet">Без ограничения длительности аудио. VAD не требуется. Лучший выбор для тех, кому важна скорость.</string>

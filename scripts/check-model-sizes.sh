@@ -14,8 +14,9 @@
 #
 # Covered surfaces:
 #   1. app/src/main/res/values*/strings.xml (format contract for the prefixed
-#      descriptions; baked-size literals for the whistle title/info line; the
-#      untranslatable speed_comparison_size_format)
+#      descriptions AND the slot-bearing titles (whistle_name's size,
+#      qwen3_asr_title's count), plus the non-catalog slotted whistle
+#      best-for claim; the untranslatable speed_comparison_size_format)
 #   2. fastlane/metadata/android/*/full_description.txt (Parakeet sizes and
 #      the storage ceiling)
 #   3. README.md "Supported Models" tables (ASR + LLM) and the prerequisites
@@ -63,37 +64,37 @@ def size_of(entry_id, variant):
 PREFIXED = {}
 for m in catalog['models']:
     for holder in [m] + m.get('variants', []):
-        desc = holder.get('description', {})
-        key = desc.get('resourceKey') if isinstance(desc, dict) else None
-        if key and isinstance(key, str):
-            # The same canonical order the app parser derives (size, count).
-            slots = [s for s, flag in (('size', 'sizePlaceholder'),
-                                       ('count', 'countPlaceholder')) if desc.get(flag)]
-            if slots:
-                PREFIXED[key] = (m['id'], holder.get('name'), slots)
+        # Titles live in the entry's `display` and a variant's `title`;
+        # descriptions in `description` on both holders (TASK-947 added the
+        # whistle size title, the first slotted title besides qwen3's).
+        for dk in ('description', 'display', 'title'):
+            disp = holder.get(dk, {})
+            key = disp.get('resourceKey') if isinstance(disp, dict) else None
+            if key and isinstance(key, str):
+                # The same canonical order the app parser derives (size, count).
+                slots = [s for s, flag in (('size', 'sizePlaceholder'),
+                                           ('count', 'countPlaceholder')) if disp.get(flag)]
+                if slots:
+                    PREFIXED[key] = slots
+# Non-catalog slotted claims (no catalog display declares them): the whistle
+# model-info best-for line renders the variant's catalog size and language
+# count through ModelInfo.bestForPlaceholders at the overlay (TASK-947).
+PREFIXED['model_info_best_for_whistle'] = ['size', 'count']
+PREFIXED['model_info_best_for_qwen3'] = ['count']
 # claim-text digits that are NOT catalog data (model names, layer counts)
 DIGIT_ALLOWLIST = {
     'whisper_turbo_description': ['3'],        # "large-v3"
     'whisper_distil_large_v3_description': ['2'],  # "2 decoder layers"
+    'qwen3_asr_title': ['3'],                  # "Qwen3-ASR"
 }
 
-# Still BAKED literal sizes (no catalog render path yet): the whistle title
-# and the model-info best-for line carry 17 MB as claim text.
-BAKED = {
-    'whistle_name': ('whistle', 'v1'),
-    'model_info_best_for_whistle': ('whistle', 'v1'),
-}
-expected = {k: size_of(e, v) for k, (e, v) in BAKED.items()}
-
-# Localized megabyte suffixes seen in the tree: en/it MB, uk МБ, fi Mt, fr Mo.
-SIZE_RE = re.compile(r'(\d+)\s*(?:MB|МБ|Мб|Mt|Mo)\b')
 string_re = re.compile(r'<string name="([^"]+)"[^>]*>([^<]*)</string>')
 
 errors = []
 
 for p in sorted((repo / 'app/src/main/res').glob('values*/strings.xml')):
     bodies = {m.group(1): m.group(2) for m in string_re.finditer(p.read_text())}
-    for name, (_e, _v, slots) in PREFIXED.items():
+    for name, slots in PREFIXED.items():
         body = bodies.get(name)
         if body is None:
             errors.append(f'{p.relative_to(repo)}: {name} missing')
@@ -115,24 +116,6 @@ for p in sorted((repo / 'app/src/main/res').glob('values*/strings.xml')):
             if run not in allowed:
                 errors.append(f'{p.relative_to(repo)}: {name} carries a baked digit {run!r}; '
                               f'numbers must come from the catalog slots')
-    for name in BAKED:
-        body = bodies.get(name)
-        if body is None:
-            # A translation may legitimately drop the size; only the default
-            # locale is required to carry it.
-            if p.parent.name == 'values':
-                errors.append(f'{p.relative_to(repo)}: {name} carries no size token')
-            continue
-        toks = SIZE_RE.findall(body)
-        if not toks:
-            # The default locale MUST keep the size claim; a translation that
-            # drops it may pass (the same leniency as the missing-string arm).
-            if p.parent.name == 'values':
-                errors.append(f'{p.relative_to(repo)}: {name} lost its size token')
-            continue
-        want = str(expected[name])
-        if toks[0] != want:
-            errors.append(f'{p.relative_to(repo)}: {name} says {toks[0]}MB, catalog says {want}MB')
     # Speed-comparison copies must not exist in locales (one pass with the
     # bodies dict instead of a second file walk).
     if p.parent.name != 'values' and any(
@@ -325,6 +308,6 @@ if errors:
     for e in errors:
         print(' -', e)
     sys.exit(1)
-print(f'model sizes OK: {len(PREFIXED)} format-contract descriptions in every locale, '
-      f'{len(expected)} baked whistle literals, speed size_format, listings, guides and docs match the catalog')
+print(f'model sizes OK: {len(PREFIXED)} format-contract descriptions and titles '
+      f'in every locale, speed size_format, listings, guides and docs match the catalog')
 PYEOF

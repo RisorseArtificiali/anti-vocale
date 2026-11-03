@@ -35,12 +35,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
+import com.antivocale.app.data.catalog.formatArgs
 import com.antivocale.app.transcription.ArchitectureType
 import com.antivocale.app.transcription.LanguageFlags
 import com.antivocale.app.transcription.ModelInfo
 import com.antivocale.app.transcription.ModelVariant
 import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.util.formatFileSize
+import com.antivocale.app.ui.components.titleRes
 
 @Composable
 fun ModelInfoOverlay(
@@ -52,7 +54,7 @@ fun ModelInfoOverlay(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Info, contentDescription = null) },
         title = {
-            Text(stringResource(variant.titleResId))
+            Text(variant.titleRes())
         },
         text = {
             Column(
@@ -66,7 +68,7 @@ fun ModelInfoOverlay(
                 HorizontalDivider()
 
                 if (info != null) {
-                    RecommendationsSection(info)
+                    RecommendationsSection(variant, info)
                     HorizontalDivider()
                     TechnicalDetailsSection(variant, info)
                     HorizontalDivider()
@@ -148,7 +150,7 @@ private fun LanguageChip(flag: String, name: String) {
 }
 
 @Composable
-private fun RecommendationsSection(info: ModelInfo) {
+private fun RecommendationsSection(variant: ModelVariant, info: ModelInfo) {
     SectionHeader(
         icon = { Icon(Icons.Default.TipsAndUpdates, contentDescription = null, modifier = Modifier.size(18.dp)) },
         title = stringResource(R.string.model_info_section_recommendations)
@@ -160,7 +162,14 @@ private fun RecommendationsSection(info: ModelInfo) {
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
             Text(
-                text = stringResource(info.bestFor),
+                // TASK-947: a slot-bearing claim reads the variant's OWN size
+                // and count through the shared mapping; an empty list
+                // (every other model) resolves plainly.
+                text = placeholderAwareStringResource(
+                    info.bestFor,
+                    info.bestForPlaceholders.formatArgs(
+                        variant.estimatedSizeMB, variant.supportedLanguageCodes.size),
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface

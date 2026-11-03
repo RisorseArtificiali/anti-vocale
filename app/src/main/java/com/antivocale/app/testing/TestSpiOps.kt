@@ -18,6 +18,8 @@ import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.RemoteOmnivoiceBackend
 import com.antivocale.app.transcription.TranscriptFuzzySearch
+import com.antivocale.app.ui.components.placeholderAwareString
+import com.antivocale.app.ui.components.variantTitle
 import com.antivocale.app.ui.theme.ThemeMode
 import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType
@@ -952,7 +954,9 @@ internal class TestSpiOps(
         val catalogEntry = com.antivocale.app.data.catalog.BundledCatalog.byId(entryId) ?: error("validated")
         val uiVariant = com.antivocale.app.transcription.CatalogVariantUi.forEntry(entryId)
             .firstOrNull { it.variantName == variantName }
-        val displayName = uiVariant?.let { context.getString(it.titleResId) } ?: variantName
+        val displayName = uiVariant?.let {
+            context.variantTitle(it)
+        } ?: variantName
         val out = File(context.getExternalFilesDir(null), "bundle-$entryId-$variantName.zip")
         java.io.FileOutputStream(out).use { stream ->
             com.antivocale.app.data.ModelBundleTransfer.export(

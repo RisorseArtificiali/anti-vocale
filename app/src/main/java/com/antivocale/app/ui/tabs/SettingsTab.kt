@@ -85,6 +85,7 @@ import com.antivocale.app.ui.components.CardTitleRow
 import com.antivocale.app.ui.components.VoiceNoteFolderGrantCard
 import com.antivocale.app.ui.components.VoiceNoteFolderGrantSheet
 import com.antivocale.app.ui.components.languageOptionLabel
+import com.antivocale.app.ui.components.titleRes
 import com.antivocale.app.ui.components.transcriptionSentinelLabels
 import com.antivocale.app.ui.components.CollapsibleSection
 import com.antivocale.app.ui.components.GroupHeader
@@ -872,12 +873,16 @@ fun SettingsTab(
                     ?.displayName?.let { return it }
                 // Same stale-fallback rule as the picker: the catalog family
                 // title, never a raw backend id in a user-facing sentence.
-                val res = androidx.compose.runtime.remember(id) {
+                // TASK-947: a slotted title formats its catalog args (the
+                // bare stringResource would leak the literal %1$d).
+                val ui = androidx.compose.runtime.remember(id) {
                     runCatching {
-                        com.antivocale.app.transcription.CatalogVariantUi.of(id).titleResId
+                        com.antivocale.app.transcription.CatalogVariantUi.of(id)
                     }.getOrNull()
                 }
-                return res?.let { stringResource(it) } ?: id
+                return ui?.let {
+                    it.titleRes()
+                } ?: id
             }
 
             val refinementFast = refinementFastId
@@ -930,13 +935,16 @@ fun SettingsTab(
                         val options = listOf("") + installed.map { it.backendId }
                         // A stale pin (model deleted after pinning) falls
                         // back to the catalog family label, never the raw
-                        // backend id (the picker invariant).
-                        val staleTitleRes: Int? = remember(pinned) {
+                        // backend id (the picker invariant). TASK-947: a
+                        // slotted title formats its catalog args.
+                        val staleTitleUi: com.antivocale.app.transcription.CatalogVariantUi? = remember(pinned) {
                             runCatching {
-                                com.antivocale.app.transcription.CatalogVariantUi.of(pinned).titleResId
+                                com.antivocale.app.transcription.CatalogVariantUi.of(pinned)
                             }.getOrNull()
                         }
-                        val staleTitle = staleTitleRes?.let { stringResource(it) } ?: inheritLabel
+                        val staleTitle = staleTitleUi?.let {
+                            it.titleRes()
+                        } ?: inheritLabel
                         fun labelFor(id: String) =
                             if (id.isBlank()) inheritLabel
                             else installed.firstOrNull { it.backendId == id }?.displayName

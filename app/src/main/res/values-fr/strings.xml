@@ -151,10 +151,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~%1$d Mo • Rapide • ASR russe avec ponctuation</string>
     <string name="gigaam_name">GigaAM v3</string>
-    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_name">Whistle (%1$d MB)</string>
     <string name="whistle_description">~%1$d Mo • Très rapide • %2$d langues, détectées automatiquement</string>
     <string name="benchmark_unsupported_engine">Le benchmark n\'est pas pris en charge pour ce moteur</string>
-    <string name="model_info_best_for_whistle">Démarrage le plus rapide sur appareil : 17 Mo, 7 langues, premier texte instantané</string>
+    <string name="model_info_best_for_whistle">Démarrage le plus rapide sur appareil : %1$d Mo, %2$d langues, premier texte instantané</string>
     <string name="model_info_notes_whistle">Précision inférieure à Parakeet en italien ; la musique peut être transcrite en texte (pas de filtre musical)</string>
     <string name="gigaam_download_confirm_title">Télécharger GigaAM v3 ?</string>
     <string name="gigaam_download_confirm_message">Cela téléchargera environ %1$d Mo. GigaAM v3 est un modèle ASR exclusivement russe de Sber, très précis en russe.</string>
@@ -810,7 +810,7 @@
     <string name="model_info_notes_whisper_medium">Bon équilibre entre précision et consommation de ressources.</string>
     <string name="model_info_best_for_distil_it">Meilleure précision italienne (3,5%% WER)</string>
     <string name="model_info_notes_distil_it">Italien uniquement. Précision maximale pour les messages vocaux italiens. Priorité à la précision plutôt qu\'à la vitesse.</string>
-    <string name="model_info_best_for_qwen3">Détection automatique en 59 langues</string>
+    <string name="model_info_best_for_qwen3">Détection automatique en %1$d langues</string>
     <string name="model_info_notes_qwen3">Couverture linguistique la plus large. Note : tronque l\'audio de plus de 30 secondes. ARM64 uniquement.</string>
     <string name="model_info_best_for_parakeet">Transcription la plus rapide (4,0%% WER en italien)</string>
     <string name="model_info_notes_parakeet">Aucune limite de durée. VAD inutile. Idéal si la vitesse est prioritaire.</string>

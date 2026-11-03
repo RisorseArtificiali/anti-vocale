@@ -165,10 +165,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">نحو %1$d ميغابايت • سريع • تعرّف على الكلام بالروسية مع الترقيم</string>
     <string name="gigaam_name">GigaAM v3</string>
-    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_name">Whistle (%1$d MB)</string>
     <string name="whistle_description">نحو %1$d ميغابايت • سريع جدًا • %2$d لغات، يتم اكتشافها تلقائيًا</string>
     <string name="benchmark_unsupported_engine">قياس الأداء غير مدعوم لهذا المحرك</string>
-    <string name="model_info_best_for_whistle">أسرع بدء تشغيل على الجهاز: 17 ميغابايت، 7 لغات، أول نص فوري</string>
+    <string name="model_info_best_for_whistle">أسرع بدء تشغيل على الجهاز: %1$d ميغابايت، %2$d لغات، أول نص فوري</string>
     <string name="model_info_notes_whistle">دقة الكلمات أقل من Parakeet في الإيطالية؛ وقد تتحول الموسيقى إلى نص مكتوب (لا يحتوي المحرك على مرشّح للموسيقى)</string>
     <string name="gigaam_download_confirm_title">تنزيل GigaAM v3؟</string>
     <string name="gigaam_download_confirm_message">سيتم تنزيل نحو %1$d ميغابايت. GigaAM v3 نموذج تعرّف على الكلام للروسية فقط من Sber وبدقة عالية في الروسية.</string>
@@ -793,7 +793,7 @@
     <string name="model_info_notes_whisper_medium">توازن جيد بين الدقة واستخدام الموارد.</string>
     <string name="model_info_best_for_distil_it">أفضل دقة للإيطالية (3.5%% WER)</string>
     <string name="model_info_notes_distil_it">للإيطالية فقط. أعلى دقة للرسائل الصوتية الإيطالية. يقدّم الدقة على السرعة.</string>
-    <string name="model_info_best_for_qwen3">اكتشاف تلقائي لـ 59 لغة</string>
+    <string name="model_info_best_for_qwen3">اكتشاف تلقائي لـ %1$d لغة</string>
     <string name="model_info_notes_qwen3">أوسع تغطية لغوية. ملاحظة: يقصّ الصوت الأطول من 30 ثانية. لأجهزة ARM64 فقط.</string>
     <string name="model_info_best_for_parakeet">أسرع نسخ (WER بنسبة 4.0%% في الإيطالية)</string>
     <string name="model_info_notes_parakeet">بلا حد لمدة الصوت. لا حاجة إلى VAD. الأفضل لمن يضعون السرعة في المقام الأول.</string>

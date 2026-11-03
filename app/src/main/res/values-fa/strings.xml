@@ -192,10 +192,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~%1$dMB • سریع • ASR روسی با نشانه‌گذاری</string>
     <string name="gigaam_name">GigaAM v3</string>
-    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_name">Whistle (%1$d MB)</string>
     <string name="whistle_description">~%1$dMB • بسیار سریع • %2$d زبان، تشخیص خودکار</string>
     <string name="benchmark_unsupported_engine">محک برای این موتور پشتیبانی نمی‌شود</string>
-    <string name="model_info_best_for_whistle">سریع‌ترین شروع روی دستگاه: 17 مگابایت، 7 زبان، متن اول فوری</string>
+    <string name="model_info_best_for_whistle">سریع‌ترین شروع روی دستگاه: %1$d مگابایت، %2$d زبان، متن اول فوری</string>
     <string name="model_info_notes_whistle">دقت کمتر از Parakeet در ایتالیایی؛ موسیقی می‌تواند به متن تبدیل شود (بدون فیلتر موسیقی)</string>
     <string name="gigaam_download_confirm_title">GigaAM v3 دانلود شود؟</string>
     <string name="gigaam_download_confirm_message">حدود %1$dMB دانلود خواهد شد. GigaAM v3 یک مدل ASR فقط‌روسی از Sber با دقت عالی روی روسی است.</string>
@@ -914,7 +914,7 @@
     <string name="model_info_notes_whisper_medium">تعادل خوب بین دقت و مصرف منابع.</string>
     <string name="model_info_best_for_distil_it">بهترین دقت ایتالیایی (3.5%% WER)</string>
     <string name="model_info_notes_distil_it">فقط ایتالیایی. بالاترین دقت برای پیام‌های صوتی ایتالیایی. دقت مهم‌تر از سرعت.</string>
-    <string name="model_info_best_for_qwen3">تشخیص خودکار در 59 زبان</string>
+    <string name="model_info_best_for_qwen3">تشخیص خودکار در %1$d زبان</string>
     <string name="model_info_notes_qwen3">وسیع‌ترین پوشش زبانی. توجه: صداهای بلندتر از 30 ثانیه را قطع می‌کند. فقط دستگاه‌های ARM64.</string>
     <string name="model_info_best_for_parakeet">سریع‌ترین رونویسی (WER 4.0%% در ایتالیایی)</string>
     <string name="model_info_notes_parakeet">بدون محدودیت طول صدا. VAD لازم نیست. برای کسانی که سرعت برایشان اولویت است.</string>

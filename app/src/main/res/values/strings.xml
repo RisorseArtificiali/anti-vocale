@@ -199,10 +199,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~%1$dMB • Fast • Russian ASR with punctuation</string>
     <string name="gigaam_name">GigaAM v3</string>
-    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_name">Whistle (%1$d MB)</string>
     <string name="whistle_description">~%1$dMB • Very fast • %2$d languages, detected automatically</string>
     <string name="benchmark_unsupported_engine">Benchmarking is not supported for this engine</string>
-    <string name="model_info_best_for_whistle">Fastest on-device start: 17 MB, 7 languages, instant first text</string>
+    <string name="model_info_best_for_whistle">Fastest on-device start: %1$d MB, %2$d languages, instant first text</string>
     <string name="model_info_notes_whistle">Word accuracy trails Parakeet on Italian; music can transcribe as text (the engine has no music filter)</string>
     <string name="gigaam_download_confirm_title">Download GigaAM v3?</string>
     <string name="gigaam_download_confirm_message">This will download ~%1$dMB. GigaAM v3 is a Russian-only ASR model from Sber with strong Russian accuracy.</string>
@@ -978,7 +978,7 @@
     <string name="model_info_notes_whisper_medium">Good balance between accuracy and resource usage.</string>
     <string name="model_info_best_for_distil_it">Best Italian accuracy (3.5%% WER)</string>
     <string name="model_info_notes_distil_it">Italian-only. Highest accuracy for Italian voice messages. Prioritize accuracy over speed.</string>
-    <string name="model_info_best_for_qwen3">59-language auto-detection</string>
+    <string name="model_info_best_for_qwen3">%1$d-language auto-detection</string>
     <string name="model_info_notes_qwen3">Broadest language coverage. Note: truncates audio longer than 30 seconds. ARM64 devices only.</string>
     <string name="model_info_best_for_parakeet">Fastest transcription (4.0%% WER in Italian)</string>
     <string name="model_info_notes_parakeet">No audio length limit. VAD not needed. Best for users who prioritize speed.</string>

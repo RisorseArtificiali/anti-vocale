@@ -165,10 +165,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~%1$dMB • 快速 • 带标点的俄语识别</string>
     <string name="gigaam_name">GigaAM v3</string>
-    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_name">Whistle (%1$d MB)</string>
     <string name="whistle_description">~%1$dMB • 极速 • %2$d 种语言，自动检测</string>
     <string name="benchmark_unsupported_engine">此引擎不支持基准测试</string>
-    <string name="model_info_best_for_whistle">本机启动最快：17 MB、7 种语言、首段文字即时输出</string>
+    <string name="model_info_best_for_whistle">本机启动最快：%1$d MB、%2$d 种语言、首段文字即时输出</string>
     <string name="model_info_notes_whistle">在意大利语上的词准确率不及 Parakeet；音乐可能被转写成文字（该引擎没有音乐过滤器）</string>
     <string name="gigaam_download_confirm_title">下载 GigaAM v3？</string>
     <string name="gigaam_download_confirm_message">将下载约 %1$dMB。GigaAM v3 是 Sber 出品的纯俄语识别模型，俄语准确率出色。</string>
@@ -793,7 +793,7 @@
     <string name="model_info_notes_whisper_medium">在准确度与资源占用之间取得了良好平衡。</string>
     <string name="model_info_best_for_distil_it">意大利语准确度最佳（3.5%% WER）</string>
     <string name="model_info_notes_distil_it">仅支持意大利语。对意大利语语音消息的准确度最高。优先考虑准确度而非速度。</string>
-    <string name="model_info_best_for_qwen3">59 种语言自动检测</string>
+    <string name="model_info_best_for_qwen3">%1$d 种语言自动检测</string>
     <string name="model_info_notes_qwen3">语言覆盖最广。注意：会截断超过 30 秒的音频。仅支持 ARM64 设备。</string>
     <string name="model_info_best_for_parakeet">转写速度最快（意大利语词错率 4.0%%）</string>
     <string name="model_info_notes_parakeet">无音频时长限制。无需 VAD。最适合注重速度的用户。</string>

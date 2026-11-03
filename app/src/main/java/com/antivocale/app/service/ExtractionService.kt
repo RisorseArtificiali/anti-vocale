@@ -15,6 +15,7 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.CatalogVariantUi
+import com.antivocale.app.ui.components.placeholderAwareString
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.SherpaModelDownloader
 import com.antivocale.app.util.CrashReporter
@@ -123,7 +124,10 @@ class ExtractionService : Service() {
         // covers every built-in, so no Gemma fallback remains.
         if (BundledCatalog.byId(modelKey) != null) {
             val variantName = variant ?: BundledCatalog.byId(modelKey)!!.defaultVariant.name
-            return getString(CatalogVariantUi.of(modelKey, variantName).titleResId)
+            val ui = CatalogVariantUi.of(modelKey, variantName)
+            // TASK-947: a slotted title (whistle's size, qwen3's count)
+            // formats its catalog args instead of leaking the literal %1$d.
+            return placeholderAwareString(ui.titleResId, ui.titleFormatArgs)
         }
         return modelKey
     }

@@ -173,10 +173,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~%1$dMB • तेज़ • विराम चिह्नों सहित रूसी ASR</string>
     <string name="gigaam_name">GigaAM v3</string>
-    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_name">Whistle (%1$d MB)</string>
     <string name="whistle_description">~%1$dMB • बहुत तेज़ • %2$d भाषाएँ, अपने आप पहचानी जाती हैं</string>
     <string name="benchmark_unsupported_engine">इस इंजन के लिए बेंचमार्क समर्थित नहीं है</string>
-    <string name="model_info_best_for_whistle">डिवाइस पर सबसे तेज़ शुरुआत: 17MB, 7 भाषाएँ, तुरंत पहला टेक्स्ट</string>
+    <string name="model_info_best_for_whistle">डिवाइस पर सबसे तेज़ शुरुआत: %1$dMB, %2$d भाषाएँ, तुरंत पहला टेक्स्ट</string>
     <string name="model_info_notes_whistle">इटालियन में Parakeet से कम सटीक; संगीत टेक्स्ट बन सकता है (कोई संगीत फ़िल्टर नहीं)</string>
     <string name="gigaam_download_confirm_title">GigaAM v3 डाउनलोड करें?</string>
     <string name="gigaam_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा। GigaAM v3, Sber का सिर्फ़ रूसी भाषा वाला ASR मॉडल है जिसकी रूसी सटीकता मज़बूत है।</string>
@@ -905,7 +905,7 @@
     <string name="model_info_notes_whisper_medium">सटीकता और संसाधन इस्तेमाल का अच्छा संतुलन।</string>
     <string name="model_info_best_for_distil_it">सबसे बेहतर इतालवी सटीकता (3.5%% WER)</string>
     <string name="model_info_notes_distil_it">सिर्फ़ इतालवी। इतालवी वॉइस मैसेज के लिए सर्वोच्च सटीकता। गति से ज़्यादा सटीकता मायने रखती है।</string>
-    <string name="model_info_best_for_qwen3">59-भाषा ऑटो-डिटेक्शन</string>
+    <string name="model_info_best_for_qwen3">%1$d-भाषा ऑटो-डिटेक्शन</string>
     <string name="model_info_notes_qwen3">सबसे व्यापक भाषा कवरेज। नोट: 30 सेकंड से लंबा ऑडियो काट देता है। सिर्फ़ ARM64 डिवाइस।</string>
     <string name="model_info_best_for_parakeet">सबसे तेज़ ट्रांसक्रिप्शन (इतालवी में 4.0%% WER)</string>
     <string name="model_info_notes_parakeet">ऑडियो लंबाई की कोई सीमा नहीं। VAD ज़रूरी नहीं। गति प्राथमिकता वाले उपयोगकर्ताओं के लिए सबसे बेहतर।</string>

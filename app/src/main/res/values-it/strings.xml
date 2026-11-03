@@ -192,10 +192,10 @@
     <string name="gigaam_title">GigaAM v3</string>
     <string name="gigaam_description">~%1$dMB • Veloce • ASR russo con punteggiatura</string>
     <string name="gigaam_name">GigaAM v3</string>
-    <string name="whistle_name">Whistle (17 MB)</string>
+    <string name="whistle_name">Whistle (%1$d MB)</string>
     <string name="whistle_description">~%1$dMB • Velocissimo • %2$d lingue, rilevate automaticamente</string>
     <string name="benchmark_unsupported_engine">Il benchmark non e supportato per questo motore</string>
-    <string name="model_info_best_for_whistle">Avvio più rapido on-device: 17 MB, 7 lingue, primo testo immediato</string>
+    <string name="model_info_best_for_whistle">Avvio più rapido on-device: %1$d MB, %2$d lingue, primo testo immediato</string>
     <string name="model_info_notes_whistle">Accuratezza inferiore a Parakeet sull\'italiano; la musica può essere trascritta come testo (nessun filtro musicale)</string>
     <string name="gigaam_download_confirm_title">Scaricare GigaAM v3?</string>
     <string name="gigaam_download_confirm_message">Verranno scaricati ~%1$dMB. GigaAM v3 è un modello ASR solo-russo di Sber con ottima accuratezza sul russo.</string>
@@ -915,7 +915,7 @@
     <string name="model_info_notes_whisper_medium">Buon compromesso tra accuratezza e utilizzo delle risorse.</string>
     <string name="model_info_best_for_distil_it">Migliore accuratezza italiano (3,5%% WER)</string>
     <string name="model_info_notes_distil_it">Solo italiano. Massima accuratezza per messaggi vocali italiani. Priorità all\'accuratezza rispetto alla velocità.</string>
-    <string name="model_info_best_for_qwen3">Rilevamento automatico in 59 lingue</string>
+    <string name="model_info_best_for_qwen3">Rilevamento automatico in %1$d lingue</string>
     <string name="model_info_notes_qwen3">Copertura linguistica più ampia. Nota: tronca audio oltre i 30 secondi. Solo dispositivi ARM64.</string>
     <string name="model_info_best_for_parakeet">Trascrizione più veloce (4,0%% WER in italiano)</string>
     <string name="model_info_notes_parakeet">Nessun limite di durata audio. VAD non necessario. Ideale per chi priorità alla velocità.</string>

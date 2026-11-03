@@ -1,6 +1,7 @@
 package com.antivocale.app.transcription
 
 import com.antivocale.app.R
+import com.antivocale.app.data.catalog.PlaceholderSlot
 
 enum class ArchitectureType {
     ENCODER_DECODER,
@@ -25,6 +26,14 @@ data class ModelInfo(
     val benchmarkWer: Float?,
     val relativeSpeed: String?,
     val bestFor: Int,
+    /**
+     * TASK-947: the format slots the [bestFor] claim declares (see
+     * PlaceholderSlot), empty by default. The values never live here: the
+     * overlay maps them onto the variant's OWN size and language-count
+     * truth through the shared slot mapping, so a repinned catalog cannot
+     * drift from the claim text.
+     */
+    val bestForPlaceholders: List<PlaceholderSlot> = emptyList(),
     val performanceNotes: Int,
 )
 
@@ -120,6 +129,7 @@ object ModelInfoProvider {
                 benchmarkWer = 12.2f,
                 relativeSpeed = null,
                 bestFor = R.string.model_info_best_for_qwen3,
+                bestForPlaceholders = listOf(PlaceholderSlot.COUNT),
                 performanceNotes = R.string.model_info_notes_qwen3
             ))
 
@@ -157,6 +167,7 @@ object ModelInfoProvider {
                 benchmarkWer = null,
                 relativeSpeed = null,
                 bestFor = R.string.model_info_best_for_whistle,
+                bestForPlaceholders = listOf(PlaceholderSlot.SIZE, PlaceholderSlot.COUNT),
                 performanceNotes = R.string.model_info_notes_whistle
             ))
 

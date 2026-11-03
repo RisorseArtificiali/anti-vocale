@@ -321,6 +321,19 @@ object ModelCatalogJson {
 enum class PlaceholderSlot { SIZE, COUNT }
 
 /**
+ * The ONE slot-to-value mapping: the args come back in slot order, reading
+ * whatever size and count the caller's scope owns (the catalog entry/variant
+ * via CatalogVariantUi; the model-info overlay's own variant, TASK-947).
+ */
+internal fun List<PlaceholderSlot>.formatArgs(sizeMB: Long, count: Int): List<Any> =
+    map { slot ->
+        when (slot) {
+            PlaceholderSlot.SIZE -> sizeMB
+            PlaceholderSlot.COUNT -> count
+        }
+    }
+
+/**
  * One way to surface a display string. Built-in entries use [CatalogDisplay.Resource]
  * (a localized R.string by NAME); external entries always use [CatalogDisplay.Literal]
  * (the exact text from the user's JSON, shown regardless of locale).
