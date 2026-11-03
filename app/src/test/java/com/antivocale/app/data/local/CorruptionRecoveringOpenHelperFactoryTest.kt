@@ -46,6 +46,7 @@ class CorruptionRecoveringOpenHelperFactoryTest {
     private lateinit var roboContext: Context
     private lateinit var databasesDir: File
     private val freshDb = mockk<SupportSQLiteDatabase>(relaxed = true)
+    private val healthyCursor = mockk<android.database.Cursor>()
     private val innerHelper = mockk<SupportSQLiteOpenHelper>(relaxed = true)
     private val innerFactory = mockk<SupportSQLiteOpenHelper.Factory>()
 
@@ -58,6 +59,7 @@ class CorruptionRecoveringOpenHelperFactoryTest {
         }
         every { innerFactory.create(any()) } returns innerHelper
         every { innerHelper.databaseName } returns dbName
+        every { freshDb.query(any<String>()) } returns healthyCursor
         HistoryRecoveryLedger.record(-1, preservedAside = true) // sentinel distinguishing record() from never-called
     }
 
@@ -280,6 +282,113 @@ class CorruptionRecoveringOpenHelperFactoryTest {
 
         assertSame("the no-op attempt left the notice alone", after,
             HistoryRecoveryLedger.lastRecovery.value)
+    }
+
+    @Test
+    fun `transient query IOERR recovers by plain reopen without renaming anything`() {
+        // TASK-896 first tier: one IOERR on the guarded query, then a
+        // healthy database. The plain reopen (close, no rename, no
+        // ledger) clears it; a rename here would have destroyed the
+        // visible history of a perfectly healthy database.
+        writeDamagedFiles()
+        val damagedDb = mockk<SupportSQLiteDatabase>()
+        var damagedQueries = 0
+        every { damagedDb.query(any<String>()) } answers {
+            damagedQueries += 1
+            if (damagedQueries == 1) throw SQLiteDiskIOException("disk I/O error (WAL checkpoint blip)")
+            healthyCursor
+        }
+        var closed = false
+        every { innerHelper.readableDatabase } answers { if (closed) freshDb else damagedDb }
+        every { innerHelper.close() } answers { closed = true }
+
+        val db = helper().readableDatabase
+        val cursor = db.query("SELECT * FROM logs")
+
+        assertSame("the replay succeeded after the plain reopen", healthyCursor, cursor)
+        verify(exactly = 1) { damagedDb.query(any<String>()) }
+        verify(exactly = 1) { freshDb.query(any<String>()) }
+        assertTrue("the damaged files are untouched on disk",
+            File(databasesDir, dbName).readText() == "damaged-main")
+        assertEquals("no aside set was minted",
+            0, databasesDir.listFiles { _, n -> n.contains(dbName + DB_ASIDE_INFIX) }!!.size)
+        assertEquals("the ledger stayed at the setUp sentinel (no recovery event)",
+            -1L, HistoryRecoveryLedger.lastRecovery.value?.stamp)
+    }
+
+    @Test
+    fun `corruption on both query attempts escalates to the rename-aside tier`() {
+        // The second corruption-class throw (the replay after the plain
+        // reopen) fires the existing rename-aside recovery exactly as
+        // shipped, then the same query replays on the fresh database.
+        writeDamagedFiles()
+        val damagedDb = mockk<SupportSQLiteDatabase>()
+        every { damagedDb.query(any<String>()) } throws
+            SQLiteDatabaseCorruptException("database disk image is malformed")
+        // The plain reopen lands on a database that corrupts again: the
+        // replay throws a second corruption class, which escalates.
+        val stillCorruptDb = mockk<SupportSQLiteDatabase>()
+        every { stillCorruptDb.query(any<String>()) } throws
+            SQLiteDatabaseCorruptException("still malformed after reopen")
+        var stage = 0
+        every { innerHelper.close() } answers { stage += 1 }
+        every { innerHelper.readableDatabase } answers {
+            when (stage) {
+                0 -> damagedDb
+                1 -> stillCorruptDb
+                else -> freshDb
+            }
+        }
+
+        val db = helper().readableDatabase
+        val cursor = db.query("SELECT * FROM logs")
+
+        assertSame("the rename-tier replay succeeded", healthyCursor, cursor)
+        verify(exactly = 1) { stillCorruptDb.query(any<String>()) }
+        assertEquals("all four damaged files preserved aside",
+            4, databasesDir.listFiles { _, n -> n.contains(dbName + DB_ASIDE_INFIX) }!!.size)
+        assertTrue("the ledger recorded the recovery",
+            HistoryRecoveryLedger.lastRecovery.value?.preservedAside == true)
+    }
+
+    @Test
+    fun `a 522 at plain reopen escalates to the rename-aside tier`() {
+        // The Oct-18 truncated-file class: the plain reopen throws the
+        // same 522 on the same bytes, and the ladder must still fall
+        // through to the rename and deliver a fresh database. Keyed on
+        // close: the first open "succeeds" onto the truncated handle,
+        // the plain tier's reopened open hits the damaged bytes and
+        // throws, and only after the rename-aside recovery has moved
+        // the files does the open succeed onto freshDb.
+        writeDamagedFiles()
+        val truncatedDb = mockk<SupportSQLiteDatabase>()
+        every { truncatedDb.query(any<String>()) } throws
+            SQLiteDiskIOException("short read (522)")
+        var closed = false
+        every { innerHelper.close() } answers { closed = true }
+        var renamedAside = false
+        val h = helper()
+        h.renameAside = { from, to ->
+            val moved = from.renameTo(to)
+            if (moved) renamedAside = true
+            moved
+        }
+        every { innerHelper.readableDatabase } answers {
+            when {
+                renamedAside -> freshDb
+                closed -> throw SQLiteDiskIOException("short read at open (522)")
+                else -> truncatedDb
+            }
+        }
+
+        val db = h.readableDatabase
+        val cursor = db.query("SELECT * FROM logs")
+
+        assertSame("the rename-tier replay succeeded", healthyCursor, cursor)
+        assertEquals("the truncated file set was renamed aside",
+            4, databasesDir.listFiles { _, n -> n.contains(dbName + DB_ASIDE_INFIX) }!!.size)
+        assertTrue("the ledger recorded the recovery",
+            HistoryRecoveryLedger.lastRecovery.value?.preservedAside == true)
     }
 
     @Test

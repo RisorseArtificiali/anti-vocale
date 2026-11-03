@@ -81,6 +81,37 @@ class CorruptionRecoveringOpenHelperFactory(
         }
 
         /**
+         * TASK-896: the NON-destructive first tier of the query ladder.
+         * Closes the helper and reopens plainly: no rename, no ledger. A
+         * transient SQLITE_IOERR (WAL-checkpoint blip, storage stall) on a
+         * perfectly healthy database clears here, and renaming the files
+         * aside would have wiped the user's visible history for nothing.
+         * A corrupted database typically throws AGAIN on the reopened
+         * bytes (the Oct-18 truncated-file class throws the same 522 at
+         * open on the same file), and the ladder escalates to
+         * [recoverAfterQueryCorruption]. A 0-byte main file opens as a
+         * VALID EMPTY database and never throws, so it never reaches
+         * either tier (unchanged since before the wrapper).
+         */
+        @Synchronized
+        fun reopenAfterIoError(cause: Exception) {
+            Log.w(TAG, "History database ${cause.javaClass.simpleName} (${cause.message});" +
+                " closing and reopening plainly first, before any destructive recovery" +
+                " (TASK-896)")
+            closeQuietly()
+            // Load-bearing: forces the open NOW so an open-time throw (the
+            // 522-at-open truncated-file class) surfaces inside the ladder
+            // and escalates to the rename-aside tier.
+            delegate.readableDatabase
+        }
+
+        /** Release the damaged handles before any reopen; a close failure
+         *  on an already-broken helper must not block the recovery. */
+        private fun closeQuietly() {
+            runCatching { delegate.close() }
+        }
+
+        /**
          * Serialized: two threads hitting the same corruption must not race
          * the rename. Idempotent by the file's absence: a racing recovery
          * that already renamed leaves nothing for this one to move, and the
@@ -107,7 +138,7 @@ class CorruptionRecoveringOpenHelperFactory(
                 " crash at every launch (TASK-886)")
             // Release the damaged handles before renaming; a close failure
             // on an already-broken helper must not block the recovery.
-            runCatching { delegate.close() }
+            closeQuietly()
             val databasesDir = context.getDatabasePath(name).parentFile
             // Strictly monotonic: two recoveries in the same millisecond
             // must not share an aside name (a second rename would silently
@@ -180,8 +211,10 @@ class CorruptionRecoveringOpenHelperFactory(
      * object; the helper-level catch alone never sees it (the on-device
      * trial reproduced the original crash THROUGH the shipped wrapper).
      * Every query therefore re-issues through [guard]: on the corruption
-     * classes the helper recovers (close + rename aside + ledger) and the
-     * SAME query replays once against the fresh database.
+     * classes it first tries the plain reopen (TASK-896, transient-IOERR
+     * class), and only a second corruption-class throw escalates to the
+     * rename-aside recovery (close + rename + ledger) with the SAME query
+     * replaying once against the fresh database.
      *
      * TASK-890: [resolve] re-reads the database from the helper on EVERY
      * guarded call. Room 2.7.1 re-acquires a connection per use, but an
@@ -217,16 +250,41 @@ class CorruptionRecoveringOpenHelperFactory(
         ): android.database.Cursor =
             guard { it.query(query, cancellationSignal) }
 
+        /**
+         * TASK-896 ladder: the FIRST corruption-class hit on a guarded
+         * query gets the plain reopen ([owner.reopenAfterIoError], no
+         * rename, no ledger) and exactly one retry; only a SECOND
+         * corruption-class throw from that retry (the replay itself, or
+         * the plain reopen on corrupted bytes, the 522-at-open class)
+         * escalates to the rename-aside tier. Bounded: one plain retry,
+         * then one recovery retry, then the failure surfaces; no loops.
+         */
         private fun <R> guard(reissue: (SupportSQLiteDatabase) -> R): R =
             try {
                 reissue(resolve())
-            } catch (e: SQLiteDiskIOException) {
-                owner.recoverAfterQueryCorruption(e)
-                reissue(resolve())
-            } catch (e: SQLiteDatabaseCorruptException) {
-                owner.recoverAfterQueryCorruption(e)
-                reissue(resolve())
+            } catch (first: SQLiteDiskIOException) {
+                plainRetryThenEscalate(first, reissue)
+            } catch (first: SQLiteDatabaseCorruptException) {
+                plainRetryThenEscalate(first, reissue)
             }
+
+        private fun <R> plainRetryThenEscalate(
+            first: Exception,
+            reissue: (SupportSQLiteDatabase) -> R,
+        ): R =
+            try {
+                owner.reopenAfterIoError(first)
+                reissue(resolve())
+            } catch (e: SQLiteDiskIOException) {
+                escalate(e, reissue)
+            } catch (e: SQLiteDatabaseCorruptException) {
+                escalate(e, reissue)
+            }
+
+        private fun <R> escalate(e: Exception, reissue: (SupportSQLiteDatabase) -> R): R {
+            owner.recoverAfterQueryCorruption(e)
+            return reissue(resolve())
+        }
     }
 
     private companion object {
