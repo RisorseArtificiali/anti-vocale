@@ -88,6 +88,22 @@ Top-level shape:
 
 \* An entry must either declare `display` or have variants with `title`.
 
+**Placeholder flags (`sizePlaceholder` / `countPlaceholder`).** A
+`resourceKey` display may declare either boolean next to the flags; each
+becomes one `%N$d` format slot fed from the catalog at render time
+(`sizePlaceholder` = the variant's `estimatedSizeMB`, `countPlaceholder` =
+the languages array length, variant-own or entry-level).
+
+Count-slot constraint (TASK-948): the baked count noun in the ru/pl/uk
+locales is the genitive plural ("языков" family), correct only where CLDR
+picks that form (counts ending 0 or 5-9, or 11-14). **Changing a
+countPlaceholder languages array into 1-4, 21-24, 31-34, ... requires the
+plurals audit first**: the phrase must move to `<plurals>` resources or get
+natively reviewed copy in every affected locale; a bare count edit ships a
+grammatical error. `scripts/check-model-sizes.sh` fails on such a count, and
+`ModelSizePlaceholderGuardTest` pins the same rule, so both gates catch it
+before release.
+
 ### Variant fields
 
 | Field | Required | Description |

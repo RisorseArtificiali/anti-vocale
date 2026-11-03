@@ -98,7 +98,10 @@ class ModelSizePlaceholderGuardTest {
                 "catalog placeholder $key declares disagreeing slot lists"
             }
         }
-        byKey.map { (_, targets) -> targets.first() }
+        // Keep EVERY arm: two holders sharing a key can have different
+        // language sources, and each count must be window-audited on its
+        // own source (the bash guard audits holders, not deduped keys).
+        all
     }
 
     /** The derivation's expected coverage: the pins catch a flag edit that
@@ -151,6 +154,29 @@ class ModelSizePlaceholderGuardTest {
                         "$digits: $formatted", formatted.contains(digits))
                 }
             }
+        }
+    }
+
+    @Test
+    fun `every count-slot language count stays in the baked genitive-plural band`() {
+        // TASK-948: the count noun baked next to %2$d in the ru/pl/uk locales
+        // ("языков" family) is the genitive plural, correct only where the CLDR
+        // cardinal rules pick that form (residue 0 or 5-9, or 11-14). A catalog
+        // edit moving any countPlaceholder languages array into 1-4, 21-24,
+        // 31-34, ... ships a grammatical error in every affected locale, so this
+        // is the JVM twin of the bash guard's TASK-948 check: fail HERE (before
+        // CI's guard run) with the audit instruction, never silently.
+        fun countSlotUnsafe(n: Int): Boolean = n < 5 ||
+            (n % 10 == 1 && n % 100 != 11) ||
+            (n % 10 in 2..4 && n % 100 !in 12..14)
+        prefixed.filter { PlaceholderSlot.COUNT in it.slots }.forEach { target ->
+            val n = target.languages.size
+            assertTrue(
+                "TASK-948: ${target.key} renders $n languages in a one/few band where " +
+                    "ru/pl/uk do not use the baked genitive plural noun; run the plurals " +
+                    "audit (plurals resources or natively reviewed copy) before any release",
+                !countSlotUnsafe(n),
+            )
         }
     }
 

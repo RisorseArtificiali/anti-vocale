@@ -25,6 +25,13 @@
 #   5. docs/user-guide/*/ manual tables (whisper rows, localized unit
 #      suffixes)
 #   6. docs/play-store/store-listing.md storage ceilings
+#   7. TASK-948 plural safety of the count slot: the baked count noun in the
+#      ru/pl/uk locales (e.g. "%2$d языков") is the genitive plural, correct
+#      only for counts whose CLDR cardinal form IS that plural (residue 0 or
+#      5-9, or 11-14). A catalog edit that moves any countPlaceholder-bearing
+#      languages array into 1-4, 21-24, 31-34, ... (the one/few bands) would
+#      ship a grammatical error in every affected locale, so the guard fails
+#      with a plurals-audit instruction before release.
 # Whitelisted by design (no catalog counterpart): speaker_labels_description
 # (the diarization bundle is not a catalog entry) and the historical Italian
 # benchmark table in README (it cites its own run's sizes).
@@ -302,6 +309,47 @@ for res, key in CLAIM_PINS.items():
         if not any(abs(float(n.replace(',', '.')) - float(want)) <= 0.05 for n in nums):
             errors.append(f'{p.relative_to(repo)}: {res} numbers {nums} do not include the '
                           f'matrix value {want}%')
+
+# TASK-948: the count slot's baked noun is frozen as the genitive plural
+# ("языков" family) in ru/pl/uk. That form is correct only where the CLDR
+# cardinal rules pick it: residue 0 or 5-9, or 11-14. Counts in the one/few
+# bands (1-4, 21-24, 31-34, ...) need a different noun, and converting the
+# phrase to Android plurals resources across 17 locales is the TASK-948
+# audit, not a mechanical edit. Fail here so no release ships with a wrong
+# form; a count below 5 fails outright for the same reason. Scope note:
+# this band rule covers ru/pl/uk only. ar (and hi, weakly) bake
+# count-sensitive nouns whose form depends on the per-string baked word,
+# so ANY change to a counted language count needs an ar/hi copy audit too.
+def count_slot_unsafe(n):
+    # One/few bands for n >= 5 (the caller owns the n < 5 outright case);
+    # keep in sync with the JVM pin in ModelSizePlaceholderGuardTest.
+    return (n % 10 == 1 and n % 100 != 11) \
+        or (2 <= n % 10 <= 4 and n % 100 not in (12, 13, 14))
+
+for m in catalog['models']:
+    holders = [m] + m.get('variants', [])
+    for holder in holders:
+        count_declared = any(
+            isinstance(holder.get(dk), dict) and holder[dk].get('countPlaceholder')
+            for dk in ('description', 'display', 'title'))
+        if not count_declared:
+            continue
+        languages = holder.get('languages') or m.get('languages') or []
+        n = len(languages)
+        where = f"{m['id']}" + (f"/{holder['name']}" if holder is not m else '')
+        if n == 0:
+            errors.append(f'{where}: a count slot with NO languages declared '
+                          f'(variant languages empty and no entry-level list): '
+                          f'this is a catalog bug, not a plurals question')
+        elif n < 5:
+            errors.append(f'{where}: count slot renders {n} languages; counts below 5 '
+                          f'take a non-plural noun form in ru/pl/uk: run the TASK-948 '
+                          f'plurals audit (plurals resources or a native-reviewed copy) '
+                          f'before any release')
+        elif count_slot_unsafe(n):
+            errors.append(f'{where}: count slot renders {n} languages, a one/few band '
+                          f'where ru/pl/uk do not use the baked genitive plural noun: '
+                          f'run the TASK-948 plurals audit before any release')
 
 if errors:
     print('model size drift:')

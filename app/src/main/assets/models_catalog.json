@@ -875,7 +875,8 @@
       "modelType": "",
       "family": "",
       "display": {
-        "resourceKey": "whistle_name"
+        "resourceKey": "whistle_name",
+        "sizePlaceholder": true
       },
       "description": {
         "resourceKey": "whistle_description",
@@ -900,7 +901,8 @@
         {
           "name": "v1",
           "title": {
-            "resourceKey": "whistle_name"
+            "resourceKey": "whistle_name",
+            "sizePlaceholder": true
           },
           "dirName": "whistle-v1",
           "estimatedSizeMB": 17,
