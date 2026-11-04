@@ -116,8 +116,12 @@ class LogsViewModelBatchIntakeTest {
 
         viewModel.transcribeLocalFiles(mockk(relaxed = true), uris)
 
+        // TASK-960 interim: the wall budgets are 30s because the CI fdroid
+        // runner reds a 5s budget under load while the test logic is correct
+        // (4/4 green in isolation on the same HEAD); 30s still fails fast on
+        // a real deadlock. The structural fix is tracked in TASK-960.
         // File 1 owns the single dialog slot...
-        val first = withTimeout(5000) {
+        val first = withTimeout(30_000) {
             viewModel.pendingBrowseDuplicate.first { it != null }
         }
         assertEquals("model-a", first?.modelName)
@@ -125,7 +129,7 @@ class LogsViewModelBatchIntakeTest {
         // ...and file 2 cannot take the slot until it is dismissed (the
         // pick arm: clear without reprocess).
         viewModel.clearPendingBrowseDuplicate()
-        val second = withTimeout(5000) {
+        val second = withTimeout(30_000) {
             viewModel.pendingBrowseDuplicate.first { it?.modelName == "model-b" }
         }
         assertEquals("model-b", second?.modelName)
@@ -134,7 +138,7 @@ class LogsViewModelBatchIntakeTest {
     @Test
     fun `a second batch queues behind an unresolved first batch`() = runBlocking {
         viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
-        val first = withTimeout(5000) {
+        val first = withTimeout(30_000) {
             viewModel.pendingBrowseDuplicate.first { it != null }
         }
         assertEquals("model-a", first?.modelName)
@@ -147,7 +151,7 @@ class LogsViewModelBatchIntakeTest {
         assertEquals("model-a", viewModel.pendingBrowseDuplicate.value?.modelName)
 
         viewModel.clearPendingBrowseDuplicate()
-        val second = withTimeout(5000) {
+        val second = withTimeout(30_000) {
             viewModel.pendingBrowseDuplicate.first { it?.modelName == "model-b" }
         }
         assertEquals("model-b", second?.modelName)
@@ -163,7 +167,7 @@ class LogsViewModelBatchIntakeTest {
         viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
         // The stubbed context resolves the message to an empty string; the
         // emission itself is the behavior under test.
-        withTimeout(5000) { report.join() }
+        withTimeout(30_000) { report.join() }
     }
 
     @Test
@@ -176,13 +180,13 @@ class LogsViewModelBatchIntakeTest {
         stubSubtitleProbe()
 
         viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
-        withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it != null } }
+        withTimeout(30_000) { viewModel.pendingBrowseDuplicate.first { it != null } }
 
         // Review Y6: the second pick's fresh file must not queue behind the
         // pending dialog (the whole-pass lock used to park it there).
         viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/2")))
-        withTimeout(5000) {
-            verify(timeout = 1000) {
+        withTimeout(30_000) {
+            verify(timeout = 10_000) {
                 SubtitleChoice.offerIfTracks(
                     any(), any(), eq("/tmp/browse-copy"), any(), any(), any(), any())
             }
@@ -215,10 +219,10 @@ class LogsViewModelBatchIntakeTest {
     fun `TASK-934 the open arm deletes the staged copy`() = runBlocking {
         val staged = stagedRealFile()
         viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
-        withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it != null } }
+        withTimeout(30_000) { viewModel.pendingBrowseDuplicate.first { it != null } }
 
         viewModel.onBrowseDuplicateOpen("task-1")
-        withTimeout(5000) {
+        withTimeout(30_000) {
             while (staged.exists()) delay(20)
         }
         assertEquals(null, viewModel.pendingBrowseDuplicate.value)
@@ -229,12 +233,12 @@ class LogsViewModelBatchIntakeTest {
         val staged = stagedRealFile()
         stubSubtitleProbe()
         viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
-        val hit = withTimeout(5000) { viewModel.pendingBrowseDuplicate.first { it != null } }!!
+        val hit = withTimeout(30_000) { viewModel.pendingBrowseDuplicate.first { it != null } }!!
 
         viewModel.clearPendingBrowseDuplicate()
         hit.continueRequest()
-        withTimeout(5000) {
-            verify(timeout = 1000) {
+        withTimeout(30_000) {
+            verify(timeout = 10_000) {
                 SubtitleChoice.offerIfTracks(
                     any(), any(), eq(staged.absolutePath), any(), any(), any(), any())
             }
