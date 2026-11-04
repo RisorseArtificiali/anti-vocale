@@ -7,11 +7,9 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.BackendConfig
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.TranscriptionBackend
-import com.antivocale.app.transcription.variantAwareDisplayName
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.json.JSONObject
 import javax.inject.Inject
@@ -212,18 +210,16 @@ class BenchmarkManager @Inject constructor(
 
     /**
      * User-visible backend name for the failure messages, resolved through
-     * the registry's [variantAwareDisplayName] like every other surface
+     * the registry's ONE display-name resolve
+     * ([BackendRegistry.resolveDisplayName]) like every other surface
      * (TASK-955): whistle and the fixed-label families get the localized,
      * slotted name instead of the non-localized [TranscriptionBackend.displayName]
      * literal. An unregistered id or a blank derivation keeps the raw
      * displayName fallback.
      */
-    private suspend fun displayNameFor(backend: TranscriptionBackend): String {
-        val descriptor = backendRegistry.byBackendId(backend.id) ?: return backend.displayName
-        val savedPath = descriptor.modelPathFlow(preferencesManager).first()
-        return variantAwareDisplayName(context, descriptor, savedPath)
+    private suspend fun displayNameFor(backend: TranscriptionBackend): String =
+        backendRegistry.resolveDisplayName(context, preferencesManager, backend.id)
             .ifBlank { backend.displayName }
-    }
 
     private suspend fun saveResult(result: BenchmarkResult) {
         preferencesManager.saveBenchmarkResult(result.modelId, result.toJson())

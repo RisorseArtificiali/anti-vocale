@@ -11,7 +11,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.coVerifyOrder
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
@@ -28,9 +27,12 @@ class BenchmarkManagerResidencyTest {
 
     private val context = mockk<Context>(relaxed = true)
     private val preferencesManager = mockk<PreferencesManager>(relaxed = true)
-    // Unregistered id by default: name resolution keeps the raw displayName
-    // fallback, matching the pre-TASK-955 behavior the residency tests pin.
-    private val backendRegistry = mockk<BackendRegistry> {
+    // A SPY of a real registry: name resolution runs the REAL
+    // resolveDisplayName derivation (byBackendId defaults to null ->
+    // raw displayName fallback, the pre-TASK-955 behavior the residency
+    // tests pin), while the busy-message test stubs one lookup.
+    private val backendRegistry = io.mockk.spyk(
+        BackendRegistry(mockk(relaxed = true), mockk(relaxed = true))) {
         every { byBackendId(any()) } returns null
     }
 
@@ -100,23 +102,23 @@ class BenchmarkManagerResidencyTest {
 
     /**
      * TASK-955: the busy-state message names the backend through the
-     * registry derivation, not the raw displayName literal. The descriptor's
-     * own deriveDisplayName (null displayNameResId short-circuits
-     * variantAwareDisplayName before any Context resource lookup) stands in
-     * for the localized slotted name.
+     * registry resolve, not the raw displayName literal. The registry's
+     * OTHER methods are stubbed but [BackendRegistry.resolveDisplayName]
+     * itself runs REAL (a descriptor whose name derives from the saved
+     * path, no Context resources involved), so the wiring the message
+     * depends on - lookup, path read, variantAwareDisplayName - is
+     * exercised, per the TASK-957 review's tautology note.
      */
     @Test
     fun `busy message names the backend through the registry`() = runTest {
         val descriptor = BackendDescriptor(
-            backendId = "whisper",
+            backendId = "sherpa-onnx",
             shareAlias = "",
-            displayNameResId = null,
-            deriveDisplayName = { _, _ -> "Whisper Derived" },
-            modelPathFlow = { _ -> flowOf("/models/whisper-b") },
+            modelPathFlow = { kotlinx.coroutines.flow.flowOf("/models/whisper-b") },
             saveModelPath = { _, _ -> },
-            clearModelPath = { },
+            clearModelPath = { _ -> },
         )
-        every { backendRegistry.byBackendId("whisper") } returns descriptor
+        coEvery { backendRegistry.byBackendId("whisper") } returns descriptor
 
         val backend = backend(ready = true, busy = true)
         val config = BackendConfig.SherpaOnnxConfig(
@@ -126,8 +128,10 @@ class BenchmarkManagerResidencyTest {
         val result = manager.runBenchmark(backend, config)
 
         assertTrue(result.isFailure)
+        // deriveDisplayName's default is the path's file name: the message
+        // must carry the DERIVED name, proving the whole resolve ran.
         assertEquals(
-            "A transcription is running on Whisper Derived; benchmark it again when idle",
+            "A transcription is running on whisper-b; benchmark it again when idle",
             result.exceptionOrNull()?.message)
     }
 }

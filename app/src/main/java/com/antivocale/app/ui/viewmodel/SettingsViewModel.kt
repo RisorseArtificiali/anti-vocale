@@ -1808,8 +1808,8 @@ class SettingsViewModel @Inject constructor(
         _shareIconBackends.value = backendRegistry.backends
             .filter { it.shareAlias.isNotBlank() }
             .map { d ->
-                val path = d.modelPathFlow(preferencesManager).first()
-                val label = com.antivocale.app.transcription.variantAwareDisplayName(context, d, path)
+                val label = backendRegistry
+                    .resolveDisplayName(context, preferencesManager, d.backendId)
                     .ifBlank { d.backendId }
                 ShareIconBackend(
                     backendId = d.backendId,

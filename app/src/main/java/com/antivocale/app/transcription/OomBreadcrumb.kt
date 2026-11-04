@@ -9,7 +9,6 @@ import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.util.CrashReporter
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.first
 
 /**
  * One resident engine as the breadcrumb and the memory panel name it: the
@@ -137,17 +136,14 @@ class OomBreadcrumbRecorder @Inject constructor(
         }
     }
 
-    private suspend fun displayNameFor(context: Context, backendId: String): String {
+    private suspend fun displayNameFor(context: Context, backendId: String): String =
         // Review F9: the raw id is a better fallback than the engine's
         // generic "External model" placeholder (the id carries the family
-        // and the record identity).
-        val fallback = backendId
-        return runCatching {
-            val descriptor = backendRegistry.byBackendId(backendId) ?: return fallback
-            variantAwareDisplayName(
-                context, descriptor, descriptor.modelPathFlow(preferencesManager).first())
-        }.getOrDefault(fallback)
-    }
+        // and the record identity). The runCatching survives: this site runs
+        // at the OOM catch, where every read can itself throw.
+        runCatching {
+            backendRegistry.resolveDisplayName(context, preferencesManager, backendId)
+        }.getOrDefault("").ifBlank { backendId }
 
     /**
      * The catch-site entry. Never throws (every read is guarded: the heap may

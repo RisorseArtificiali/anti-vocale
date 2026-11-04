@@ -11,6 +11,7 @@ import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.data.catalog.CatalogDisplay
 import com.antivocale.app.data.catalog.CatalogStringKeys
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.File
 import javax.inject.Inject
@@ -187,6 +188,12 @@ internal fun variantAwareDisplayName(
  *
  * Dispatch-site status (the sherpa-onnx consolidation removed the bookkeeping
  * [ExtractionService.ModelType] enum; all sites now key on backend-id strings):
+ *  - id-keyed display-name wrappers ([OomBreadcrumbRecorder],
+ *    [com.antivocale.app.ui.viewmodel.LogsViewModel],
+ *    [com.antivocale.app.ui.viewmodel.SettingsViewModel] share icons,
+ *    [com.antivocale.app.benchmark.BenchmarkManager]) resolve through
+ *    [resolveDisplayName] (TASK-957 consolidation; each keeps its own
+ *    fallback at the call site)
  *  - [com.antivocale.app.data.ActiveModelRepository] — descriptor's model-path
  *    flow + display-name derivation; unknown ids keep the generic-modelPath
  *    fallback locally
@@ -409,4 +416,35 @@ class BackendRegistry @Inject constructor(
      */
     fun byShareAlias(alias: String?): BackendDescriptor? =
         alias?.takeIf { it.isNotBlank() }?.let { a -> backends.firstOrNull { it.shareAlias == a } }
+
+    /**
+     * The ONE display-name resolve for an id the caller has NOT already
+     * turned into a descriptor: the registry lookup plus the shared
+     * [variantAwareDisplayName] derivation in one suspend call. Returns ""
+     * when the id is unregistered or the derivation comes back blank; each
+     * caller keeps its own fallback string at the call site (they differ by
+     * design: the backend displayName, the raw backendId, the engine name).
+     *
+     * Consumers (TASK-957; the class KDoc's dispatch-site checklist above
+     * is the ONE list - do not duplicate it here): OomBreadcrumbRecorder,
+     * LogsViewModel (re-transcribe picker), SettingsViewModel (share
+     * icons), BenchmarkManager. ModelActivator is a documented carve-out
+     * (comments only): its arms capture the ACTIVATED path before/around
+     * activation, not a fresh registry preference read.
+     *
+     * Sites holding a descriptor with the saved path already in hand (the
+     * shortcut eligibility check, ActiveModelRepository's flow, the
+     * orchestrator's log write, LogsViewModel's fast-backend label at the
+     * deliberate null-path pick) keep calling [variantAwareDisplayName]
+     * directly to avoid a second preference read.
+     */
+    suspend fun resolveDisplayName(
+        context: Context,
+        preferencesManager: PreferencesManager,
+        backendId: String,
+    ): String {
+        val descriptor = byBackendId(backendId) ?: return ""
+        return variantAwareDisplayName(
+            context, descriptor, descriptor.modelPathFlow(preferencesManager).first())
+    }
 }

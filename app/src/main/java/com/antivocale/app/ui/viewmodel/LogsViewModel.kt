@@ -1037,16 +1037,12 @@ class LogsViewModel @Inject constructor(
      * "nemotron-streaming") must never reach the picker (the "missed one dispatch site"
      * bug class): every display label routes through the registry.
      */
-    private suspend fun displayNameFor(backendId: String, context: Context): String {
+    private suspend fun displayNameFor(backendId: String, context: Context): String =
         // TASK-442: the SAME variant-aware derivation the log row and the
         // Settings show (the old family-only form labeled the retranscribe
         // picker "Whisper" while both siblings said "Whisper Small").
-        val descriptor = backendRegistry.byBackendId(backendId)
-            ?: return transcriptionBackendManager.getBackend(backendId)?.displayName ?: backendId
-        val path = descriptor.modelPathFlow(preferencesManager).first()
-        return com.antivocale.app.transcription.variantAwareDisplayName(context, descriptor, path)
+        backendRegistry.resolveDisplayName(context, preferencesManager, backendId)
             .ifBlank { backendId }
-    }
 
     fun reTranscribeWithBackend(
         originalEntry: LogEntry,

@@ -154,6 +154,9 @@ class ModelActivator @Inject constructor(
             // this arm must honor the same no-dangling-preference contract).
             if (!File(path).isFile) return null
             activateLlm(File(path))
+            // TASK-957: names the captured ACTIVATED path, not a fresh
+            // BackendRegistry.resolveDisplayName re-read (the preference may
+            // have moved under activation); same derivation underneath.
             variantAwareDisplayName(context, backendRegistry.byBackendId(backendId), path)
                 .ifBlank { backendId }
         }
@@ -167,6 +170,10 @@ class ModelActivator @Inject constructor(
                 ?.modelPathFlow(preferencesManager)?.first()
             val path = activateCatalog(context, backendId, variantName = null, staleCatalogPath = savedPath)
                 ?: return null
+            // TASK-957: names the ACTIVATED path, not a fresh
+            // BackendRegistry.resolveDisplayName re-read (the ladder may have
+            // picked a different variant than the saved preference); same
+            // derivation underneath.
             variantAwareDisplayName(context, backendRegistry.byBackendId(backendId), path)
                 .ifBlank { backendId }
         }
