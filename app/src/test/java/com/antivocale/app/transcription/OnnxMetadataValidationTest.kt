@@ -85,6 +85,28 @@ class OnnxMetadataValidationTest {
     }
 
     @Test
+    fun `head-layout encoder metadata is found (canary-1b-v2 bnoordhuis layout)`() {
+        // GH #182 device import: the bnoordhuis canary encoder writes its
+        // metadata_props near the START of the file (offset ~100), 1.1 GiB
+        // from the end; the old tail-only scan rejected a perfectly valid
+        // export at import time. The head+tail scan must find it.
+        // 64 KiB fixture, 16 KiB scan window: the file exceeds 2x the window,
+        // so the split branch (head + tail as separate regions) runs at
+        // sibling scale, with the prop at offset 100 only in the head region.
+        val file = fixtureToFile("canary_head_metadata.bin")
+        val window = 16L * 1024
+        val missing = SherpaBackend.missingOnnxMetadata(
+            file, listOf("model_type"), maxScanBytes = window
+        )
+        assertTrue("Head-layout encoder should satisfy model_type via the head scan. Missing: $missing",
+            missing.isEmpty())
+        val value = SherpaBackend.onnxMetadataValue(
+            file, "model_type", maxScanBytes = window
+        )
+        assertEquals("EncDecMultiTaskModel", value)
+    }
+
+    @Test
     fun `broken SmoothQuant encoder reports all metadata missing`() {
         val missing = SherpaBackend.missingOnnxMetadata(
             fixtureToFile("smoothquant_broken_tail.bin"),

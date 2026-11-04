@@ -14,11 +14,14 @@ Extraction method (honest description):
   ONNX ModelProto carries metadata_props as repeated StringStringEntryProto
   records (field 14, wire type 2: tag byte 0x72, varint length, then an inner
   message whose field 1, tag 0x0A, is the length-prefixed key). We read the
-  LAST 2 MiB of the encoder, the same window as the production scanner
-  (SherpaBackend.ONNX_METADATA_SCAN_LIMIT), and collect every byte sequence
+  HEAD and TAIL windows of the encoder (2 MiB each, mirroring the production
+  scanner's regions), and collect every byte sequence
   that parses as that record shape with a printable UTF-8 key. The pip `onnx`
   package is NOT assumed; this is a minimal, shape-validated protobuf read of
-  the one field we need. Coincidental byte shapes could in theory fake a
+  the one field we need. The window mirrors the production scanner (GH #182):
+  the HEAD and the TAIL, 2 MiB each, because writers place metadata_props at
+  either end (python-onnx serializes them after the graph; the bnoordhuis
+  canary exports emit them at the very start). Coincidental byte shapes could in theory fake a
   record, but every accepted record must carry consistent varint lengths end
   to end; review the generated diff (a handful of human-readable keys per
   model) when regenerating.
@@ -186,13 +189,23 @@ def main() -> int:
                     "fixtures are only generated from the exact published artifact"
                 )
                 break
+            size = source.stat().st_size
             with open(source, "rb") as fh:
-                fh.seek(max(0, source.stat().st_size - SCAN_WINDOW_BYTES))
-                tail = fh.read()
+                if size > 2 * SCAN_WINDOW_BYTES:
+                    head = fh.read(SCAN_WINDOW_BYTES)
+                    fh.seek(size - SCAN_WINDOW_BYTES)
+                    tail = fh.read()
+                else:
+                    # Mirrors the scanner's overlap branch: one full read
+                    # covers both regions.
+                    head = fh.read()
+                    tail = b""
             variants_out[variant["name"]] = {
                 "encoder": file_name,
                 "sha256": actual,
-                "keys": extract_metadata_keys(tail),
+                "keys": sorted(
+                    set(extract_metadata_keys(head)) | set(extract_metadata_keys(tail))
+                ),
             }
         if skipped_reason:
             missing.append(f"{entry_id}: {skipped_reason}")
@@ -207,8 +220,8 @@ def main() -> int:
             "modelType": entry.get("modelType", ""),
             "generatedBy": "scripts/extract-metadata-fixtures.py",
             "method": (
-                "onnx metadata_props keys from the last 2 MiB of each pinned "
-                "encoder (the production scan window)"
+                "onnx metadata_props keys from the head and tail windows "
+                "(2 MiB each) of each pinned encoder (the production scan)"
             ),
             # The production window this extraction used; the contract test
             # asserts it still equals SherpaBackend.ONNX_METADATA_SCAN_LIMIT.

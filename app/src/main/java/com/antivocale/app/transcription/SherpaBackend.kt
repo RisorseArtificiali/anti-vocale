@@ -129,16 +129,17 @@ class SherpaBackend(
 
         // TASK-413: internal (not private) so MetadataFixturesContractTest can
         // assert the fixtures' recorded scan window against the production
-        // window; the extractor and the scanner must read the same bytes.
+        // window; the extractor and the scanner must read the same regions.
         @VisibleForTesting
         internal const val ONNX_METADATA_SCAN_LIMIT: Long = 2L * 1024 * 1024
 
         /**
          * Returns the metadata keys from [requiredKeys] that are NOT present in [file].
          *
-         * ONNX stores metadata_props (protobuf key-value pairs); for large models they land near
-         * the END of the file, so we scan the last [maxScanBytes] once and test every key against
-         * the same buffer. Empty/missing file returns every key as missing.
+         * ONNX stores metadata_props (protobuf key-value pairs); writers place them
+         * near either END of the file (see [readHeadAndTail]), so we scan the head
+         * and tail regions once and test every key against both buffers.
+         * Missing file returns every key as missing.
          *
          * This prevents native crashes: sherpa-onnx calls exit(255) when required metadata
          * (e.g. vocab_size) is missing, killing the process with no catchable exception (1.13.x behavior; 2.0.0 converts these to catchable Java exceptions, #3988).
@@ -151,13 +152,16 @@ class SherpaBackend(
             if (requiredKeys.isEmpty()) return emptyList()
             // Treat unreadable as "all metadata missing" so the caller shows a clear
             // ModelLoadError instead of letting an IOException propagate uncaught.
-            val data = readTail(file, maxScanBytes) ?: return requiredKeys
-            return missingOnnxMetadataKeys(data, requiredKeys)
+            val regions = readHeadAndTail(file, maxScanBytes)
+            if (regions.isEmpty()) return requiredKeys
+            // A key written in EITHER region satisfies the requirement.
+            return missingOnnxMetadataKeys(regions, requiredKeys)
         }
 
         /**
-         * Key-presence check plus one value lookup in a SINGLE tail read: returns the
-         * missing required keys together with the value of [valueKey] (null when
+         * Key-presence check plus one value lookup over the head+tail scan regions
+         * (each read once): returns the missing required keys together with the
+         * value of [valueKey] (null when
          * [valueKey] is null, or when the key/file is absent or unreadable). Serves
          * callers that run both [missingOnnxMetadata] and [onnxMetadataValue] on the
          * same file (importer registration, external engine init) without reading the
@@ -177,30 +181,55 @@ class SherpaBackend(
             if (requiredKeys.isEmpty()) return emptyList<String>() to null
             // (an empty key list also voids the value read: the plausible-
             // value check exists to sanity-check a REQUIRED key, and the
-            // metadata-free families paid a 2 MiB tail read per init for a
+            // metadata-free families paid a 2 MiB scan per init for a
             // value nothing consumed; review round, TASK-667.)
-            val data = readTail(file, maxScanBytes) ?: return requiredKeys to null
-            val value = valueKey?.let { onnxMetadataValueBytes(data, it) }
-            return missingOnnxMetadataKeys(data, requiredKeys) to value
+            val regions = readHeadAndTail(file, maxScanBytes)
+            if (regions.isEmpty()) return requiredKeys to null
+            val value = valueKey?.let { key ->
+                regions.firstNotNullOfOrNull { region -> onnxMetadataValueBytes(region, key) }
+            }
+            val missing = missingOnnxMetadataKeys(regions, requiredKeys)
+            return missing to value
         }
 
         /**
-         * Reads the last [maxScanBytes] of [file]. Null when the file is empty/missing
-         * or unreadable (the sentinel each caller picks for its own error handling).
+         * Reads the head and tail scan regions of [file] (each up to [maxScanBytes]).
+         * ONNX metadata_props sit outside the graph blob, but WHERE depends on the
+         * writer: python-onnx serializes the graph (field 7) before metadata_props
+         * (field 14), putting them near the END, while other exporters (the
+         * bnoordhuis canary-1b-v2 encoders) emit them at the very START. Scanning
+         * both ends covers every layout we have seen without reading gigabytes of
+         * tensor data. Empty list when the file is missing/empty/unreadable (the
+         * sentinel each caller picks for its own error handling).
          */
-        private fun readTail(file: File, maxScanBytes: Long): ByteArray? {
-            if (!file.exists() || file.length() == 0L) return null
+        private fun readHeadAndTail(file: File, maxScanBytes: Long): List<ByteArray> {
+            if (!file.exists() || file.length() == 0L) return emptyList()
             val fileSize = file.length()
-            val scanStart = maxOf(0L, fileSize - maxScanBytes)
-            val data = ByteArray((fileSize - scanStart).toInt())
+            if (fileSize <= 2 * maxScanBytes) {
+                // The regions overlap or touch: one full read covers both.
+                val data = ByteArray(fileSize.toInt())
+                return try {
+                    java.io.RandomAccessFile(file, "r").use { raf -> raf.readFully(data) }
+                    listOf(data)
+                } catch (e: java.io.IOException) {
+                    emptyList()
+                }
+            }
+            val head = ByteArray(maxScanBytes.toInt())
+            val tail = ByteArray(maxScanBytes.toInt())
+            val tailStart = fileSize - maxScanBytes
             return try {
                 java.io.RandomAccessFile(file, "r").use { raf ->
-                    raf.seek(scanStart)
-                    raf.readFully(data)
+                    raf.readFully(head)
+                    raf.seek(tailStart)
+                    raf.readFully(tail)
                 }
-                data
+                // Tail first: python-onnx serializes metadata_props after the
+                // graph (the tail), so the common layout's genuine entry wins
+                // over any stray key-shaped bytes in the head's tensor data.
+                listOf(tail, head)
             } catch (e: java.io.IOException) {
-                null
+                emptyList()
             }
         }
 
@@ -210,10 +239,20 @@ class SherpaBackend(
          */
         @JvmStatic
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-        internal fun missingOnnxMetadataKeys(data: ByteArray, requiredKeys: List<String>): List<String> {
+        internal fun missingOnnxMetadataKeys(data: ByteArray, requiredKeys: List<String>): List<String> =
+            missingOnnxMetadataKeys(listOf(data), requiredKeys)
+
+        /**
+         * Regions form: a key is present when its UTF-8 bytes appear in ANY
+         * scanned region (head or tail). An empty key is vacuously present
+         * (never reported missing), matching the single-buffer form.
+         */
+        @JvmStatic
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        internal fun missingOnnxMetadataKeys(regions: List<ByteArray>, requiredKeys: List<String>): List<String> {
             return requiredKeys.filter { key ->
                 val needle = key.toByteArray(Charsets.UTF_8)
-                needle.isNotEmpty() && !containsSubsequence(data, needle)
+                needle.isNotEmpty() && regions.none { region -> containsSubsequence(region, needle) }
             }
         }
 
@@ -221,7 +260,7 @@ class SherpaBackend(
          * Returns the VALUE of metadata prop [key] in [file], or null when absent/unreadable.
          *
          * ONNX metadata_props are protobuf StringStringEntryProto pairs (field 1 = key,
-         * field 2 = value, both length-prefixed). The scan reads the file tail once (same
+         * field 2 = value, both length-prefixed). The scan reads the head and tail regions once each (same
          * window as [missingOnnxMetadata]), locates the key bytes, and parses the following
          * length-delimited value (tag 0x12 + varint length). Key occurrences not followed by
          * a value tag are skipped, so stray key text cannot fool the parser.
@@ -231,8 +270,8 @@ class SherpaBackend(
             key: String,
             maxScanBytes: Long = ONNX_METADATA_SCAN_LIMIT
         ): String? {
-            val data = readTail(file, maxScanBytes) ?: return null
-            return onnxMetadataValueBytes(data, key)
+            val regions = readHeadAndTail(file, maxScanBytes)
+            return regions.firstNotNullOfOrNull { region -> onnxMetadataValueBytes(region, key) }
         }
 
         /**
@@ -246,8 +285,8 @@ class SherpaBackend(
          * neither marker is readable: undeterminable, callers fail open.
          */
         fun zipformerGraphIsStreaming(encoderFile: File, maxScanBytes: Long = ONNX_METADATA_SCAN_LIMIT): Boolean? {
-            val data = readTail(encoderFile, maxScanBytes) ?: return null
-            return zipformerGraphIsStreamingBytes(data)
+            val regions = readHeadAndTail(encoderFile, maxScanBytes)
+            return regions.firstNotNullOfOrNull { region -> zipformerGraphIsStreamingBytes(region) }
         }
 
         /** Pure half of [zipformerGraphIsStreaming], unit-testable on raw bytes. */

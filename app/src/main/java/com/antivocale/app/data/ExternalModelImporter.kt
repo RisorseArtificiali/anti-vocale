@@ -595,9 +595,9 @@ class ExternalModelImporter(
 
         // TASK-720: streaming flag vs the actual encoder graph (family-routed;
         // plain zipformers). The wrong combination aborts the process at first
-        // decode, so it dies HERE instead. No second tail read: this modelType
+        // decode, so it dies HERE instead. No second scan: this modelType
         // maps to no required keys, so the metadata scan above short-circuited
-        // without reading; this probe is the only 2 MiB read of the file.
+        // without reading; this probe is the file's only head+tail read.
         ModelFamilySupport.forFamily(family)
             .streamingFlagMismatch(metadataFile, streaming)
             ?.let { throw IllegalArgumentException(it) }
