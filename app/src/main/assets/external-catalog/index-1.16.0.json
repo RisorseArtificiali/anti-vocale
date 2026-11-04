@@ -267,6 +267,14 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/finnish.json"
     },
     {
+      "name": "Whisper Large v3 French Distil int8 (sherpa, bofenghuang distil)",
+      "languages": [
+        "fr"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/french.json"
+    },
+    {
       "name": "Whisper Large v3 Turbo Arabic Dialectal (sherpa int8)",
       "languages": [
         "ar"

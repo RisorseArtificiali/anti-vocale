@@ -1,0 +1,32 @@
+{
+  "name": "Whisper Large v3 French Distil int8 (sherpa, bofenghuang distil)",
+  "family": "WHISPER",
+  "modelType": "",
+  "languages": [
+    "fr"
+  ],
+  "options": {
+    "whisper.language": "fr",
+    "whisper.task": "transcribe"
+  },
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/sherpa-onnx-whisper-large-v3-french-distil/resolve/main/encoder.int8.onnx",
+      "sha256": "f6a83a5d2bf66f10dee0a573e99d6795937e84a4495a9e8ef5e354a3daaf96ea",
+      "size": 714129993
+    },
+    {
+      "name": "decoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/sherpa-onnx-whisper-large-v3-french-distil/resolve/main/decoder.int8.onnx",
+      "sha256": "c3af005bc01a263830434fbf5d7a3c7999323bd13f822e749334f1179e84c062",
+      "size": 639822942
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/pantinor/sherpa-onnx-whisper-large-v3-french-distil/resolve/main/tokens.txt",
+      "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+      "size": 816730
+    }
+  ]
+}

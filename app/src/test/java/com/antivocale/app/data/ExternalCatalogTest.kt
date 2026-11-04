@@ -190,7 +190,12 @@ class ExternalCatalogTest {
         // + canary 1b v2 dutch int8 (TASK-954: bnoordhuis' prebuilt
         // conversion; our FLEURS nl measurement 6.08 vs turbo 8.29
         // and 2.4x faster decode; device pass pending)
-        assertEquals(34, entries.size)
+        // + whisper large v3 french distil int8 (TASK-953: our conversion
+        // of bofenghuang's distil-dec16, FLEURS fr 6.54 vs turbo 8.59
+        // and vs the full fine-tune's 7.10, at 1.35GB; hosted at
+        // pantinor/sherpa-onnx-whisper-large-v3-french-distil;
+        // device pass pending)
+        assertEquals(35, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
@@ -244,6 +249,9 @@ class ExternalCatalogTest {
             Triple("finnish.json", "WHISPER" to "", 3),
             // TASK-954: the Dutch quality pick, same tripwire.
             Triple("dutch.json", "CANARY" to "", 3),
+            // TASK-953: the French distil pick (the heavy tier lost to it on
+            // every axis and is NOT published).
+            Triple("french.json", "WHISPER" to "", 3),
         ).forEach { (file, pin, fileCount) ->
             val obj = org.json.JSONObject(
                 RepoFiles.readText("src/main/assets/external-catalog/$file"))
@@ -277,6 +285,7 @@ class ExternalCatalogTest {
             "moonshine-vietnamese.json" to "vi",
             "finnish.json" to "fi",
             "dutch.json" to "nl",
+            "french.json" to "fr",
         ).forEach { (file, lang) ->
             val obj = org.json.JSONObject(
                 RepoFiles.readText("src/main/assets/external-catalog/$file"))
