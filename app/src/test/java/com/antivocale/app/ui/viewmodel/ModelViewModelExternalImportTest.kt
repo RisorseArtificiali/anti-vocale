@@ -2,6 +2,7 @@ package com.antivocale.app.ui.viewmodel
 
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.ExternalModelImportOperations
@@ -18,6 +19,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -50,6 +52,9 @@ import org.robolectric.RobolectricTestRunner
 class ModelViewModelExternalImportTest {
 
     private val testDispatcher = StandardTestDispatcher()
+
+    // TASK-960: a field (not inline in setup) so tearDown can cancel it.
+    private val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
     private lateinit var fakePrefs: FakePreferencesManager
     private lateinit var viewModel: ModelViewModel
     private lateinit var fakeImporter: RecordingImporter
@@ -155,7 +160,7 @@ class ModelViewModelExternalImportTest {
             externalModelImporter = fakeImporter,
             litertLmUrlImporter = io.mockk.mockk(relaxed = true),
             externalCatalogRepository = io.mockk.mockk(relaxed = true),
-            applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+            applicationScope = applicationScope,
             // TASK-675: real demoter over the same preferences.
             silentModelDemoter = sharedDemoter,
             modelActivator = com.antivocale.app.transcription.ModelActivator(
@@ -170,6 +175,9 @@ class ModelViewModelExternalImportTest {
 
     @After
     fun tearDown() {
+        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
+        applicationScope.cancel()
         Dispatchers.resetMain()
     }
 

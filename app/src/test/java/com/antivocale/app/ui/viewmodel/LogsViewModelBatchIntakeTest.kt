@@ -2,6 +2,7 @@ package com.antivocale.app.ui.viewmodel
 
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.VoiceNoteDuplicateGuard
 import com.antivocale.app.data.local.LogEntity
 import com.antivocale.app.receiver.SubtitleChoice
@@ -14,7 +15,10 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -44,6 +48,9 @@ class LogsViewModelBatchIntakeTest {
 
     private lateinit var viewModel: LogsViewModel
     private val duplicateGuard: VoiceNoteDuplicateGuard = mockk(relaxed = true)
+
+    // TASK-960: a field (not the constructor default) so tearDown can cancel it.
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     @Before
     fun setup() {
@@ -75,11 +82,15 @@ class LogsViewModelBatchIntakeTest {
             mockk(relaxed = true),
             orchestrator = mockk(relaxed = true),
             duplicateGuard = duplicateGuard,
+            appScope = appScope,
         )
     }
 
     @After
     fun tearDown() {
+        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
+        appScope.cancel()
         stagedFile?.delete()
         stagedFile = null
         unmockkAll()
@@ -116,10 +127,11 @@ class LogsViewModelBatchIntakeTest {
 
         viewModel.transcribeLocalFiles(mockk(relaxed = true), uris)
 
-        // TASK-960 interim: the wall budgets are 30s because the CI fdroid
-        // runner reds a 5s budget under load while the test logic is correct
-        // (4/4 green in isolation on the same HEAD); 30s still fails fast on
-        // a real deadlock. The structural fix is tracked in TASK-960.
+        // TASK-960: the wall budgets are 30s because the CI fdroid runner
+        // reds a 5s budget under load while the test logic is correct (4/4
+        // green in isolation on the same HEAD). The leak half of TASK-960
+        // landed as the teardown scope cancels; these budgets stay raised
+        // for the slow-runner half (a real deadlock still fails in 30s).
         // File 1 owns the single dialog slot...
         val first = withTimeout(30_000) {
             viewModel.pendingBrowseDuplicate.first { it != null }

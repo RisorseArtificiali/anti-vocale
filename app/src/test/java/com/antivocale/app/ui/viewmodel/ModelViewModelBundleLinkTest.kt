@@ -4,6 +4,7 @@ import com.antivocale.app.testing.RepoFiles
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelRecord
@@ -24,6 +25,7 @@ import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -55,6 +57,9 @@ import org.robolectric.annotation.Config
 class ModelViewModelBundleLinkTest {
 
     private val testDispatcher = StandardTestDispatcher()
+
+    // TASK-960: a field (not inline in setup) so tearDown can cancel it.
+    private val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
     private lateinit var fakePrefs: FakePreferencesManager
     private lateinit var store: ExternalModelStore
     private lateinit var viewModel: ModelViewModel
@@ -150,7 +155,7 @@ class ModelViewModelBundleLinkTest {
             externalModelImporter = ExternalModelImporter(store = store, filesRoot = { importerRoot }),
             litertLmUrlImporter = mockk(relaxed = true),
             externalCatalogRepository = mockk(relaxed = true),
-            applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+            applicationScope = applicationScope,
             silentModelDemoter = sharedDemoter,
             modelActivator = com.antivocale.app.transcription.ModelActivator(
                 fakePrefs, sharedDemoter, store, staticRegistry()),
@@ -164,6 +169,9 @@ class ModelViewModelBundleLinkTest {
 
     @After
     fun tearDown() {
+        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
+        applicationScope.cancel()
         Dispatchers.resetMain()
         // The patched seed must not leak into later classes sharing this
         // worker JVM (the catalog singleton caches per process).

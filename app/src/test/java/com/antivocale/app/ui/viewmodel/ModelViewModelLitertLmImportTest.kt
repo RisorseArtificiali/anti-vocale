@@ -7,6 +7,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.ExternalModelImporter
@@ -21,6 +22,7 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -35,7 +37,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import com.antivocale.app.testing.TempDataStoreRule
-import kotlinx.coroutines.SupervisorJob
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,6 +55,9 @@ import org.robolectric.annotation.Config
 class ModelViewModelLitertLmImportTest {
 
     private val testDispatcher = StandardTestDispatcher()
+
+    // TASK-960: a field (not inline in setup) so tearDown can cancel it.
+    private val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
     private val backendKey = stringPreferencesKey("transcription_backend")
     private val modelPathKey = stringPreferencesKey("model_path")
 
@@ -108,7 +112,7 @@ class ModelViewModelLitertLmImportTest {
             ),
             litertLmUrlImporter = importer,
             externalCatalogRepository = mockk(relaxed = true),
-            applicationScope = kotlinx.coroutines.CoroutineScope(SupervisorJob()),
+            applicationScope = applicationScope,
             // TASK-675: real demoter over the same preferences.
             silentModelDemoter = sharedDemoter,
             modelActivator = com.antivocale.app.transcription.ModelActivator(
@@ -122,6 +126,9 @@ class ModelViewModelLitertLmImportTest {
 
     @After
     fun tearDown() {
+        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
+        applicationScope.cancel()
         Dispatchers.resetMain()
     }
 

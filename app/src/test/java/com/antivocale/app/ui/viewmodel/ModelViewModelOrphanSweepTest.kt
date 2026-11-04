@@ -3,6 +3,7 @@ package com.antivocale.app.ui.viewmodel
 import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.ui.tabs.hasCleanupWork
 import android.content.Context
+import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.FakePreferencesManager
@@ -14,6 +15,7 @@ import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
@@ -54,6 +56,9 @@ import org.junit.Test
 class ModelViewModelOrphanSweepTest {
 
     private val testDispatcher = StandardTestDispatcher()
+
+    // TASK-960: a field (not inline in setup) so tearDown can cancel it.
+    private val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
     private val recordsProvider = FakeExternalRecordsProvider()
     private lateinit var viewModel: ModelViewModel
 
@@ -108,12 +113,15 @@ class ModelViewModelOrphanSweepTest {
             externalCatalogRepository = mockk(relaxed = true),
             silentModelDemoter = mockk(relaxed = true),
             modelActivator = mockk(relaxed = true),
-            applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+            applicationScope = applicationScope,
         )
     }
 
     @After
     fun tearDown() {
+        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
+        applicationScope.cancel()
         Dispatchers.resetMain()
         filesRoot.deleteRecursively()
     }

@@ -1,5 +1,7 @@
 package com.antivocale.app.ui.viewmodel
 
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.cancel
 import android.app.Application
 import android.content.Context
 import com.antivocale.app.data.ActiveModelRepository
@@ -53,8 +55,14 @@ internal class SettingsViewModelTestHelper(
     private val speakerIdsDir = java.nio.file.Files
         .createTempDirectory("speaker-ids").toFile()
 
-    /** Deletes the one filesystem footprint; call from the suite's @After. */
+    /**
+     * The suite teardown: cancels the harness ViewModel's scope FIRST
+     * (TASK-960: pending jobs must die before resetMain or they resume
+     * against dead dispatchers and crash into the NEXT class's Main),
+     * then deletes the one filesystem footprint. Call from @After.
+     */
     fun cleanup() {
+        viewModel.viewModelScope.cancel()
         speakerIdsDir.deleteRecursively()
     }
 

@@ -2,6 +2,7 @@ package com.antivocale.app.ui.viewmodel
 
 import android.app.Application
 import android.content.Context
+import androidx.lifecycle.viewModelScope
 import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.PreferencesManager
@@ -10,10 +11,15 @@ import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.staticRegistry
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -39,12 +45,22 @@ class LogsViewModelRetranscribeNamesTest {
     private lateinit var viewModel: LogsViewModel
     private val context: Context = ApplicationProvider.getApplicationContext()
 
+    // TASK-960: a field (not the constructor default) so tearDown can cancel it.
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     @Before
     fun setUp() {
         manager = mockk(relaxed = true)
         preferences = stubPreferencesManager()
         every { preferences.sherpaModelPath(any()) } returns flowOf("/data/models/saved")
-        viewModel = LogsViewModel(manager, mockk<LogDao>(relaxed = true), preferences, staticRegistry(), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), orchestrator = io.mockk.mockk(relaxed = true), duplicateGuard = io.mockk.mockk(relaxed = true))
+        viewModel = LogsViewModel(manager, mockk<LogDao>(relaxed = true), preferences, staticRegistry(), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), orchestrator = io.mockk.mockk(relaxed = true), duplicateGuard = io.mockk.mockk(relaxed = true), appScope = appScope)
+    }
+
+    @After
+    fun tearDown() {
+        // TASK-960: pending viewModelScope/appScope jobs must die before the mocks go away or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
+        appScope.cancel()
     }
 
     @Test

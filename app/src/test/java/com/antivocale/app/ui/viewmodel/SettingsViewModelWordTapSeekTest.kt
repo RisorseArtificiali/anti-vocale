@@ -44,7 +44,10 @@ class SettingsViewModelWordTapSeekTest {
 
     @After
     fun tearDown() {
-        harness.cleanup()
+        // TASK-960: guarded so a @Before that died mid-harness-construction
+        // still reaches resetMain (an unguarded lateinit access here would
+        // leave Main swapped for the NEXT class).
+        if (::harness.isInitialized) harness.cleanup()
         Dispatchers.resetMain()
     }
 
