@@ -1,0 +1,32 @@
+{
+  "name": "Whisper Large v3 German (sherpa, primeline fine-tune)",
+  "family": "WHISPER",
+  "modelType": "",
+  "languages": [
+    "de"
+  ],
+  "options": {
+    "whisper.language": "de",
+    "whisper.task": "transcribe"
+  },
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/sherpa-onnx-whisper-large-v3-german/resolve/main/encoder.int8.onnx",
+      "sha256": "0b2db823b3e8783215d72cdd4f3ed3bc58181af0903c46a24adefcb5cb1dbc75",
+      "size": 766681404
+    },
+    {
+      "name": "decoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/sherpa-onnx-whisper-large-v3-german/resolve/main/decoder.int8.onnx",
+      "sha256": "4bb43a19f04202cd25438ab17a29e50727ab415eeb687e1c433e04460e816525",
+      "size": 1011267563
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/pantinor/sherpa-onnx-whisper-large-v3-german/resolve/main/tokens.txt",
+      "sha256": "b34b360dbb493e781e47e794586d661700670d65564001f23024971d1f2fa126",
+      "size": 816730
+    }
+  ]
+}

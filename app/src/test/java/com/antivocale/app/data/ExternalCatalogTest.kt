@@ -195,7 +195,12 @@ class ExternalCatalogTest {
         // and vs the full fine-tune's 7.10, at 1.35GB; hosted at
         // pantinor/sherpa-onnx-whisper-large-v3-french-distil;
         // device pass pending)
-        assertEquals(35, entries.size)
+        // + whisper large v3 german full fine-tune (GH #183 decision:
+        // ships beside turbo as the training-domain pick; FLEURS de
+        // 7.48 vs turbo 6.01, CV15 3.00 on its own domain; hosted at
+        // pantinor/sherpa-onnx-whisper-large-v3-german; device pass
+        // pending)
+        assertEquals(36, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
@@ -252,6 +257,10 @@ class ExternalCatalogTest {
             // TASK-953: the French distil pick (the heavy tier lost to it on
             // every axis and is NOT published).
             Triple("french.json", "WHISPER" to "", 3),
+            // GH #183 maintainer decision: the German full fine-tune ships
+            // ALONGSIDE turbo (domain pick: CV15 3.00 on its training
+            // domain, FLEURS 7.48 vs turbo 6.01 on ours).
+            Triple("german-large.json", "WHISPER" to "", 3),
         ).forEach { (file, pin, fileCount) ->
             val obj = org.json.JSONObject(
                 RepoFiles.readText("src/main/assets/external-catalog/$file"))
@@ -286,6 +295,7 @@ class ExternalCatalogTest {
             "finnish.json" to "fi",
             "dutch.json" to "nl",
             "french.json" to "fr",
+            "german-large.json" to "de",
         ).forEach { (file, lang) ->
             val obj = org.json.JSONObject(
                 RepoFiles.readText("src/main/assets/external-catalog/$file"))
@@ -317,7 +327,7 @@ class ExternalCatalogTest {
         // languages (TASK-596: orukeet now declares its full 24-language
         // set, so it joins the German results; TASK-855: transcribepsy
         // EU declares de too)
-        assertEquals(6, ExternalCatalog.filter(entries, "de").size)
+        assertEquals(7, ExternalCatalog.filter(entries, "de").size)
         // TASK-652: the six IndicConformer entries surface via their codes.
         // TASK-663: Dolphin declares the same six codes, so each surfaces
         // exactly the IndicConformer entry plus Dolphin (order: Dolphin first).
