@@ -96,7 +96,7 @@ Anti-Vocale 可以在新 WhatsApp 语音消息到达的那一刻自动转写，�
 
 ## 社区模型与导入
 
-内置目录并不覆盖所有语言。Anti-Vocale 自带一个社区模型目录，两次点按即可导入：模型标签页、高级、ONNX Sherpa、从目录导入、按您的语言筛选、点按模型、确认。目录在持续增长，目前收录 30 多个经过验证的条目：阿拉伯语（方言版，含完整版和轻量版）、德语（流式和一个 Whisper 微调）、西班牙语（流式和轻量版 Moonshine）、瑞士德语、希伯来语、波斯语、俄语、越南语（流式和轻量版 Moonshine）、乌克兰语、六种印度语言（孟加拉语、古吉拉特语、印地语、马拉地语、泰米尔语、泰卢固语）、土耳其语（Whisper small 微调）、芬兰语（Whisper large v3 微调）、巴西葡萄牙语（Distil Whisper large v3）、英语、法语、德语和西班牙语的 Canary Flash、荷兰语的完整版 Canary、英语的 Parakeet TDT-CTC 110M、SenseVoice、Dolphin、Orukeet（一个覆盖 24 种语言、包括意大利语的 Parakeet 微调）、TranscribePsy（覆盖 20 种欧洲语言的 Parakeet 蒸馏）、Omnilingual ASR 300M（多语言，实验性），以及一个低内存的多语言 Whisper Tiny。如果缺少您的语言，请开一个 issue：条目正是这样添加进来的。
+内置目录并不覆盖所有语言。Anti-Vocale 自带一个社区模型目录，两次点按即可导入：模型标签页、高级、ONNX Sherpa、从目录导入、按您的语言筛选、点按模型、确认。目录在持续增长，目前收录 30 多个经过验证的条目：阿拉伯语（方言版，含完整版和轻量版）、德语（流式和一个 Whisper 微调）、西班牙语（流式和轻量版 Moonshine）、瑞士德语、希伯来语、波斯语、俄语、越南语（流式和轻量版 Moonshine）、乌克兰语、六种印度语言（孟加拉语、古吉拉特语、印地语、马拉地语、泰米尔语、泰卢固语）、土耳其语（Whisper small 微调）、芬兰语（Whisper large v3 微调）、法语（Whisper large v3 蒸馏）、巴西葡萄牙语（Distil Whisper large v3）、英语、法语、德语和西班牙语的 Canary Flash、荷兰语的完整版 Canary、英语的 Parakeet TDT-CTC 110M、SenseVoice、Dolphin、Orukeet（一个覆盖 24 种语言、包括意大利语的 Parakeet 微调）、TranscribePsy（覆盖 20 种欧洲语言的 Parakeet 蒸馏）、Omnilingual ASR 300M（多语言，实验性），以及一个低内存的多语言 Whisper Tiny。如果缺少您的语言，请开一个 issue：条目正是这样添加进来的。
 
 高级用户还可以：
 - 从 Hugging Face 仓库 URL 或目录条目链接导入模型（同一对话框中的高级分支）；
