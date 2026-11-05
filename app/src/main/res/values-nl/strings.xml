@@ -983,6 +983,11 @@
     <string name="model_info_best_for_gemma">Multimodaal LLM voor tekst- en audiotaken</string>
     <string name="model_info_notes_gemma">Niet geoptimaliseerd voor pure ASR. Gebruik het voor geavanceerde functies zoals audiobegrip gecombineerd met tekstgeneratie.</string>
     <string name="model_info_benchmark_wer">Woordfoutpercentage (Italiaans): %.1f%%</string>
+    <string name="benchmark_busy">Er wordt een transcriptie uitgevoerd op %1$s; voer de benchmark opnieuw uit wanneer deze inactief is</string>
+    <string name="benchmark_init_failed">Initialiseren van %1$s mislukt</string>
+    <string name="benchmark_unknown_backend">Onbekende backend: %1$s</string>
+    <string name="benchmark_model_folder_missing">Modelmap ontbreekt voor %1$s</string>
+    <string name="benchmark_failed">Benchmark mislukt</string>
     <string name="model_info_relative_speed">Snelheid: %s</string>
     <string name="model_info_close">Sluiten</string>
 

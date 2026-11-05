@@ -1100,6 +1100,11 @@
     <!-- Benchmark -->
     <string name="benchmark_provider_label">موتور</string>
     <string name="benchmark_provider_value">%1$s</string>
+    <string name="benchmark_busy">روی %1$s یک رونویسی در حال اجراست؛ وقتی این مدل بیکار است دوباره بنچمارک را اجرا کنید</string>
+    <string name="benchmark_init_failed">راه‌اندازی %1$s ناموفق بود</string>
+    <string name="benchmark_unknown_backend">بک‌اند ناشناخته: %1$s</string>
+    <string name="benchmark_model_folder_missing">پوشه مدل برای %1$s وجود ندارد</string>
+    <string name="benchmark_failed">بنچمارک ناموفق بود</string>
 
     <!-- Actions -->
     <string name="action_dismiss">بستن</string>

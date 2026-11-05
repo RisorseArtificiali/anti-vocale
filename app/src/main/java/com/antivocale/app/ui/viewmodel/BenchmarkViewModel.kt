@@ -2,6 +2,7 @@ package com.antivocale.app.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.antivocale.app.R
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.benchmark.BenchmarkManager
 import com.antivocale.app.benchmark.BenchmarkState
@@ -63,7 +64,8 @@ class BenchmarkViewModel @Inject constructor(
         _benchmarkState.value = BenchmarkState.Idle
 
         val backend = backendManager.getBackend(backendId) ?: run {
-            _benchmarkState.value = BenchmarkState.Error("Unknown backend: $backendId")
+            _benchmarkState.value = BenchmarkState.Error(
+                appContext.getString(R.string.benchmark_unknown_backend, backendId))
             return
         }
         // TASK-853: the harness builds a SHERPA config; whistle (its own
@@ -71,7 +73,7 @@ class BenchmarkViewModel @Inject constructor(
         // point cannot re-open the unload-then-fail trap.
         if (BuiltInBackendIds.isWhistle(backendId)) {
             _benchmarkState.value = BenchmarkState.Error(
-                appContext.getString(com.antivocale.app.R.string.benchmark_unsupported_engine))
+                appContext.getString(R.string.benchmark_unsupported_engine))
             return
         }
 
@@ -92,8 +94,8 @@ class BenchmarkViewModel @Inject constructor(
                 val record = externalModelStore.byId(
                     backendId.removePrefix(com.antivocale.app.data.ExternalModelRecord.BACKEND_ID_PREFIX))
                     ?: run {
-                        _benchmarkState.value =
-                            BenchmarkState.Error("Model folder missing for $backendId")
+                        _benchmarkState.value = BenchmarkState.Error(
+                            appContext.getString(R.string.benchmark_model_folder_missing, backendId))
                         return@launch
                     }
                 // KEEP IN SYNC with the orchestrator's loadExternalBackend
@@ -112,7 +114,8 @@ class BenchmarkViewModel @Inject constructor(
                 )
             } else {
                 val entry = BundledCatalog.byId(backendId) ?: run {
-                    _benchmarkState.value = BenchmarkState.Error("Unsupported backend for benchmark")
+                    _benchmarkState.value = BenchmarkState.Error(
+                        appContext.getString(R.string.benchmark_unsupported_engine))
                     return@launch
                 }
                 BackendConfig.SherpaOnnxConfig(
@@ -132,7 +135,8 @@ class BenchmarkViewModel @Inject constructor(
             }
             _benchmarkState.value = result.fold(
                 onSuccess = { BenchmarkState.Complete(it) },
-                onFailure = { BenchmarkState.Error(it.message ?: "Benchmark failed") }
+                onFailure = { BenchmarkState.Error(it.message
+                    ?: appContext.getString(R.string.benchmark_failed)) }
             )
         }
     }

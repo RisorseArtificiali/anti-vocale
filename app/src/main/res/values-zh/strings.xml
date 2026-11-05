@@ -805,6 +805,11 @@
     <string name="model_info_best_for_gemma">用于文本 + 音频任务的多模态 LLM</string>
     <string name="model_info_notes_gemma">未针对纯语音识别优化。适用于音频理解与文本生成相结合等高级功能。</string>
     <string name="model_info_benchmark_wer">词错率（意大利语）：%.1f%%</string>
+    <string name="benchmark_busy">%1$s 正在进行转写；请在空闲时重新运行基准测试</string>
+    <string name="benchmark_init_failed">初始化 %1$s 失败</string>
+    <string name="benchmark_unknown_backend">未知后端：%1$s</string>
+    <string name="benchmark_model_folder_missing">%1$s 的模型文件夹缺失</string>
+    <string name="benchmark_failed">基准测试失败</string>
     <string name="model_info_relative_speed">速度：%s</string>
     <string name="model_info_close">关闭</string>
     <string name="skeleton_loading_content_description">正在加载转写内容</string>

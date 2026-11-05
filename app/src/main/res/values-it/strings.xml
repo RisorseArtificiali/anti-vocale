@@ -1101,6 +1101,11 @@
     <!-- Benchmark -->
     <string name="benchmark_provider_label">Provider</string>
     <string name="benchmark_provider_value">%1$s</string>
+    <string name="benchmark_busy">Una trascrizione è in corso su %1$s; esegui di nuovo il benchmark quando è inattivo</string>
+    <string name="benchmark_init_failed">Inizializzazione di %1$s non riuscita</string>
+    <string name="benchmark_unknown_backend">Backend sconosciuto: %1$s</string>
+    <string name="benchmark_model_folder_missing">Cartella del modello mancante per %1$s</string>
+    <string name="benchmark_failed">Benchmark non riuscito</string>
 
     <!-- Azioni -->
     <string name="action_dismiss">Chiudi</string>

@@ -918,6 +918,11 @@
     <string name="model_info_best_for_gemma">Multimodales LLM für Text- + Audio-Aufgaben</string>
     <string name="model_info_notes_gemma">Nicht für reine Spracherkennung optimiert. Für erweiterte Funktionen wie Audioverständnis kombiniert mit Textgenerierung.</string>
     <string name="model_info_benchmark_wer">Word Error Rate (Italienisch): %.1f%%</string>
+    <string name="benchmark_busy">Auf %1$s läuft gerade eine Transkription; starte den Benchmark erneut, wenn das Modell wieder frei ist</string>
+    <string name="benchmark_init_failed">Initialisierung von %1$s fehlgeschlagen</string>
+    <string name="benchmark_unknown_backend">Unbekanntes Backend: %1$s</string>
+    <string name="benchmark_model_folder_missing">Modellordner fehlt für %1$s</string>
+    <string name="benchmark_failed">Benchmark fehlgeschlagen</string>
     <string name="model_info_relative_speed">Geschwindigkeit: %s</string>
     <string name="model_info_close">Schließen</string>
 

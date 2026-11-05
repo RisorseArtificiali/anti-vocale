@@ -967,6 +967,11 @@
     <string name="model_info_best_for_gemma">מודל LLM מולטימודלי למשימות טקסט + אודיו</string>
     <string name="model_info_notes_gemma">לא מותאם ל-ASR טהור. מיועד לתכונות מתקדמות כמו הבנת אודיו בשילוב יצירת טקסט.</string>
     <string name="model_info_benchmark_wer">אחוז שגיאות מילים (איטלקית): %.1f%%</string>
+    <string name="benchmark_busy">פענוח פועל כעת על %1$s; הפעל את מדידת הביצועים שוב כשהמודל פנוי</string>
+    <string name="benchmark_init_failed">אתחול %1$s נכשל</string>
+    <string name="benchmark_unknown_backend">מנוע לא מוכר: %1$s</string>
+    <string name="benchmark_model_folder_missing">תיקיית המודל חסרה עבור %1$s</string>
+    <string name="benchmark_failed">מדידת הביצועים נכשלה</string>
     <string name="model_info_relative_speed">מהירות: %s</string>
     <string name="model_info_close">סגירה</string>
 

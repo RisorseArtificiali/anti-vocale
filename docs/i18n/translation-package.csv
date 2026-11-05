@@ -735,6 +735,11 @@ lang_filter_all,All languages,plain,
 lang_filter_no_results,No matching language,plain,
 lang_filter_clear,Clear search,plain,
 benchmark_title,Benchmark %1$s,formatted,keep verbatim: ['%1$s']
+benchmark_busy,A transcription is running on %1$s; benchmark it again when idle,formatted,keep verbatim: ['%1$s']
+benchmark_init_failed,Failed to initialize %1$s,formatted,keep verbatim: ['%1$s']
+benchmark_unknown_backend,Unknown backend: %1$s,formatted,keep verbatim: ['%1$s']
+benchmark_model_folder_missing,Model folder missing for %1$s,formatted,keep verbatim: ['%1$s']
+benchmark_failed,Benchmark failed,plain,
 benchmark_preparing,Preparing benchmark…,plain,
 benchmark_running,Running benchmark…,plain,
 benchmark_progress,%1$d%% complete,formatted,"keep verbatim: ['%%', '%1$d']"

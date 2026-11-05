@@ -805,6 +805,11 @@
     <string name="model_info_best_for_gemma">نموذج لغوي كبير متعدد الوسائط لمهام النصوص والصوت</string>
     <string name="model_info_notes_gemma">غير محسَّن لتعرّف الكلام البحت؛ استخدمه للميزات المتقدمة مثل فهم الصوت مقترنًا بتوليد النصوص.</string>
     <string name="model_info_benchmark_wer">معدل خطأ الكلمات (الإيطالية): %.1f%%</string>
+    <string name="benchmark_busy">يجري نسخ على %1$s؛ شغّل قياس الأداء مجددًا عندما يخلو هذا النموذج</string>
+    <string name="benchmark_init_failed">تعذّر تهيئة %1$s</string>
+    <string name="benchmark_unknown_backend">محرك غير معروف: %1$s</string>
+    <string name="benchmark_model_folder_missing">مجلد النموذج مفقود لـ %1$s</string>
+    <string name="benchmark_failed">فشل قياس الأداء</string>
     <string name="model_info_relative_speed">السرعة: %s</string>
     <string name="model_info_close">إغلاق</string>
     <string name="skeleton_loading_content_description">جارٍ تحميل النسخ</string>

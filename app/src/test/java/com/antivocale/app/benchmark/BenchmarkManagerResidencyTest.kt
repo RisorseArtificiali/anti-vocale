@@ -124,14 +124,19 @@ class BenchmarkManagerResidencyTest {
         val config = BackendConfig.SherpaOnnxConfig(
             modelDir = "/models/whisper-b", modelType = "whisper", numThreads = 4)
 
+        // deriveDisplayName's default is the path's file name: the message
+        // must carry the DERIVED name as the resource ARG, proving the
+        // whole resolve ran (the English copy itself lives in the string
+        // resource now, TASK-958; the mock context hands it back verbatim).
+        io.mockk.every {
+            context.getString(com.antivocale.app.R.string.benchmark_busy, "whisper-b")
+        } returns "busy on whisper-b"
         val manager = BenchmarkManager(context, preferencesManager, backendRegistry)
         val result = manager.runBenchmark(backend, config)
 
         assertTrue(result.isFailure)
-        // deriveDisplayName's default is the path's file name: the message
-        // must carry the DERIVED name, proving the whole resolve ran.
         assertEquals(
-            "A transcription is running on whisper-b; benchmark it again when idle",
+            "busy on whisper-b",
             result.exceptionOrNull()?.message)
     }
 }

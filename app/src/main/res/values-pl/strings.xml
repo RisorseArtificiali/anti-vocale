@@ -979,6 +979,11 @@
     <string name="model_info_best_for_gemma">Multimodalny LLM do zadań tekst + audio</string>
     <string name="model_info_notes_gemma">Nie zoptymalizowany pod czyste ASR. Użyj do zaawansowanych funkcji, takich jak rozumienie audio połączone z generowaniem tekstu.</string>
     <string name="model_info_benchmark_wer">Word Error Rate (włoski): %.1f%%</string>
+    <string name="benchmark_busy">Na %1$s trwa transkrypcja; uruchom ponownie benchmark, gdy model będzie bezczynny</string>
+    <string name="benchmark_init_failed">Nie udało się zainicjować %1$s</string>
+    <string name="benchmark_unknown_backend">Nieznany backend: %1$s</string>
+    <string name="benchmark_model_folder_missing">Brak folderu modelu dla %1$s</string>
+    <string name="benchmark_failed">Benchmark nie powiódł się</string>
     <string name="model_info_relative_speed">Szybkość: %s</string>
     <string name="model_info_close">Zamknij</string>
 

@@ -905,6 +905,11 @@
 
     <!-- Model Benchmark -->
     <string name="benchmark_title">Benchmark %1$s</string>
+    <string name="benchmark_busy">A transcription is running on %1$s; benchmark it again when idle</string>
+    <string name="benchmark_init_failed">Failed to initialize %1$s</string>
+    <string name="benchmark_unknown_backend">Unknown backend: %1$s</string>
+    <string name="benchmark_model_folder_missing">Model folder missing for %1$s</string>
+    <string name="benchmark_failed">Benchmark failed</string>
     <string name="benchmark_preparing">Preparing benchmark…</string>
     <string name="benchmark_running">Running benchmark…</string>
     <string name="benchmark_progress">%1$d%% complete</string>

@@ -822,6 +822,11 @@
     <string name="model_info_best_for_gemma">LLM multimodal para tarefas de texto + áudio</string>
     <string name="model_info_notes_gemma">Não otimizado para ASR puro. Use para recursos avançados: compreensão de áudio combinada com geração de texto.</string>
     <string name="model_info_benchmark_wer">Taxa de erro de palavras (italiano): %.1f%%</string>
+    <string name="benchmark_busy">Uma transcrição está em execução em %1$s; execute o benchmark novamente quando estiver ocioso</string>
+    <string name="benchmark_init_failed">Falha ao inicializar %1$s</string>
+    <string name="benchmark_unknown_backend">Backend desconhecido: %1$s</string>
+    <string name="benchmark_model_folder_missing">Pasta do modelo ausente para %1$s</string>
+    <string name="benchmark_failed">Falha no benchmark</string>
     <string name="model_info_relative_speed">Velocidade: %s</string>
     <string name="model_info_close">Fechar</string>
     <string name="skeleton_loading_content_description">Carregando transcrição</string>

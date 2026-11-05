@@ -845,6 +845,11 @@
     <string name="model_info_best_for_gemma">Multimodaalinen suuri kielimalli teksti- ja äänitehtäviin</string>
     <string name="model_info_notes_gemma">Ei optimoitu pelkkään puheentunnistukseen. Käytä edistyneisiin ominaisuuksiin, kuten äänen ymmärtämiseen yhdistettynä tekstin tuottamiseen.</string>
     <string name="model_info_benchmark_wer">Sanavirheaste (italia): %.1f%%</string>
+    <string name="benchmark_busy">%1$s on parhaillaan transkriptiossa; aja suorituskykytesti uudelleen, kun malli on vapaa</string>
+    <string name="benchmark_init_failed">Kohteen %1$s alustus epäonnistui</string>
+    <string name="benchmark_unknown_backend">Tuntematon taustajärjestelmä: %1$s</string>
+    <string name="benchmark_model_folder_missing">Mallikansio puuttuu kohteelle %1$s</string>
+    <string name="benchmark_failed">Suorituskykytesti epäonnistui</string>
     <string name="model_info_relative_speed">Nopeus: %s</string>
     <string name="model_info_close">Sulje</string>
     <string name="skeleton_loading_content_description">Ladataan transkriptiota</string>

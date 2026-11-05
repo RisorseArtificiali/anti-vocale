@@ -917,6 +917,11 @@
     <string name="model_info_best_for_gemma">टेक्स्ट + ऑडियो कार्यों के लिए मल्टीमॉडल LLM</string>
     <string name="model_info_notes_gemma">सिर्फ़ ASR के लिए ऑप्टिमाइज़्ड नहीं। टेक्स्ट जनरेशन के साथ ऑडियो समझ जैसी बेहतर सुविधाओं के लिए इस्तेमाल करें।</string>
     <string name="model_info_benchmark_wer">वर्ड एरर रेट (इतालवी): %.1f%%</string>
+    <string name="benchmark_busy">%1$s पर एक ट्रांसक्रिप्शन चल रहा है; निष्क्रिय होने पर बेंचमार्क फिर से चलाएँ</string>
+    <string name="benchmark_init_failed">%1$s आरंभ नहीं हो सका</string>
+    <string name="benchmark_unknown_backend">अज्ञात बैकएंड: %1$s</string>
+    <string name="benchmark_model_folder_missing">%1$s के लिए मॉडल फ़ोल्डर गुम है</string>
+    <string name="benchmark_failed">बेंचमार्क विफल</string>
     <string name="model_info_relative_speed">गति: %s</string>
     <string name="model_info_close">बंद करें</string>
 

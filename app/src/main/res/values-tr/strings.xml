@@ -961,6 +961,11 @@
     <string name="model_info_best_for_gemma">Metin + ses görevleri için çok kipli LLM</string>
     <string name="model_info_notes_gemma">Saf ASR için optimize değil. Metin üretimiyle birleşik ses anlama gibi gelişmiş özellikler için kullanın.</string>
     <string name="model_info_benchmark_wer">Sözcük Hata Oranı (İtalyanca): %.1f%%</string>
+    <string name="benchmark_busy">%1$s üzerinde bir transkripsiyon çalışıyor; model boşta olduğunda kıyaslamayı tekrar çalıştır</string>
+    <string name="benchmark_init_failed">%1$s başlatılamadı</string>
+    <string name="benchmark_unknown_backend">Bilinmeyen arka uç: %1$s</string>
+    <string name="benchmark_model_folder_missing">%1$s için model klasörü eksik</string>
+    <string name="benchmark_failed">Kıyaslama başarısız oldu</string>
     <string name="model_info_relative_speed">Hız: %s</string>
     <string name="model_info_close">Kapat</string>
 

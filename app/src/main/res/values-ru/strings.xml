@@ -961,6 +961,11 @@
     <string name="model_info_best_for_gemma">Мультимодальная LLM для задач с текстом и аудио</string>
     <string name="model_info_notes_gemma">Не оптимизирована для чистого распознавания речи. Используйте для расширенных возможностей: понимание аудио в сочетании с генерацией текста.</string>
     <string name="model_info_benchmark_wer">Доля ошибок на словах (итальянский): %.1f%%</string>
+    <string name="benchmark_busy">На %1$s выполняется расшифровка; запустите тест повторно, когда модель освободится</string>
+    <string name="benchmark_init_failed">Не удалось инициализировать %1$s</string>
+    <string name="benchmark_unknown_backend">Неизвестный движок: %1$s</string>
+    <string name="benchmark_model_folder_missing">Отсутствует папка модели для %1$s</string>
+    <string name="benchmark_failed">Не удалось выполнить тест</string>
     <string name="model_info_relative_speed">Скорость: %s</string>
     <string name="model_info_close">Закрыть</string>
 
