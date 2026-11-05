@@ -151,6 +151,20 @@ This is the manufacturer's background restriction, not a bug in the transcriptio
 2. Make the app exempt from battery optimization (Settings, or the card the app shows on affected devices). On the most aggressive builds this is not always enough.
 3. Turn on Settings, "Background transcription protection" ([#67](https://github.com/RisorseArtificiali/anti-vocale/pull/67)): the app plays an inaudible stream while a transcription runs, which these systems treat as active playback and stop freezing mid-work. It is off by default because it keeps the audio path awake for the duration of each transcription.
 
+### My downloaded model disappeared and the app asks me to download it again. Why?
+
+The app never deletes a downloaded model on its own, on a timer, or while it is idle. Every deletion path in the code is one of: you tapped delete, the app found the files corrupt or missing at load time and re-downloads them (the built-in default model recovers automatically this way), or an app update replaced the model directory with a newer version.
+
+If the model is simply gone (the card offers a fresh download, nothing else changed), the cause is almost always the phone's own storage cleaner. Several manufacturer skins run one in the background, and some of them delete files from apps' private storage, which Android otherwise guarantees to be untouchable except by the app itself. This was reproduced on a Realme (ColorOS) device: multi-gigabyte model files vanished overnight with no app update, no uninstall, and no deletion path ever executed by the app. Samsung's Device care "Storage Booster" is reported to do the same class of thing on some builds.
+
+### How do I stop my phone's cleaner from deleting the models?
+
+On ColorOS (Realme, OnePlus, OPPO), the storage cleaner has a per-app exemption list: open the system **Phone Manager**, go to storage cleanup, then **App cleanup**, and add Anti-Vocale to the apps exempt from cleanup. That list exists for exactly this purpose and needs no special tools. On the same phones, users who want the cleaner gone entirely have also removed the system storage manager (`com.oplus.athena`) via ADB or with an app like Canta plus Shizuku; that is a system-level modification and entirely your choice.
+
+On Samsung, the equivalent ("Storage Booster" under Battery and device care) has no user-visible off switch on the affected builds: keep an eye on the Device care storage settings after a One UI update, and re-download the model from the Models tab when it happens. An upcoming app update will detect the wipe and restore the download automatically.
+
+In all cases the fix for a wiped model is the same: open the Models tab and download it again. Nothing else in the app is affected; transcripts and settings are stored elsewhere and survive.
+
 ## Nightly builds
 
 ### What is the nightly build, and can I install it over my store copy?
