@@ -75,6 +75,8 @@ A full language model rather than a dedicated transcriber: the only bundled mode
 
 One-tap imports from the in-app catalog. Where we publish our own sherpa-onnx re-export of someone else's fine-tune, both links are listed: the original model is the one to read for training data, benchmarks, and credit; our mirror is just the packaging the app downloads.
 
+**When an entry may ship despite losing on the shared benchmark.** The gate for a per-language entry is our FLEURS check against Whisper Turbo. An entry that loses there still ships when two things hold: it wins on a published benchmark of its own training domain, and it brings a value the incumbent does not (a different training distribution, a lighter payload, streaming). The German full fine-tune is the precedent: 7.48 on our FLEURS de against turbo's 6.01, but 3.00 on the author's Common Voice 15 German test, and a training distribution no turbo variant has; the catalog keeps both entries and the row states the two numbers, so the choice stays with the user. An entry that loses on the shared benchmark and has neither domain evidence nor a distinct value does not ship.
+
 | Language | Catalog entry (searchable name in the app) | Size | Original model | Our mirror |
 |---|---|---|---|---|
 | Arabic (dialectal) | Whisper Large v3 Turbo Arabic Dialectal (sherpa int8) | ~1.0 GB | [oddadmix/whisper-large-v3-turbo-arabic-dialectal-v2](https://huggingface.co/oddadmix/whisper-large-v3-turbo-arabic-dialectal-v2) (sherpa export: [dmouayad](https://huggingface.co/dmouayad/sherpa-onnx-whisper-large-v3-turbo-arabic-dialectal-v2)) | [pantinor/whisper-arabic-dialectal-sherpa](https://huggingface.co/pantinor/whisper-arabic-dialectal-sherpa) |
