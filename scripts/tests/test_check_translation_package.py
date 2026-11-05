@@ -1,14 +1,14 @@
-"""TASK-950 failure-branch pins: the freshness check's three failure arms
-(corrupt UTF-8, LF-normalized-only drift, content drift) and the
-missing-file arm are exercised against a scratch repo so a future refactor
-of the comparison cannot silently break them (the LF arm exists because of
-the real 2222-line CRLF incident).
+"""TASK-950/959 failure-branch pins: the freshness check's CSV failure
+arms (corrupt UTF-8, LF-normalized-only drift, content drift, missing
+file) and the plurals-md arms (stale file, missing file, orphaned tag)
+are exercised against a scratch repo so a future refactor of the
+comparison cannot silently break them (the LF arm exists because of the
+real 2222-line CRLF incident).
 
 The green path is pinned by the script's own nightly run; these tests pin
 the RED paths.
 """
 
-import os
 import shutil
 import subprocess
 import tempfile
@@ -26,6 +26,8 @@ class CheckTranslationPackageFailureBranchesTest(unittest.TestCase):
         docs = self.scratch / 'docs' / 'i18n'
         docs.mkdir(parents=True)
         shutil.copy(CSV, docs / 'translation-package.csv')
+        for md in (REPO / 'docs/i18n').glob('plurals-*.md'):
+            shutil.copy(md, docs / md.name)
         # The check imports the generator and reads strings.xml from the
         # repo it is given, so the scratch tree needs those too.
         shutil.copytree(REPO / 'scripts', self.scratch / 'scripts')
@@ -80,6 +82,30 @@ class CheckTranslationPackageFailureBranchesTest(unittest.TestCase):
         self.assertEqual(1, result.returncode)
         self.assertIn('translation package drift:', result.stdout)
         self.assertIn('Regenerate with:', result.stdout)
+
+    def test_stale_plurals_md_fails_with_a_per_tag_command(self):
+        md = self.scratch / 'docs/i18n/plurals-fi.md'
+        md.write_bytes(md.read_bytes() + b'<!-- stale -->\n')
+        result = self.run_check()
+        self.assertEqual(1, result.returncode)
+        self.assertIn('plural rule drift:', result.stdout)
+        self.assertIn('plurals-fi.md: regenerate with', result.stdout)
+
+    def test_missing_plurals_md_fails_with_the_incomplete_header(self):
+        (self.scratch / 'docs/i18n/plurals-ar.md').unlink()
+        result = self.run_check()
+        self.assertEqual(1, result.returncode)
+        self.assertIn('translation package incomplete:', result.stdout)
+        self.assertIn('plurals-ar.md is missing', result.stdout)
+
+    def test_orphaned_plurals_md_fails_with_a_delete_hint(self):
+        # A tag the generator no longer lists must not pass forever.
+        shutil.copy(self.scratch / 'docs/i18n/plurals-ar.md',
+                    self.scratch / 'docs/i18n/plurals-xx.md')
+        result = self.run_check()
+        self.assertEqual(1, result.returncode)
+        self.assertIn('no longer lists these tags', result.stdout)
+        self.assertIn('plurals-xx.md', result.stdout)
 
 
 if __name__ == '__main__':

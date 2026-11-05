@@ -21,7 +21,6 @@ import csv
 import re
 import sys
 import xml.etree.ElementTree as ET
-from datetime import date
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -108,21 +107,25 @@ def write_package_csv(
     return csv_path
 
 
-def main(tag: str) -> None:
-    if tag not in CLDR_CARDINALS:
-        print(f"unsupported locale tag {tag!r}; supported: {sorted(CLDR_CARDINALS)}")
-        raise SystemExit(2)
+def write_plurals_md(
+    tag: str,
+    rows: list[list[str]],
+    plurals: list[tuple[str, dict[str, str]]],
+    out_dir: Path,
+) -> Path:
+    """Write plurals-<tag>.md into out_dir and return its path.
 
-    rows, plurals, warnings = extract()
-
-    # ONE shared package: the CSV never depends on the tag.
-    csv_path = write_package_csv(rows, plurals, OUT_DIR)
-
+    Deliberately date-free (TASK-959): the header counts strings and plural
+    keys, which only move when strings.xml moves. A date line would make the
+    file differ from a fresh regeneration every day and keep the freshness
+    check from byte-comparing these files at all.
+    """
     wanted = CLDR_CARDINALS[tag]
-    md = OUT_DIR / f"plurals-{tag}.md"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    md = out_dir / f"plurals-{tag}.md"
     with open(md, "w", encoding="utf-8") as f:
         f.write(f"# Plural rules for values-{tag}\n\n")
-        f.write(f"Extracted {date.today()} from values/strings.xml "
+        f.write(f"Extracted from values/strings.xml "
                 f"({len(rows)} strings, {len(plurals)} plural keys).\n\n")
         f.write(f"CLDR cardinal categories for {tag}: **{', '.join(wanted)}**\n\n")
         f.write("Every plural key in the package must supply exactly these quantities:\n\n")
@@ -135,6 +138,19 @@ def main(tag: str) -> None:
                 f.write(f"- {t}\n")
         else:
             f.write("\nNo locale-specific plural lint traps apply.\n")
+    return md
+
+
+def main(tag: str) -> None:
+    if tag not in CLDR_CARDINALS:
+        print(f"unsupported locale tag {tag!r}; supported: {sorted(CLDR_CARDINALS)}")
+        raise SystemExit(2)
+
+    rows, plurals, warnings = extract()
+
+    # ONE shared package: the CSV never depends on the tag.
+    csv_path = write_package_csv(rows, plurals, OUT_DIR)
+    md = write_plurals_md(tag, rows, plurals, OUT_DIR)
     for wn in warnings:
         print("WARN", wn)
     print(f"{tag}: {len(rows)} strings, {len(plurals)} plural keys -> "
