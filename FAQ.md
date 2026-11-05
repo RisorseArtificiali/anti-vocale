@@ -67,6 +67,21 @@ To actually lock a language, switch to a model that supports it:
 
 This conclusion is measured, not assumed. The model's vocabulary does contain language control tokens, the exact mechanism other models use for forcing, so we ran the experiments before giving up ([what we tried](docs/research/parakeet-language-forcing.md)): priming the decoder with the control tokens in seven shapes, feeding it French text prompts, and prepending spoken French markers from a single "Bonjour." up to nine seconds of speech. None of it changes the language of what follows; only the acoustics of each segment do. Degrading clean French speech with growing noise, telephone-band filtering and echo never flips the language either: the model keeps transcribing French and only loses content words. If your audio still comes out wrong with a pinned model, sharing the file on the issue lets us test it against this setup directly.
 
+### Can I point the app at my own model catalog?
+
+Yes. The community catalog picker reads its index from a JSON URL, and the "change" action next to the catalog source points the app at any index you or your community host; restoring the official catalog is always one tap away. The index is a small file:
+
+```json
+{
+  "entries": [
+    { "name": "Arabic Whisper", "languages": ["ar"], "family": "WHISPER",
+      "entryUrl": "https://example.com/arabic-whisper.json" }
+  ]
+}
+```
+
+Each `entryUrl` serves a single-model manifest with integrity pins: name, family, languages, options, and a files list where every file carries its url, sha256 and size. The full schemas with worked examples live in [docs/external-models.md](docs/external-models.md) (the import formats and the entry JSON, hostable anywhere from a gist to a personal site) and in [docs/model-integration.md](docs/model-integration.md) (the index wrapper, section 2, and the single-model JSON, section 3).
+
 ## Queue and concurrent requests
 
 ### What happens if I share a second audio while one is transcribing?
