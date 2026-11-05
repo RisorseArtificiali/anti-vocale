@@ -17,10 +17,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeout
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -35,7 +33,7 @@ import org.junit.Test
  * scheduler.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class SettingsViewModelBackupTest {
+class SettingsViewModelBackupTest : ViewModelTeardownTest() {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var harness: SettingsViewModelTestHelper
@@ -55,23 +53,14 @@ class SettingsViewModelBackupTest {
         Dispatchers.setMain(testDispatcher)
         // The shared construction harness (TASK-848); the backup arms'
         // seams: a resolver-stubbed Application and the hoisted DAO.
-        harness = SettingsViewModelTestHelper(
+        harness = register(SettingsViewModelTestHelper(
             application = mockk(relaxed = true) {
                 every { contentResolver } returns resolver
             },
-        )
+        ))
         fakePrefs = harness.fakePrefs
         logDao = harness.logDao
         viewModel = harness.viewModel
-    }
-
-    @After
-    fun tearDown() {
-        // TASK-960: guarded so a @Before that died mid-harness-construction
-        // still reaches resetMain (an unguarded lateinit access here would
-        // leave Main swapped for the NEXT class).
-        if (::harness.isInitialized) harness.cleanup()
-        Dispatchers.resetMain()
     }
 
     private suspend fun awaitTerminal(): SettingsViewModel.BackupState =
