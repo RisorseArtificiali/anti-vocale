@@ -121,6 +121,20 @@ class LogsViewModelBatchIntakeTest {
     private fun awaitFirstReport(scope: kotlinx.coroutines.CoroutineScope): kotlinx.coroutines.Job =
         scope.launch { viewModel.historyError.first() }
 
+    /** The ViewModel's error path guards on subscriptionCount > 0 before
+     *  emitting (it skips orphans). On a slow CI runner the runBlocking
+     *  event loop may not have dispatched the collector's launch before
+     *  transcribeLocalFiles fires the error, so the emission is skipped
+     *  and first() never returns. Yielding here gives the event loop one
+     *  scheduling quantum to run the collector's subscription before the
+     *  caller starts the work that emits (the root-cause fix for the CI
+     *  flake). */
+    private suspend fun awaitSubscribedReport(scope: kotlinx.coroutines.CoroutineScope): kotlinx.coroutines.Job {
+        val job = scope.launch { viewModel.historyError.first() }
+        kotlinx.coroutines.yield()
+        return job
+    }
+
     @Test
     fun `second file's intake waits for the first dialog to resolve`() = runBlocking {
         val uris = listOf(Uri.parse("content://picker/1"), Uri.parse("content://picker/2"))
@@ -174,7 +188,7 @@ class LogsViewModelBatchIntakeTest {
         coEvery {
             SharedAudioHandler.copyToAppStorage(any(), any(), any(), any())
         } throws RuntimeException("fgs start refused")
-        val report = awaitFirstReport(this)
+        val report = awaitSubscribedReport(this)
 
         viewModel.transcribeLocalFiles(mockk(relaxed = true), listOf(Uri.parse("content://picker/1")))
         // The stubbed context resolves the message to an empty string; the
