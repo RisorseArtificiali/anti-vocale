@@ -18,14 +18,27 @@ class HuggingFaceRepoListing(
 
     sealed class HfFile {
         abstract val name: String
-        data class Lfs(override val name: String, val sha256: String, val size: Long) : HfFile()
-        data class Plain(override val name: String, val size: Long) : HfFile()
+        /** Full repo path (may differ from [name] for subdirectory files). */
+        abstract val repoPath: String
+        data class Lfs(override val name: String, override val repoPath: String, val sha256: String, val size: Long) : HfFile()
+        data class Plain(override val name: String, override val repoPath: String, val size: Long) : HfFile()
     }
 
-    /** Lists the repo's main-branch files (files only, directories skipped). */
+    /**
+     * Lists the repo's main-branch files, recursing into subdirectories
+     * (GH #186: repos like Fritter keep the sherpa build under
+     * sherpa-onnx/int8/, invisible to a root-only listing). The names
+     * returned are BARE filenames (the path's last segment, matching
+     * what every downstream consumer expects: the copy-plan keyword
+     * matcher, the sidecar scanner, and the download URL builder).
+     * When a sherpa-onnx subtree exists alongside other exports, a
+     * bare-name collision resolves in favor of the sherpa-onnx copy
+     * (the NeMo decoder_joint would otherwise win the "decoder" and
+     * "joint" keyword races but is not two separate files).
+     */
     fun listFiles(repoId: String): List<HfFile> {
         val request = okhttp3.Request.Builder()
-            .url("$apiBase/api/models/$repoId/tree/main")
+            .url("$apiBase/api/models/$repoId/tree/main?recursive=true")
             .header("Accept", "application/json")
             .build()
         client.newCall(request).execute().use { response ->
@@ -34,7 +47,7 @@ class HuggingFaceRepoListing(
             }
             val body = response.body?.string() ?: throw IllegalArgumentException("empty listing body")
             val entries = JSONArray(body)
-            return buildList {
+            val all = buildList {
                 for (i in 0 until entries.length()) {
                     val e = entries.getJSONObject(i)
                     if (e.optString("type") != "file") continue
@@ -44,11 +57,26 @@ class HuggingFaceRepoListing(
                     if (lfs != null) {
                         val oid = lfs.optString("oid")
                         if (oid.length == 64) {
-                            add(HfFile.Lfs(path, oid, lfs.optLong("size", size)))
+                            add(HfFile.Lfs(path, path, oid, lfs.optLong("size", size)))
                             continue
                         }
                     }
-                    add(HfFile.Plain(path, size))
+                    add(HfFile.Plain(path, path, size))
+                }
+            }
+            // Prefer the sherpa-onnx subtree when it exists (the copy-plan
+            // keyword matcher would pick NeMo files that match both decoder
+            // and joint keywords but are not two separate files), then
+            // flatten to bare filenames: every downstream consumer (the
+            // copy plan, the sidecar scanner, the URL builder) works on
+            // bare names. The full repo path rides in [HfFile.repoPath].
+            val sherpaOnly = all.filter { it.name.startsWith("sherpa-onnx/") }
+            val effective = if (sherpaOnly.isNotEmpty()) sherpaOnly else all
+            return effective.map { f ->
+                val bare = f.name.substringAfterLast('/')
+                when (f) {
+                    is HfFile.Lfs -> HfFile.Lfs(bare, f.repoPath, f.sha256, f.size)
+                    is HfFile.Plain -> HfFile.Plain(bare, f.repoPath, f.size)
                 }
             }
         }

@@ -89,6 +89,50 @@ class HuggingFaceRepoListingTest {
     }
 
     @Test
+    fun `recursive listing prefers the sherpa-onnx subtree when it exists (GH 186)`() = runTest {
+        server.enqueue(MockResponse().setBody("""
+            [
+              {"type":"file","path":".gitattributes","size":100},
+              {"type":"file","path":"Fritter.nemo","size":999},
+              {"type":"file","path":"onnx/int8/encoder-model.int8.onnx","lfs":{"oid":"${"b".repeat(64)}","size":100},"size":100},
+              {"type":"file","path":"onnx/int8/decoder_joint-model.int8.onnx","lfs":{"oid":"${"c".repeat(64)}","size":100},"size":100},
+              {"type":"file","path":"sherpa-onnx/int8/encoder.int8.onnx","lfs":{"oid":"${"d".repeat(64)}","size":200},"size":200},
+              {"type":"file","path":"sherpa-onnx/int8/decoder.int8.onnx","lfs":{"oid":"${"e".repeat(64)}","size":50},"size":50},
+              {"type":"file","path":"sherpa-onnx/int8/joiner.int8.onnx","lfs":{"oid":"${"f".repeat(64)}","size":10},"size":10},
+              {"type":"file","path":"sherpa-onnx/int8/tokens.txt","size":200}
+            ]
+        """.trimIndent()))
+
+        val files = listing.listFiles("danielrosehill/Fritter")
+
+        // Only the sherpa-onnx subtree, flattened to bare names: the NeMo
+        // export's decoder_joint would satisfy both "decoder" and "joint"
+        // keywords in the copy plan but is not two separate files. The
+        // repoPath carries the original subdirectory for URL construction.
+        assertEquals(4, files.size)
+        assertTrue(files.none { it.name.contains("/") })
+        assertTrue(files.all { it.repoPath.startsWith("sherpa-onnx/") })
+        assertEquals("encoder.int8.onnx", files[0].name)
+        assertEquals("sherpa-onnx/int8/encoder.int8.onnx", files[0].repoPath)
+    }
+
+    @Test
+    fun `recursive listing keeps all files when no sherpa-onnx subtree exists`() = runTest {
+        server.enqueue(MockResponse().setBody("""
+            [
+              {"type":"file","path":"encoder.int8.onnx","lfs":{"oid":"${"a".repeat(64)}","size":100},"size":100},
+              {"type":"file","path":"subdir/decoder.int8.onnx","lfs":{"oid":"${"b".repeat(64)}","size":50},"size":50},
+              {"type":"file","path":"subdir/tokens.txt","size":100}
+            ]
+        """.trimIndent()))
+
+        val files = listing.listFiles("someone/flat-repo")
+
+        // No sherpa-onnx subtree: everything survives (the flat-repo path).
+        assertEquals(3, files.size)
+    }
+
+    @Test
     fun `entry json parses and demands hashes`() {
         val entry = ExternalModelEntryJson.parse("""
             {"name":"GigaAM v3","modelType":"nemo_transducer","languages":["ru"],

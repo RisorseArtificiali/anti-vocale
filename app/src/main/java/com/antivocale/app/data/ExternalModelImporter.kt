@@ -356,7 +356,7 @@ class ExternalModelImporter(
             names)
         val triples = plan.map { (canonical, sourceName) ->
             val source = files.first { it.name == sourceName }
-            val url = repoListing.resolveUrl(repoId, sourceName)
+            val url = repoListing.resolveUrl(repoId, source.repoPath)
             when (source) {
                 is HuggingFaceRepoListing.HfFile.Lfs -> DownloadTriple(url, canonical, source.sha256, source.size)
                 is HuggingFaceRepoListing.HfFile.Plain -> DownloadTriple(url, canonical, null, source.size)

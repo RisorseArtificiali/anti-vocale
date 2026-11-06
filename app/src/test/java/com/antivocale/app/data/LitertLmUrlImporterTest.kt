@@ -16,21 +16,21 @@ class LitertLmUrlImporterTest {
     private val listing = HuggingFaceRepoListing()
 
     private fun lfs(name: String, size: Long = 2_600_000_000L) =
-        HfFile.Lfs(name, "a".repeat(64), size)
+        HfFile.Lfs(name, name, "a".repeat(64), size)
 
     // ---- Planner (pure) ----
 
     @Test(expected = IllegalArgumentException::class)
     fun `planner rejects repo without litertlm files`() {
         LitertLmUrlImporter.planDownload(
-            files = listOf(HfFile.Plain("README.md", 100L), lfs("model.onnx")),
+            files = listOf(HfFile.Plain("README.md", "README.md", 100L), lfs("model.onnx")),
             repoId = "owner/repo")
     }
 
     @Test
     fun `planner returns single litertlm file directly`() {
         val plan = LitertLmUrlImporter.planDownload(
-            files = listOf(HfFile.Plain("README.md", 100L), lfs("model.litertlm")),
+            files = listOf(HfFile.Plain("README.md", "README.md", 100L), lfs("model.litertlm")),
             repoId = "owner/repo")
         assertEquals("model.litertlm", plan.single().fileName)
         assertEquals(2_600_000_000L, plan.single().sizeBytes)
