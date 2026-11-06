@@ -137,10 +137,9 @@ class VoiceNoteTreeGrant @Inject constructor(
      */
     private fun resolveToSandbox(treeUri: Uri, whatsappPath: String, source: VoiceNoteSource): String? {
         val name = whatsappPath.substringAfterLast('/')
-        val counter = whatsappPath.substringBeforeLast('/').substringAfterLast('/')
         val treeDocId = android.provider.DocumentsContract.getTreeDocumentId(treeUri)
         val noteUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(
-            treeUri, "$treeDocId/$counter/$name")
+            treeUri, noteDocumentIdWithinTree(treeDocId, whatsappPath, source))
         // The source namespace keeps two clients' same-named PTT files from
         // reusing each other's sandbox copy (empty for WhatsApp: unchanged).
         val localName = "voicenote_${source.idNamespace}$name"
@@ -157,8 +156,33 @@ class VoiceNoteTreeGrant @Inject constructor(
         }
     }
 
+
     companion object {
         private const val TAG = "VoiceNoteTreeGrant"
+
+        /**
+         * The note's document id inside the granted tree, from the observed
+         * absolute path. WhatsApp's PTT layout nests each note one counter
+         * folder below the tree root ("<root>/<counter>/<name>"); the
+         * watched-folder source's notes sit directly in the picked folder
+         * ("<root>/<name>", TASK-966). The child docId MUST extend the
+         * TREE's own docId (the AOSP rule documented above), and must
+         * address the file at its REAL depth or the provider answers a
+         * different file.
+         */
+        internal fun noteDocumentIdWithinTree(
+            treeDocId: String,
+            observedPath: String,
+            source: VoiceNoteSource,
+        ): String {
+            val name = observedPath.substringAfterLast('/')
+            return if (source.usesPttLayout) {
+                val counter = observedPath.substringBeforeLast('/').substringAfterLast('/')
+                "$treeDocId/$counter/$name"
+            } else {
+                "$treeDocId/$name"
+            }
+        }
 
         /** WhatsApp's folder name under Android/media (not localized there). */
         // Review F6: EXPECTED_FOLDER_NAME deleted (its last production
@@ -179,20 +203,45 @@ class VoiceNoteTreeGrant @Inject constructor(
          * folders, so without that check the child arm would accept the
          * WhatsApp folder in the Business slot (or the reverse), and every
          * resolve would then read same-named files from the wrong app.
+         *
+         * TASK-966 (GH #184): the watched-folder slot runs NONE of the
+         * WhatsApp path validation (that rejection is the exact failure
+         * the reporter hit pointing the app at Music/Signal). Its only
+         * check is feasibility: the tree must be a real local folder
+         * ([isLocalWatchedFolderTree]); the folder choice itself is the
+         * validation, and the WhatsApp trees stay reserved for their own
+         * slots via [belongsToOtherSource].
          */
         fun looksLikeVoiceNotesTree(
             context: Context,
             treeUri: Uri,
             source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
         ): Boolean = try {
-            if (belongsToOtherSource(treeUri, source) || isOtherFolderOfSource(treeUri, source)) return false
-            val root = DocumentFile.fromTreeUri(context, treeUri) ?: return false
-            root.name == source.folderName ||
-                root.listFiles().any { it.name?.toIntOrNull() != null }
+            if (belongsToOtherSource(treeUri, source)) return false
+            when (source) {
+                VoiceNoteSource.WATCHED_FOLDER -> isLocalWatchedFolderTree(treeUri)
+                else -> {
+                    if (isOtherFolderOfSource(treeUri, source)) return false
+                    val root = DocumentFile.fromTreeUri(context, treeUri) ?: return false
+                    root.name == source.folderName ||
+                        root.listFiles().any { it.name?.toIntOrNull() != null }
+                }
+            }
         } catch (e: Exception) {
             Log.w(TAG, "tree validation failed", e)
             false
         }
+
+        /**
+         * TASK-966: the watched-folder slot's pick-time check. FileObserver
+         * needs a raw filesystem path and the resolve hop needs path-shaped
+         * docIds, so the tree must come from the external-storage provider
+         * AND name a folder (a "volume:path" docId with a non-empty tail;
+         * the bare volume root and every cloud provider's opaque id fail).
+         * Anything else about the folder is the user's choice.
+         */
+        internal fun isLocalWatchedFolderTree(treeUri: Uri): Boolean =
+            com.antivocale.app.util.TreeUris.externalStorageRawPathOrNull(treeUri) != null
 
         /**
          * The folder picker's EXTRA_INITIAL_URI, in DOCUMENT form
@@ -223,6 +272,9 @@ class VoiceNoteTreeGrant @Inject constructor(
          * so anything else is the wrong folder.
          */
         internal fun isOtherFolderOfSource(treeUri: Uri, source: VoiceNoteSource): Boolean {
+            // TASK-966: the watched-folder source has no scoped media dir
+            // of its own (and no fixed root to compare against).
+            if (source.packageName == null) return false
             val docPath = treeDocumentPath(treeUri) ?: return false
             return docPath.startsWith("Android/media/${source.packageName}/") &&
                 docPath.trimEnd('/') != source.relativeRootPath
@@ -235,9 +287,16 @@ class VoiceNoteTreeGrant @Inject constructor(
 
         fun pickerInitialUri(source: VoiceNoteSource = VoiceNoteSource.WHATSAPP): Uri? = try {
             val storageRoot = Environment.getExternalStorageDirectory().absolutePath
-            val relative = voiceNotesRoot(source).absolutePath
-                .removePrefix(storageRoot)
-                .trimStart('/')
+            val relative = when (source) {
+                // TASK-966: no canonical folder to land on; Music is where
+                // media-saving apps put user-visible audio (Signal:
+                // Music/Signal), so the picker opens one tap away from the
+                // likely pick instead of at the storage root.
+                VoiceNoteSource.WATCHED_FOLDER -> "Music"
+                else -> voiceNotesRoot(source).absolutePath
+                    .removePrefix(storageRoot)
+                    .trimStart('/')
+            }
             android.provider.DocumentsContract.buildDocumentUri(
                 com.antivocale.app.util.TreeUris.EXTERNAL_STORAGE_AUTHORITY, "primary:$relative")
         } catch (e: Exception) {

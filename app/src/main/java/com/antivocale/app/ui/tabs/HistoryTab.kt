@@ -375,6 +375,9 @@ private fun shareTranscription(context: Context, text: String) {
  * TXT and TXT_TIMED share as inline text; SRT/VTT share a uniquely named
  * file from cacheDir/share via FileProvider, written off the main thread
  * and guarded (a share tap must never crash).
+ *
+ * GH #185: [outputFileName] forces the FILE arm with that exact name (the
+ * audio-derived txt options; null keeps the per-format behavior above).
  */
 private fun shareInFormat(
     scope: kotlinx.coroutines.CoroutineScope,
@@ -383,6 +386,7 @@ private fun shareInFormat(
     transcript: String,
     segmentsJson: String?,
     failedChunkCount: Int,
+    outputFileName: String? = null,
 ) {
     scope.launch(kotlinx.coroutines.Dispatchers.IO) {
         // Review F1: parse + render + sign ALL run off-main (a streamed
@@ -397,45 +401,57 @@ private fun shareInFormat(
             // both the inline-txt and the file arms.
             val signed = com.antivocale.app.util.TranscriptFileSaver.signedExport(
                 decision, sig.text, sig.position)
-            if (decision.format != com.antivocale.app.util.SubtitleFormatter.Format.SRT &&
-                decision.format != com.antivocale.app.util.SubtitleFormatter.Format.SRT_WORD &&
-                decision.format != com.antivocale.app.util.SubtitleFormatter.Format.VTT
-            ) {
+            val timedFile = decision.format == com.antivocale.app.util.SubtitleFormatter.Format.SRT ||
+                decision.format == com.antivocale.app.util.SubtitleFormatter.Format.SRT_WORD ||
+                decision.format == com.antivocale.app.util.SubtitleFormatter.Format.VTT
+            if (outputFileName == null && !timedFile) {
                 return@runCatching ShareOutcome.Inline(signed)
             }
-            // Review F2: real uniqueness (createTempFile), not a
-            // second-granularity stamp two fast shares would share.
             val shareDir = java.io.File(context.cacheDir, "share").apply { mkdirs() }
-            val file = java.io.File.createTempFile(
-                "transcript_", ".${decision.format.extension}", shareDir)
+            val file = if (outputFileName != null) {
+                // GH #185: the audio-derived name the user picked; the
+                // receiving app sees exactly it. The share dir is staging:
+                // a re-share of the same name replaces the staged copy.
+                java.io.File(shareDir, outputFileName)
+            } else {
+                // Review F2: real uniqueness (createTempFile), not a
+                // second-granularity stamp two fast shares would share.
+                java.io.File.createTempFile(
+                    "transcript_", ".${decision.format.extension}", shareDir)
+            }
             file.writeText(signed)
             ShareOutcome.File(
                 androidx.core.content.FileProvider.getUriForFile(
                     context, context.packageName + ".fileprovider", file),
                 decision.format.mime)
         }
-        outcome.onSuccess { result ->
-            val sendIntent = Intent().apply {
-                action = Intent.ACTION_SEND
-                when (result) {
-                    is ShareOutcome.Inline -> {
-                        putExtra(Intent.EXTRA_TEXT, result.text)
-                        type = "text/plain"
-                    }
-                    is ShareOutcome.File -> {
-                        putExtra(Intent.EXTRA_STREAM, result.uri)
-                        type = result.mime
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
+        dispatchShareOutcome(context, outcome)
+    }
+}
+
+/** The chooser dispatch both share arms share: the intent build and the one hop back to main. */
+private suspend fun dispatchShareOutcome(context: Context, outcome: kotlin.Result<ShareOutcome>) {
+    outcome.onSuccess { result ->
+        val sendIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            when (result) {
+                is ShareOutcome.Inline -> {
+                    putExtra(Intent.EXTRA_TEXT, result.text)
+                    type = "text/plain"
+                }
+                is ShareOutcome.File -> {
+                    putExtra(Intent.EXTRA_STREAM, result.uri)
+                    type = result.mime
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
             }
-            withContext(kotlinx.coroutines.Dispatchers.Main) {
-                context.startActivity(
-                    Intent.createChooser(sendIntent, context.getString(R.string.share_transcription)))
-            }
-        }.onFailure {
-            android.util.Log.w("HistoryTab", "timed-format share failed", it)
         }
+        withContext(kotlinx.coroutines.Dispatchers.Main) {
+            context.startActivity(
+                Intent.createChooser(sendIntent, context.getString(R.string.share_transcription)))
+        }
+    }.onFailure {
+        android.util.Log.w("HistoryTab", "format share failed", it)
     }
 }
 
@@ -2220,6 +2236,35 @@ fun LogEntryItem(
                                                         shareInFormat(
                                                             rowScope, context, fmt,
                                                             log.result, rowSegmentsJson ?: log.segments, log.failedChunkCount)
+                                                    }
+                                                }
+                                                // GH #185: the audio-derived txt file names,
+                                                // offered only when the row's audio file is
+                                                // known (a text entry has nothing to name
+                                                // after; the options above stand). The label
+                                                // previews the exact name the share carries.
+                                                remember(log.filePath) {
+                                                    com.antivocale.app.util.ExportFileNamer.txtFileName(
+                                                        log.filePath, com.antivocale.app.util.ExportFileNamer.Scheme.AUDIO_NAME) to
+                                                        com.antivocale.app.util.ExportFileNamer.txtFileName(
+                                                            log.filePath, com.antivocale.app.util.ExportFileNamer.Scheme.AUDIO_NAME_DATE)
+                                                }.let { (plainName, datedName) ->
+                                                    listOfNotNull(
+                                                        plainName?.let {
+                                                            R.string.share_format_txt_file_audio_name to it },
+                                                        datedName?.let {
+                                                            R.string.share_format_txt_file_audio_name_date to it },
+                                                    ).forEach { (labelRes, fileName) ->
+                                                        ShareFormatOption(
+                                                            label = stringResource(labelRes, fileName),
+                                                        ) {
+                                                            shareFormatOpen = false
+                                                            shareInFormat(
+                                                                rowScope, context,
+                                                                com.antivocale.app.util.SubtitleFormatter.Format.TXT,
+                                                                log.result, rowSegmentsJson ?: log.segments, log.failedChunkCount,
+                                                                outputFileName = fileName)
+                                                        }
                                                     }
                                                 }
                                                 if (!hasCues) {

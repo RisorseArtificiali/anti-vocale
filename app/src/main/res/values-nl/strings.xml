@@ -618,6 +618,8 @@
     <string name="share_format_srt_word">Ondertitels met wordtijden (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">Dit item heeft geen opgeslagen tijdstempels; de tijdstempelopties delen platte tekst.</string>
+    <string name="share_format_txt_file_audio_name">Tekstbestand met de naam van het audiobestand (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">Tekstbestand met de naam van het audiobestand, met datum (%1$s)</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Standaardprompt</string>
@@ -1269,8 +1271,8 @@
 
     <!-- TASK-271 trial branch: EN stopgaps until the translation pass -->
     <string name="voice_note_settings_title">Voice notes</string>
-    <string name="voice_note_settings_summary_on">Automatic WhatsApp voice-note transcription · on</string>
-    <string name="voice_note_settings_summary_off">Automatic WhatsApp voice-note transcription · off</string>
+    <string name="voice_note_settings_summary_on">Automatische transcriptie van spraakberichten · aan</string>
+    <string name="voice_note_settings_summary_off">Automatische transcriptie van spraakberichten · uit</string>
     <string name="voice_note_settings_summary_limited">Sender recognition for voice notes</string>
     <string name="voice_note_identity_title">Voice note sender recognition</string>
     <string name="voice_note_identity_description">Labels transcribed voice notes with the sender\'s name, shared here or automatic. WhatsApp only for now. The name appears only when the note\'s notification arrived while this was on and its length matches (no guessed names); the waiting list lives in memory only. Requires notification access.</string>
@@ -1296,6 +1298,12 @@
     <string name="voice_note_business_folder_grant_rejected">Dit is niet de map met WhatsApp Business-spraakberichten. Kies de map met de naam WhatsApp Business Voice Notes en probeer het opnieuw.</string>
     <string name="voice_note_business_folder_card_desc">Om de berichten te lezen, verleen één keer toegang tot de map waar WhatsApp Business ze opslaat:</string>
     <string name="voice_note_business_folder_sheet_step3">Tik met de map WhatsApp Business Voice Notes geselecteerd (niet openen) op DEZE MAP GEBRUIKEN en daarna op TOESTAAN.</string>
+    <string name="voice_note_source_watched_folder">Bewaakte map</string>
+    <string name="voice_note_watched_detection_description">Voor elke app die spraakberichten opslaat in een map die je in je bestandsbeheerder ziet (bijvoorbeeld Signal, dat opslaat in Music/Signal): zet het eenmalig aan en kies die map, daarna worden nieuwe audiobestanden daar bij aankomst getranscribeerd. Elk bestand wordt alleen gelezen om het te transcriberen, en alleen op dit apparaat; met de functie uit wordt er niets gelezen. Audiotoegang vereist.</string>
+    <string name="voice_note_watched_folder_grant_rejected">Deze map kan niet bewaakt worden. Kies een map op de opslag van dit apparaat (niet de volledige opslagroot en niet de WhatsApp-mappen, die hebben hun eigen sectie).</string>
+    <string name="voice_note_watched_folder_card_desc">Om de berichten te lezen, verleen eenmalig toegang tot de map waar je andere app ze opslaat (elke map op de opslag van dit apparaat):</string>
+    <string name="voice_note_watched_folder_sheet_step2">Open de map waar je andere app spraakberichten opslaat (bijvoorbeeld Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">Tik met die map geselecteerd (niet openen) op DEZE MAP GEBRUIKEN en daarna op TOESTAAN.</string>
 
     <!-- Back-up en overdracht (TASK-843/844, GH #158) -->
 

@@ -752,10 +752,11 @@ class ResultNotificationFactory(private val context: Context) {
          *   suspension outcome)
          * - 2503: SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID (TASK-684
          *   generic interrupted-runs summary)
-         * - 2601..2602: RESULT_CATCHUP_DIGEST_ID_BASE..+RANGE (TASK-889
+         * - 2601..2603: RESULT_CATCHUP_DIGEST_ID_BASE..+RANGE (TASK-889
          *   cold-start burst digest, one id per voice-note source; 2601
          *   was the voice-note offer slot until the offer mode was
-         *   removed, TASK-272, then reclaimed here)
+         *   removed, TASK-272, then reclaimed here; 2603 joined with the
+         *   TASK-966 watched-folder source)
          * New fixed ids or bands go under the base; 2301..2400 and 2504..2999
          * are free headroom.
          */
@@ -764,12 +765,13 @@ class ResultNotificationFactory(private val context: Context) {
         /**
          * TASK-889: the catch-up burst digest band, inside the
          * reserved-range contract. One id per voice-note source ordinal:
-         * the two clients' cold sweeps fire at the same app start, and a
+         * the clients' cold sweeps fire at the same app start, and a
          * single shared id would have the second source's digest silently
-         * replace the first's. A third source must grow the range.
+         * replace the first's. A further source must grow the range (the
+         * watched-folder source took the third slot, TASK-966).
          */
         const val RESULT_CATCHUP_DIGEST_ID_BASE = 2601
-        const val RESULT_CATCHUP_DIGEST_ID_RANGE = 2
+        const val RESULT_CATCHUP_DIGEST_ID_RANGE = 3
 
         /**
          * Shared derivation for per-key notification ids: folds an arbitrary

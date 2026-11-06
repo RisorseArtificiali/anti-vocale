@@ -288,6 +288,9 @@ class VoiceNoteDetectionCoordinatorTest {
         var granted = false
         val h = Harness(permissionGranted = { granted })
         h.preferences._voiceNoteDetectionEnabled.value = true
+        // The watched-folder source stays off: its collector would race
+        // the permission-poke verification below with a second source.
+        h.preferences._voiceNoteWatchedDetectionEnabled.value = false
         // Before any collector: the permission is missing, so the gate
         // stays closed even with the preference on.
         h.coordinator.reconcile(prefEnabled = true, treeUri = TREE_URI)

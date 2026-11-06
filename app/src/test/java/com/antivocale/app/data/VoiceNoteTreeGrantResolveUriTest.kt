@@ -48,6 +48,47 @@ class VoiceNoteTreeGrantResolveUriTest {
         java.io.File(java.io.File(context.filesDir, "shared_audio").apply { mkdirs() }, name)
             .apply { writeText("opus") }
 
+    /**
+     * TASK-966: the document id must address the file at its REAL depth.
+     * WhatsApp's PTT layout nests one counter folder below the tree root;
+     * the watched-folder source's files sit directly in the picked folder,
+     * so a flat docId there (and a counter-shaped one for WhatsApp, whose
+     * picked folder NAME would otherwise masquerade as the counter).
+     */
+    @Test
+    fun `note docIds follow each source's tree depth`() {
+        val treeDocId = "primary:Music/Signal"
+        assertEquals(
+            "$treeDocId/Signal-2026-11-05-1030.m4a",
+            VoiceNoteTreeGrant.noteDocumentIdWithinTree(
+                treeDocId, "/storage/emulated/0/Music/Signal/Signal-2026-11-05-1030.m4a",
+                VoiceNoteSource.WATCHED_FOLDER))
+        assertEquals(
+            "$treeDocId/202642/PTT-1.opus",
+            VoiceNoteTreeGrant.noteDocumentIdWithinTree(
+                treeDocId, "/storage/emulated/0/WhatsApp Voice Notes/202642/PTT-1.opus",
+                VoiceNoteSource.WHATSAPP))
+        assertEquals(
+            "$treeDocId/202642/PTT-1.opus",
+            VoiceNoteTreeGrant.noteDocumentIdWithinTree(
+                treeDocId, "/w/202642/PTT-1.opus", VoiceNoteSource.WHATSAPP_BUSINESS))
+    }
+
+    @Test
+    fun `a watched-folder note resolves and dedups under its own sandbox name`() = runBlocking {
+        // The namespaced sandbox copy (watched_ prefix) answers for the
+        // watched source's note: same file name, never either WhatsApp
+        // client's copy (the existing-copy shortcut, pinned per source).
+        val copy = sandboxCopy("voicenote_watched_note.m4a")
+        val watchedTree = android.provider.DocumentsContract.buildTreeDocumentUri(
+            com.antivocale.app.util.TreeUris.EXTERNAL_STORAGE_AUTHORITY, "primary:Music/Signal").toString()
+        val grant = VoiceNoteTreeGrant(context, FakePreferencesManager())
+        assertEquals(
+            copy.absolutePath,
+            grant.resolve(watchedTree, "/storage/emulated/0/Music/Signal/note.m4a",
+                VoiceNoteSource.WATCHED_FOLDER))
+    }
+
     private val tree = android.provider.DocumentsContract.buildTreeDocumentUri(
         com.antivocale.app.util.TreeUris.EXTERNAL_STORAGE_AUTHORITY,
         "primary:${VoiceNoteSource.WHATSAPP_BUSINESS.relativeRootPath}").toString()

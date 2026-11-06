@@ -1,6 +1,7 @@
 package com.antivocale.app.data
 
 import android.net.Uri
+import android.os.Environment
 import android.os.FileObserver
 import android.provider.DocumentsContract
 import android.util.Log
@@ -154,7 +155,12 @@ class VoiceNoteDetector(
     private val pendingCatchUps = mutableSetOf<String>()
 
     val root: File
-        get() = voiceNotesRoot(source)
+        get() = when (source) {
+            VoiceNoteSource.WHATSAPP, VoiceNoteSource.WHATSAPP_BUSINESS -> voiceNotesRoot(source)
+            // TASK-966: the watched-folder source's root is the LIVE tree
+            // grant's raw path (a user-picked folder), not a fixed one.
+            VoiceNoteSource.WATCHED_FOLDER -> watchedFolderRoot(grantedTreeUri)
+        }
 
     @Synchronized
     fun subscribe(treeUri: String? = null) {
@@ -195,9 +201,14 @@ class VoiceNoteDetector(
     private fun armWatchers() {
         armed = true
         watch(root)
-        root.listFiles()
-            ?.filter { VoiceNoteFilter.isCounterFolderName(it.name) }
-            ?.forEach { watch(it) }
+        // TASK-966: only WhatsApp's PTT layout nests notes under numeric
+        // counter folders; the watched-folder source watches the picked
+        // folder itself, flat.
+        if (source.usesPttLayout) {
+            root.listFiles()
+                ?.filter { VoiceNoteFilter.isCounterFolderName(it.name) }
+                ?.forEach { watch(it) }
+        }
     }
 
     @Synchronized
@@ -273,8 +284,10 @@ class VoiceNoteDetector(
                     Log.v(TAG, "event=0x${Integer.toHexString(event)} path=$path dir=${dir.name}")
                 }
                 // A new counter folder at the root: watch it too (events
-                // for its files do not bubble up).
-                if (VoiceNoteFilter.isCounterFolderName(path) &&
+                // for its files do not bubble up). TASK-966: PTT layout
+                // only; the watched-folder source's tree is flat.
+                if (source.usesPttLayout &&
+                    VoiceNoteFilter.isCounterFolderName(path) &&
                     (event and (FileObserver.CREATE or FileObserver.MOVED_TO)) != 0
                 ) {
                     val folder = File(dir, path)
@@ -292,7 +305,7 @@ class VoiceNoteDetector(
                 // File notes only once the write is complete (see class
                 // KDoc): CREATE alone means WhatsApp is still writing.
                 if ((event and (FileObserver.CLOSE_WRITE or FileObserver.MOVED_TO)) == 0) return
-                if (!VoiceNoteFilter.isWhatsAppVoiceNoteName(path)) return
+                if (!VoiceNoteFilter.isVoiceNoteName(source, path)) return
                 onDetection(entryFor(File(dir, path).absolutePath))
             }
         }
@@ -393,7 +406,7 @@ class VoiceNoteDetector(
             return
         }
         val notes = listing
-            .filter { it.isFile && VoiceNoteFilter.isWhatsAppVoiceNoteName(it.name) }
+            .filter { it.isFile && VoiceNoteFilter.isVoiceNoteName(source, it.name) }
         val ripe = notes.filter { now - it.lastModified() >= catchUpDelayMs }
         if (ripe.isNotEmpty()) {
             Log.i(TAG, "catch-up emitted ${ripe.size} note(s) from ${folder.name}")
@@ -439,7 +452,7 @@ class VoiceNoteDetector(
      *  clear-vs-relaunch decision on the pending entry. */
     private fun serveRipe(files: List<SweepFile>, folder: File, now: Long) {
         val ripe = files
-            .filter { VoiceNoteFilter.isWhatsAppVoiceNoteName(it.name) }
+            .filter { VoiceNoteFilter.isVoiceNoteName(source, it.name) }
             .filter { now - it.lastModified >= catchUpDelayMs }
         if (ripe.isNotEmpty()) {
             Log.i(TAG, "831 re-fire emitted ${ripe.size} note(s) from ${folder.name}")
@@ -508,6 +521,12 @@ class VoiceNoteDetector(
     private suspend fun coldCatchUp() {
         Log.i(TAG, "cold catch-up running (armed=$armed)")
         if (!armed) return
+        // TASK-966: the sweep is watermark-KEYED, and only WhatsApp's PTT
+        // names parse to a key (ordinary file names carry no ordering), so
+        // for the watched-folder source it could only ever walk the tree
+        // and find nothing. Skip it there; live CLOSE_WRITE/MOVED_TO
+        // events are that source's whole detection surface.
+        if (!source.usesPttLayout) return
         val treeUri = grantedTreeUri
         if (treeUri != null) {
             // TASK-906: the SAF lane is the PRODUCTION lane. Measured on
@@ -778,7 +797,7 @@ class VoiceNoteDetector(
         val candidates = liveFolders
             .flatMap { folderName ->
                 listFiles(folderName).orEmpty()
-                    .filter { VoiceNoteFilter.isWhatsAppVoiceNoteName(it.name) }
+                    .filter { VoiceNoteFilter.isVoiceNoteName(source, it.name) }
             }
             .mapNotNull { sweepFile ->
                 val key = VoiceNoteFilter.watermarkKeyOf(File(sweepFile.path))
@@ -904,8 +923,27 @@ class VoiceNoteDetector(
 
 /** The canonical voice-notes folder of [source] (the detector's watch root
  *  and the Settings picker's initial location: one owner of the path, the
- *  source descriptor). */
+ *  source descriptor). WhatsApp sources only; the watched-folder source's
+ *  root is [watchedFolderRoot]. */
 fun voiceNotesRoot(source: VoiceNoteSource = VoiceNoteSource.WHATSAPP): File = source.root()
+
+/**
+ * TASK-966: the watched-folder source's watch root, derived from the LIVE
+ * tree grant (the raw path of the user's picked folder; a FileObserver
+ * needs a real filesystem path, which only the external-storage provider's
+ * docIds carry). No grant yet, or a tree with no path (a cloud provider):
+ * a placeholder directory under the storage root that never exists, so
+ * [VoiceNoteDetector]'s existence check attaches no watcher (the
+ * coordinator only arms this source with a live grant, so the placeholder
+ * is the construction-time and between-picks shape, never a working one).
+ */
+internal fun watchedFolderRoot(treeUri: String?): File {
+    val rawPath = treeUri?.let {
+        com.antivocale.app.util.TreeUris.externalStorageRawPathOrNull(Uri.parse(it))
+    }
+    return if (rawPath != null) File(rawPath)
+    else File(Environment.getExternalStorageDirectory(), "__antivocale_watched_folder__")
+}
 
 /**
  * The pure decision rules for voice-note detection, split out of
@@ -920,6 +958,27 @@ object VoiceNoteFilter {
     fun isWhatsAppVoiceNoteName(name: String): Boolean =
         name.startsWith("PTT-", ignoreCase = true) &&
             name.endsWith(".opus", ignoreCase = true)
+
+    /**
+     * TASK-966: the per-source live-name predicate. The WhatsApp pair
+     * keeps its PTT rule byte-identical; the watched-folder source accepts
+     * ordinary audio files (the FOLDER choice is the filter: anything
+     * audio-shaped landing in the folder the user pointed at is a
+     * transcription candidate). Video containers stay out (.mp4, .webm):
+     * a watched folder may hold those without them being notes.
+     */
+    fun isVoiceNoteName(source: VoiceNoteSource, name: String): Boolean =
+        if (source.usesPttLayout) isWhatsAppVoiceNoteName(name)
+        else isWatchedFolderAudioName(name)
+
+    /** The watched-folder source's name rule: a non-hidden audio file. */
+    fun isWatchedFolderAudioName(name: String): Boolean =
+        !name.startsWith(".") &&
+            WATCHED_AUDIO_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) }
+
+    /** Voice-note-plausible extensions (kept lowercase; matched ignoring case). */
+    private val WATCHED_AUDIO_EXTENSIONS = listOf(
+        ".opus", ".ogg", ".oga", ".m4a", ".aac", ".mp3", ".amr", ".3gp", ".3gpp", ".wav", ".flac")
 
     /** WhatsApp's rolling counter folders (one per ~100 notes, numeric). */
     fun isCounterFolderName(name: String): Boolean = name.toIntOrNull() != null

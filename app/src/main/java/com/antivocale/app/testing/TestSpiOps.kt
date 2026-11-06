@@ -166,6 +166,10 @@ internal class TestSpiOps(
             // WhatsApp Business support: the Business client's pair.
             .put("voiceNoteBusinessDetectionEnabled", preferences.voiceNoteBusinessDetectionEnabled.first())
             .put("voiceNoteBusinessTreeUri", preferences.voiceNoteBusinessTreeUri.first() ?: JSONObject.NULL)
+            // TASK-966: the watched-folder source's pair (no watermark
+            // twin: that source has no keyed catch-up).
+            .put("voiceNoteWatchedDetectionEnabled", preferences.voiceNoteWatchedDetectionEnabled.first())
+            .put("voiceNoteWatchedTreeUri", preferences.voiceNoteWatchedTreeUri.first() ?: JSONObject.NULL)
             // TASK-778: the persisted catch-up watermark (read-only diagnostic;
             // the detector owns writes). TASK-891: one per source.
             .put("voiceNoteWatermark", preferences.voiceNoteWatermark.first() ?: JSONObject.NULL)

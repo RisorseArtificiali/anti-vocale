@@ -564,6 +564,8 @@
     <string name="share_format_srt_word">शब्द-समय वाले सबटाइटल (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">इस प्रविष्टि में कोई टाइमस्टैम्प संग्रहीत नहीं है; समय-संबंधी विकल्प सादा पाठ साझा करेंगे।</string>
+    <string name="share_format_txt_file_audio_name">ऑडियो फ़ाइल के नाम वाली टेक्स्ट फ़ाइल (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">ऑडियो फ़ाइल के नाम और तारीख़ वाली टेक्स्ट फ़ाइल (%1$s)</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">डिफ़ॉल्ट प्रॉम्प्ट</string>
@@ -993,8 +995,8 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">शेयर मेन्यू में मॉडल</string>
     <string name="voice_note_settings_title">वॉयेस नोट</string>
-    <string name="voice_note_settings_summary_on">WhatsApp वॉयेस नोट की स्वचालित ट्रांसक्रिप्शन · चालू</string>
-    <string name="voice_note_settings_summary_off">WhatsApp वॉयेस नोट की स्वचालित ट्रांसक्रिप्शन · बंद</string>
+    <string name="voice_note_settings_summary_on">वॉयेस नोट की स्वचालित ट्रांसक्रिप्शन · चालू</string>
+    <string name="voice_note_settings_summary_off">वॉयेस नोट की स्वचालित ट्रांसक्रिप्शन · बंद</string>
     <string name="voice_note_settings_summary_limited">वॉयेस नोट भेजने वाले की पहचान</string>
     <string name="voice_note_identity_title">वॉइस नोट भेजने वाले की पहचान</string>
     <string name="voice_note_identity_description">ट्रांसक्राइब की गई वॉयेस नोट को भेजने वाले के नाम से लेबल करता है, यहाँ साझा या स्वचालित। फिलहाल सिर्फ WhatsApp। नाम केवल तब दिखता है जब यह ऑन होने पर नोटिफिकेशन आया हो और समय मेल खाता हो (कोई अंदाज़ा नहीं); प्रतीक्षा सूची केवल मेमरी में रहती है। नोटिफिकेशन एक्सेस चाहिए।</string>
@@ -1021,6 +1023,12 @@
     <string name="voice_note_business_folder_grant_rejected">यह WhatsApp Business Voice Notes फ़ोल्डर नहीं है। WhatsApp Business Voice Notes नाम का फ़ोल्डर चुनकर फिर से प्रयास करें।</string>
     <string name="voice_note_business_folder_card_desc">नोट पढ़ने के लिए, जिस फ़ोल्डर में WhatsApp Business उन्हें सहेजता है उसे एक बार एक्सेस दें:</string>
     <string name="voice_note_business_folder_sheet_step3">WhatsApp Business Voice Notes फ़ोल्डर चुनकर (खोले बिना) इस फ़ोल्डर का उपयोग करें पर, फिर अनुमति दें पर टैप करें।</string>
+    <string name="voice_note_source_watched_folder">निगरानी वाला फ़ोल्डर</string>
+    <string name="voice_note_watched_detection_description">किसी भी ऐप के लिए जो वॉयेस नोट को आपके फ़ाइल मैनेजर में दिखने वाले फ़ोल्डर में सहेजता है (जैसे Signal, जो Music/Signal में सहेजता है): इसे एक बार चालू करके वह फ़ोल्डर चुनें, और उसमें आने वाली नई ऑडियो फ़ाइलें आते ही ट्रांसक्राइब हो जाएँगी। हर फ़ाइल केवल ट्रांसक्राइब करने के लिए पढ़ी जाती है, और केवल इसी डिवाइस पर; सुविधा बंद होने पर कुछ भी नहीं पढ़ा जाता। ऑडियो एक्सेस आवश्यक है।</string>
+    <string name="voice_note_watched_folder_grant_rejected">इस फ़ोल्डर की निगरानी नहीं हो सकती। इस डिवाइस के स्टोरेज में कोई फ़ोल्डर चुनें (पूरा स्टोरेज रूट नहीं, और WhatsApp वाले फ़ोल्डर भी नहीं, उनका अपना सेक्शन है)।</string>
+    <string name="voice_note_watched_folder_card_desc">नोट पढ़ने के लिए, उस फ़ोल्डर को एक बार एक्सेस दें जिसमें आपकी दूसरी ऐप उन्हें सहेजती है (इस डिवाइस के स्टोरेज में कोई भी फ़ोल्डर):</string>
+    <string name="voice_note_watched_folder_sheet_step2">वह फ़ोल्डर खोलें जिसमें आपकी दूसरी ऐप वॉयेस नोट सहेजती है (जैसे Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">वह फ़ोल्डर चुनकर (खोले बिना) इस फ़ोल्डर का उपयोग करें पर, फिर अनुमति दें पर टैप करें।</string>
     <string name="share_targets_description">हर डाउनलोड किया मॉडल सिस्टम मेन्यू में अलग विकल्प के रूप में दिखेगा। ऑडियो चुने गए मॉडल से प्रोसेस होगा।</string>
     <string name="advanced_sharing_toggle">डाउनलोड किए मॉडल दिखाएं</string>
     <string name="share_targets_models_info">हर डाउनलोड किया मॉडल शेयर मेन्यू में अलग एंट्री के रूप में दिखेगा। मॉडल मिटाने पर वह मेन्यू से हट जाएगा।</string>

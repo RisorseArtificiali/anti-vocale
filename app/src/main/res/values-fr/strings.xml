@@ -512,6 +512,8 @@
     <string name="share_format_srt_word">Sous-titres minutés au mot (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">Cette entrée n’a pas d’horodatages enregistrés ; les options horodatées partageront du texte brut.</string>
+    <string name="share_format_txt_file_audio_name">Fichier texte nommé comme le fichier audio (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">Fichier texte nommé comme le fichier audio, avec la date (%1$s)</string>
     <string name="default_prompt_title">Invite par défaut</string>
     <string name="default_prompt_description">Consigne donnée au modèle pendant la transcription. Laisser vide pour utiliser l\'invite intégrée.</string>
     <string name="default_prompt_placeholder">ex. Transcris ce discours :</string>
@@ -892,8 +894,8 @@
     <string name="external_notice_family">Si la transcription plante sans erreur, l\'architecture est peut-être incorrecte : supprimez puis réimportez le modèle avec une autre architecture.</string>
     <string name="share_targets_title">Modèles dans le menu Partager</string>
     <string name="voice_note_settings_title">Notes vocales</string>
-    <string name="voice_note_settings_summary_on">Transcription automatique des notes vocales WhatsApp · active</string>
-    <string name="voice_note_settings_summary_off">Transcription automatique des notes vocales WhatsApp · inactive</string>
+    <string name="voice_note_settings_summary_on">Transcription automatique des notes vocales · active</string>
+    <string name="voice_note_settings_summary_off">Transcription automatique des notes vocales · inactive</string>
     <string name="voice_note_settings_summary_limited">Reconnaissance de l\'expéditeur des notes vocales</string>
     <string name="voice_note_identity_title">Reconnaissance de l\'expéditeur des notes vocales</string>
     <string name="voice_note_identity_description">Étiquette les notes vocales transcrites du nom de l\'expéditeur, partagées ici ou automatiques. Pour l\'instant, WhatsApp seulement. Le nom n\'apparaît que si la notification est arrivée option activée et que la durée correspond (aucun nom deviné) ; la liste d\'attente vit uniquement en mémoire. Nécessite l\'accès aux notifications.</string>
@@ -920,6 +922,12 @@
     <string name="voice_note_business_folder_grant_rejected">Ce n\'est pas le dossier des notes vocales WhatsApp Business. Choisissez le dossier nommé WhatsApp Business Voice Notes et réessayez.</string>
     <string name="voice_note_business_folder_card_desc">Pour lire les notes, accordez une fois l\'accès au dossier où WhatsApp Business les enregistre:</string>
     <string name="voice_note_business_folder_sheet_step3">Le dossier WhatsApp Business Voice Notes sélectionné (sans l\'ouvrir), touchez UTILISER CE DOSSIER puis AUTORISER.</string>
+    <string name="voice_note_source_watched_folder">Dossier surveillé</string>
+    <string name="voice_note_watched_detection_description">Pour toute application qui enregistre les notes vocales dans un dossier visible dans votre gestionnaire de fichiers (par exemple Signal, qui enregistre dans Music/Signal) : activez la fonction et choisissez ce dossier une fois ; les nouveaux fichiers audio qui y arrivent seront transcrits immédiatement. Chaque fichier n\'est lu que pour être transcrit, et uniquement sur cet appareil ; fonction désactivée, rien n\'est lu. Nécessite l\'accès à l\'audio.</string>
+    <string name="voice_note_watched_folder_grant_rejected">Ce dossier ne peut pas être surveillé. Choisissez un dossier du stockage de cet appareil (pas la racine du stockage entière, ni les dossiers WhatsApp, qui ont leur propre section).</string>
+    <string name="voice_note_watched_folder_card_desc">Pour lire les notes, accordez une fois l\'accès au dossier où votre autre application les enregistre (n\'importe quel dossier du stockage de cet appareil) :</string>
+    <string name="voice_note_watched_folder_sheet_step2">Ouvrez le dossier où votre autre application enregistre les notes vocales (par exemple Music › Signal) :</string>
+    <string name="voice_note_watched_folder_sheet_step3">Ce dossier sélectionné (sans l\'ouvrir), touchez UTILISER CE DOSSIER puis AUTORISER.</string>
     <string name="share_targets_description">Chaque modèle téléchargé apparaît comme entrée distincte dans le menu système. L\'audio est traité par le modèle sélectionné.</string>
     <string name="advanced_sharing_toggle">Afficher les modèles téléchargés</string>
     <string name="share_targets_models_info">Chaque modèle téléchargé apparaîtra comme entrée dans le menu Partager. Supprimer un modèle le retire du menu.</string>

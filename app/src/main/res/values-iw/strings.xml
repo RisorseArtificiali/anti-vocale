@@ -597,6 +597,8 @@
     <string name="share_format_srt_word">כתוביות עם תזמון מילים (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">לרשומה זו אין חותמות זמן שמורות; אפשרויות התזמון ישתפו טקסט רגיל.</string>
+    <string name="share_format_txt_file_audio_name">קובץ טקסט עם שם קובץ האודיו (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">קובץ טקסט עם שם קובץ האודיו והתאריך (%1$s)</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">פרומפט ברירת מחדל</string>
@@ -1043,8 +1045,8 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">מודלים בתפריט השיתוף</string>
     <string name="voice_note_settings_title">הודעות קול</string>
-    <string name="voice_note_settings_summary_on">תמלול אוטומטי של הודעות קול בוואטסאפ · פעיל</string>
-    <string name="voice_note_settings_summary_off">תמלול אוטומטי של הודעות קול בוואטסאפ · כבוי</string>
+    <string name="voice_note_settings_summary_on">תמלול אוטומטי של הודעות קול · פעיל</string>
+    <string name="voice_note_settings_summary_off">תמלול אוטומטי של הודעות קול · כבוי</string>
     <string name="voice_note_settings_summary_limited">זיהוי השולח של הודעות קול</string>
     <string name="voice_note_identity_title">זיהוי שולח ההודעות הקוליות</string>
     <string name="voice_note_identity_description">מתייג הודעות קול מתומללות בשם השולח, ששותפו כאן או אוטומטיות. לעת עתה רק WhatsApp. השם מופיע רק אם ההתראה הגיעה כשהאפשרות היתה פעילה והאוך תואם (בלי שמות מנוחשים); רשימת ההמתנה מוחזקת רק בזכרון. דורש הרשאת גישה להתראות.</string>
@@ -1071,6 +1073,12 @@
     <string name="voice_note_business_folder_grant_rejected">זו אינה תיקיית ההודעות הקוליות של WhatsApp Business. בחרו את התיקייה בשם WhatsApp Business Voice Notes ונסו שוב.</string>
     <string name="voice_note_business_folder_card_desc">כדי לקרוא את ההודעות, העניקו פעם אחת גישה לתיקייה שבה WhatsApp Business שומר אותן:</string>
     <string name="voice_note_business_folder_sheet_step3">כשתיקיית WhatsApp Business Voice Notes מסומנת (בלי לפתוח אותה), הקישו על השתמש בתיקייה זו ולאחר מכן על אפשר.</string>
+    <string name="voice_note_source_watched_folder">תיקייה במעקב</string>
+    <string name="voice_note_watched_detection_description">לכל אפליקציה ששומרת הודעות קוליות בתיקייה שנראית במנהל הקבצים שלכם (למשל Signal, ששומר ב־Music/Signal): הפעילו פעם אחת ובחרו את התיקייה הזו, ומרגע זה כל קובץ שמע חדש שמגיע אליה יתומלל מיד. כל קובץ נקרא רק לצורך התמלול, ורק במכשיר זה; כשהתכונה כבויה לא נקרא דבר. דורש הרשאת גישה לשמע.</string>
+    <string name="voice_note_watched_folder_grant_rejected">אין אפשרות לעקוב אחרי התיקייה הזו. בחרו תיקייה באחסון של המכשיר (לא את שורש האחסון כולו, ולא את תיקיות WhatsApp, שיש להן מקטע משלהן).</string>
+    <string name="voice_note_watched_folder_card_desc">כדי לקרוא את ההודעות, העניקו פעם אחת גישה לתיקייה שבה האפליקציה האחרת שומרת אותן (כל תיקייה באחסון המכשיר):</string>
+    <string name="voice_note_watched_folder_sheet_step2">פתחו את התיקייה שבה האפליקציה האחרת שומרת הודעות קוליות (למשל Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">כשהתיקייה הזו מסומנת (בלי לפתוח אותה), הקישו על השתמש בתיקייה זו ולאחר מכן על אפשר.</string>
     <string name="share_targets_description">כל מודל שהורד מופיע כאפשרות נפרדת בתפריט המערכת. האודיו מעובד על ידי המודל שנבחר.</string>
     <string name="advanced_sharing_toggle">הצגת מודלים שהורדו</string>
     <string name="share_targets_models_info">כל מודל שהורד יופיע כפריט בתפריט השיתוף. מחיקת מודל מסירה אותו מהתפריט.</string>

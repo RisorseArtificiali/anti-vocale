@@ -180,6 +180,10 @@ class VoiceNoteBusinessCoordinatorTest {
         preferences._voiceNoteTreeUri.value = "content://tree/wa"
         preferences._voiceNoteBusinessDetectionEnabled.value = true
         preferences._voiceNoteBusinessTreeUri.value = "content://tree/w4b"
+        // TASK-966: the third source joins the "every source" conjunction;
+        // its own pair, like the two WhatsApp clients above.
+        preferences._voiceNoteWatchedDetectionEnabled.value = true
+        preferences._voiceNoteWatchedTreeUri.value = "content://tree/watched"
         gated.start()
         until { gated.all.all { it.gateState.value == VoiceNoteGateState.PermissionMissing } }
 

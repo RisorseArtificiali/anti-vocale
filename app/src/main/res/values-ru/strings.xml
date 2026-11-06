@@ -586,6 +586,8 @@
     <string name="share_format_srt_word">Субтитры с пословным таймингом (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">В этой записи нет сохранённых временных меток; параметры с временем поделят обычным текстом.</string>
+    <string name="share_format_txt_file_audio_name">Текстовый файл с именем аудиофайла (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">Текстовый файл с именем аудиофайла и датой (%1$s)</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Запрос по умолчанию</string>
@@ -1037,8 +1039,8 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Модели в меню «Поделиться»</string>
     <string name="voice_note_settings_title">Голосовые сообщения</string>
-    <string name="voice_note_settings_summary_on">Автоматическая расшифровка голосовых сообщений WhatsApp · включена</string>
-    <string name="voice_note_settings_summary_off">Автоматическая расшифровка голосовых сообщений WhatsApp · выключена</string>
+    <string name="voice_note_settings_summary_on">Автоматическая расшифровка голосовых сообщений · включена</string>
+    <string name="voice_note_settings_summary_off">Автоматическая расшифровка голосовых сообщений · выключена</string>
     <string name="voice_note_settings_summary_limited">Распознавание отправителя голосовых сообщений</string>
     <string name="voice_note_identity_title">Распознавание отправителя голосовых</string>
     <string name="voice_note_identity_description">Помечает расшифрованные голосовые сообщения именем отправителя: отправленные в приложение или автоматические. Пока только WhatsApp. Имя появляется, только если уведомление пришло при включённой опции и длительность совпадает (без угадывания); список ожидания живёт только в памяти. Требуется доступ к уведомлениям.</string>
@@ -1065,6 +1067,12 @@
     <string name="voice_note_business_folder_grant_rejected">Это не папка голосовых сообщений WhatsApp Business. Выберите папку с именем WhatsApp Business Voice Notes и попробуйте ещё раз.</string>
     <string name="voice_note_business_folder_card_desc">Чтобы читать сообщения, один раз предоставьте доступ к папке, куда WhatsApp Business их сохраняет:</string>
     <string name="voice_note_business_folder_sheet_step3">Выберите папку WhatsApp Business Voice Notes (не открывая) и нажмите ИСПОЛЬЗОВАТЬ ЭТУ ПАПКУ, затем РАЗРЕШИТЬ.</string>
+    <string name="voice_note_source_watched_folder">Отслеживаемая папка</string>
+    <string name="voice_note_watched_detection_description">Для любого приложения, которое сохраняет голосовые сообщения в папку, видимую в файловом менеджере (например Signal, сохраняющий в Music/Signal): включите один раз и выберите эту папку, и новые аудиофайлы, попадающие туда, будут расшифровываться сразу. Каждый файл читается только для расшифровки и только на этом устройстве; при выключенной функции ничего не читается. Требуется доступ к аудио.</string>
+    <string name="voice_note_watched_folder_grant_rejected">Эту папку нельзя отслеживать. Выберите папку в памяти устройства (не весь корень хранилища и не папки WhatsApp, у них есть свои разделы).</string>
+    <string name="voice_note_watched_folder_card_desc">Чтобы читать сообщения, один раз предоставьте доступ к папке, куда их сохраняет другое приложение (любая папка в памяти устройства):</string>
+    <string name="voice_note_watched_folder_sheet_step2">Откройте папку, куда другое приложение сохраняет голосовые сообщения (например Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">Выбрав эту папку (не открывая), нажмите ИСПОЛЬЗОВАТЬ ЭТУ ПАПКУ, затем РАЗРЕШИТЬ.</string>
     <string name="share_targets_description">Каждая скачанная модель отображается отдельным пунктом системного меню. Аудио обрабатывает выбранная модель</string>
     <string name="advanced_sharing_toggle">Показывать скачанные модели</string>
     <string name="share_targets_models_info">Каждая скачанная модель появится отдельным пунктом в меню «Поделиться». Удаление модели уберёт её из меню</string>

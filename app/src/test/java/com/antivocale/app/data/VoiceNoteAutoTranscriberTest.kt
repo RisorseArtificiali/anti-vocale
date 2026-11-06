@@ -111,6 +111,56 @@ class VoiceNoteAutoTranscriberTest {
         assertEquals(InferenceService.SOURCE_VOICE_NOTE, serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE))
     }
 
+    /**
+     * TASK-966: the watched-folder source carries no originating package
+     * (the History row lands ungrouped) and its task id keeps the
+     * watched_ namespace, so a same-named file in the watched folder can
+     * never collide with either WhatsApp client's row.
+     */
+    @Test
+    fun `a watched-folder note is ungrouped and carries the watched namespace`() {
+        val serviceIntent = impl("/local/n.m4a").serviceIntent(
+            "/local/n.m4a", "/storage/emulated/0/Music/Signal/note.m4a",
+            source = VoiceNoteSource.WATCHED_FOLDER)
+        assertNull(serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE_PACKAGE))
+        assertEquals("voicenote_watched_note.m4a",
+            serviceIntent.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID))
+        assertEquals(InferenceService.SOURCE_VOICE_NOTE,
+            serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE))
+    }
+
+    /**
+     * TASK-966: no sender-label resolution for this source. The cache is
+     * armed (accepting, one in-window candidate for the empty package) so
+     * a regression that reaches the matcher is observable: the candidate
+     * lookup is the matcher's first move, pinned to zero calls here, and
+     * without the skip every watched note would also stall the serial
+     * collector 2s in the matcher's race window.
+     */
+    @Test
+    fun `a watched-folder enqueue never touches the identity matcher`() = runBlocking {
+        val cache = io.mockk.mockk<VoiceNoteIdentityCache>()
+        io.mockk.every { cache.accepting } returns true
+        io.mockk.every { cache.unconsumedForPackage(any()) } returns listOf(
+            com.antivocale.app.receiver.VoiceNoteIdentityExtractor.VoiceNote(
+                packageName = "org.thoughtcrime.securems", sender = "Signal sender",
+                durationSeconds = 6, postedAtMs = 1_000))
+        val transcriber = VoiceNoteAutoTranscriber(
+            context,
+            mockk {
+                coEvery { resolve(any(), any(), any()) } returns "/local/n.m4a"
+            },
+            mockk<AudioPreprocessor>(),
+            cache,
+            mockk { coEvery { alreadyTranscribed(any()) } returns false },
+        )
+        val outcome = transcriber.enqueue(
+            "/storage/emulated/0/Music/Signal/note.m4a", 1_000L,
+            treeUri = "content://tree/watched", source = VoiceNoteSource.WATCHED_FOLDER)
+        assertEquals(VoiceNoteAutoTranscriber.EnqueueOutcome.ENQUEUED, outcome)
+        io.mockk.verify(exactly = 0) { cache.unconsumedForPackage(any()) }
+    }
+
     @Test
     fun `a Business enqueue dedups and resolves under its own source`() = runBlocking {
         impl(resolveResult = null).enqueue(

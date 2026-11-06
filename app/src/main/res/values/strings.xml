@@ -620,6 +620,8 @@
     <string name="share_format_srt_word">Word-timed subtitles (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">This entry has no timestamps stored; the timed options will share plain text.</string>
+    <string name="share_format_txt_file_audio_name">Text file named after the audio (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">Text file named after the audio, with date (%1$s)</string>
     <string name="saved_to_folder_nameless">Saved to %1$s</string>
 
     <!-- Settings Tab - Default Prompt -->
@@ -1076,8 +1078,8 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Models in Share Menu</string>
     <string name="voice_note_settings_title">Voice notes</string>
-    <string name="voice_note_settings_summary_on">Automatic WhatsApp voice-note transcription · on</string>
-    <string name="voice_note_settings_summary_off">Automatic WhatsApp voice-note transcription · off</string>
+    <string name="voice_note_settings_summary_on">Automatic voice-note transcription · on</string>
+    <string name="voice_note_settings_summary_off">Automatic voice-note transcription · off</string>
     <string name="voice_note_settings_summary_limited">Sender recognition for voice notes</string>
     <string name="voice_note_identity_title">Voice note sender recognition</string>
     <string name="voice_note_identity_description">Labels transcribed voice notes with the sender\'s name, shared here or automatic. WhatsApp only for now. The name appears only when the note\'s notification arrived while this was on and its length matches (no guessed names); the waiting list lives in memory only. Requires notification access.</string>
@@ -1106,6 +1108,12 @@
     <string name="voice_note_business_folder_grant_rejected">That is not the WhatsApp Business Voice Notes folder. Pick the folder named WhatsApp Business Voice Notes and try again.</string>
     <string name="voice_note_business_folder_card_desc">To read the notes, grant access once to the folder where WhatsApp Business saves them:</string>
     <string name="voice_note_business_folder_sheet_step3">With the WhatsApp Business Voice Notes folder selected (don\'t open it), tap USE THIS FOLDER, then ALLOW.</string>
+    <string name="voice_note_source_watched_folder">Watched folder</string>
+    <string name="voice_note_watched_detection_description">For any app that saves voice notes to a folder you can see in your file manager (for example Signal, which saves to Music/Signal): turn it on and pick that folder once, and new audio files landing there are transcribed as they arrive. Each file is read only to transcribe it, and only on this device; with the feature off, nothing is read. Requires audio access.</string>
+    <string name="voice_note_watched_folder_grant_rejected">That folder cannot be watched. Pick a folder on this device\'s storage (not the whole storage root, and not the WhatsApp folders, which have their own section).</string>
+    <string name="voice_note_watched_folder_card_desc">To read the notes, grant access once to the folder your other app saves them to (any folder on this device\'s storage):</string>
+    <string name="voice_note_watched_folder_sheet_step2">Open the folder your other app saves voice notes to (for example Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">With that folder selected (don\'t open it), tap USE THIS FOLDER, then ALLOW.</string>
     <string name="share_targets_description">Each downloaded model appears as a separate option in the system menu. Audio is processed by the selected model.</string>
     <string name="advanced_sharing_toggle">Show downloaded models</string>
     <string name="share_targets_models_info">Each downloaded model will appear as an item in the share menu. Deleting a model removes it from the menu.</string>

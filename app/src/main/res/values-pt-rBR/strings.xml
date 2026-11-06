@@ -512,6 +512,8 @@
     <string name="share_format_srt_word">Legendas com tempo por palavra (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">Esta entrada não tem marcações de tempo salvas; as opções com tempo compartilharão texto simples.</string>
+    <string name="share_format_txt_file_audio_name">Arquivo de texto com o nome do áudio (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">Arquivo de texto com o nome do áudio, com data (%1$s)</string>
     <string name="default_prompt_title">Prompt padrão</string>
     <string name="default_prompt_description">Instrução dada ao modelo durante a transcrição. Vazio usa o prompt integrado.</string>
     <string name="default_prompt_placeholder">ex. Transcreva este discurso:</string>
@@ -892,8 +894,8 @@
     <string name="external_notice_family">Se a transcrição fechar sem erro, a arquitetura pode estar errada: exclua e reimporte o modelo com outra arquitetura.</string>
     <string name="share_targets_title">Modelos no menu Compartilhar</string>
     <string name="voice_note_settings_title">Mensagens de voz</string>
-    <string name="voice_note_settings_summary_on">Transcrição automática das mensagens de voz do WhatsApp · ativa</string>
-    <string name="voice_note_settings_summary_off">Transcrição automática das mensagens de voz do WhatsApp · inativa</string>
+    <string name="voice_note_settings_summary_on">Transcrição automática de mensagens de voz · ativa</string>
+    <string name="voice_note_settings_summary_off">Transcrição automática de mensagens de voz · inativa</string>
     <string name="voice_note_settings_summary_limited">Reconhecimento do remetente das mensagens de voz</string>
     <string name="voice_note_identity_title">Reconhecimento do remetente de áudios</string>
     <string name="voice_note_identity_description">Etiqueta as mensagens de voz transcritas com o nome do remetente, compartilhadas aqui ou automáticas. Por enquanto só WhatsApp. O nome aparece somente se a notificação chegou com isto ativado e a duração bate (nenhum nome chutado); a lista de espera vive só na memória. Requer acesso às notificações.</string>
@@ -920,6 +922,12 @@
     <string name="voice_note_business_folder_grant_rejected">Esta não é a pasta de notas de voz do WhatsApp Business. Escolha a pasta chamada WhatsApp Business Voice Notes e tente novamente.</string>
     <string name="voice_note_business_folder_card_desc">Para ler as notas, conceda uma vez o acesso à pasta onde o WhatsApp Business as salva:</string>
     <string name="voice_note_business_folder_sheet_step3">Com a pasta WhatsApp Business Voice Notes selecionada (sem abri-la), toque em USAR ESTA PASTA e depois em PERMITIR.</string>
+    <string name="voice_note_source_watched_folder">Pasta monitorada</string>
+    <string name="voice_note_watched_detection_description">Para qualquer app que salve mensagens de voz numa pasta visível no seu gerenciador de arquivos (por exemplo o Signal, que salva em Music/Signal): ative e escolha essa pasta uma vez, e os novos arquivos de áudio que chegarem serão transcritos na hora. Cada arquivo é lido apenas para ser transcrito, e somente neste dispositivo; com o recurso desligado, nada é lido. Requer acesso ao áudio.</string>
+    <string name="voice_note_watched_folder_grant_rejected">Essa pasta não pode ser monitorada. Escolha uma pasta no armazenamento do dispositivo (não a raiz do armazenamento inteira, e não as pastas do WhatsApp, que têm a própria seção).</string>
+    <string name="voice_note_watched_folder_card_desc">Para ler as mensagens, conceda uma vez acesso à pasta onde o outro app as salva (qualquer pasta no armazenamento do dispositivo):</string>
+    <string name="voice_note_watched_folder_sheet_step2">Abra a pasta onde o outro app salva as mensagens de voz (por exemplo Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">Com essa pasta selecionada (sem abri-la), toque em USAR ESTA PASTA e depois em PERMITIR.</string>
     <string name="share_targets_description">Cada modelo baixado aparece como item separado no menu do sistema. O áudio é processado pelo modelo selecionado.</string>
     <string name="advanced_sharing_toggle">Mostrar modelos baixados</string>
     <string name="share_targets_models_info">Cada modelo baixado aparecerá como item no menu Compartilhar. Excluir um modelo remove-o do menu.</string>

@@ -74,9 +74,16 @@ class VoiceNoteAutoTranscriber @Inject constructor(
         }
         // The source's OWN package: the cache is filtered by exact package,
         // so a notification from the other WhatsApp client can never label
-        // this note.
-        val senderName = VoiceNoteSenderResolution.matchForDetection(
-            identityCache, audioPreprocessor, source.packageName, localPath, detectedAtMs)
+        // this note. TASK-966: the watched-folder source has no originating
+        // package (no notifications to mine, by design), so its notes are
+        // never labeled and never pay the matcher's 2s race-window wait.
+        val senderName =
+            if (source.resolvesSenderLabels) {
+                VoiceNoteSenderResolution.matchForDetection(
+                    identityCache, audioPreprocessor, source.packageName, localPath, detectedAtMs)
+            } else {
+                null
+            }
         // TASK-842 (review F4): the content hash rides the auto row too,
         // so a later manual share of the SAME note matches it in the
         // interactive dialog (the row is otherwise invisible to the guard:

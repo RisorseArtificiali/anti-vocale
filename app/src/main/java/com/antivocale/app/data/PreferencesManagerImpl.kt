@@ -118,6 +118,10 @@ class PreferencesManagerImpl(
         // WhatsApp Business support: the same pair for the Business client.
         private val VOICE_NOTE_BUSINESS_DETECTION_ENABLED = booleanPreferencesKey("voice_note_business_detection_enabled")
         private val VOICE_NOTE_BUSINESS_TREE_URI = stringPreferencesKey("voice_note_business_tree_uri")
+        // TASK-966: the same pair for the generic watched-folder source
+        // (no watermark twin: that source has no keyed catch-up).
+        private val VOICE_NOTE_WATCHED_DETECTION_ENABLED = booleanPreferencesKey("voice_note_watched_detection_enabled")
+        private val VOICE_NOTE_WATCHED_TREE_URI = stringPreferencesKey("voice_note_watched_tree_uri")
         // TASK-778: the persisted voice-note watermark (the durable dedup
         // boundary the cold-start catch-up sweep compares against).
         private val VOICE_NOTE_WATERMARK = stringPreferencesKey("voice_note_watermark")
@@ -202,6 +206,8 @@ class PreferencesManagerImpl(
         val voiceNoteTreeUri: String? = null,
         val voiceNoteBusinessDetectionEnabled: Boolean = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED,
         val voiceNoteBusinessTreeUri: String? = null,
+        val voiceNoteWatchedDetectionEnabled: Boolean = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED,
+        val voiceNoteWatchedTreeUri: String? = null,
         val voiceNoteWatermark: String? = null,
         val voiceNoteBusinessWatermark: String? = null,
         val remoteOmnivoiceEnabled: Boolean = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED,
@@ -278,6 +284,8 @@ class PreferencesManagerImpl(
         voiceNoteTreeUri = this[VOICE_NOTE_TREE_URI],
         voiceNoteBusinessDetectionEnabled = this[VOICE_NOTE_BUSINESS_DETECTION_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED,
         voiceNoteBusinessTreeUri = this[VOICE_NOTE_BUSINESS_TREE_URI],
+        voiceNoteWatchedDetectionEnabled = this[VOICE_NOTE_WATCHED_DETECTION_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED,
+        voiceNoteWatchedTreeUri = this[VOICE_NOTE_WATCHED_TREE_URI],
         voiceNoteWatermark = this[VOICE_NOTE_WATERMARK],
         voiceNoteBusinessWatermark = this[VOICE_NOTE_BUSINESS_WATERMARK],
         remoteOmnivoiceEnabled = this[REMOTE_OMNIVOICE_ENABLED] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED,
@@ -983,6 +991,29 @@ class PreferencesManagerImpl(
             else preferences[VOICE_NOTE_BUSINESS_TREE_URI] = uri
         }
         cache.updateAndGet { it.copy(voiceNoteBusinessTreeUri = uri) }
+    }
+
+    // TASK-966: the watched-folder source's pair, the twin of the blocks
+    // above over its own keys (a user-picked folder instead of a fixed
+    // WhatsApp tree; no watermark twin, that source has no keyed catch-up).
+    override val voiceNoteWatchedDetectionEnabled: Flow<Boolean> = dataStore.data.map { it[VOICE_NOTE_WATCHED_DETECTION_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED }
+        .onStart { emit(cache.get().voiceNoteWatchedDetectionEnabled) }
+    override val voiceNoteWatchedTreeUri: Flow<String?> = dataStore.data.map { it[VOICE_NOTE_WATCHED_TREE_URI] }
+        .onStart { emit(cache.get().voiceNoteWatchedTreeUri) }
+
+    override suspend fun saveVoiceNoteWatchedDetectionEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[VOICE_NOTE_WATCHED_DETECTION_ENABLED] = enabled
+        }
+        cache.updateAndGet { it.copy(voiceNoteWatchedDetectionEnabled = enabled) }
+    }
+
+    override suspend fun saveVoiceNoteWatchedTreeUri(uri: String?) {
+        dataStore.edit { preferences ->
+            if (uri == null) preferences.remove(VOICE_NOTE_WATCHED_TREE_URI)
+            else preferences[VOICE_NOTE_WATCHED_TREE_URI] = uri
+        }
+        cache.updateAndGet { it.copy(voiceNoteWatchedTreeUri = uri) }
     }
 
     override suspend fun bumpVoiceNoteWatermark(candidate: String) {

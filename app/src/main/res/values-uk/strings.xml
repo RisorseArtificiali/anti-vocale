@@ -606,6 +606,8 @@
     <string name="share_format_srt_word">Субтитри з послівним таймінгом (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">У цьому записі немає збережених міток часу; параметри з часом поділять звичайний текст.</string>
+    <string name="share_format_txt_file_audio_name">Текстовий файл із назвою аудіофайлу (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">Текстовий файл із назвою аудіофайлу та датою (%1$s)</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Типовий запит розшифровки</string>
@@ -1057,8 +1059,8 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Цілі надсилання</string>
     <string name="voice_note_settings_title">Голосові повідомлення</string>
-    <string name="voice_note_settings_summary_on">Автоматична розшифровка голосових повідомлень WhatsApp · увімкнена</string>
-    <string name="voice_note_settings_summary_off">Автоматична розшифровка голосових повідомлень WhatsApp · вимкнена</string>
+    <string name="voice_note_settings_summary_on">Автоматична розшифровка голосових повідомлень · увімкнена</string>
+    <string name="voice_note_settings_summary_off">Автоматична розшифровка голосових повідомлень · вимкнена</string>
     <string name="voice_note_settings_summary_limited">Розпізнавання відправника голосових повідомлень</string>
     <string name="voice_note_identity_title">Розпізнавання відправника голосових</string>
     <string name="voice_note_identity_description">Позначає розшифровані голосові повідомлення ім\'ям відправника: поділені в застосунок або автоматичні. Поки лише WhatsApp. Ім\'я з\'являється, лише якщо сповіщення прийшло за увімкненої опції і тривалість збігається (без вгадувань); список очікування живе лише в пам\'яті. Потрібен доступ до сповіщень.</string>
@@ -1085,6 +1087,12 @@
     <string name="voice_note_business_folder_grant_rejected">Це не папка голосових повідомлень WhatsApp Business. Виберіть папку з назвою WhatsApp Business Voice Notes і спробуйте ще раз.</string>
     <string name="voice_note_business_folder_card_desc">Щоб читати повідомлення, один раз надайте доступ до папки, куди WhatsApp Business їх зберігає:</string>
     <string name="voice_note_business_folder_sheet_step3">Вибравши папку WhatsApp Business Voice Notes (не відкриваючи), торкніться ВИКОРИСТАТИ ЦЮ ПАПКУ, а потім ДОЗВОЛИТИ.</string>
+    <string name="voice_note_source_watched_folder">Папка спостереження</string>
+    <string name="voice_note_watched_detection_description">Для будь-якої програми, яка зберігає голосові повідомлення у папку, видиму у вашому файловому менеджері (наприклад Signal, що зберігає у Music/Signal): увімкніть і один раз оберіть цю папку, і нові аудіофайли, що там з\'являються, розшифровуватимуться одразу. Кожен файл читається лише для розшифровки і лише на цьому пристрої; коли функцію вимкнено, нічого не читається. Потребує доступу до аудіо.</string>
+    <string name="voice_note_watched_folder_grant_rejected">Цю папку не можна спостерігати. Виберіть папку в пам\'яті пристрою (не весь корінь сховища і не папки WhatsApp, у них власні розділи).</string>
+    <string name="voice_note_watched_folder_card_desc">Щоб читати повідомлення, один раз надайте доступ до папки, куди їх зберігає інша програма (будь-яка папка в пам\'яті пристрою):</string>
+    <string name="voice_note_watched_folder_sheet_step2">Відкрийте папку, куди інша програма зберігає голосові повідомлення (наприклад Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">Вибравши цю папку (не відкриваючи), торкніться ВИКОРИСТАТИ ЦЮ ПАПКУ, а потім ДОЗВОЛИТИ.</string>
     <string name="share_targets_description">Показувати кожну завантажену модель окремим варіантом у меню надсилання Android. Коли ви надсилаєте аудіо через конкретну модель, вона використовується тимчасово лише для цієї розшифровки.</string>
     <string name="advanced_sharing_toggle">Показувати моделі в меню надсилання</string>
     <string name="share_targets_models_info">Кожна завантажена модель з\'явиться як окрема ціль надсилання. Видалення моделі прибирає її ціль надсилання.</string>

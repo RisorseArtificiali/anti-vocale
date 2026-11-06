@@ -596,6 +596,8 @@
     <string name="share_format_srt_word">Kelime zamanlı altyazılar (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">Bu kayıtta saklı zaman damgası yok; zaman damgalı seçenekler düz metin paylaşacak.</string>
+    <string name="share_format_txt_file_audio_name">Ses dosyasının adını taşıyan metin dosyası (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">Ses dosyasının adını ve tarihi taşıyan metin dosyası (%1$s)</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Varsayılan Komut</string>
@@ -1037,8 +1039,8 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Paylaşım Menüsünde Modeller</string>
     <string name="voice_note_settings_title">Sesli mesajlar</string>
-    <string name="voice_note_settings_summary_on">WhatsApp sesli mesajlarının otomatik yazıya çevirisi · açık</string>
-    <string name="voice_note_settings_summary_off">WhatsApp sesli mesajlarının otomatik yazıya çevirisi · kapalı</string>
+    <string name="voice_note_settings_summary_on">Sesli mesajların otomatik yazıya çevirisi · açık</string>
+    <string name="voice_note_settings_summary_off">Sesli mesajların otomatik yazıya çevirisi · kapalı</string>
     <string name="voice_note_settings_summary_limited">Sesli mesaj gönderenini tanıma</string>
     <string name="voice_note_identity_title">Sesli not gönderenini tanıma</string>
     <string name="voice_note_identity_description">Transkripte edilen sesli mesajları gönderenin adıyla etiketler; buraya paylaşılan ya da otomatik olanlar. Şimdilik sadece WhatsApp. Ad, yalnızca bildirim bu açıkken geldiyse ve süre uyuyorsa görünür (tahmine dayalı ad yok); bekleme listesi yalnız bellekte yaşar. Bildirim erişimi gerekir.</string>
@@ -1065,6 +1067,12 @@
     <string name="voice_note_business_folder_grant_rejected">Bu, WhatsApp Business sesli notları klasörü değil. WhatsApp Business Voice Notes adlı klasörü seçin ve tekrar deneyin.</string>
     <string name="voice_note_business_folder_card_desc">Notları okumak için WhatsApp Business\'ın kaydettiği klasöre bir kez erişim verin:</string>
     <string name="voice_note_business_folder_sheet_step3">WhatsApp Business Voice Notes klasörü seçiliyken (açmadan) BU KLASÖRÜ KULLAN\'a, ardından İZİN VER\'e dokunun.</string>
+    <string name="voice_note_source_watched_folder">İzlenen klasör</string>
+    <string name="voice_note_watched_detection_description">Sesli mesajları dosya yöneticinizde görebileceğiniz bir klasöre kaydeden her uygulama için (örneğin Music/Signal konumuna kaydeden Signal): bir kez açıp o klasörü seçin; oraya gelen yeni ses dosyaları geldiği anda yazıya çevrilir. Her dosya yalnızca yazıya çevrilmek için okunur ve yalnızca bu cihazda; özellik kapalıyken hiçbir şey okunmaz. Ses erişimi gerektirir.</string>
+    <string name="voice_note_watched_folder_grant_rejected">Bu klasör izlenemez. Bu cihazın deposunda bir klasör seçin (deponun tamamı değil; WhatsApp klasörleri de değil, onların kendi bölümü var).</string>
+    <string name="voice_note_watched_folder_card_desc">Mesajları okumak için diğer uygulamanın kaydettiği klasöre bir kez erişim verin (bu cihazın deposundaki herhangi bir klasör):</string>
+    <string name="voice_note_watched_folder_sheet_step2">Diğer uygulamanın sesli mesajları kaydettiği klasörü açın (örneğin Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">Bu klasör seçiliyken (açmadan) BU KLASÖRÜ KULLAN\'a, ardından İZİN VER\'e dokunun.</string>
     <string name="share_targets_description">İndirilen her model sistem menüsünde ayrı bir seçenek olarak görünür. Sesi seçilen model işler.</string>
     <string name="advanced_sharing_toggle">İndirilen modelleri göster</string>
     <string name="share_targets_models_info">İndirilen her model paylaşım menüsünde ayrı bir öğe olarak görünür. Model silindiğinde menüden kalkar.</string>

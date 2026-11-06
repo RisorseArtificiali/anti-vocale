@@ -90,6 +90,9 @@ internal class FakePreferencesManager : PreferencesManager {
     val _voiceNoteTreeUri = MutableStateFlow<String?>(null)
     val _voiceNoteBusinessDetectionEnabled = MutableStateFlow(PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED)
     val _voiceNoteBusinessTreeUri = MutableStateFlow<String?>(null)
+    // TASK-966: the watched-folder source's pair, default off like the rest.
+    val _voiceNoteWatchedDetectionEnabled = MutableStateFlow(PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED)
+    val _voiceNoteWatchedTreeUri = MutableStateFlow<String?>(null)
     // TASK-681: the LAN-offload (OmniVoice) gate and its config triple.
     val _remoteOmnivoiceEnabled = MutableStateFlow(PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED)
     val _remoteOmnivoiceEndpoint = MutableStateFlow(PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT)
@@ -165,6 +168,8 @@ internal class FakePreferencesManager : PreferencesManager {
     override val voiceNoteTreeUri: Flow<String?> get() = _voiceNoteTreeUri
     override val voiceNoteBusinessDetectionEnabled: Flow<Boolean> get() = _voiceNoteBusinessDetectionEnabled
     override val voiceNoteBusinessTreeUri: Flow<String?> get() = _voiceNoteBusinessTreeUri
+    override val voiceNoteWatchedDetectionEnabled: Flow<Boolean> get() = _voiceNoteWatchedDetectionEnabled
+    override val voiceNoteWatchedTreeUri: Flow<String?> get() = _voiceNoteWatchedTreeUri
     override val remoteOmnivoiceEnabled: Flow<Boolean> get() = _remoteOmnivoiceEnabled
     override val remoteOmnivoiceEndpoint: Flow<String> get() = _remoteOmnivoiceEndpoint
     override val remoteOmnivoiceApiKey: Flow<String> get() = _remoteOmnivoiceApiKey
@@ -243,6 +248,8 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveVoiceNoteTreeUri(uri: String?) { _voiceNoteTreeUri.value = uri }
     override suspend fun saveVoiceNoteBusinessDetectionEnabled(enabled: Boolean) { _voiceNoteBusinessDetectionEnabled.value = enabled }
     override suspend fun saveVoiceNoteBusinessTreeUri(uri: String?) { _voiceNoteBusinessTreeUri.value = uri }
+    override suspend fun saveVoiceNoteWatchedDetectionEnabled(enabled: Boolean) { _voiceNoteWatchedDetectionEnabled.value = enabled }
+    override suspend fun saveVoiceNoteWatchedTreeUri(uri: String?) { _voiceNoteWatchedTreeUri.value = uri }
     override suspend fun saveCompactResultActions(enabled: Boolean) { _compactResultActions.value = enabled }
     override suspend fun saveLanguageChipEnabled(enabled: Boolean) { _languageChipEnabled.value = enabled }
     override suspend fun saveExternalModelsJson(json: String) { _externalModelsJson.value = json }

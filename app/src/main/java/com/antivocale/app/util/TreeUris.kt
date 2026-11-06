@@ -88,9 +88,14 @@ object TreeUris {
         // ARE paths; a colon inside a cloud provider's opaque id would
         // fabricate a nonexistent directory (code review F1).
         val authority = uri.authority
-        if (authority != EXTERNAL_STORAGE_AUTHORITY &&
-            authority != "com.android.providers.downloads.documents"
-        ) {
+        if (authority == EXTERNAL_STORAGE_AUTHORITY) {
+            // The volume root keeps its path here (display callers picked
+            // SOMETHING and deserve its location), unlike the watch-root
+            // helper below.
+            return externalStorageRawPath(uri, allowVolumeRoot = true)
+                ?: displayName(context, uri)
+        }
+        if (authority != "com.android.providers.downloads.documents") {
             return displayName(context, uri)
         }
         val docId = runCatching { DocumentsContract.getTreeDocumentId(uri) }.getOrNull()
@@ -108,4 +113,34 @@ object TreeUris {
         }
         return displayName(context, uri)
     }
+
+    /**
+     * TASK-966: the raw filesystem path of an external-storage tree, or
+     * null when the URI is not one (cloud providers use opaque ids, where
+     * no path exists). Pure docId work, no provider query: the
+     * watched-folder detector's FileObserver root consumes it (an observer
+     * needs a real path, which only the external-storage provider's
+     * "volume:path" and "raw:" docIds carry). The empty tail ("primary:",
+     * the whole volume root) is rejected by default: a WATCH root must
+     * name a folder, not a volume, while [displayPath] keeps rendering the
+     * volume root for picks that legitimately selected it.
+     */
+    fun externalStorageRawPathOrNull(uri: Uri): String? =
+        externalStorageRawPath(uri, allowVolumeRoot = false)
+
+    private fun externalStorageRawPath(uri: Uri, allowVolumeRoot: Boolean): String? =
+        runCatching {
+            if (uri.authority != EXTERNAL_STORAGE_AUTHORITY) return null
+            val docId = DocumentsContract.getTreeDocumentId(uri)
+            if (docId.startsWith("raw:")) {
+                return docId.removePrefix("raw:").ifBlank { null }
+            }
+            val sep = docId.indexOf(':')
+            if (sep <= 0) return null
+            val volume = docId.substring(0, sep)
+            val rest = docId.substring(sep + 1)
+            if (rest.isBlank() && !allowVolumeRoot) return null
+            val root = if (volume == "primary") "/storage/emulated/0" else "/storage/$volume"
+            if (rest.isBlank()) root else "$root/$rest"
+        }.getOrNull()
 }

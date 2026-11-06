@@ -516,6 +516,8 @@
     <string name="share_format_srt_word">ترجمات بتوقيت الكلمات (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">لا توجد طوابع زمنية محفوظة لهذا العنصر؛ ستستخدم الخيارات الزمنية نصًا عاديًا عند المشاركة.</string>
+    <string name="share_format_txt_file_audio_name">ملف نصي باسم الملف الصوتي (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">ملف نصي باسم الملف الصوتي مع التاريخ (%1$s)</string>
     <string name="saved_to_folder_nameless">تم الحفظ في %1$s</string>
     <string name="default_prompt_title">الموجّه الافتراضي</string>
     <string name="default_prompt_description">التعليمات المعطاة للنموذج أثناء النسخ. اتركه فارغًا لاستخدام الموجّه المدمج.</string>
@@ -884,8 +886,8 @@
     <string name="external_notice_family">إذا تعطل النسخ دون ظهور أي خطأ، فقد تكون البنية خاطئة: احذف النموذج وأعد استيراده مع تحديد بنية مختلفة.</string>
     <string name="share_targets_title">النماذج في قائمة المشاركة</string>
     <string name="voice_note_settings_title">الرسائل الصوتية</string>
-    <string name="voice_note_settings_summary_on">النسخ التلقائي للرسائل الصوتية في WhatsApp · مفعّل</string>
-    <string name="voice_note_settings_summary_off">النسخ التلقائي للرسائل الصوتية في WhatsApp · متوقف</string>
+    <string name="voice_note_settings_summary_on">النسخ التلقائي للرسائل الصوتية · مفعّل</string>
+    <string name="voice_note_settings_summary_off">النسخ التلقائي للرسائل الصوتية · متوقف</string>
     <string name="voice_note_settings_summary_limited">التعرّف على مرسلي الرسائل الصوتية</string>
     <string name="voice_note_identity_title">التعرّف على مرسل الرسالة الصوتية</string>
     <string name="voice_note_identity_description">يضيف اسم المرسل إلى الرسائل الصوتية بعد نسخها، سواء شاركتَه هنا أم اكتُشف تلقائيًا. يدعم WhatsApp فقط حاليًا. لا يظهر الاسم إلا إذا وصل إشعار الرسالة أثناء تفعيل هذه الميزة وتطابق طولها (بدون أسماء تخمينية)؛ وقائمة الانتظار تُحفظ في الذاكرة فقط. يتطلب الوصول إلى الإشعارات.</string>
@@ -1220,6 +1222,12 @@
     <string name="voice_note_business_folder_grant_rejected">هذا ليس مجلد WhatsApp Business Voice Notes. اختر المجلد المسمى WhatsApp Business Voice Notes وحاول مرة أخرى.</string>
     <string name="voice_note_business_folder_card_desc">لقراءة الرسائل الصوتية، امنح مرة واحدة الوصول إلى المجلد الذي يحفظ فيه WhatsApp Business رسائله:</string>
     <string name="voice_note_business_folder_sheet_step3">مع تحديد مجلد WhatsApp Business Voice Notes (دون فتحه)، انقر استخدام هذا المجلد ثم السماح.</string>
+    <string name="voice_note_source_watched_folder">مجلد مراقَب</string>
+    <string name="voice_note_watched_detection_description">لأي تطبيق يحفظ الرسائل الصوتية في مجلد تراه في مدير الملفات (مثل Signal الذي يحفظ في Music/Signal): فعّل الميزة واختر ذلك المجلد مرة واحدة، وسيتم نسخ الملفات الصوتية الجديدة التي تصل إليه فور وصولها. يُقرأ كل ملف لنسخه فقط، وعلى هذا الجهاز فقط؛ وعند إيقاف الميزة لا يُقرأ أي شيء. يتطلب الوصول إلى الصوت.</string>
+    <string name="voice_note_watched_folder_grant_rejected">لا يمكن مراقبة هذا المجلد. اختر مجلدًا في مساحة تخزين هذا الجهاز (وليس جذر التخزين بالكامل، وليس مجلدات WhatsApp فلها قسمها الخاص).</string>
+    <string name="voice_note_watched_folder_card_desc">لقراءة الرسائل، امنح مرة واحدة الوصول إلى المجلد الذي يحفظ فيه التطبيق الآخر رسائله (أي مجلد في مساحة تخزين هذا الجهاز):</string>
+    <string name="voice_note_watched_folder_sheet_step2">افتح المجلد الذي يحفظ فيه التطبيق الآخر الرسائل الصوتية (مثل Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">مع تحديد ذلك المجلد (دون فتحه)، انقر استخدام هذا المجلد ثم السماح.</string>
     <string name="bundle_restore_download_active">لا يزال تنزيل هذا النموذج قيد التقدم. انتظر انتهاءه أو ألغِه ثم استورد الحزمة مرة أخرى.</string>
     <string name="model_download_restore_active">تتم استعادة هذا النموذج الآن. انتظر انتهاءها ثم نزّله مرة أخرى.</string>
 

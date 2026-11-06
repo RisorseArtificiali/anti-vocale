@@ -565,6 +565,8 @@
     <string name="share_format_srt_word">Wortzeitgesteuerte Untertitel (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">Dieser Eintrag hat keine gespeicherten Zeitmarken; die Optionen mit Zeitbezug teilen Klartext.</string>
+    <string name="share_format_txt_file_audio_name">Textdatei mit dem Namen der Audiodatei (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">Textdatei mit dem Namen der Audiodatei, mit Datum (%1$s)</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Standard-Prompt</string>
@@ -994,8 +996,8 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Modelle im Teilen-Menü</string>
     <string name="voice_note_settings_title">Sprachnachrichten</string>
-    <string name="voice_note_settings_summary_on">Automatische Transkription von WhatsApp-Sprachnachrichten · aktiv</string>
-    <string name="voice_note_settings_summary_off">Automatische Transkription von WhatsApp-Sprachnachrichten · inaktiv</string>
+    <string name="voice_note_settings_summary_on">Automatische Transkription von Sprachnachrichten · aktiv</string>
+    <string name="voice_note_settings_summary_off">Automatische Transkription von Sprachnachrichten · inaktiv</string>
     <string name="voice_note_settings_summary_limited">Erkennung der Absender von Sprachnachrichten</string>
     <string name="voice_note_identity_title">Erkennung des Absenders von Sprachnachrichten</string>
     <string name="voice_note_identity_description">Beschriftet transkribierte Sprachnachrichten mit dem Namen des Absenders, geteilt oder automatisch. Zurzeit nur WhatsApp. Der Name erscheint nur, wenn die Benachrichtigung bei aktivierter Option einging und die Länge übereinstimmt (keine geratenen Namen); die Warteliste lebt nur im Speicher. Benötigt Benachrichtigungszugriff.</string>
@@ -1022,6 +1024,12 @@
     <string name="voice_note_business_folder_grant_rejected">Das ist nicht der Ordner für WhatsApp Business-Sprachnachrichten. Wähle den Ordner mit dem Namen WhatsApp Business Voice Notes und versuche es erneut.</string>
     <string name="voice_note_business_folder_card_desc">Um die Nachrichten zu lesen, erteile einmalig Zugriff auf den Ordner, in dem WhatsApp Business sie speichert:</string>
     <string name="voice_note_business_folder_sheet_step3">Wähle den Ordner WhatsApp Business Voice Notes aus (nicht öffnen) und tippe auf DIESEN ORDNER VERWENDEN und dann auf ZULASSEN.</string>
+    <string name="voice_note_source_watched_folder">Beobachteter Ordner</string>
+    <string name="voice_note_watched_detection_description">Für jede App, die Sprachnachrichten in einem Ordner speichert, den du im Dateimanager sehen kannst (z. B. Signal, das unter Music/Signal speichert): einmal einschalten und den Ordner wählen, danach werden neue Audiodateien dort beim Eintreffen transkribiert. Jede Datei wird nur zum Transkribieren gelesen, und nur auf diesem Gerät; bei ausgeschalteter Funktion wird nichts gelesen. Benötigt Audiozugriff.</string>
+    <string name="voice_note_watched_folder_grant_rejected">Dieser Ordner kann nicht beobachtet werden. Wähle einen Ordner auf dem Speicher dieses Geräts (nicht den gesamten Speicherstamm und nicht die WhatsApp-Ordner, die haben ihre eigenen Abschnitte).</string>
+    <string name="voice_note_watched_folder_card_desc">Um die Nachrichten zu lesen, erteile einmal Zugriff auf den Ordner, in dem deine andere App sie speichert (ein beliebiger Ordner auf dem Speicher dieses Geräts):</string>
+    <string name="voice_note_watched_folder_sheet_step2">Öffne den Ordner, in den deine andere App Sprachnachrichten speichert (z. B. Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">Mit diesem Ordner ausgewählt (nicht öffnen) tippe auf DIESEN ORDNER VERWENDEN und dann auf ZULASSEN.</string>
     <string name="share_targets_description">Jedes heruntergeladene Modell erscheint als eigener Eintrag im Systemmenü. Das Audio verarbeitet das ausgewählte Modell.</string>
     <string name="advanced_sharing_toggle">Heruntergeladene Modelle anzeigen</string>
     <string name="share_targets_models_info">Jedes heruntergeladene Modell erscheint als Eintrag im Teilen-Menü. Beim Löschen wird das Modell aus dem Menü entfernt.</string>

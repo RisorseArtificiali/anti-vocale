@@ -208,6 +208,19 @@ interface PreferencesManager {
     val voiceNoteBusinessDetectionEnabled: Flow<Boolean>
 
     /**
+     * TASK-966: the same gate for the generic watched-folder source
+     * (a user-picked folder; Signal's Music/Signal among others),
+     * independent of the two WhatsApp gates. Off by default. Callers that
+     * work per source go through [VoiceNoteSource]'s accessors.
+     */
+    val voiceNoteWatchedDetectionEnabled: Flow<Boolean>
+    suspend fun saveVoiceNoteWatchedDetectionEnabled(enabled: Boolean)
+
+    /** TASK-966: the watched-folder source's SAF tree grant URI. */
+    val voiceNoteWatchedTreeUri: Flow<String?>
+    suspend fun saveVoiceNoteWatchedTreeUri(uri: String?)
+
+    /**
      * TASK-681: the LAN-offload consent gate. Off by default; while off the
      * backend has no surface anywhere and nothing leaves the device. The
      * disclosure paragraph the Settings card renders is the contract this

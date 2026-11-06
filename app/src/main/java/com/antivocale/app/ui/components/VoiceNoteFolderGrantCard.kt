@@ -111,10 +111,17 @@ fun VoiceNoteFolderGrantCard(
                     when (source) {
                         VoiceNoteSource.WHATSAPP -> R.string.voice_note_folder_card_desc
                         VoiceNoteSource.WHATSAPP_BUSINESS -> R.string.voice_note_business_folder_card_desc
+                        VoiceNoteSource.WATCHED_FOLDER -> R.string.voice_note_watched_folder_card_desc
                     }))
             }
-            Spacer(Modifier.height(12.dp))
-            MonospacePathChip(breadcrumbAnnotated(segments, boldFrom = if (granted) segments.size - 1 else 1))
+            // TASK-966: the watched-folder source has no canonical expected
+            // path (the user picks the folder), so the chip renders only
+            // once a grant exists; the WhatsApp pair keeps its expected
+            // path visible while missing.
+            if (granted || source != VoiceNoteSource.WATCHED_FOLDER) {
+                Spacer(Modifier.height(12.dp))
+                MonospacePathChip(breadcrumbAnnotated(segments, boldFrom = if (granted) segments.size - 1 else 1))
+            }
             Spacer(Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -161,16 +168,26 @@ fun VoiceNoteFolderGrantSheet(
             )
             Spacer(Modifier.height(14.dp))
             GrantSheetStep(1, stringResource(R.string.voice_note_folder_sheet_step1))
-            GrantSheetStep(2, stringResource(R.string.voice_note_folder_sheet_step2)) {
-                MonospacePathChip(
-                    AnnotatedString(
-                        voiceNotePathSegments(granted = false, uriString = null, source = source)
-                            .joinToString(" › ")))
+            GrantSheetStep(2, stringResource(
+                when (source) {
+                    VoiceNoteSource.WHATSAPP,
+                    VoiceNoteSource.WHATSAPP_BUSINESS -> R.string.voice_note_folder_sheet_step2
+                    // TASK-966: no canonical path to show for a user-picked
+                    // folder; the text alone names what to look for.
+                    VoiceNoteSource.WATCHED_FOLDER -> R.string.voice_note_watched_folder_sheet_step2
+                })) {
+                if (source != VoiceNoteSource.WATCHED_FOLDER) {
+                    MonospacePathChip(
+                        AnnotatedString(
+                            voiceNotePathSegments(granted = false, uriString = null, source = source)
+                                .joinToString(" › ")))
+                }
             }
             GrantSheetStep(3, stringResource(
                 when (source) {
                     VoiceNoteSource.WHATSAPP -> R.string.voice_note_folder_sheet_step3
                     VoiceNoteSource.WHATSAPP_BUSINESS -> R.string.voice_note_business_folder_sheet_step3
+                    VoiceNoteSource.WATCHED_FOLDER -> R.string.voice_note_watched_folder_sheet_step3
                 }))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -250,11 +267,12 @@ private fun breadcrumbAnnotated(segments: List<String>, boldFrom: Int): Annotate
 /**
  * The breadcrumb segments: the localized storage-root label plus the real
  * directory names. Granted: the SAF display path of the picked tree;
- * missing: the canonical expected path from [voiceNotesRoot]. The
- * expected path is the synchronous initial value (pure string work), and
- * the granted display path resolves on Dispatchers.IO because its
- * cloud-tree fallback is a documents-provider query (review F4: never on
- * the composition thread).
+ * missing: the canonical expected path from [voiceNotesRoot] (WhatsApp
+ * sources; the watched-folder source has none, and renders the bare
+ * storage label until a grant exists). The expected path is the
+ * synchronous initial value (pure string work), and the granted display
+ * path resolves on Dispatchers.IO because its cloud-tree fallback is a
+ * documents-provider query (review F4: never on the composition thread).
  */
 @Composable
 private fun voiceNotePathSegments(
@@ -265,7 +283,10 @@ private fun voiceNotePathSegments(
     val context = LocalContext.current
     val storageRootLabel = stringResource(R.string.voice_note_folder_storage_root)
     return produceState(
-        initialValue = segmentsUnderLabel(storageRootLabel, voiceNotesRoot(source).absolutePath),
+        initialValue = when (source) {
+            VoiceNoteSource.WATCHED_FOLDER -> listOf(storageRootLabel)
+            else -> segmentsUnderLabel(storageRootLabel, voiceNotesRoot(source).absolutePath)
+        },
         granted,
         uriString,
         // The label is an input too: a locale change with a live grant

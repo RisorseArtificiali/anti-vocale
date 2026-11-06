@@ -2070,12 +2070,16 @@ fun SettingsTab(
             // part inside. Search contract: the hub's registry vocabulary
             // is the static union of its own and all three children's
             // strings.
-            // Either client on reads as on (WhatsApp Business support).
+            // Any source on reads as on (WhatsApp Business support; the
+            // TASK-966 watched-folder source).
             val whatsAppDetectionEnabled by viewModel
                 .voiceNoteDetectionEnabled(com.antivocale.app.data.VoiceNoteSource.WHATSAPP).collectAsState()
             val businessDetectionEnabled by viewModel
                 .voiceNoteDetectionEnabled(com.antivocale.app.data.VoiceNoteSource.WHATSAPP_BUSINESS).collectAsState()
-            val voiceNoteDetectionEnabledForSummary = whatsAppDetectionEnabled || businessDetectionEnabled
+            val watchedDetectionEnabled by viewModel
+                .voiceNoteDetectionEnabled(com.antivocale.app.data.VoiceNoteSource.WATCHED_FOLDER).collectAsState()
+            val voiceNoteDetectionEnabledForSummary =
+                whatsAppDetectionEnabled || businessDetectionEnabled || watchedDetectionEnabled
             // R-1 (review 2026-10-14): the subpage's own ON_RESUME probe only
             // runs while the page is open; an external grant or revoke of the
             // read-media permission must re-evaluate the coordinator's
@@ -2194,6 +2198,8 @@ internal fun VoiceNoteSettingsScreen(
                                 R.string.voice_note_source_whatsapp
                             com.antivocale.app.data.VoiceNoteSource.WHATSAPP_BUSINESS ->
                                 R.string.voice_note_source_whatsapp_business
+                            com.antivocale.app.data.VoiceNoteSource.WATCHED_FOLDER ->
+                                R.string.voice_note_source_watched_folder
                         })
                     // key: each source keeps its own remembered state.
                     androidx.compose.runtime.key(source) {
@@ -2348,6 +2354,8 @@ private fun VoiceNoteDetectionSection(
                                 R.string.voice_note_folder_grant_rejected
                             com.antivocale.app.data.VoiceNoteSource.WHATSAPP_BUSINESS ->
                                 R.string.voice_note_business_folder_grant_rejected
+                            com.antivocale.app.data.VoiceNoteSource.WATCHED_FOLDER ->
+                                R.string.voice_note_watched_folder_grant_rejected
                         },
                         Toast.LENGTH_LONG)
                 is com.antivocale.app.data.VoiceNoteTreeGrant.GrantOutcome.Saved -> {}
@@ -2364,6 +2372,8 @@ private fun VoiceNoteDetectionSection(
                         R.string.voice_note_detection_description
                     com.antivocale.app.data.VoiceNoteSource.WHATSAPP_BUSINESS ->
                         R.string.voice_note_business_detection_description
+                    com.antivocale.app.data.VoiceNoteSource.WATCHED_FOLDER ->
+                        R.string.voice_note_watched_detection_description
                 }),
             checked = voiceNoteDetectionEnabled,
             onCheckedChange = { enabled ->
@@ -4194,7 +4204,8 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     // TASK-835 (the N>=2 subpage rule): the voice-note hub, whose page
     // hosts the three entries. Static union vocabulary: the hub's strings
     // plus all three children's (sender recognition, detection, folder),
-    // the detection and folder ones for both WhatsApp clients.
+    // the detection and folder ones for every detection source (the two
+    // WhatsApp clients and the TASK-966 watched-folder source).
     SettingsSearchCard(
         SettingsSearchId.VOICE_NOTE_HUB, SettingsSearchSection.ADVANCED,
         listOf(
@@ -4205,7 +4216,10 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.voice_note_folder_card_title, R.string.voice_note_folder_card_desc,
             R.string.voice_note_source_whatsapp_business,
             R.string.voice_note_business_detection_description,
-            R.string.voice_note_business_folder_card_desc),
+            R.string.voice_note_business_folder_card_desc,
+            R.string.voice_note_source_watched_folder,
+            R.string.voice_note_watched_detection_description,
+            R.string.voice_note_watched_folder_card_desc),
         group = SettingsSearchGroup.INTEGRATIONS,
     ),
     SettingsSearchCard(

@@ -776,6 +776,8 @@
     <string name="share_format_srt_word">زیرنویس با زمان‌بندی کلمات (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">این مورد هیچ مهر زمانی ذخیره‌شده ندارد؛ گزینه‌های زمان‌دار متن ساده را به اشتراک می‌گذارند.</string>
+    <string name="share_format_txt_file_audio_name">فایل متنی با نام فایل صوتی (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">فایل متنی با نام فایل صوتی، همراه با تاریخ (%1$s)</string>
     <string name="progressive_initial">در حال آماده‌سازی متن؛ نتیجه نهایی در پایان</string>
     <string name="processing_segment_progress">قطعه %1$d از %2$d…</string>
 
@@ -995,8 +997,8 @@
     <string name="external_notice_family">اگر رونویسی بدون خطا نیمه‌کاره بماند، ممکن است معماری درست نباشد: مدل را حذف کنید و با معماری دیگری دوباره وارد کنید.</string>
     <string name="share_targets_title">مدل‌ها در منوی هم‌رسانی</string>
     <string name="voice_note_settings_title">پیام‌های صوتی</string>
-    <string name="voice_note_settings_summary_on">تبدیل خودکار پیام‌های صوتی واتس‌اپ به متن · روشن</string>
-    <string name="voice_note_settings_summary_off">تبدیل خودکار پیام‌های صوتی واتس‌اپ به متن · خاموش</string>
+    <string name="voice_note_settings_summary_on">تبدیل خودکار پیام‌های صوتی به متن · روشن</string>
+    <string name="voice_note_settings_summary_off">تبدیل خودکار پیام‌های صوتی به متن · خاموش</string>
     <string name="voice_note_settings_summary_limited">تشخیص فرستندهٔ پیام‌های صوتی</string>
     <string name="voice_note_identity_title">تشخیص فرستنده پیام صوتی</string>
     <string name="voice_note_identity_description">نوت‌های صوتی تبدیل‌شده به متن را با نام فرستنده برچسب می‌زند، چه اینجا به اشتراک گذاشته شده چه خودکار. فعلاً فقط واتس‌اپ. نام تنها وقتی نمایش داده می‌شود که اعلان با گزینه روشن رسیده و مدت مطابقت داشته باشد (بدون حدس); فهرست انتظار فقط در حافظه است. نیاز به دسترسی اعلان‌ها دارد.</string>
@@ -1023,6 +1025,12 @@
     <string name="voice_note_business_folder_grant_rejected">این پوشه پیام‌های صوتی WhatsApp Business نیست. پوشه‌ای به نام WhatsApp Business Voice Notes را انتخاب کنید و دوباره امتحان کنید.</string>
     <string name="voice_note_business_folder_card_desc">برای خواندن پیام‌ها، یک بار به پوشه‌ای که WhatsApp Business آن‌ها را ذخیره می‌کند دسترسی دهید:</string>
     <string name="voice_note_business_folder_sheet_step3">با انتخاب پوشه WhatsApp Business Voice Notes (بدون باز کردن آن)، روی استفاده از این پوشه و سپس اجازه بزنید.</string>
+    <string name="voice_note_source_watched_folder">پوشه تحت نظر</string>
+    <string name="voice_note_watched_detection_description">برای هر اپی که پیام‌های صوتی را در پوشه‌ای که در مدیریت فایل می‌بینید ذخیره می‌کند (مثلاً Signal که در Music/Signal ذخیره می‌کند): یک بار آن را روشن کنید و آن پوشه را انتخاب کنید؛ از آن پس فایل‌های صوتی جدید به محض رسیدن تبدیل می‌شوند. هر فایل فقط برای تبدیل خوانده می‌شود و فقط روی همین دستگاه؛ با خاموش بودن قابلیت هیچ چیزی خوانده نمی‌شود. نیاز به دسترسی صدا دارد.</string>
+    <string name="voice_note_watched_folder_grant_rejected">این پوشه را نمی‌توان زیر نظر گرفت. یک پوشه در حافظه این دستگاه انتخاب کنید (نه کل ریشه حافظه و نه پوشه‌های واتس‌اپ، آن‌ها بخش خودشان را دارند).</string>
+    <string name="voice_note_watched_folder_card_desc">برای خواندن پیام‌ها، یک بار به پوشه‌ای که اپ دیگر پیام‌ها را در آن ذخیره می‌کند دسترسی بدهید (هر پوشه‌ای در حافظه این دستگاه):</string>
+    <string name="voice_note_watched_folder_sheet_step2">پوشه‌ای را باز کنید که اپ دیگر پیام‌های صوتی را در آن ذخیره می‌کند (مثلاً Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">با انتخاب آن پوشه (بدون باز کردن آن)، روی استفاده از این پوشه و سپس اجازه بزنید.</string>
     <string name="share_targets_description">هر مدل دانلودشده به شکل گزینه‌ای جدا در منوی سیستم ظاهر می‌شود. صدا توسط مدل انتخاب‌شده پردازش می‌شود.</string>
     <string name="advanced_sharing_toggle">نمایش مدل‌های دانلودشده</string>
     <string name="share_targets_models_info">هر مدل دانلودشده به شکل موردی در منوی هم‌رسانی ظاهر می‌شود. با حذف یک مدل، آن از منو برداشته می‌شود.</string>

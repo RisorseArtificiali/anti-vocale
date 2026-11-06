@@ -512,6 +512,8 @@
     <string name="share_format_srt_word">Subtítulos con tiempos por palabra (.srt)</string>
     <string name="share_format_vtt">WebVTT (.vtt)</string>
     <string name="share_format_no_cues">Esta entrada no tiene marcas de tiempo guardadas; las opciones con tiempo compartirán texto sin formato.</string>
+    <string name="share_format_txt_file_audio_name">Archivo de texto con el nombre del audio (%1$s)</string>
+    <string name="share_format_txt_file_audio_name_date">Archivo de texto con el nombre del audio, con fecha (%1$s)</string>
     <string name="default_prompt_title">Prompt predeterminado</string>
     <string name="default_prompt_description">Instrucción para el modelo durante la transcripción. Si se deja vacío, se usa el prompt integrado.</string>
     <string name="default_prompt_placeholder">ej. Transcribe este discurso:</string>
@@ -892,8 +894,8 @@
     <string name="external_notice_family">Si la transcripción se cierra sin error, la arquitectura puede ser incorrecta: elimina y reimporta el modelo con otra arquitectura.</string>
     <string name="share_targets_title">Modelos en el menú Compartir</string>
     <string name="voice_note_settings_title">Notas de voz</string>
-    <string name="voice_note_settings_summary_on">Transcripción automática de las notas de voz de WhatsApp · activa</string>
-    <string name="voice_note_settings_summary_off">Transcripción automática de las notas de voz de WhatsApp · inactiva</string>
+    <string name="voice_note_settings_summary_on">Transcripción automática de las notas de voz · activa</string>
+    <string name="voice_note_settings_summary_off">Transcripción automática de las notas de voz · inactiva</string>
     <string name="voice_note_settings_summary_limited">Reconocimiento del remitente de las notas de voz</string>
     <string name="voice_note_identity_title">Reconocimiento del remitente de notas de voz</string>
     <string name="voice_note_identity_description">Etiqueta las notas de voz transcritas con el nombre del remitente, compartidas aquí o automáticas. Por ahora solo WhatsApp. El nombre aparece solo si la notificación llegó con esto activado y la duración coincide (nada de nombres adivinados); la lista de espera vive solo en memoria. Requiere acceso a notificaciones.</string>
@@ -920,6 +922,12 @@
     <string name="voice_note_business_folder_grant_rejected">Esa no es la carpeta de notas de voz de WhatsApp Business. Elige la carpeta llamada WhatsApp Business Voice Notes e inténtalo de nuevo.</string>
     <string name="voice_note_business_folder_card_desc">Para leer las notas, concede una vez el acceso a la carpeta donde WhatsApp Business las guarda:</string>
     <string name="voice_note_business_folder_sheet_step3">Con la carpeta WhatsApp Business Voice Notes seleccionada (sin abrirla), toca USAR ESTA CARPETA y luego PERMITIR.</string>
+    <string name="voice_note_source_watched_folder">Carpeta vigilada</string>
+    <string name="voice_note_watched_detection_description">Para cualquier aplicación que guarde notas de voz en una carpeta visible en tu gestor de archivos (por ejemplo Signal, que guarda en Music/Signal): actívala y elige esa carpeta una vez, y a partir de ahí los nuevos archivos de audio que lleguen se transcriben al momento. Cada archivo se lee solo para transcribirlo, y solo en este dispositivo; con la función desactivada no se lee nada. Requiere acceso al audio.</string>
+    <string name="voice_note_watched_folder_grant_rejected">Esa carpeta no se puede vigilar. Elige una carpeta del almacenamiento del dispositivo (no la raíz del almacenamiento completa, ni las carpetas de WhatsApp, que tienen su propia sección).</string>
+    <string name="voice_note_watched_folder_card_desc">Para leer las notas, concede una vez acceso a la carpeta donde las guarda tu otra aplicación (cualquier carpeta del almacenamiento del dispositivo):</string>
+    <string name="voice_note_watched_folder_sheet_step2">Abre la carpeta donde tu otra aplicación guarda las notas de voz (por ejemplo Music › Signal):</string>
+    <string name="voice_note_watched_folder_sheet_step3">Con esa carpeta seleccionada (sin abrirla), toca USAR ESTA CARPETA y luego PERMITIR.</string>
     <string name="share_targets_description">Cada modelo descargado aparece como opción separada en el menú del sistema. El audio lo procesa el modelo seleccionado.</string>
     <string name="advanced_sharing_toggle">Mostrar modelos descargados</string>
     <string name="share_targets_models_info">Cada modelo descargado aparecerá como opción en el menú Compartir. Al eliminar un modelo, desaparece del menú.</string>
