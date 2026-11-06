@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.viewmodel
 
+import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.LogEntity
 import com.antivocale.app.transcription.TranscriptionBackendManager
@@ -11,9 +12,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -24,14 +28,14 @@ import org.junit.Test
  * interim writes go through the orchestrator's private path.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class LogsViewModelSuccessTest : ViewModelTeardownTest() {
+class LogsViewModelSuccessTest {
 
     private lateinit var logDao: LogDao
     private lateinit var viewModel: LogsViewModel
     private val testDispatcher = StandardTestDispatcher()
 
-    // A field (not the constructor default) so the harness cancels it.
-    private val appScope = register(CoroutineScope(SupervisorJob() + Dispatchers.IO))
+    // TASK-960: a field (not the constructor default) so tearDown can cancel it.
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val testTaskId = "test-task-123"
     private val pendingEntity = LogEntity(
@@ -47,7 +51,15 @@ class LogsViewModelSuccessTest : ViewModelTeardownTest() {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         logDao = mockk(relaxed = true)
-        viewModel = register(LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager(), staticRegistry(), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), orchestrator = mockk(relaxed = true), duplicateGuard = mockk(relaxed = true), appScope = appScope))
+        viewModel = LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager(), staticRegistry(), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), orchestrator = io.mockk.mockk(relaxed = true), duplicateGuard = io.mockk.mockk(relaxed = true), appScope = appScope)
+    }
+
+    @After
+    fun tearDown() {
+        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
+        appScope.cancel()
+        Dispatchers.resetMain()
     }
 
     @Test

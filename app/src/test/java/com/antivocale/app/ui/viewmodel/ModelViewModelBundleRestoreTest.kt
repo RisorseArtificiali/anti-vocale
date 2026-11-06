@@ -4,6 +4,7 @@ import com.antivocale.app.testing.RepoFiles
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelStore
@@ -22,10 +23,13 @@ import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -34,8 +38,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 
 /**
  * TASK-924 (GH #124 reopen): the builtin-restore routing of the bundle
@@ -53,24 +55,18 @@ import kotlinx.coroutines.SupervisorJob
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
-class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
+class ModelViewModelBundleRestoreTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    // A field (not inline in setup) so the harness cancels it.
-    private val applicationScope = register(CoroutineScope(SupervisorJob()))
+    // TASK-960: a field (not inline in setup) so tearDown can cancel it.
+    private val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
     private lateinit var fakePrefs: FakePreferencesManager
     private lateinit var store: ExternalModelStore
     private lateinit var viewModel: ModelViewModel
     private lateinit var mockContext: Context
     private lateinit var importerRoot: File
     private lateinit var appFilesDir: File
-    private lateinit var appCacheDir: File
-    /** Every fixture temp dir created this test method; reclaimed in afterTeardown. */
-    private val scratch = mutableListOf<File>()
-
-    private fun newTempDir(name: String): File =
-        Files.createTempDirectory(name).toFile().also { scratch += it }
 
     /** Served by the mocked ContentResolver for the next bundle import. */
     private var nextBundle: ByteArray = ByteArray(0)
@@ -88,9 +84,9 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
         Dispatchers.setMain(testDispatcher)
         fakePrefs = FakePreferencesManager()
         store = ExternalModelStore(fakePrefs)
-        importerRoot = newTempDir("bundle-restore-ext")
-        appFilesDir = newTempDir("bundle-restore-files")
-        appCacheDir = newTempDir("bundle-restore-cache")
+        importerRoot = Files.createTempDirectory("bundle-restore-ext").toFile()
+        appFilesDir = Files.createTempDirectory("bundle-restore-files").toFile()
+        val appCacheDir = Files.createTempDirectory("bundle-restore-cache").toFile()
 
         // The served catalog re-pins the qwen3-asr AND nemotron-streaming
         // files onto the fixture bytes (the real pins hash the real weights
@@ -124,7 +120,7 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
         com.antivocale.app.data.catalog.BundledCatalog.attach(mockContext)
 
         val sharedDemoter = com.antivocale.app.transcription.SilentModelDemoter(fakePrefs)
-        viewModel = register(ModelViewModel(
+        viewModel = ModelViewModel(
             preferencesManager = fakePrefs,
             activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry(), FakeExternalRecordsProvider()),
             tokenManager = mockk(relaxed = true),
@@ -137,13 +133,7 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
             externalModelStore = store,
             recordsProvider = com.antivocale.app.data.DefaultExternalModelRecordsProvider(
                 store = store,
-                // Deliberately NOT registered with the teardown harness: the
-                // provider's collectors observe the store; cancelling the
-                // scope at teardown races the dir-missing records refresh
-                // and, on CI timing, crashes pending jobs into the NEXT
-                // class's Main (the 783de4fa red run). The scope is
-                // test-JVM-lifetime bounded either way.
-                scope = CoroutineScope(SupervisorJob()),
+                scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
             ),
             externalModelImporter = ExternalModelImporter(store = store, filesRoot = { importerRoot }),
             litertLmUrlImporter = mockk(relaxed = true),
@@ -152,7 +142,7 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
             silentModelDemoter = sharedDemoter,
             modelActivator = com.antivocale.app.transcription.ModelActivator(
                 fakePrefs, sharedDemoter, store, staticRegistry()),
-        ))
+        )
         // LAST: the registry helpers above seed the catalog singleton with
         // the REAL entries; re-seed with the patched ones so the identity
         // guard sees the fixture pins (BundledCatalog caches per process).
@@ -160,22 +150,21 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
             com.antivocale.app.data.catalog.ModelCatalogJson.parseCatalog(nextCatalogJson))
     }
 
-    override fun afterTeardown() {
+    @After
+    fun tearDown() {
+        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
+        applicationScope.cancel()
+        Dispatchers.resetMain()
         // The patched seed must not leak into later classes sharing this
         // worker JVM (the catalog singleton caches per process).
         com.antivocale.app.data.catalog.BundledCatalog.seed(
             com.antivocale.app.transcription.bundledCatalogEntriesForTest())
-        // The temp roots the suites scratch into (review round: they were
-        // never reclaimed; the hook exists exactly for mock-free file I/O).
-        if (::importerRoot.isInitialized) importerRoot.deleteRecursively()
-        if (::appFilesDir.isInitialized) appFilesDir.deleteRecursively()
-        if (::appCacheDir.isInitialized) appCacheDir.deleteRecursively()
-        scratch.forEach { it.deleteRecursively() }
     }
 
     /** The real download path's qwen3 directory shape: files + tokenizer/ tree. */
     private fun qwen3SourceDir(): File {
-        val dir = newTempDir("qwen3-src")
+        val dir = Files.createTempDirectory("qwen3-src").toFile()
         File(dir, "conv_frontend.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 1 })
         File(dir, "encoder.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 2 })
         File(dir, "decoder.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 3 })
@@ -303,7 +292,7 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
     /** The streaming Nemotron fixture: the catalog variant's four file
      *  names, no metadata theater (the identity pass never loads it). */
     private fun nemotronStreamingSourceDir(): File {
-        val dir = newTempDir("bundle-src-nemotron")
+        val dir = Files.createTempDirectory("bundle-src-nemotron").toFile()
         File(dir, "encoder.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 1 })
         File(dir, "decoder.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 2 })
         File(dir, "joiner.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 3 })
@@ -405,7 +394,7 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
     /** The gigaam-shaped transducer source the importer's validation accepts
      *  (the ModelViewModelBundleLinkTest fixture shape). */
     private fun transducerSourceDir(): File {
-        val dir = newTempDir("bundle-src")
+        val dir = Files.createTempDirectory("bundle-src").toFile()
         val metadataProp = { key: String, value: String ->
             key.toByteArray() + byteArrayOf(0x12, value.length.toByte()) + value.toByteArray()
         }

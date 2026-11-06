@@ -7,6 +7,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.ExternalModelImporter
@@ -21,14 +22,17 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -38,8 +42,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 
 /**
  * TASK-373 (device-free): the litert-lm URL import must persist model_path and
@@ -50,12 +52,12 @@ import kotlinx.coroutines.SupervisorJob
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
-class ModelViewModelLitertLmImportTest : ViewModelTeardownTest() {
+class ModelViewModelLitertLmImportTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    // A field (not inline in setup) so the harness cancels it.
-    private val applicationScope = register(CoroutineScope(SupervisorJob()))
+    // TASK-960: a field (not inline in setup) so tearDown can cancel it.
+    private val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
     private val backendKey = stringPreferencesKey("transcription_backend")
     private val modelPathKey = stringPreferencesKey("model_path")
 
@@ -92,7 +94,7 @@ class ModelViewModelLitertLmImportTest : ViewModelTeardownTest() {
         every { mockContext.applicationContext } returns mockContext
         com.antivocale.app.data.catalog.BundledCatalog.attach(mockContext)
         val sharedDemoter = com.antivocale.app.transcription.SilentModelDemoter(prefs)
-        viewModel = register(ModelViewModel(
+        viewModel = ModelViewModel(
             preferencesManager = prefs,
             activeModelRepository = ActiveModelRepository(prefs, mockContext, staticRegistry(), FakeExternalRecordsProvider()),
             tokenManager = mockk(relaxed = true),
@@ -119,7 +121,15 @@ class ModelViewModelLitertLmImportTest : ViewModelTeardownTest() {
                 externalModelStore = com.antivocale.app.data.ExternalModelStore(prefs),
                 backendRegistry = staticRegistry(),
                 ),
-        ))
+        )
+    }
+
+    @After
+    fun tearDown() {
+        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
+        applicationScope.cancel()
+        Dispatchers.resetMain()
     }
 
     @Test

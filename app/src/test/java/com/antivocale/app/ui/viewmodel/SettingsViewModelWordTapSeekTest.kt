@@ -8,9 +8,11 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -25,7 +27,7 @@ import org.junit.Test
  * the stale initial value before the upstream lands.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class SettingsViewModelWordTapSeekTest : ViewModelTeardownTest() {
+class SettingsViewModelWordTapSeekTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var harness: SettingsViewModelTestHelper
@@ -35,9 +37,18 @@ class SettingsViewModelWordTapSeekTest : ViewModelTeardownTest() {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        harness = register(SettingsViewModelTestHelper())
+        harness = SettingsViewModelTestHelper()
         fakePrefs = harness.fakePrefs
         viewModel = harness.viewModel
+    }
+
+    @After
+    fun tearDown() {
+        // TASK-960: guarded so a @Before that died mid-harness-construction
+        // still reaches resetMain (an unguarded lateinit access here would
+        // leave Main swapped for the NEXT class).
+        if (::harness.isInitialized) harness.cleanup()
+        Dispatchers.resetMain()
     }
 
     @Test

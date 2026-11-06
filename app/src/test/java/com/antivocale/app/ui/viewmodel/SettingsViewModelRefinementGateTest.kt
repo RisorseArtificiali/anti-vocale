@@ -5,14 +5,17 @@ import com.antivocale.app.data.FakePreferencesManager
 import com.antivocale.app.transcription.SherpaModelManager
 import io.mockk.coEvery
 import io.mockk.mockkObject
+import io.mockk.unmockkAll
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -38,7 +41,7 @@ import org.junit.Test
  * gate reports).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class SettingsViewModelRefinementGateTest : ViewModelTeardownTest() {
+class SettingsViewModelRefinementGateTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val externalRecords = MutableStateFlow<List<ExternalModelRecord>>(emptyList())
@@ -57,9 +60,19 @@ class SettingsViewModelRefinementGateTest : ViewModelTeardownTest() {
         // exception was attributed to the NEXT test (the shifting
         // UncaughtExceptionsBeforeTest victims on CI).
         mockkObject(SherpaModelManager.Companion)
-        harness = register(SettingsViewModelTestHelper(externalRecords = externalRecords))
+        harness = SettingsViewModelTestHelper(externalRecords = externalRecords)
         fakePrefs = harness.fakePrefs
         viewModel = harness.viewModel
+    }
+
+    @After
+    fun tearDown() {
+        // TASK-960: guarded so a @Before that died mid-harness-construction
+        // still reaches resetMain (an unguarded lateinit access here would
+        // leave Main swapped for the NEXT class).
+        if (::harness.isInitialized) harness.cleanup()
+        Dispatchers.resetMain()
+        unmockkAll()
     }
 
     /** Installs two built-in models through the saved-path preference. */

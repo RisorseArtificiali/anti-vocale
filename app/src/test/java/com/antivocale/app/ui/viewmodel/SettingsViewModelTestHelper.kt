@@ -40,11 +40,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * PRECONDITION: construct only AFTER Dispatchers.setMain(testDispatcher)
  * ran in the suite's setup (the ViewModel's init launches on Main; an
  * uninitialized Main fails every test with a dispatcher error that reads
- * like a harness bug). Since TASK-961 the pairing is registration:
- * construct through ViewModelTeardownTest.register, which cancels the
- * ViewModel's scope in the ordered teardown and calls [cleanup] after
- * Main resets (the speaker-ids temp dir is the helper's one filesystem
- * footprint).
+ * like a harness bug). Pair every construction with [cleanup] in @After
+ * (the speaker-ids temp dir is the helper's one filesystem footprint).
  */
 internal class SettingsViewModelTestHelper(
     val fakePrefs: FakePreferencesManager = FakePreferencesManager(),
@@ -59,12 +56,10 @@ internal class SettingsViewModelTestHelper(
         .createTempDirectory("speaker-ids").toFile()
 
     /**
-     * The teardown half, run by [ViewModelTeardownTest]: cancels the
-     * harness ViewModel's scope (TASK-960: pending jobs must die before
-     * unmockkAll/resetMain or they resume against dead dispatchers and
-     * crash into the NEXT class's Main), then deletes the one filesystem
-     * footprint. The cancel is a no-op when the harness already cancelled
-     * the scope; idempotent by design.
+     * The suite teardown: cancels the harness ViewModel's scope FIRST
+     * (TASK-960: pending jobs must die before resetMain or they resume
+     * against dead dispatchers and crash into the NEXT class's Main),
+     * then deletes the one filesystem footprint. Call from @After.
      */
     fun cleanup() {
         viewModel.viewModelScope.cancel()

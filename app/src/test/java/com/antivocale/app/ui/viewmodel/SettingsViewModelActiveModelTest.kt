@@ -12,9 +12,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -37,7 +39,7 @@ import org.junit.Test
  * flow -> uiState update) settles before assertions read emissions.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class SettingsViewModelActiveModelTest : ViewModelTeardownTest() {
+class SettingsViewModelActiveModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val externalRecords = MutableStateFlow<List<ExternalModelRecord>>(emptyList())
@@ -52,14 +54,23 @@ class SettingsViewModelActiveModelTest : ViewModelTeardownTest() {
         // the class-level mutable records flow, plus the getString-stubbed
         // repository context (fixed catalog display names resolve
         // distinguishably instead of a relaxed-mock empty string).
-        harness = register(SettingsViewModelTestHelper(
+        harness = SettingsViewModelTestHelper(
             externalRecords = externalRecords,
             repositoryContext = mockk<Context>(relaxed = true) {
                 every { getString(any()) } answers { "str:${args[0]}" }
             },
-        ))
+        )
         fakePrefs = harness.fakePrefs
         viewModel = harness.viewModel
+    }
+
+    @After
+    fun tearDown() {
+        // TASK-960: guarded so a @Before that died mid-harness-construction
+        // still reaches resetMain (an unguarded lateinit access here would
+        // leave Main swapped for the NEXT class).
+        if (::harness.isInitialized) harness.cleanup()
+        Dispatchers.resetMain()
     }
 
     /**

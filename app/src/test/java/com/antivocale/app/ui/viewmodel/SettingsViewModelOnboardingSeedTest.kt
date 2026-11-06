@@ -4,10 +4,12 @@ import com.antivocale.app.data.FakePreferencesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -28,7 +30,7 @@ import org.junit.Test
  * locale read never runs here.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class SettingsViewModelOnboardingSeedTest : ViewModelTeardownTest() {
+class SettingsViewModelOnboardingSeedTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var harness: SettingsViewModelTestHelper
@@ -39,9 +41,18 @@ class SettingsViewModelOnboardingSeedTest : ViewModelTeardownTest() {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         // The shared construction harness (TASK-848).
-        harness = register(SettingsViewModelTestHelper())
+        harness = SettingsViewModelTestHelper()
         fakePrefs = harness.fakePrefs
         viewModel = harness.viewModel
+    }
+
+    @After
+    fun tearDown() {
+        // TASK-960: guarded so a @Before that died mid-harness-construction
+        // still reaches resetMain (an unguarded lateinit access here would
+        // leave Main swapped for the NEXT class).
+        if (::harness.isInitialized) harness.cleanup()
+        Dispatchers.resetMain()
     }
 
     @Test

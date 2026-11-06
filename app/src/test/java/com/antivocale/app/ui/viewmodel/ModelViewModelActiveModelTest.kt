@@ -2,6 +2,7 @@ package com.antivocale.app.ui.viewmodel
 
 import com.antivocale.app.testing.RepoFiles
 import android.content.Context
+import androidx.lifecycle.viewModelScope
 import com.antivocale.app.R
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.FakeExternalRecordsProvider
@@ -13,15 +14,16 @@ import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 
 /**
  * Unit tests proving that a preference change propagates reactively into
@@ -45,12 +47,12 @@ import kotlinx.coroutines.SupervisorJob
  * without Robolectric.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class ModelViewModelActiveModelTest : ViewModelTeardownTest() {
+class ModelViewModelActiveModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    // A field (not inline in setup) so the harness cancels it.
-    private val applicationScope = register(CoroutineScope(SupervisorJob()))
+    // TASK-960: a field (not inline in setup) so tearDown can cancel it.
+    private val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
     private lateinit var fakePrefs: FakePreferencesManager
     private lateinit var viewModel: ModelViewModel
 
@@ -86,7 +88,7 @@ class ModelViewModelActiveModelTest : ViewModelTeardownTest() {
         every { mockContext.applicationContext } returns mockContext
         com.antivocale.app.data.catalog.BundledCatalog.attach(mockContext)
         val sharedDemoter = com.antivocale.app.transcription.SilentModelDemoter(fakePrefs)
-        viewModel = register(ModelViewModel(
+        viewModel = ModelViewModel(
             preferencesManager = fakePrefs,
             activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry(), FakeExternalRecordsProvider()),
             tokenManager = mockk(relaxed = true),
@@ -113,11 +115,16 @@ class ModelViewModelActiveModelTest : ViewModelTeardownTest() {
                 externalModelStore = com.antivocale.app.data.ExternalModelStore(fakePrefs),
                 backendRegistry = staticRegistry(),
             ),
-        ))
+        )
 
     }
 
-    override fun afterTeardown() {
+    @After
+    fun tearDown() {
+        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
+        applicationScope.cancel()
+        Dispatchers.resetMain()
         filesRoot.deleteRecursively()
     }
 

@@ -3,6 +3,7 @@ package com.antivocale.app.ui.viewmodel
 import com.antivocale.app.testing.RepoFiles
 import com.antivocale.app.ui.tabs.hasCleanupWork
 import android.content.Context
+import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.FakePreferencesManager
@@ -14,17 +15,18 @@ import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 
 /**
  * TASK-871's investigation closed as a MISDIAGNOSIS (2026-10-23): the
@@ -51,12 +53,12 @@ import kotlinx.coroutines.SupervisorJob
  * way ModelViewModelBundleLinkTest.await does.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class ModelViewModelOrphanSweepTest : ViewModelTeardownTest() {
+class ModelViewModelOrphanSweepTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    // A field (not inline in setup) so the harness cancels it.
-    private val applicationScope = register(CoroutineScope(SupervisorJob()))
+    // TASK-960: a field (not inline in setup) so tearDown can cancel it.
+    private val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
     private val recordsProvider = FakeExternalRecordsProvider()
     private lateinit var viewModel: ModelViewModel
 
@@ -94,7 +96,7 @@ class ModelViewModelOrphanSweepTest : ViewModelTeardownTest() {
         com.antivocale.app.data.catalog.BundledCatalog.attach(mockContext)
 
         val fakePrefs = FakePreferencesManager()
-        viewModel = register(ModelViewModel(
+        viewModel = ModelViewModel(
             preferencesManager = fakePrefs,
             activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry(), recordsProvider),
             tokenManager = mockk(relaxed = true),
@@ -112,10 +114,15 @@ class ModelViewModelOrphanSweepTest : ViewModelTeardownTest() {
             silentModelDemoter = mockk(relaxed = true),
             modelActivator = mockk(relaxed = true),
             applicationScope = applicationScope,
-        ))
+        )
     }
 
-    override fun afterTeardown() {
+    @After
+    fun tearDown() {
+        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
+        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
+        applicationScope.cancel()
+        Dispatchers.resetMain()
         filesRoot.deleteRecursively()
     }
 
