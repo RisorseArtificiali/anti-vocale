@@ -148,7 +148,13 @@ class ModelViewModelBundleLinkTest : ViewModelTeardownTest() {
             // refreshes this file pins ride the same hot seam the app uses.
             recordsProvider = com.antivocale.app.data.DefaultExternalModelRecordsProvider(
                 store = store,
-                scope = register(CoroutineScope(SupervisorJob())),
+                // Deliberately NOT registered with the teardown harness: the
+                // provider's collectors observe the store; cancelling the
+                // scope at teardown races the dir-missing records refresh
+                // and, on CI timing, crashes pending jobs into the NEXT
+                // class's Main (the 783de4fa red run). The scope is
+                // test-JVM-lifetime bounded either way.
+                scope = CoroutineScope(SupervisorJob()),
             ),
             externalModelImporter = ExternalModelImporter(store = store, filesRoot = { importerRoot }),
             litertLmUrlImporter = mockk(relaxed = true),
