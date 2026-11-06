@@ -1,0 +1,94 @@
+name: Model suggestion
+description: Suggest an ASR model for the in-app community catalog
+title: "Model: "
+labels: ["kind/feature", "area/transcription"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a model. The catalog carries metadata and download links, not the model binaries, so any license is fine (including non-commercial). What we check is quality: the model must run on device via sherpa-onnx, transcribe its language measurably better than the multilingual alternatives already in the catalog (or fill a language gap), and carry pinned sha256 hashes.
+
+        If you are the model's author and it is not yet in sherpa-onnx format, we can help with the export.
+
+  - type: input
+    id: model-link
+    attributes:
+      label: Model link (HuggingFace or other)
+      placeholder: https://huggingface.co/user/model-name
+    validations:
+      required: true
+
+  - type: input
+    id: model-name
+    attributes:
+      label: Model name as you want it to appear
+      placeholder: Whisper Large v3 French Distil int8
+    validations:
+      required: true
+
+  - type: input
+    id: languages
+    attributes:
+      label: Language(s) it serves (ISO codes)
+      placeholder: fr, or it+en for bilingual
+    validations:
+      required: true
+
+  - type: dropdown
+    id: base-model
+    attributes:
+      label: Base model family
+      options:
+        - Whisper
+        - Parakeet (TDT or CTC)
+        - Canary
+        - SenseVoice
+        - Transducer (zipformer, NeMo, etc.)
+        - Other (describe below)
+    validations:
+      required: true
+
+  - type: input
+    id: size
+    attributes:
+      label: Approximate size of the int8 export
+      placeholder: e.g. 988 MB, or 1.35 GB
+    validations:
+      required: true
+
+  - type: dropdown
+    id: sherpa-status
+    attributes:
+      label: sherpa-onnx export status
+      options:
+        - Already exported (link to the sherpa build)
+        - Not exported yet, I can do it
+        - Not exported yet, I need help
+    validations:
+      required: true
+
+  - type: textarea
+    id: benchmarks
+    attributes:
+      label: Quality evidence (WER, CER, or comparison against other models)
+      description: Numbers from your own test set are fine; tell us what set it is and what baseline you compared against.
+      placeholder: |
+        e.g. WER 4.3% on my 200-clip French test set, vs Whisper Turbo's 6.1% on the same set.
+        Or: no formal benchmark, but community feedback says it handles X better than Y.
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else worth knowing
+      description: Streaming support, native punctuation, domain specialization (medical, technical, dialectal), single-speaker training, etc.
+      placeholder: Optional.
+
+  - type: checkboxes
+    id: license
+    attributes:
+      label: License confirmation
+      options:
+        - label: I am the model's author or have the right to offer it (any license is fine, including non-commercial)
+          required: true
