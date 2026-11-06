@@ -58,10 +58,7 @@ class ExternalModelStore(
     suspend fun validRecords(): List<ExternalModelRecord> =
         records().filter { isLoadable(it) }
 
-    /** THE single loadability predicate (everything that asks "can this
-     *  record be loaded" consumes this form: byId, validRecords, and the
-     *  TASK-963 repairer's dangling filter). */
-    fun isLoadable(record: ExternalModelRecord) =
+    private fun isLoadable(record: ExternalModelRecord) =
         !record.quarantined && dirExists(record.dir)
 
     suspend fun byId(id: String): ExternalModelRecord? =
