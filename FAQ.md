@@ -82,6 +82,10 @@ Yes. The community catalog picker reads its index from a JSON URL, and the "chan
 
 Each `entryUrl` serves a single-model manifest with integrity pins: name, family, languages, options, and a files list where every file carries its url, sha256 and size. The full schemas with worked examples live in [docs/external-models.md](docs/external-models.md) (the import formats and the entry JSON, hostable anywhere from a gist to a personal site) and in [docs/model-integration.md](docs/model-integration.md) (the index wrapper, section 2, and the single-model JSON, section 3).
 
+### Can I add my model to the in-app catalog?
+
+Yes, and the license is not a barrier: the catalog carries model metadata and download links, not the model binaries, so non-commercial licenses are fine (several catalog entries already carry them). What we do check is quality: the model must run on device via sherpa-onnx, transcribe its language measurably better than the multilingual alternatives already in the catalog (or fill a language gap), and carry pinned sha256 hashes so what the user downloads is what was tested. If you have a fine-tune that meets that bar, open an issue with a link to the model and its benchmark numbers; we will test it on a real device and, if it holds up, add the catalog entry and the pinned mirror. The full integration path is documented in [docs/model-integration.md](docs/model-integration.md).
+
 ## Queue and concurrent requests
 
 ### What happens if I share a second audio while one is transcribing?
