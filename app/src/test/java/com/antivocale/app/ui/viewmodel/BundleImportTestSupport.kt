@@ -20,9 +20,14 @@ internal object BundleImportTestSupport {
 
 /** Polls [predicate] on real time (the import and the catalog refreshes
  *  run on real IO dispatchers); FAILS the test on timeout so a broken
- *  derivation cannot pass by silently waiting out the clock. */
+ *  derivation cannot pass by silently waiting out the clock.
+ *
+ * TASK-960: the budget is 30s because the CI fdroid runner reds a 5s
+ * budget under load while the logic is correct (the family green in
+ * every local isolation on the same HEAD); 30s still fails fast on a
+ * real derivation break. Same treatment as the BatchIntake walls. */
 internal fun TestScope.await(what: String, predicate: () -> Boolean) {
-    val deadline = System.currentTimeMillis() + 5_000
+    val deadline = System.currentTimeMillis() + 30_000
     while (!predicate() && System.currentTimeMillis() < deadline) {
         Thread.sleep(20)
         runCurrent()
