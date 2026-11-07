@@ -551,4 +551,102 @@ class ExternalModelImporterTest {
             ExternalModelImporter.canonicalizeEntryUrl(
                 "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/turkish.json"))
     }
+
+    // ==================== schema-1 CDN-manifest imports (2026-11-07) ====================
+    // Real-path pins through [importFromEntryJson] against a localhost server
+    // ([LocalModelServer]): fetch, sniff, synthesize, download, verify, and
+    // register, with zero production seams faked.
+
+    @Test
+    fun `schema-1 manifest import registers the record with the index metadata`() = runTest {
+        LocalModelServer().use { server ->
+            val manifestUrl = server.serveSchema1Manifest(model = "fritter-streaming")
+            val record = importer.importFromEntryJson(
+                manifestUrl,
+                displayName = "Fritter Streaming English int8 (Nemotron 0.6B, CC-BY-NC)",
+                licence = "CC-BY-NC-4.0",
+                languages = listOf("en"),
+                streaming = true)
+            assertEquals("Fritter Streaming English int8 (Nemotron 0.6B, CC-BY-NC)", record.displayName)
+            assertEquals(listOf("en"), record.languages)
+            assertTrue(record.streaming)
+            // The bundled-Nemotron pattern: the streaming synthesis clears the
+            // modelType so the nemo_transducer metadata trio is not demanded.
+            assertEquals("", record.modelType)
+            assertEquals("CC-BY-NC-4.0", record.licence)
+            assertEquals(ExternalModelSource.URL, record.source)
+            assertEquals(manifestUrl, record.sourceUrl)
+            assertEquals(LocalModelServer.CANONICAL_FILES.toSet(), record.files.keys)
+            assertTrue(record.files.values.all { it.verified })
+        }
+    }
+
+    @Test
+    fun `schema-1 manifest bare import of a streaming model is rejected naming the catalog entry`() = runTest {
+        LocalModelServer().use { server ->
+            val manifestUrl = server.serveSchema1Manifest(model = "fritter-streaming")
+            try {
+                importer.importFromEntryJson(manifestUrl)
+                fail("a bare import of a streaming-named manifest must reject")
+            } catch (e: IllegalArgumentException) {
+                assertTrue(e.message!!.contains("catalog entry"))
+            }
+            assertEquals(0, store.records().size)
+        }
+    }
+
+    @Test
+    fun `legacy entry json with an index streaming flag records streaming with the cleared model type`() = runTest {
+        // R1: the entry claims an OFFLINE NeMo export (modelType
+        // nemo_transducer); the index-picked streaming flag flips it, and the
+        // merge must ALSO clear the modelType or the record dies at first
+        // decode (the TASK-720 process-abort class).
+        LocalModelServer().use { server ->
+            server.serveSchema1Manifest(model = "fritter")  // serves the four files
+            fun pin(name: String) = pinOf(server, name)
+            val entryJson = """
+                {"name":"Fritter English int8","languages":["en"],"family":"TRANSDUCER",
+                 "modelType":"nemo_transducer",
+                 "files":[
+                   {"name":"encoder.int8.onnx","url":"${server.baseUrl}encoder.int8.onnx",
+                    "sha256":"${pin("encoder.int8.onnx").first}","size":${pin("encoder.int8.onnx").second}},
+                   {"name":"decoder.int8.onnx","url":"${server.baseUrl}decoder.int8.onnx",
+                    "sha256":"${pin("decoder.int8.onnx").first}","size":${pin("decoder.int8.onnx").second}},
+                   {"name":"joiner.int8.onnx","url":"${server.baseUrl}joiner.int8.onnx",
+                    "sha256":"${pin("joiner.int8.onnx").first}","size":${pin("joiner.int8.onnx").second}},
+                   {"name":"tokens.txt","url":"${server.baseUrl}tokens.txt",
+                    "sha256":"${pin("tokens.txt").first}","size":${pin("tokens.txt").second}}
+                 ]}
+            """.trimIndent()
+            val entryUrl = server.serve("entry.json", entryJson)
+            val record = importer.importFromEntryJson(entryUrl, streaming = true)
+            assertTrue(record.streaming)
+            assertEquals("", record.modelType)
+            assertEquals("Fritter English int8", record.displayName)
+        }
+    }
+
+    @Test
+    fun `a licence-less re-import preserves the recorded licence`() = runTest {
+        // R3a: the sourceUrl/linkedCatalog carry-preservation rule, applied to
+        // licence: a plain re-import must not erase what the original import
+        // recorded.
+        val src = sourceDir()
+        val first = importer.importFromDirectory(src, licence = "CC-BY-NC-4.0")
+        assertEquals("CC-BY-NC-4.0", first.licence)
+        val second = importer.importFromDirectory(src)
+        assertEquals(first.id, second.id)
+        assertEquals("CC-BY-NC-4.0", second.licence)
+        // A fresh declaration still refreshes.
+        val third = importer.importFromDirectory(src, licence = "Apache-2.0")
+        assertEquals("Apache-2.0", third.licence)
+    }
+
+    /** sha256+size of a document already registered on [server] (test-side mirror of the manifest pins). */
+    private fun pinOf(server: LocalModelServer, path: String): Pair<String, Long> {
+        val bytes = java.net.URL(server.baseUrl + path).openStream().use { it.readBytes() }
+        val sha = java.security.MessageDigest.getInstance("SHA-256").digest(bytes)
+            .joinToString("") { "%02x".format(it) }
+        return sha to bytes.size.toLong()
+    }
 }

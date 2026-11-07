@@ -90,6 +90,7 @@ class ModelViewModelExternalImportTest : ViewModelTeardownTest() {
             streaming: Boolean,
             displayName: String?,
             linkedCatalog: com.antivocale.app.data.LinkedCatalogRef?,
+            licence: String?,
         ): ExternalModelRecord = throw UnsupportedOperationException("not used in this test")
 
         override suspend fun importFromTreeUri(
