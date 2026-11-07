@@ -1,22 +1,19 @@
 package com.antivocale.app.ui.viewmodel
 
-import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.local.LogDao
+import com.antivocale.app.transcription.staticRegistry
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -33,14 +30,14 @@ import org.junit.Test
  * the value, unsubscribe, expire, and assert the value is null again.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class LogsViewModelRowCacheTest {
+class LogsViewModelRowCacheTest : ViewModelTeardownTest() {
 
     private lateinit var logDao: LogDao
     private lateinit var viewModel: LogsViewModel
     private val testDispatcher = StandardTestDispatcher()
 
-    // TASK-960: a field (not the constructor default) so tearDown can cancel it.
-    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // A field (not the constructor default) so the harness cancels it.
+    private val appScope = register(CoroutineScope(SupervisorJob() + Dispatchers.IO))
 
     /** DAO-side source the row flow subscribes to while collected. */
     private val firstPassSource = MutableStateFlow<String?>("parola")
@@ -61,15 +58,7 @@ class LogsViewModelRowCacheTest {
         every { logDao.getFirstPass(any()) } returns firstPassSource
         every { logDao.getSegments(any()) } returns segmentsSource
         every { logDao.getResult(any()) } returns resultSource
-        viewModel = LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager(), com.antivocale.app.transcription.staticRegistry(), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), orchestrator = io.mockk.mockk(relaxed = true), duplicateGuard = io.mockk.mockk(relaxed = true), appScope = appScope)
-    }
-
-    @After
-    fun tearDown() {
-        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
-        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
-        appScope.cancel()
-        Dispatchers.resetMain()
+        viewModel = register(LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager(), staticRegistry(), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), orchestrator = mockk(relaxed = true), duplicateGuard = mockk(relaxed = true), appScope = appScope))
     }
 
     @Test

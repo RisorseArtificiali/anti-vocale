@@ -2,7 +2,6 @@ package com.antivocale.app.ui.viewmodel
 
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.VoiceNoteDuplicateGuard
 import com.antivocale.app.data.local.LogEntity
 import com.antivocale.app.receiver.SubtitleChoice
@@ -13,20 +12,16 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeout
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -44,13 +39,13 @@ import org.robolectric.annotation.Config
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
-class LogsViewModelBatchIntakeTest {
+class LogsViewModelBatchIntakeTest : ViewModelTeardownTest() {
 
     private lateinit var viewModel: LogsViewModel
     private val duplicateGuard: VoiceNoteDuplicateGuard = mockk(relaxed = true)
 
-    // TASK-960: a field (not the constructor default) so tearDown can cancel it.
-    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // A field (not the constructor default) so the harness cancels it.
+    private val appScope = register(CoroutineScope(SupervisorJob() + Dispatchers.IO))
 
     @Before
     fun setup() {
@@ -71,7 +66,7 @@ class LogsViewModelBatchIntakeTest {
             hit("task-1", "model-a"),
             hit("task-2", "model-b"),
         )
-        viewModel = LogsViewModel(
+        viewModel = register(LogsViewModel(
             mockk(relaxed = true),
             mockk(relaxed = true),
             stubPreferencesManager(),
@@ -83,18 +78,13 @@ class LogsViewModelBatchIntakeTest {
             orchestrator = mockk(relaxed = true),
             duplicateGuard = duplicateGuard,
             appScope = appScope,
-        )
+        ))
     }
 
-    @After
-    fun tearDown() {
-        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
-        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
-        appScope.cancel()
+    /** Mock-free leftovers reclaim, after the ordered harness teardown. */
+    override fun afterTeardown() {
         stagedFile?.delete()
         stagedFile = null
-        unmockkAll()
-        Dispatchers.resetMain()
     }
 
     private fun hit(existingTaskId: String, modelName: String) =
@@ -228,7 +218,8 @@ class LogsViewModelBatchIntakeTest {
     }
 
     /** A duplicate dialog over a REAL temp file, so the Open arm's deletion
-     *  (TASK-934) has something observable to reclaim. Removed in @After. */
+     *  (TASK-934) has something observable to reclaim. Removed in
+     *  afterTeardown. */
     private var stagedFile: java.io.File? = null
 
     private fun stagedRealFile(): java.io.File {

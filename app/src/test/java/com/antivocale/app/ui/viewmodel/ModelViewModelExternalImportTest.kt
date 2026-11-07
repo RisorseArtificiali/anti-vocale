@@ -2,7 +2,6 @@ package com.antivocale.app.ui.viewmodel
 
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.ExternalModelImportOperations
@@ -19,13 +18,10 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -33,6 +29,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 
 /**
  * Unit tests proving the ModelViewModel import wrappers forward family, options and
@@ -49,12 +47,12 @@ import org.robolectric.RobolectricTestRunner
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [34])
-class ModelViewModelExternalImportTest {
+class ModelViewModelExternalImportTest : ViewModelTeardownTest() {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    // TASK-960: a field (not inline in setup) so tearDown can cancel it.
-    private val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
+    // A field (not inline in setup) so the harness cancels it.
+    private val applicationScope = register(CoroutineScope(SupervisorJob()))
     private lateinit var fakePrefs: FakePreferencesManager
     private lateinit var viewModel: ModelViewModel
     private lateinit var fakeImporter: RecordingImporter
@@ -145,7 +143,7 @@ class ModelViewModelExternalImportTest {
             }
         }
         val sharedDemoter = com.antivocale.app.transcription.SilentModelDemoter(fakePrefs)
-        viewModel = ModelViewModel(
+        viewModel = register(ModelViewModel(
             preferencesManager = fakePrefs,
             activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry(), FakeExternalRecordsProvider()),
             tokenManager = mockk(relaxed = true),
@@ -169,16 +167,8 @@ class ModelViewModelExternalImportTest {
                 externalModelStore = com.antivocale.app.data.ExternalModelStore(fakePrefs),
                 backendRegistry = staticRegistry(),
                 ),
-        )
+        ))
 
-    }
-
-    @After
-    fun tearDown() {
-        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
-        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
-        applicationScope.cancel()
-        Dispatchers.resetMain()
     }
 
     @Test

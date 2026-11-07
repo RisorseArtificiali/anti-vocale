@@ -1,0 +1,57 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - paragraph [ref=e3]: "Stato 1: senza grant (toggle già attivo)"
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - heading "Avvisi note vocali" [level=3] [ref=e7]
+        - generic [ref=e8]: Trascrivi le note vocali WhatsApp appena arrivano.
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - generic [ref=e12]: 📂
+          - heading "Cartella note vocali · da concedere" [level=3] [ref=e14]
+        - generic [ref=e15]: "Per leggere le note, concedi una volta l'accesso alla cartella in cui WhatsApp le salva:"
+        - generic [ref=e16]: Memoria interna › Android › media › com.whatsapp › WhatsApp › Media › WhatsApp Voice Notes
+        - button "Scegli la cartella" [ref=e18]
+  - generic [ref=e19]:
+    - paragraph [ref=e20]: "Stato 2: grant attivo (browsing sempre disponibile)"
+    - generic [ref=e21]:
+      - generic [ref=e23]:
+        - heading "Avvisi note vocali" [level=3] [ref=e24]
+        - generic [ref=e25]: Trascrivi le note vocali WhatsApp appena arrivano.
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]: 📂
+          - heading "Cartella note vocali · concessa" [level=3] [ref=e31]
+        - generic [ref=e32]: Memoria interna › Android › media › com.whatsapp › WhatsApp › Media › WhatsApp Voice Notes
+        - generic [ref=e33]:
+          - button "Cambia cartella" [ref=e34]
+          - button "Rimuovi accesso" [ref=e35]
+  - generic [ref=e36]:
+    - paragraph [ref=e37]: Guida al tocco di "Scegli la cartella" (bottom sheet)
+    - generic [ref=e38]:
+      - heading "Concedi l'accesso alla cartella" [level=3] [ref=e39]
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]: "1"
+          - paragraph [ref=e43]: Nel selettore che si apre, entra in Memoria interna (menu a sinistra, "Mostra memoria di archiviazione" se non la vedi).
+        - generic [ref=e44]:
+          - generic [ref=e45]: "2"
+          - paragraph [ref=e46]: "Scendi lungo il percorso fino alla cartella delle note vocali:"
+          - generic [ref=e47]:
+            - text: Android
+            - generic [ref=e48]: ›
+            - text: media
+            - generic [ref=e49]: ›
+            - text: com.whatsapp
+            - generic [ref=e50]: ›
+            - text: WhatsApp
+            - generic [ref=e51]: ›
+            - text: Media
+            - generic [ref=e52]: ›
+            - generic [ref=e53]: WhatsApp Voice Notes
+        - generic [ref=e54]:
+          - generic [ref=e55]: "3"
+          - paragraph [ref=e56]: Con la cartella WhatsApp Voice Notes selezionata (non entrarci), tocca USA QUESTA CARTELLA e poi CONSENTI.
+      - generic [ref=e57]:
+        - button "Annulla" [ref=e58]
+        - button "Apri il selettore" [ref=e59]

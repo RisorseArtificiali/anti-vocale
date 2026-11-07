@@ -1,0 +1,11 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]: LinkedIn
+    - heading "This link will take you to a page that’s not on LinkedIn" [level=1] [ref=e5]
+    - heading "Because this is an external link, we’re unable to verify it for safety." [level=2] [ref=e6]
+    - link "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Transcribe-30B-A4B" [ref=e7] [cursor=pointer]:
+      - /url: https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Transcribe-30B-A4B
+  - contentinfo [ref=e8]:
+    - generic [ref=e9]: Have questions?
+    - link "Learn more" [ref=e10] [cursor=pointer]:
+      - /url: https://www.linkedin.com/help/linkedin/answer/a1341680?trk=in_page_learn_more_click

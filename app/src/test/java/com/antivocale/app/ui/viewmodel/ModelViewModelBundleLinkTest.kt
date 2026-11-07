@@ -4,7 +4,6 @@ import com.antivocale.app.testing.RepoFiles
 import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelRecord
@@ -25,13 +24,10 @@ import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -39,6 +35,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 
 /**
  * TASK-801 (GH #128): the catalog entity link, end to end through the real
@@ -54,12 +52,12 @@ import org.robolectric.annotation.Config
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
-class ModelViewModelBundleLinkTest {
+class ModelViewModelBundleLinkTest : ViewModelTeardownTest() {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    // TASK-960: a field (not inline in setup) so tearDown can cancel it.
-    private val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
+    // A field (not inline in setup) so the harness cancels it.
+    private val applicationScope = register(CoroutineScope(SupervisorJob()))
     private lateinit var fakePrefs: FakePreferencesManager
     private lateinit var store: ExternalModelStore
     private lateinit var viewModel: ModelViewModel
@@ -135,7 +133,7 @@ class ModelViewModelBundleLinkTest {
         com.antivocale.app.data.catalog.BundledCatalog.attach(mockContext)
 
         val sharedDemoter = com.antivocale.app.transcription.SilentModelDemoter(fakePrefs)
-        viewModel = ModelViewModel(
+        viewModel = register(ModelViewModel(
             preferencesManager = fakePrefs,
             activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry(), FakeExternalRecordsProvider()),
             tokenManager = mockk(relaxed = true),
@@ -150,7 +148,13 @@ class ModelViewModelBundleLinkTest {
             // refreshes this file pins ride the same hot seam the app uses.
             recordsProvider = com.antivocale.app.data.DefaultExternalModelRecordsProvider(
                 store = store,
-                scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+                // Deliberately NOT registered with the teardown harness: the
+                // provider's collectors observe the store; cancelling the
+                // scope at teardown races the dir-missing records refresh
+                // and, on CI timing, crashes pending jobs into the NEXT
+                // class's Main (the 783de4fa red run). The scope is
+                // test-JVM-lifetime bounded either way.
+                scope = CoroutineScope(SupervisorJob()),
             ),
             externalModelImporter = ExternalModelImporter(store = store, filesRoot = { importerRoot }),
             litertLmUrlImporter = mockk(relaxed = true),
@@ -159,7 +163,7 @@ class ModelViewModelBundleLinkTest {
             silentModelDemoter = sharedDemoter,
             modelActivator = com.antivocale.app.transcription.ModelActivator(
                 fakePrefs, sharedDemoter, store, staticRegistry()),
-        )
+        ))
         // LAST: the registry helpers above seed the catalog singleton with
         // the REAL entries; re-seed with the patched ones so the identity
         // guard sees the fixture pins (BundledCatalog caches per process).
@@ -167,12 +171,7 @@ class ModelViewModelBundleLinkTest {
             com.antivocale.app.data.catalog.ModelCatalogJson.parseCatalog(catalogJson))
     }
 
-    @After
-    fun tearDown() {
-        // TASK-960: pending viewModelScope jobs must die before unmockkAll/resetMain or they resume against dead objects and crash into the NEXT class's Main dispatcher (the CI UncaughtExceptionsBeforeTest family)
-        if (::viewModel.isInitialized) viewModel.viewModelScope.cancel()
-        applicationScope.cancel()
-        Dispatchers.resetMain()
+    override fun afterTeardown() {
         // The patched seed must not leak into later classes sharing this
         // worker JVM (the catalog singleton caches per process).
         com.antivocale.app.data.catalog.BundledCatalog.seed(

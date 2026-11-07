@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risposte LinuxFr: revisione (v2)</title>
+<style>
+  :root {
+    --bg: #0d1117; --card: #161b22; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
+    --ok: #3fb950; --warn: #d29922; --bad: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 15px; line-height: 1.6; padding-bottom: 260px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 24px 20px; }
+  header h1 { font-size: 22px; font-weight: 600; }
+  .context {
+    margin: 10px 0 4px; color: var(--muted); font-size: 13.5px;
+  }
+  .context a { color: var(--accent); text-decoration: none; }
+  .context a:hover { text-decoration: underline; }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 20px; }
+  .presets button {
+    background: #21262d; color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 12px; font-size: 13px; cursor: pointer;
+  }
+  .presets button:hover { border-color: var(--accent); }
+  .stats { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .stats b { color: var(--text); font-weight: 600; }
+
+  .draft { background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 18px; overflow: hidden; }
+  .draft.ok     { border-color: rgba(63,185,80,.55); }
+  .draft.edit   { border-color: rgba(210,153,34,.55); }
+  .draft.reject { border-color: rgba(248,81,73,.55); }
+  .draft-head {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.02);
+  }
+  .draft-head .num { font-weight: 700; }
+  .draft-head .to { color: var(--muted); font-size: 13.5px; }
+  .draft-head .to a { color: var(--accent); text-decoration: none; }
+  .draft-head .to a:hover { text-decoration: underline; }
+  .pill { margin-left: auto; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; border: 1px solid; }
+  .pill.pending { color: var(--muted); border-color: var(--muted); }
+  .pill.ok      { color: var(--ok); border-color: var(--ok); }
+  .pill.edit    { color: var(--warn); border-color: var(--warn); }
+  .pill.reject  { color: var(--bad); border-color: var(--bad); }
+  .draft-body { padding: 14px 16px; }
+  .it-text p { margin-bottom: 10px; }
+  .it-text a { color: var(--accent); }
+  .it-text ul { margin: 0 0 10px 20px; }
+  .it-text li { margin-bottom: 6px; }
+  .facts { margin: 10px 0; padding: 8px 12px; border-left: 3px solid var(--accent); background: rgba(88,166,255,.07); font-size: 13px; color: var(--muted); border-radius: 0 6px 6px 0; }
+  details { margin-top: 8px; border: 1px solid var(--border); border-radius: 8px; }
+  details summary { cursor: pointer; padding: 8px 12px; font-size: 13px; color: var(--muted); user-select: none; }
+  details summary:hover { color: var(--text); }
+  .fr-box { padding: 0 12px 12px; }
+  .fr-text {
+    white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px; color: #c9d1d9; background: #0d1117; border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 12px;
+  }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    background: transparent; color: var(--muted); border: none; padding: 6px 14px;
+    font-size: 13px; cursor: pointer; border-right: 1px solid var(--border);
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button.active[data-s="ok"]     { background: rgba(63,185,80,.18); color: var(--ok); }
+  .seg button.active[data-s="edit"]   { background: rgba(210,153,34,.18); color: var(--warn); }
+  .seg button.active[data-s="reject"] { background: rgba(248,81,73,.18); color: var(--bad); }
+  .btn {
+    background: #21262d; color: var(--text); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 12px; font-size: 13px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+  .btn.primary:hover { background: #388bfd; }
+  .note {
+    width: 100%; margin-top: 10px; background: #0d1117; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+    font-size: 13.5px; font-family: inherit; resize: vertical; min-height: 44px;
+  }
+  .note:focus { outline: none; border-color: var(--accent); }
+  .note::placeholder { color: #484f58; }
+
+  .output {
+    position: fixed; bottom: 0; left: 0; right: 0; background: #161b22;
+    border-top: 1px solid var(--border); padding: 14px 20px; z-index: 10;
+  }
+  .output-inner { max-width: 880px; margin: 0 auto; display: flex; gap: 14px; align-items: flex-start; }
+  .output-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  #prompt {
+    flex: 1; background: #0d1117; border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px; white-space: pre-wrap; max-height: 150px; overflow-y: auto; color: #c9d1d9;
+  }
+  .output-actions { display: flex; flex-direction: column; gap: 8px; }
+  #globalNote {
+    width: 100%; margin-top: 6px; background: #0d1117; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px;
+    font-size: 13px; font-family: inherit;
+  }
+  #globalNote:focus { outline: none; border-color: var(--accent); }
+  .copied { color: var(--ok) !important; border-color: var(--ok) !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Risposte LinuxFr: revisione (v2 con il tuo feedback)</h1>
+    <p class="context">
+      Versione 2: tutte e quattro riscritte secondo le tue note. Handle corretto (github.com/paoloantinori, verificato: senza i dà 404).
+      Le quattro risposte si incollano dall'account <b>risorseartificiali</b>, come risposte annidate ai singoli commenti.
+      Ordine consigliato: prima la 1, poi la 2 entro pochi minuti, quindi 3 e 4.
+      <a href="https://linuxfr.org/users/risorseartificiali/journaux/anti-vocale-transcription-hors-ligne-des-messages-vocaux-sur-android-libre" target="_blank">apri il thread</a>
+    </p>
+    <div class="presets">
+      <button onclick="preset('all-ok')">Approva tutte</button>
+      <button onclick="preset('tech-only')">Ok solo le tecniche (2 e 3)</button>
+      <button onclick="preset('rewrite-intro')">Rivedere la presentazione</button>
+      <button onclick="preset('drop-optional')">Scartare le opzionali (3 e 4)</button>
+      <button onclick="preset('reset')">Azzera decisioni</button>
+    </div>
+    <p class="stats" id="stats"></p>
+  </header>
+
+  <div id="drafts"></div>
+</div>
+
+<div class="output">
+  <div class="output-inner">
+    <div style="flex:1">
+      <div class="output-label">Il tuo feedback per me (italiano)</div>
+      <div id="prompt"></div>
+      <input id="globalNote" placeholder="Note generali (facoltativo): tono, ordine, altro..." oninput="updateAll()">
+    </div>
+    <div class="output-actions">
+      <button class="btn primary" onclick="copyPrompt(this)">Copia feedback</button>
+      <button class="btn" onclick="copyAllFr(this)">Copia tutte le FR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const drafts = [
+  {
+    id: 1,
+    to: 'Glandos',
+    toUrl: 'https://linuxfr.org/nodes/145642/comments/2034015/answer',
+    toWhat: 'Pourquoi ce spam ?',
+    it: [
+      'Buongiorno, e scusate per la mancanza di reattività: avevo perso di vista questo diario e non ho ricevuto nessuna notifica. Ci sono tornato oggi, quasi per caso.',
+      'Sul dibattito sollevato dal vostro commento: sfogliando gli altri giornali del sito avevo capito che si potessero segnalare software liberi di pubblica utilità. Se mi sono sbagliato, chiedo scusa, e non ho alcun problema che il diario venga cancellato; non era mia intenzione creare problemi.',
+      'Mi presento: Paolo Antinori, ingegnere italiano (github.com/paoloantinori). Ho scritto questa applicazione per uso personale: ricevo molti messaggi vocali e preferisco leggerli. Lo sviluppo è assistito da IA, è dichiarato nel README; anche questo diario è stato redatto con un\'aiuto IA, perché non padroneggio abbastanza il francese per scriverlo da solo.',
+      'Se ho pubblicato qui, è per far conoscere l\'applicazione su un canale francofono. Come per l\'italiano e il tedesco, la trascrizione integrata di WhatsApp non copre il francese, quindi ho pensato che l\'applicazione potesse essere utile; ha altri pregi, ma questa è la motivazione di partenza.',
+      'Ora rispondo alle domande tecniche, a partire da quella di jch.'
+    ],
+    facts: 'Handle verificato: github.com/paoloantinor risponde 404, github.com/paoloantinori 200. Le lingue di WhatsApp citate (fr non coperto, come it e de) vengono dalla FAQ ufficiale citata già nel diario.',
+    fr: "Bonjour, et désolé pour le manque de réactivité : j'avais perdu de vue ce journal et je n'ai reçu aucune notification. J'y suis revenu aujourd'hui, presque par hasard.\n\nSur le débat soulevé par votre commentaire : en parcourant les autres journaux du site, j'avais compris qu'on pouvait y signaler des logiciels libres d'utilité publique. Si je me suis trompé, toutes mes excuses, et je n'ai aucun problème à ce que le journal soit supprimé ; ce n'était pas mon intention de créer des problèmes.\n\nJe me présente : Paolo Antinori, ingénieur italien ([github.com/paoloantinori](https://github.com/paoloantinori)). J'ai écrit cette application pour un usage personnel, je reçois beaucoup de messages vocaux et je préfère les lire. Le développement est assisté par IA, c'est déclaré dans le [README](https://github.com/RisorseArtificiali/anti-vocale) ; ce journal aussi a été rédigé avec une aide IA, parce que je ne maîtrise pas assez le français pour l'écrire seul.\n\nSi j'ai posté ici, c'est pour faire connaître l'application sur un canal francophone. Comme pour l'italien et l'allemand, la transcription intégrée de WhatsApp ne couvre pas le français, donc j'ai pensé qu'elle pouvait être utile ici ; elle a d'autres atouts, mais c'est la motivation de départ.\n\nJe réponds maintenant aux questions techniques, en commençant par celle de jch."
+  },
+  {
+    id: 2,
+    to: 'jch',
+    toUrl: 'https://linuxfr.org/nodes/145642/comments/2034045/answer',
+    toWhat: 'Meilleurs modèles ?',
+    it: [
+      'Grazie per questo commento: è esattamente il tipo di riscontro che speravo. Lavoro su modelli per lingue che non parlo, quindi un po\' alla cieca, guidato dai riscontri degli utenti e dai numeri dei benchmark. Ma quei numeri si sono rivelati poco affidabili per il parlato reale: audio registrato in movimento, come sono i messaggi vocali. E l\'accento, nazionale o regionale, cambia il risultato: certi modelli se la cavano nettamente meglio di altri. Per questo l\'applicazione permette di ritrascrivere un messaggio già trascritto con un altro modello, per confrontare facilmente quale si comporta meglio su un caso dato.',
+      'Il mio caso d\'uso resta la trascrizione offline su telefono (sherpa-onnx, CPU), non la sottotitolazione in diretta, quindi il mio confronto risponde solo in parte al vostro bisogno. Ciò che ho misurato sull\'italiano:',
+      '<ul><li>Parakeet TDT 0.6B (NVIDIA, 25 lingue europee incluso il francese) è il mio modello predefinito. Sul mio set di test italiano è leggermente dietro a distil-whisper-large-v3 in WER, circa 5% contro 4%, ma circa 17 volte più veloce. Non è un modello in streaming, ma trascrive nettamente più veloce del tempo reale, quindi con segmenti di pochi secondi la latenza resta ragionevole.</li><li>L\'unico modello in streaming che fornisco è Nemotron 3.5 ASR 0.6B int8 (45 lingue incluso il francese, segmenti da 1120 ms). La latenza è buona, ma sui miei test italiani la qualità è nettamente dietro a Parakeet. Non l\'ho ancora valutato sul francese.</li><li>Ho anche nel catalogo comunitario un piccolo modello francese: canary-180m-flash (en/es/de/fr, circa 180M di parametri). Non in streaming, ma molto leggero. Qwen3-ASR 0.6B (59 lingue) occupa la stessa nicchia offline di Parakeet.</li></ul>',
+      'Per galene-stt, sherpa-onnx espone una API C, quindi un\'integrazione a fianco di whisper.cpp è fattibile. Se la priorità è la latenza, il Nemotron in streaming è la pista più diretta per il francese; se qualche secondo di ritardo è accettabile, io proverei Parakeet TDT a segmenti corti: per me è il miglior rapporto qualità/velocità su CPU. Non ho nessun dato sull\'inglese parlato con accento francese, quindi non affermo nulla.',
+      'La collezione di modelli offerta dipende dalle statistiche pubblicate online, e sono molto interessato a estenderla a partire dai riscontri. Un utente svizzero, per esempio, mi ha segnalato che i modelli di tedesco gestiscono male lo svizzero-tedesco e mi ha chiesto di supportarne uno specializzato: ora è nel catalogo comunitario.',
+      'Il progetto essendo interamente libero, chiunque abbia le competenze, o voglia puntarci un agente di codifica, può sperimentare. Ma siccome la maggior parte degli utenti non è tecnica, l\'applicazione accetta anche cataloghi di modelli esterni: liste pre-validate da utenti avanzati, che gli altri caricano configurando semplicemente un URL. L\'applicazione si estende così senza cambiare una riga di codice: un meccanismo pensato proprio per le lingue e le varianti regionali.'
+    ],
+    facts: 'Verificato nel codice: il pulsante esiste ("Re-transcribe with…", HistoryTab + strings 1058-60); il catalogo esterno via URL esiste (externalCatalogUrl, "Custom source" nelle impostazioni); lo svizzero-tedesco è nel catalogo comunitario (Whisper v3 Turbo Swiss German int8, fine-tune Flurin17). I link Parakeet/Nemotron/Canary rispondono 200.',
+    fr: "Merci pour ce commentaire : c'est exactement le type de retour que j'espérais. Je travaille sur des modèles pour des langues que je ne parle pas, donc un peu à l'aveugle, guidé par les retours d'utilisateurs et par les chiffres des benchmarks. Or ces chiffres se sont révélés peu fiables pour la parole réelle : audio enregistré en mouvement, comme le sont les messages vocaux. Et l'accent, national ou régional, change le résultat, certains modèles s'en sortent nettement mieux que d'autres. C'est pour ça que l'application permet de retranscrire un message déjà transcrit avec un autre modèle, pour comparer facilement lequel se comporte le mieux sur un cas donné.\n\nMon cas d'usage reste la transcription hors ligne sur téléphone (sherpa-onnx, CPU), pas le sous-titrage en direct, donc ma comparaison ne répond qu'en partie à votre besoin. Ce que j'ai mesuré sur l'italien :\n\n- [Parakeet TDT 0.6B](https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8) (NVIDIA, 25 langues européennes dont le français) est mon modèle par défaut. Sur mon jeu de test italien il est légèrement derrière distil-whisper-large-v3 en WER, environ 5 % contre 4 %, mais environ 17 fois plus rapide. Ce n'est pas un modèle streaming, mais il transcrit nettement plus vite que le temps réel, donc avec des segments de quelques secondes la latence reste raisonnable.\n- Le seul modèle streaming que je livre est [Nemotron 3.5 ASR 0.6B int8](https://huggingface.co/csukuangfj2/sherpa-onnx-nemotron-3.5-asr-streaming-0.6b-1120ms-int8-2026-06-11) (45 langues dont le français, segments de 1120 ms). La latence est bonne, mais sur mes tests italiens la qualité est nettement derrière Parakeet. Je ne l'ai pas encore évalué sur le français.\n- J'ai aussi dans le catalogue communautaire un petit modèle français : [canary-180m-flash](https://huggingface.co/csukuangfj/sherpa-onnx-nemo-canary-180m-flash-en-es-de-fr-int8) (en/es/de/fr, environ 180 M de paramètres). Non streaming, mais très léger. Qwen3-ASR 0.6B (59 langues) occupe le même créneau hors ligne que Parakeet.\n\nPour galene-stt, sherpa-onnx expose une API C, donc une intégration à côté de whisper.cpp est envisageable. Si la latence est la priorité, le Nemotron streaming est la piste la plus directe pour le français ; si quelques secondes de délai sont acceptables, je testerais Parakeet TDT en segments courts, c'est pour moi le meilleur rapport qualité / vitesse sur CPU. Je n'ai aucune donnée sur l'anglais parlé avec l'accent français, je ne peux donc rien affirmer.\n\nLa collection de modèles proposée dépend des statistiques publiées en ligne, et je suis très intéressé par l'étendre à partir des retours. Un utilisateur suisse m'a par exemple signalé que les modèles d'allemand géraient mal le suisse-allemand et m'a demandé d'en soutenir un spécialisé : il est maintenant au catalogue communautaire.\n\nLe projet étant entièrement libre, quiconque a les compétences, ou veut y lancer un agent de codage, peut expérimenter. Mais comme la plupart des utilisateurs ne sont pas techniques, l'application accepte aussi des catalogues de modèles externes : des listes pré-validées par des utilisateurs avancés, que les autres chargent en configurant simplement une URL. Elle s'étend ainsi sans changer une ligne de code, un mécanisme pensé justement pour les langues et les variantes régionales."
+  },
+  {
+    id: 3,
+    to: 'zurvan',
+    toUrl: 'https://linuxfr.org/nodes/145642/comments/2034028/answer',
+    toWhat: 'difensore dell\'app, segnala la RAM',
+    it: [
+      'Grazie del riscontro e dei numeri. La difficoltà di questo tipo di applicazione è il numero di dimensioni che condizionano il risultato: l\'hardware, il carico del telefono al momento del riconoscimento, il modello scelto, la durata del messaggio, e probabilmente altri parametri ancora.',
+      'Una sfida in più: lo strato di trascrizione è sherpa-onnx, in C, e non sempre propaga i propri errori allo strato Android; può fallire in silenzio. Continuo a migliorare l\'applicazione per tracciare queste situazioni, registrarle nei log e segnalarle all\'utente, e contribuisco anche correzioni al motore a monte.',
+      'Non metto in discussione il vostro dato, ma due elementi di contesto. Fino alla 1.13.0 inclusa, un bug faceva sovrastimare la memoria necessaria al modello e bloccava riconoscimenti che il telefono avrebbe potuto portare a termine; è corretto nelle versioni recenti, e l\'impostazione di protezione memoria resta disattivabile per forzare un tentativo. Inoltre, utenti hanno segnalato trascrizioni riuscite su telefoni da 3 o 4 GB di RAM.',
+      'Se volete sperimentare: Nemotron 0.6B int8 è il più leggero dei modelli integrati, il catalogo comunitario contiene un Whisper Tiny multilingue etichettato come poco esigente di memoria, e nelle impostazioni potete disattivare la protezione memoria per tentare anche quando l\'applicazione si mostra prudente. Un ticket su GitHub con il modello usato e la durata del vocale mi permetterebbe di guardare il vostro caso specifico.'
+    ],
+    facts: 'Verificato: la protezione memoria è un\'impostazione reale (memoryProtection in PreferencesManager, disattivabile); Whisper Tiny low-RAM nel catalogo comunitario; Nemotron 640 MB è il più leggero dei modelli integrati; le contribuzioni upstream a sherpa-onnx esistono (PR #3988). La versione del bug (fino alla 1.13.0) e i resoconti dei telefoni da 3-4 GB sono la tua affermazione.',
+    fr: "Merci pour le retour et pour les chiffres. La difficulté de ce genre d'application, c'est le nombre de dimensions qui conditionnent le résultat : le matériel, la charge du téléphone au moment de la reconnaissance, le modèle choisi, la longueur du message, et sans doute d'autres paramètres encore.\n\nUn défi supplémentaire : la couche de transcription est sherpa-onnx, en C, et elle ne propage pas toujours ses erreurs à la couche Android ; elle peut échouer silencieusement. Je continue d'améliorer l'application pour tracer ces situations, les journaliser et les signaler à l'utilisateur, et je contribue aussi des correctifs au moteur en amont.\n\nJe ne conteste pas votre constat, mais deux éléments de contexte. Jusqu'à la 1.13.0 incluse, un bug faisait surestimer la mémoire nécessaire au modèle et bloquait des reconnaissances que le téléphone aurait pu mener à bien ; c'est corrigé depuis, et le réglage de protection mémoire reste désactivable pour forcer un essai. Par ailleurs, des utilisateurs ont signalé réussir des transcriptions sur des téléphones à 3 ou 4 Go de RAM.\n\nSi vous voulez expérimenter : Nemotron 0.6B int8 est le plus léger des modèles intégrés, le catalogue communautaire contient un Whisper Tiny multilingue étiqueté faible en mémoire, et dans les réglages vous pouvez désactiver la protection mémoire pour tenter un essai même quand l'application se montre prudente. Un ticket GitHub avec le modèle utilisé et la durée du vocal me permettrait de regarder votre cas précis."
+  },
+  {
+    id: 4,
+    to: 'Faya',
+    toUrl: 'https://linuxfr.org/nodes/145642/comments/2034559/answer',
+    toWhat: 'chiede se FUTO può convertire un vocale',
+    it: [
+      'Per Anti-Vocale, sì: si condivide il vocale da WhatsApp, Telegram o Signal, il testo arriva in una notifica, poi nella cronologia, con export TXT/SRT/VTT (un bug sull\'export dei file è in correzione per la prossima versione). C\'è anche un pulsante per importare e trascrivere un file audio scelto sul telefono, e un supporto parziale di Tasker per gli utenti avanzati. Non ho provato le app FUTO, non so dire se accettano un vocale condiviso da un\'altra applicazione; jch indica che sono basate su Whisper. La differenza che conta per questo sito è la licenza: Anti-Vocale è GPL e su F-Droid, le applicazioni FUTO sono distribuite con una licenza source-available che limita i progetti derivati.'
+    ],
+    facts: 'Verificato: import da filesystem presente (OpenDocument in HistoryTab); automazione Tasker opt-in (impostazione "External automation (Tasker)", spenta di default). Il bug sull\'export in correzione è la tua affermazione sulla prossima versione.',
+    fr: "Pour Anti-Vocale, oui : on partage le vocal depuis WhatsApp, Telegram ou Signal, et le texte arrive dans une notification, puis dans l'historique, avec export TXT/SRT/VTT (un bug sur l'export de fichiers est en cours de correction pour la prochaine version). Il y a aussi un bouton pour importer et transcrire un fichier audio choisi sur le téléphone, et un support partiel de Tasker pour les utilisateurs avancés. Je n'ai pas testé les applis FUTO, je ne peux pas dire si elles acceptent un vocal partagé depuis une autre application ; jch indique qu'elles sont basées sur Whisper. La différence qui compte pour ce site est la licence : Anti-Vocale est GPL et sur F-Droid, les applications FUTO sont distribuées sous une licence source-available qui restreint les projets dérivés."
+  }
+];
+
+const state = {};
+drafts.forEach(d => state[d.id] = { status: 'pending', note: '' });
+
+const STATUS_IT = { pending: 'in sospeso', ok: 'approvata', edit: 'da modificare', reject: 'scartata' };
+
+function render() {
+  const el = document.getElementById('drafts');
+  el.innerHTML = drafts.map(d => {
+    const st = state[d.id].status;
+    const pill = `<span class="pill ${st}">${STATUS_IT[st]}</span>`;
+    const facts = d.facts ? `<div class="facts">${d.facts}</div>` : '';
+    const itHtml = d.it.map(p => p.startsWith('<ul>') ? p : `<p>${p}</p>`).join('');
+    return `
+    <section class="draft ${st}" id="draft-${d.id}">
+      <div class="draft-head">
+        <span class="num">Risposta ${d.id}</span>
+        <span class="to">a <a href="${d.toUrl}" target="_blank">${d.to}</a>, ${d.toWhat}</span>
+        ${pill}
+      </div>
+      <div class="draft-body">
+        <div class="it-text">${itHtml}</div>
+        ${facts}
+        <details>
+          <summary>Testo francese originale (quello da incollare su LinuxFr)</summary>
+          <div class="fr-box">
+            <div class="fr-text" id="fr-${d.id}">${d.fr.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>
+            <div class="controls" style="margin-top:8px">
+              <button class="btn" onclick="copyFr(${d.id}, this)">Copia questo testo FR</button>
+            </div>
+          </div>
+        </details>
+        <div class="controls">
+          <div class="seg">
+            <button data-s="ok" class="${st==='ok'?'active':''}" onclick="setStatus(${d.id},'ok')">Approva</button>
+            <button data-s="edit" class="${st==='edit'?'active':''}" onclick="setStatus(${d.id},'edit')">Modifica</button>
+            <button data-s="reject" class="${st==='reject'?'active':''}" onclick="setStatus(${d.id},'reject')">Scarta</button>
+          </div>
+        </div>
+        <textarea class="note" id="note-${d.id}" placeholder="Note sulla risposta ${d.id} (in italiano): cosa cambiare, cosa non ti convince..." oninput="state[${d.id}].note=this.value;updateAll()"></textarea>
+      </div>
+    </section>`;
+  }).join('');
+}
+
+function setStatus(id, s) { state[id].status = s; render(); updateAll(); }
+
+function updatePrompt() {
+  const decided = drafts.filter(d => state[d.id].status !== 'pending');
+  const pending = drafts.filter(d => state[d.id].status === 'pending');
+  const lines = [];
+  lines.push('Feedback sulle 4 bozze di risposta LinuxFr (v2):');
+  if (decided.length === 0) {
+    lines.push('(nessuna decisione presa: aggiornerò la pagina dopo il tuo prossimo giro)');
+  }
+  for (const d of decided) {
+    const st = state[d.id].status;
+    let label = { ok: 'APPROVATA', edit: 'DA MODIFICARE', reject: 'SCARTATA' }[st];
+    let line = `- Risposta ${d.id} (a ${d.to}, ${d.toWhat}): ${label}.`;
+    const note = (state[d.id].note || '').trim();
+    if (note) line += ` Note: ${note}`;
+    lines.push(line);
+  }
+  if (pending.length > 0 && decided.length > 0) {
+    lines.push(`- Lasciate in sospeso: ${pending.map(d => d.id).join(', ')}.`);
+  }
+  const g = (document.getElementById('globalNote')?.value || '').trim();
+  if (g) lines.push(`- Note generali: ${g}`);
+  lines.push('');
+  lines.push('Niente viene pubblicato da nessuna parte: aspetto tue istruzioni.');
+  return lines.join('\n');
+}
+
+function updateAll() {
+  const counts = { pending: 0, ok: 0, edit: 0, reject: 0 };
+  drafts.forEach(d => counts[state[d.id].status]++);
+  document.getElementById('stats').innerHTML =
+    `<b>${counts.ok}</b> approvate, <b>${counts.edit}</b> da modificare, <b>${counts.reject}</b> scartate, <b>${counts.pending}</b> in sospeso`;
+  document.getElementById('prompt').textContent = updatePrompt();
+}
+
+function copyText(text, btn) {
+  const done = () => { const old = btn.textContent; btn.textContent = 'Copiato!'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = old; btn.classList.remove('copied'); }, 1200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else fallbackCopy(text, done);
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { alert('Copia non riuscita: seleziona il testo a mano.'); }
+  document.body.removeChild(ta);
+}
+function copyFr(id, btn) { copyText(drafts.find(d => d.id === id).fr, btn); }
+function copyAllFr(btn) {
+  const txt = drafts.map(d => `=== RISPOSTA ${d.id} (rispondi a: ${d.toUrl}) ===\n\n${d.fr}`).join('\n\n\n');
+  copyText(txt, btn);
+}
+function copyPrompt(btn) { copyText(document.getElementById('prompt').textContent, btn); }
+
+function preset(name) {
+  const set = (a, b, c, d) => { state[1].status = a; state[2].status = b; state[3].status = c; state[4].status = d; };
+  if (name === 'all-ok') set('ok', 'ok', 'ok', 'ok');
+  else if (name === 'tech-only') set('edit', 'ok', 'ok', 'edit');
+  else if (name === 'rewrite-intro') set('edit', 'ok', 'pending', 'pending');
+  else if (name === 'drop-optional') set('ok', 'ok', 'reject', 'reject');
+  else if (name === 'reset') drafts.forEach(d => { state[d.id].status = 'pending'; });
+  render(); updateAll();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+render();
+updateAll();
+</script>
+</body>
+</html>
