@@ -88,6 +88,10 @@ object ModelBundleCodec {
             // catalog's).
             metadata.catalogEntryId?.let { manifest.put("catalogEntryId", it) }
             metadata.catalogVariantDir?.let { manifest.put("catalogVariantDir", it) }
+            // Optional licence (schema-1 era, 2026-11-07): omitted when the
+            // exporter carries none, so old readers never see a null key and
+            // old bundles simply read licence null.
+            metadata.licence?.let { manifest.put("licence", it) }
             zip.putNextEntry(ZipEntry(MANIFEST_ENTRY))
             zip.write(manifest.toString().toByteArray())
             zip.closeEntry()
@@ -290,6 +294,7 @@ object ModelBundleCodec {
             languages = languagesJson?.let { a -> (0 until a.length()).map { a.getString(it) } }
                 ?: emptyList(),
             streaming = manifest.optBoolean("streaming", false),
+            licence = manifest.optString("licence").takeIf { it.isNotBlank() },
         )
     }
 
@@ -310,6 +315,9 @@ object ModelBundleCodec {
         val options: Map<String, String>,
         val languages: List<String>,
         val streaming: Boolean,
+        /** Optional licence carried by the bundle manifest (absent in
+         *  pre-schema-1 bundles: reads null). */
+        val licence: String? = null,
     )
 
     /** The export-side metadata, from the registry descriptor or record. */
@@ -331,5 +339,8 @@ object ModelBundleCodec {
         val catalogEntryId: String? = null,
         /** The exported variant's catalog dirName; sibling of [catalogEntryId]. */
         val catalogVariantDir: String? = null,
+        /** Optional licence (schema-1 era): null (key omitted) for builtin
+         *  exports and any exporter that carries none. */
+        val licence: String? = null,
     )
 }

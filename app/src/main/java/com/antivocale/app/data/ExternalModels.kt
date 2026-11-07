@@ -76,6 +76,12 @@ data class ExternalModelRecord(
     val quarantined: Boolean = false,
     /** TASK-801: the catalog entry this record stands in for, when imported from its bundle. */
     val linkedCatalog: LinkedCatalogRef? = null,
+    /**
+     * Optional licence string (schema-1 CDN manifests: the "licence"/"terms"
+     * field; community-index entries: an authored "licence"). Data only: no UI
+     * reads it yet. Null when the source declared none.
+     */
+    val licence: String? = null,
 ) {
     val backendId: String get() = BACKEND_ID_PREFIX + id
 
@@ -102,6 +108,7 @@ data class ExternalModelRecord(
             put("linkedCatalogEntryId", it.catalogEntryId)
             put("linkedCatalogVariantDir", it.variantDir)
         }
+        put("licence", licence ?: JSONObject.NULL)
     }
 
     companion object {
@@ -139,6 +146,7 @@ data class ExternalModelRecord(
                 linkedCatalog = if (linkedEntryId.isNotBlank() && linkedVariantDir.isNotBlank()) {
                     LinkedCatalogRef(linkedEntryId, linkedVariantDir)
                 } else null,
+                licence = o.optString("licence").takeIf { it.isNotBlank() },
             )
         } catch (e: Exception) {
             Log.w(TAG, "Malformed ExternalModelRecord; dropping this record only", e)

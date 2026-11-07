@@ -122,6 +122,42 @@ Host the JSON anywhere reachable (GitHub gist, HF repo, personal site); share th
 To have a model curated for everyone (bundled into the app, or listed in the
 import dialog's autocomplete catalog), see [model-integration.md](model-integration.md).
 
+### 4. Schema-1 CDN manifest (publisher-hosted)
+
+A publisher-hosted manifest whose URL IS the document: the community-catalog index can point its `entryUrl` straight at a floating "latest" manifest on the publisher's CDN, and the app sniffs the dialect when it fetches (`schema` == 1, a `base_url`, and `files` as an object keyed by filename). This is how the Fritter and Sabich entries work: no entry JSON is shipped, the manifest is the entry.
+
+```json
+{
+  "schema": 1,
+  "model": "fritter",
+  "version": "Fritter v1.2",
+  "licence": "CC-BY-NC-4.0",
+  "base_url": "https://models.carrotcakeai.com/asr/fritter/latest/",
+  "files": {
+    "encoder.int8.onnx": {"size": 652282303, "sha256": "b1924e35..."},
+    "decoder.int8.onnx": {"size": 7257753, "sha256": "d79eac8b..."},
+    "joiner.int8.onnx": {"size": 1739080, "sha256": "37b5e174..."},
+    "tokens.txt": {"size": 9384, "sha256": "ec182b70..."}
+  }
+}
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `schema` | yes | must be `1` (the sniff key; anything else parses as entry JSON or fails) |
+| `model` | yes (bare imports) | display name when the import carries none (an index pick's name wins) |
+| `base_url` | yes | file URLs are `base_url` + filename (a missing trailing slash is added) |
+| `files` | yes | object keyed by filename, each `{size, sha256}`; the four transducer names (`encoder.int8.onnx`, `decoder.int8.onnx`, `joiner.int8.onnx`, `tokens.txt`) must ALL be present or the import rejects naming what is missing; unknown filenames are ignored (e.g. `bpe.vocab`, license PDFs), and a `<required>.data` split-ONNX sidecar joins the plan when declared and pinned |
+| `licence` / `terms` | no | recorded onto the imported record (data only today; an index-authored licence wins) |
+| `streaming` | no | boolean; when present it wins over the model-name heuristic, when absent a `model` name containing "streaming" declares streaming. Either way a streaming manifest cannot be pasted directly: it rejects with a pointer to its catalog entry, because only the entry authors the streaming flag the record needs |
+| `model_type` | no | offline arm only: declared value overrides the family default (an offline manifest is otherwise assumed a NeMo-style export; a k2 zipformer must declare `"model_type": ""`); the streaming arm always takes `""` |
+
+Floating-hash semantics: the manifest's sha256 pins are trusted at import time, then frozen into the imported record; a later CDN release simply changes the manifest and a fresh import picks up the new pins. Post-import rot is still caught at load time by the same verification every import gets. Unknown top-level sections are ignored (`gguf`, and Sabich's merged-form `onnx` block with its different layout).
+
+Non-commercial listing policy (maintainer decision, 2026-11-07): the curated index is free-licenses-only as a rule, with one accepted exception class: entries that are POINTERS to a non-commercial model (CC-BY-NC, Hebrish terms) living on the publisher's own CDN. The app ships and mirrors nothing of them; the license travels as data on the record. Mirroring such weights into our own repos would fall back under the TASK-415 free-license rule and is not done.
+
+
+
 ### Mirrored upstreams (test catalog)
 
 The `docs/test-catalog/*.json` fixtures for the OpenVoiceOS NVIDIA conformer-transducer models point at the mirror [pantinor/ovos-conformer-mirrors](https://huggingface.co/pantinor/ovos-conformer-mirrors), not at the upstream OpenVoiceOS repos. The upstream exports cannot be used directly: their encoders carry no k2-fsa metadata (sherpa-onnx exits 255 with `No model_type in the metadata!`) and the prediction/joint networks ship as one combined `decoder_joint-model.int8.onnx` graph, while sherpa's `nemo_transducer` loader requires separate decoder and joiner files. The mirror keeps the weights byte-identical, injects the metadata sherpa requires (`model_type=nemo_transducer`, `vocab_size`, `subsampling_factor=4`, `normalize_type=per_feature`, `pred_rnn_layers`, `pred_hidden`), and splits the combined graph into `decoder-model.onnx` + `joiner-model.onnx` at the prediction-network output tensor. The mirror README documents the full provenance.

@@ -26,6 +26,19 @@ object ExternalCatalog {
         val languages: List<String>,
         val entryUrl: String,
         val family: ModelFamily,
+        /**
+         * Optional licence string authored in the index (2026-11-07). Data
+         * only: it rides the import onto the record; no UI reads it yet.
+         * Null when the index entry declares none.
+         */
+        val licence: String? = null,
+        /**
+         * Streaming TRANSDUCER flag (2026-11-07 round 2): a schema-1 manifest
+         * has no streaming field yet, so an index entry whose model is
+         * streaming must author it here (the Nemotron-pattern OnlineRecognizer
+         * build, TASK-368). Default false.
+         */
+        val streaming: Boolean = false,
     )
 
     /**
@@ -95,6 +108,8 @@ object ExternalCatalog {
                     languages = langs,
                     entryUrl = url,
                     family = family,
+                    licence = e.optString("licence").takeIf { it.isNotBlank() },
+                    streaming = e.optBoolean("streaming", false),
                 ))
             }
         }

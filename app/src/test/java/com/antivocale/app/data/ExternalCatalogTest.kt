@@ -200,7 +200,45 @@ class ExternalCatalogTest {
         // 7.48 vs turbo 6.01, CV15 3.00 on its own domain; hosted at
         // pantinor/sherpa-onnx-whisper-large-v3-german; device pass
         // pending)
-        assertEquals(36, entries.size)
+        // + fritter english (2026-11-07 schema-1 CDN manifest import:
+        // Parakeet TDT v2 fine-tune, non-commercial CC-BY-NC-4.0, hosted on
+        // the publisher's CDN at a floating latest manifest) + sabich
+        // english-hebrew (Hebrish transducer, non-commercial Hebrish terms,
+        // same floating-manifest pattern). NOT shipped entry files: the
+        // entryUrl IS the schema-1 manifest the importer sniffs.
+        // Round 2: + fritter streaming english (Nemotron 0.6B streaming
+        // transducer, same manifest dialect; the INDEX entry carries the
+        // streaming flag, the manifest has no such field).
+        assertEquals(39, entries.size)
+
+        // The three schema-1 manifest entries: family/languages from the index,
+        // entryUrl is the live manifest (no committed asset; see the
+        // asset-pairing test's exemption).
+        val fritter = ExternalCatalog.filter(entries, "fritter")
+        assertEquals(2, fritter.size)
+        assertEquals(ModelFamily.TRANSDUCER, fritter[0].family)
+        assertEquals(listOf("en"), fritter[0].languages)
+        assertEquals("https://models.carrotcakeai.com/asr/fritter/latest/manifest.json",
+            fritter[0].entryUrl)
+        // The streaming twin: index-authored streaming flag is the ONLY
+        // streaming transport for a schema-1 manifest.
+        assertEquals("Fritter Streaming English int8 (Nemotron 0.6B, CC-BY-NC)", fritter[1].name)
+        assertEquals(ModelFamily.TRANSDUCER, fritter[1].family)
+        assertEquals(listOf("en"), fritter[1].languages)
+        assertEquals("https://models.carrotcakeai.com/asr/fritter-streaming/latest/manifest.json",
+            fritter[1].entryUrl)
+        assertTrue(fritter[1].streaming)
+        assertFalse(fritter[0].streaming)
+        val sabich = ExternalCatalog.filter(entries, "sabich")
+        assertEquals(1, sabich.size)
+        assertEquals(ModelFamily.TRANSDUCER, sabich[0].family)
+        assertEquals(listOf("en", "he"), sabich[0].languages)
+        assertEquals("https://cdn.hebrish.app/models/sabich/latest.json", sabich[0].entryUrl)
+        assertFalse(sabich[0].streaming)
+        // All three carry no authored licence in the index: the manifest's own
+        // licence/terms field supplies it at import time.
+        assertEquals(null, fritter[0].licence)
+        assertEquals(null, sabich[0].licence)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
@@ -369,15 +407,23 @@ class ExternalCatalogTest {
             assertEquals(code, obj.getJSONArray("languages").getString(0))
             assertEquals(2, obj.getJSONArray("files").length())
         }
-        // every index entryUrl basename must be a committed asset (index
-        // parsed ONCE, not per entry: the loop below is per-name lookup)
+        // OUR entries' entryUrl basenames must be committed assets. Entries
+        // hosted elsewhere (the schema-1 CDN manifests since 2026-11-07, and
+        // any future publisher-hosted entry) are exempt: their entryUrl IS
+        // the live document, fetched and sniffed at import time, so there is
+        // deliberately no committed asset. The rule is inverted from the
+        // original all-entries form so a new CDN entry is auto-admitted
+        // without touching this test; our-repo URLs stay enforced (index
+        // parsed ONCE, not per entry).
+        val ourRawPrefix = "https://raw.githubusercontent.com/RisorseArtificiali/"
         val assetDir = RepoFiles.resolve("src/main/assets/external-catalog")
         val assets = assetDir.listFiles()?.map { it.name }?.toSet() ?: emptySet()
         val byName = parsedIndex.associateBy { it.name }
         indexNames.forEach { name ->
-            val basename = java.io.File(
-                requireNotNull(byName[name]) { "index entry $name missing" }.entryUrl).name
-            assertTrue("index entry $name references $basename but no such asset exists",
+            val entry = requireNotNull(byName[name]) { "index entry $name missing" }
+            if (!entry.entryUrl.startsWith(ourRawPrefix)) return@forEach
+            val basename = java.io.File(entry.entryUrl).name
+            assertTrue("our-repo index entry $name references $basename but no such asset exists",
                 basename in assets)
         }
     }

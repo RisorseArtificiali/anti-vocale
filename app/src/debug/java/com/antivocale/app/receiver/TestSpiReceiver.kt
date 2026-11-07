@@ -74,6 +74,9 @@ class TestSpiReceiver : BroadcastReceiver() {
         /** TASK-911: op=search arm, literal (default) or similar. */
         const val EXTRA_MODE = "mode"
         const val EXTRA_MODEL_TYPE = "model_type"
+        /** Schema-1 index-metadata transport for op=import (TASK-912 parity). */
+        const val EXTRA_LICENCE = "licence"
+        const val EXTRA_STREAMING = "streaming"
 
         /** TASK-486: navigation destination; required by op=nav. */
         const val EXTRA_DEST = "dest"
@@ -185,7 +188,7 @@ class TestSpiReceiver : BroadcastReceiver() {
         intent.extras?.let { forwarded.putExtras(it) }
         for (bookkeeping in arrayOf(
             EXTRA_OP, EXTRA_KEY, EXTRA_VALUE, EXTRA_ENTRY, EXTRA_URL, EXTRA_FAMILY,
-            EXTRA_MODEL_TYPE, EXTRA_DEST, EXTRA_SCROLL,
+            EXTRA_MODEL_TYPE, EXTRA_DEST, EXTRA_SCROLL, EXTRA_LICENCE, EXTRA_STREAMING,
         )) {
             forwarded.removeExtra(bookkeeping)
         }
@@ -335,7 +338,9 @@ class TestSpiReceiver : BroadcastReceiver() {
                     handleShareOpen(context, intent.getStringExtra(EXTRA_VALUE), intent.getStringExtra(EXTRA_MODE))
                 } else {
                     // handle() answers every request with JSON, errors included.
-                    ops.handle(op, key, value, entry, url, family, modelType, intent.getStringExtra(EXTRA_MODE))
+                    ops.handle(
+                        op, key, value, entry, url, family, modelType, intent.getStringExtra(EXTRA_MODE),
+                        intent.getStringExtra(EXTRA_LICENCE), intent.getStringExtra(EXTRA_STREAMING))
                 }
                 // PendingResult setters, the goAsync-sanctioned API for this
                 // async window: onReceive has already returned and we are on IO.

@@ -140,6 +140,13 @@ object ExternalModelEntryJson {
         val files: List<EntryFile>,
         /** TASK-368: streaming zipformer transducer (TRANSDUCER only). */
         val streaming: Boolean = false,
+        /**
+         * Optional licence string. Entry JSON may author one; the schema-1
+         * manifest synthesis fills it from the manifest's "licence"/"terms".
+         * Persisted onto the record; entry-JSON parse does not read it yet
+         * (no shipped entry declares it).
+         */
+        val licence: String? = null,
     )
 
     fun parse(text: String): Entry {

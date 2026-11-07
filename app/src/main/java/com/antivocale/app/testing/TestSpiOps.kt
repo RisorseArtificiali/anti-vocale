@@ -85,13 +85,15 @@ internal class TestSpiOps(
         family: String? = null,
         modelType: String? = null,
         mode: String? = null,
+        licence: String? = null,
+        streaming: String? = null,
     ): String = runCatching {
         when (op) {
             OP_GET -> get()
             OP_SET -> set(key, value, entry)
             OP_RECORDS -> records()
             OP_IDENTITY_CACHE -> identityCache()
-            OP_IMPORT -> importModel(url, family, modelType)
+            OP_IMPORT -> importModel(url, family, modelType, entry, licence, streaming)
             OP_NOTIFY_MEMORY_ERROR -> notifyMemoryError()
             OP_CLIPBOARD -> clipboard()
             OP_NOTIFICATIONS -> notifications()
@@ -576,11 +578,22 @@ internal class TestSpiOps(
 
     /**
      * TASK-550 device pass: the external-model import, driven without UI. The
-     * importer classifies the url (catalog-entry JSON vs HuggingFace repo),
-     * exactly the path the import dialog uses; the response is the imported
-     * record, so a device test can chain set backend=external:<id> on it.
+     * importer classifies the url (catalog-entry JSON, schema-1 CDN manifest,
+     * or HuggingFace repo), exactly the path the import dialog uses; the
+     * response is the imported record, so a device test can chain set
+     * backend=external:<id> on it. The [displayName]/[licence]/[streaming]
+     * extras are the schema-1 index-metadata transport (TASK-912 parity with
+     * the dialog's catalog pick): a manifest URL like the streaming Fritter's
+     * needs streaming=true here, exactly as its catalog entry authors it.
      */
-    private suspend fun importModel(url: String?, family: String?, modelType: String?): String {
+    private suspend fun importModel(
+        url: String?,
+        family: String?,
+        modelType: String?,
+        displayName: String?,
+        licence: String?,
+        streaming: String?,
+    ): String {
         if (url.isNullOrBlank()) {
             throw IllegalArgumentException("missing 'url' extra")
         }
@@ -620,7 +633,25 @@ internal class TestSpiOps(
             throw IllegalArgumentException(
                 "model_type '$modelType' is not valid for family ${parsedFamily.name}")
         }
-        val record = importer.importFromUrl(url, modelType = modelType, family = parsedFamily)
+        // Streaming extra: a strict "true"/"false" (a typo must not silently
+        // mean false, which would trip the bare-manifest rejection below with
+        // no hint why).
+        val streamingFlag = streaming?.let { raw ->
+            when (raw.lowercase()) {
+                "true" -> true
+                "false" -> false
+                else -> throw IllegalArgumentException(
+                    "streaming extra '$raw' is not a boolean (use true or false)")
+            }
+        } ?: false
+        val record = importer.importFromUrlWithMetadata(
+            url,
+            displayName = displayName,
+            licence = licence,
+            modelType = modelType,
+            family = parsedFamily,
+            streaming = streamingFlag,
+        )
         return JSONObject()
             .put("op", OP_IMPORT)
             .put("record", record.toJson().put("backendId", record.backendId))

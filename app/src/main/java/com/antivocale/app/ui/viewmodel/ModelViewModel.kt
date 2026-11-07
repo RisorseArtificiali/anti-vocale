@@ -1684,13 +1684,31 @@ class ModelViewModel @Inject constructor(
         }
     }
 
-    /** URL import: a HuggingFace repo URL or a catalog-entry JSON URL. */
+    /** Catalog-pick import: the ONE entry point both dialog sites use. The
+     *  entry's metadata rides the import for BOTH dialects: languages reach a
+     *  schema-1 manifest record from the index (the manifest has none) and a
+     *  legacy entry-JSON record from its own document (TASK-820), while the
+     *  name, licence, and streaming flag merge over whatever the fetched
+     *  document declares. */
+    fun importExternalFromCatalogEntry(entry: ExternalCatalog.CatalogEntry) =
+        importExternalFromUrl(
+            entry.entryUrl, entry.family, languages = entry.languages,
+            displayName = entry.name, licence = entry.licence,
+            streaming = entry.streaming)
+
+    /** URL import: a HuggingFace repo URL, a catalog-entry JSON URL, or a
+     *  schema-1 CDN manifest URL. [displayName], [licence] and [streaming]
+     * carry the community-index metadata of an index pick; they merge over
+     * the manifest-derived values and mean nothing to the repo arm. */
     fun importExternalFromUrl(
         url: String,
         family: ModelFamily,
         ctcModelType: String = ModelFamilySupport.CTC_TYPE_NEMO,
         options: Map<String, String> = emptyMap(),
         languages: List<String> = emptyList(),
+        displayName: String? = null,
+        licence: String? = null,
+        streaming: Boolean = false,
     ) = runExternalImport("External URL",
         onProgress = { index, count, name, bytes, total ->
             _externalImportState.value = ExternalImportState.Importing(
@@ -1698,10 +1716,14 @@ class ModelViewModel @Inject constructor(
                 bytes = bytes, totalBytes = total,
                 progress = if (total > 0) bytes.toFloat() / total else 0f)
         }) { onProgress ->
-        ModelBundleTransfer.Outcome.Imported(externalModelImporter.importFromUrl(
+        ModelBundleTransfer.Outcome.Imported(externalModelImporter.importFromUrlWithMetadata(
             url,
+            displayName = displayName,
+            licence = licence,
             modelType = ctcModelType(family, ctcModelType),
-            family = family, options = options, languages = languages,
+            options = options,
+            family = family, languages = languages,
+            streaming = streaming,
             onProgress = onProgress))
     }
 

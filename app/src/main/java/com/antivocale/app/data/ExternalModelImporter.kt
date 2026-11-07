@@ -45,6 +45,7 @@ interface ExternalModelImportOperations {
         streaming: Boolean = false,
         displayName: String? = null,
         linkedCatalog: LinkedCatalogRef? = null,
+        licence: String? = null,
     ): ExternalModelRecord
 
     suspend fun importFromTreeUri(
@@ -66,6 +67,32 @@ interface ExternalModelImportOperations {
         streaming: Boolean = false,
         onProgress: ExternalImportProgress = NOOP_PROGRESS,
     ): ExternalModelRecord
+
+    /**
+     * The schema-1 carrier for index-picked metadata: a community-catalog
+     * entry whose entryUrl is a schema-1 CDN manifest has no entry JSON to
+     * drive the record, so the dialog passes the index's own name and licence
+     * here; they merge OVER the manifest-derived values. The remaining
+     * parameters mirror [importFromUrl] one-to-one so the manual-URL arm
+     * (repo imports with an explicit CTC modelType and options) keeps
+     * working through the same call; for a schema-1 manifest the index's
+     * streaming flag is the ONLY streaming source (the manifest has no such
+     * field). Default delegates to [importFromUrl] and drops the metadata,
+     * so fakes implementing the interface stay source-compatible; the real
+     * importer overrides.
+     */
+    suspend fun importFromUrlWithMetadata(
+        url: String,
+        displayName: String?,
+        licence: String?,
+        modelType: String? = null,
+        options: Map<String, String> = emptyMap(),
+        family: ModelFamily = ModelFamily.TRANSDUCER,
+        languages: List<String> = emptyList(),
+        streaming: Boolean = false,
+        onProgress: ExternalImportProgress = NOOP_PROGRESS,
+    ): ExternalModelRecord =
+        importFromUrl(url, modelType, family, options, languages, streaming, onProgress)
 
     /** TASK-513: file names a SAF tree would import (family detection in the
      *  import dialog). Default unsupported: fakes that never detect need not
@@ -328,9 +355,11 @@ class ExternalModelImporter(
         streaming: Boolean,
         displayName: String?,
         linkedCatalog: LinkedCatalogRef?,
+        licence: String?,
     ): ExternalModelRecord {
         val children = src.listFiles()?.filter { it.isFile }?.map(::FileSource) ?: emptyList()
-        return importCore(children, modelType, displayName ?: src.name, family, options, languages, streaming, linkedCatalog)
+        return importCore(children, modelType, displayName ?: src.name, family, options, languages,
+            streaming, linkedCatalog, licence)
     }
 
     /**
@@ -364,17 +393,66 @@ class ExternalModelImporter(
         }
         return downloadCore(
             triples, resolveModelType(modelType, family), repoId.substringAfter('/'),
-            ExternalModelSource.URL, repoUrl, family, options, languages, streaming, onProgress)
+            ExternalModelSource.URL, repoUrl, family, options, languages, streaming,
+            licence = null, onProgress = onProgress)
     }
 
-    /** Catalog-entry JSON import: every file must carry a sha256 pin (hashless entries rejected).
-     *  The record is driven entirely by the entry (family, modelType, languages, options). */
+    /**
+     * Catalog-entry JSON import (or, sniffed, a schema-1 CDN manifest): every
+     * file must carry a sha256 pin (hashless entries rejected). The record is
+     * driven by the fetched document (family, modelType, languages, options,
+     * licence). The sniff gates INSIDE this arm, not beside it: both fritter's
+     * manifest.json and sabich's latest.json end in ".json", so the url
+     * classification is unchanged and only the fetched text decides the
+     * dialect ([ExternalManifestV1.sniff]).
+     */
     suspend fun importFromEntryJson(
         entryUrl: String,
+        displayName: String? = null,
+        licence: String? = null,
+        family: ModelFamily = ModelFamily.TRANSDUCER,
+        languages: List<String> = emptyList(),
+        streaming: Boolean = false,
         onProgress: ExternalImportProgress = NOOP_PROGRESS,
     ): ExternalModelRecord {
         val text = repoListing.fetchText(entryUrl)
-        val entry = ExternalModelEntryJson.parse(text)
+        val entry = if (ExternalManifestV1.sniff(text)) {
+            ExternalManifestV1.synthesize(
+                text, entryUrl,
+                overrideName = displayName,
+                overrideFamily = family.takeIf { it != ModelFamily.TRANSDUCER },
+                overrideLanguages = languages,
+                overrideLicence = licence,
+                overrideStreaming = streaming,
+            )
+        } else {
+            ExternalModelEntryJson.parse(text)
+                // Legacy arm, same merge semantics as the sniff arm: the
+                // index-picked metadata fills what the document does not
+                // declare (name, licence) and the streaming flag ORs with the
+                // entry's own. The streaming-requires-TRANSDUCER guard the
+                // entry parser and the synthesis both enforce also applies to
+                // the OR result, so an index flag cannot smuggle streaming
+                // onto a non-transducer legacy entry.
+                .let {
+                    if (streaming && it.family != ModelFamily.TRANSDUCER) {
+                        throw IllegalArgumentException(
+                            "entry '${it.name}': streaming=true is only supported for the TRANSDUCER family")
+                    }
+                    val mergedStreaming = it.streaming || streaming
+                    it.copy(
+                        name = displayName ?: it.name,
+                        licence = licence ?: it.licence,
+                        streaming = mergedStreaming,
+                        // A merge that flips streaming on MUST also clear the
+                        // modelType (mirroring the synthesis arm): a record
+                        // with streaming=true and modelType nemo_transducer
+                        // over an offline NeMo graph is the TASK-720
+                        // process-abort class.
+                        modelType = if (mergedStreaming) "" else it.modelType,
+                    )
+                }
+        }
         val plan = buildCopyPlan(entry.files.map { it.name }, entry.family)
             ?: throw missingRolesError(entry.family, entry.files.map { it.name })
         val byName = entry.files.associateBy { it.name }
@@ -390,7 +468,8 @@ class ExternalModelImporter(
         }
         return downloadCore(
             triples, entry.modelType, entry.name, ExternalModelSource.URL, entryUrl,
-            entry.family, entry.options, entry.languages, entry.streaming, onProgress)
+            entry.family, entry.options, entry.languages, entry.streaming,
+            entry.licence, onProgress)
     }
 
     /**
@@ -411,7 +490,7 @@ class ExternalModelImporter(
         onProgress: ExternalImportProgress,
     ): ExternalModelRecord =
         if (isCatalogEntryUrl(url)) {
-            importFromEntryJson(canonicalizeEntryUrl(url), onProgress)
+            importFromEntryJson(canonicalizeEntryUrl(url), onProgress = onProgress)
         } else if (HuggingFaceRepoListing.parseRepoId(url) != null) {
             importFromHuggingFaceRepo(url, modelType, family, options, languages, streaming, onProgress)
         } else {
@@ -422,6 +501,34 @@ class ExternalModelImporter(
                     "such as https://huggingface.co/<owner>/<repo>, or a catalog-entry .json URL)")
         }
 
+    /** The real metadata carrier (see the interface KDoc): a schema-1 manifest
+     *  import merges the index's name, licence, and streaming flag over the
+     *  manifest values; every other url keeps [importFromUrl]'s exact behavior. */
+    override suspend fun importFromUrlWithMetadata(
+        url: String,
+        displayName: String?,
+        licence: String?,
+        modelType: String?,
+        options: Map<String, String>,
+        family: ModelFamily,
+        languages: List<String>,
+        streaming: Boolean,
+        onProgress: ExternalImportProgress,
+    ): ExternalModelRecord {
+        if (!isCatalogEntryUrl(url)) {
+            return importFromUrl(url, modelType, family, options, languages, streaming, onProgress)
+        }
+        return importFromEntryJson(
+            canonicalizeEntryUrl(url),
+            displayName = displayName,
+            licence = licence,
+            family = family,
+            languages = languages,
+            streaming = streaming,
+            onProgress = onProgress,
+        )
+    }
+
     private suspend fun importCore(
         children: List<SourceFile>,
         modelType: String?,
@@ -431,6 +538,7 @@ class ExternalModelImporter(
         languages: List<String>,
         streaming: Boolean = false,
         linkedCatalog: LinkedCatalogRef? = null,
+        licence: String? = null,
     ): ExternalModelRecord {
         val resolvedModelType = resolveModelType(modelType, family)
         // 1. Copy plan by role, plus any ONNX split-file sidecars.
@@ -474,7 +582,7 @@ class ExternalModelImporter(
             }
 
             registerImported(targetDir, pins, family, resolvedModelType, options, languages,
-                ExternalModelSource.LOCAL, null, displayName, streaming, linkedCatalog)
+                ExternalModelSource.LOCAL, null, displayName, streaming, linkedCatalog, licence)
         }
     }
 
@@ -498,6 +606,7 @@ class ExternalModelImporter(
         options: Map<String, String> = emptyMap(),
         languages: List<String> = emptyList(),
         streaming: Boolean = false,
+        licence: String? = null,
         onProgress: ExternalImportProgress = NOOP_PROGRESS,
     ): ExternalModelRecord {
         val root = filesRoot()
@@ -553,7 +662,8 @@ class ExternalModelImporter(
                 scanner?.let { checkSidecars(displayName, it.names(), declaredNames) }
             }
 
-            registerImported(targetDir, pins, family, modelType, options, languages, source, sourceUrl, displayName, streaming)
+            registerImported(targetDir, pins, family, modelType, options, languages, source, sourceUrl, displayName, streaming,
+                licence = licence)
         }
     }
 
@@ -570,6 +680,7 @@ class ExternalModelImporter(
         displayName: String,
         streaming: Boolean = false,
         linkedCatalog: LinkedCatalogRef? = null,
+        licence: String? = null,
     ): ExternalModelRecord {
         // Pre-native metadata validation BEFORE persisting: a wrong family is an
         // import-time error, never a transcription-time exit(255). Both the checked
@@ -646,6 +757,11 @@ class ExternalModelImporter(
                 modelType = modelType,
                 languages = effectiveLanguages,
                 options = options,
+                // Licence: a fresh declaration refreshes, an absent one
+                // PRESERVES the existing value (the sourceUrl/linkedCatalog
+                // carry-preservation rule: a plain re-import must not erase
+                // what the original import recorded).
+                licence = licence?.takeIf { it.isNotBlank() } ?: existing.licence,
                 // Refresh the URL only when the re-import CARRIES one: a folder
                 // re-import over a URL-imported record must not erase its
                 // provenance while leaving source=URL (code review 2026-09-03;
@@ -676,6 +792,7 @@ class ExternalModelImporter(
             importedAt = System.currentTimeMillis(),
             streaming = streaming,
             linkedCatalog = linkedCatalog,
+            licence = licence?.takeIf { it.isNotBlank() },
         )
         store.add(record)
         Log.i(TAG, "Imported external model ${record.backendId} from $displayName ($sizeBytes bytes)")

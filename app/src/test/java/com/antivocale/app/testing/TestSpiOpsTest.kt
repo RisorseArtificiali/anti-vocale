@@ -35,6 +35,9 @@ class TestSpiOpsTest {
         var lastUrl: String? = null,
         var lastFamily: ModelFamily? = null,
         var lastModelType: String? = null,
+        var lastDisplayName: String? = null,
+        var lastLicence: String? = null,
+        var lastStreaming: Boolean? = null,
         val answer: (String) -> ExternalModelRecord,
     ) : ExternalModelImportOperations {
         override suspend fun importFromDirectory(
@@ -46,6 +49,7 @@ class TestSpiOpsTest {
             streaming: Boolean,
             displayName: String?,
             linkedCatalog: com.antivocale.app.data.LinkedCatalogRef?,
+            licence: String?,
         ): ExternalModelRecord = throw UnsupportedOperationException("not used in this test")
 
         override suspend fun importFromTreeUri(
@@ -68,6 +72,26 @@ class TestSpiOpsTest {
             onProgress: com.antivocale.app.data.ExternalImportProgress,
         ): ExternalModelRecord {
             lastUrl = url
+            lastFamily = family
+            lastModelType = modelType
+            return answer("fromurl")
+        }
+
+        override suspend fun importFromUrlWithMetadata(
+            url: String,
+            displayName: String?,
+            licence: String?,
+            modelType: String?,
+            options: Map<String, String>,
+            family: ModelFamily,
+            languages: List<String>,
+            streaming: Boolean,
+            onProgress: com.antivocale.app.data.ExternalImportProgress,
+        ): ExternalModelRecord {
+            lastUrl = url
+            lastDisplayName = displayName
+            lastLicence = licence
+            lastStreaming = streaming
             lastFamily = family
             lastModelType = modelType
             return answer("fromurl")
@@ -683,6 +707,63 @@ class TestSpiOpsTest {
         // would still be silently dropped by the entry.
         val json = JSONObject(ops.handle("import", url = "http://x/entry.json", family = "TRANSDUCER"))
         assertTrue(json.getString("error").contains("entry JSON"))
+    }
+
+    @Test
+    fun `import op forwards the schema-1 index metadata extras`() = runTest {
+        // TASK-912 parity: the entry/licence/streaming extras are the
+        // headless twin of the dialog's catalog pick (the streaming Fritter
+        // manifest NEEDS streaming=true here, exactly as its index entry
+        // authors it).
+        ops.handle(
+            "import",
+            url = "https://models.carrotcakeai.com/asr/fritter-streaming/latest/manifest.json",
+            entry = "Fritter Streaming English int8 (Nemotron 0.6B, CC-BY-NC)",
+            licence = "CC-BY-NC-4.0",
+            streaming = "true")
+        assertEquals("https://models.carrotcakeai.com/asr/fritter-streaming/latest/manifest.json",
+            fakeImporter.lastUrl)
+        assertEquals("Fritter Streaming English int8 (Nemotron 0.6B, CC-BY-NC)",
+            fakeImporter.lastDisplayName)
+        assertEquals("CC-BY-NC-4.0", fakeImporter.lastLicence)
+        assertEquals(true, fakeImporter.lastStreaming)
+        // Absent extras stay null/false: a plain url import is untouched.
+        ops.handle("import", url = "http://x/repo")
+        assertEquals(null, fakeImporter.lastDisplayName)
+        assertEquals(null, fakeImporter.lastLicence)
+        assertEquals(false, fakeImporter.lastStreaming)
+    }
+
+    @Test
+    fun `import op rejects a non-boolean streaming extra`() = runTest {
+        val json = JSONObject(ops.handle("import", url = "http://x/repo", streaming = "yes"))
+        assertTrue(json.getString("error").contains("streaming"))
+        assertNull(fakeImporter.lastUrl)
+    }
+
+    @Test
+    fun `import op without the streaming extra rejects a streaming manifest through the real importer`() = runTest {
+        // The REAL importer's bare gate (a streaming-named schema-1 manifest
+        // must come from a catalog entry authoring the flag) reachable
+        // headlessly: this is the SPI arm of the ExternalModelImporterTest
+        // pin, over a localhost server standing in for the CDN.
+        com.antivocale.app.data.LocalModelServer().use { server ->
+            val manifestUrl = server.serveSchema1Manifest(model = "fritter-streaming")
+            val realStore = ExternalModelStore(fake)
+            val realImporter = com.antivocale.app.data.ExternalModelImporter(
+                store = realStore,
+                filesRoot = { java.io.File("/tmp/av-spi-test-${System.currentTimeMillis()}") })
+            val realOps = TestSpiOps(fake, realStore, realImporter)
+            val bare = JSONObject(realOps.handle("import", url = manifestUrl))
+            assertTrue(bare.getString("error").contains("catalog entry"))
+            assertEquals(0, realStore.records().size)
+            // With the extra, the same op imports and the record carries the flag.
+            val json = JSONObject(realOps.handle(
+                "import", url = manifestUrl, streaming = "true",
+                entry = "Fritter Streaming English int8 (Nemotron 0.6B, CC-BY-NC)"))
+            assertFalse(json.has("error"))
+            assertEquals(true, json.getJSONObject("record").getBoolean("streaming"))
+        }
     }
 
     @Test

@@ -143,6 +143,9 @@ object ModelBundleTransfer {
                 languages = params.languages,
                 streaming = params.streaming,
                 displayName = params.displayName,
+                // Schema-1 era: the bundle's licence (null in pre-schema-1
+                // bundles) rides the record; the importer preserves it.
+                licence = params.licence,
                 // TASK-801 heritage: pre-924 a pin-matching bundle linked
                 // its record here; post-924 a matching bundle RESTORES
                 // instead, and this branch only runs when the identity

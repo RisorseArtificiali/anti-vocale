@@ -75,6 +75,23 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/dolphin-small.json"
     },
     {
+      "name": "Fritter English int8 (Parakeet TDT v2 fine-tune, CC-BY-NC)",
+      "languages": [
+        "en"
+      ],
+      "family": "TRANSDUCER",
+      "entryUrl": "https://models.carrotcakeai.com/asr/fritter/latest/manifest.json"
+    },
+    {
+      "name": "Fritter Streaming English int8 (Nemotron 0.6B, CC-BY-NC)",
+      "languages": [
+        "en"
+      ],
+      "family": "TRANSDUCER",
+      "entryUrl": "https://models.carrotcakeai.com/asr/fritter-streaming/latest/manifest.json",
+      "streaming": true
+    },
+    {
       "name": "IndicConformer Bengali int8 (2.4% CER)",
       "languages": [
         "bn"
@@ -210,6 +227,15 @@
       ],
       "family": "CTC",
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/parakeet-110m-english.json"
+    },
+    {
+      "name": "Sabich English-Hebrew int8 (Hebrish transducer, non-commercial)",
+      "languages": [
+        "en",
+        "he"
+      ],
+      "family": "TRANSDUCER",
+      "entryUrl": "https://cdn.hebrish.app/models/sabich/latest.json"
     },
     {
       "name": "SenseVoice Small multilingual int8 (zh/en/yue/ja/ko)",

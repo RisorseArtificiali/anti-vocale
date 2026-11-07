@@ -1,6 +1,7 @@
 package com.antivocale.app.data
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Rule
@@ -127,6 +128,28 @@ class ModelBundleCodecTest {
         assertEquals(ModelFamily.WHISPER, params.family)
         assertEquals(listOf("he"), params.languages)
         assertEquals("he", params.options["whisper.language"])
+    }
+
+    @Test
+    fun `licence round-trips through the manifest and reads null when absent`() {
+        // R3b: the optional licence key. A metadata block carrying one
+        // exports it and reads back; the default metadata (no licence)
+        // exports no key and reads null, which is also what pre-schema-1
+        // bundles answer.
+        val dir = modelDir("m.onnx" to "x")
+        val withLicence = ByteArrayOutputStream()
+        ModelBundleCodec.export(dir, withLicence, metadata(name = "Fritter").copy(licence = "CC-BY-NC-4.0"))
+        val manifest = ModelBundleCodec.import(
+            ByteArrayInputStream(withLicence.toByteArray()), File(tmp.newFolder(), "imported"))
+        assertEquals("CC-BY-NC-4.0", ModelBundleCodec.recordParams(manifest).licence)
+        // Absent exporter licence: the key is omitted entirely (old readers
+        // never see it) and the read side answers null.
+        val without = ByteArrayOutputStream()
+        ModelBundleCodec.export(dir, without, metadata(name = "Plain"))
+        val reimported = ModelBundleCodec.import(
+            ByteArrayInputStream(without.toByteArray()), File(tmp.newFolder(), "imported2"))
+        assertFalse(reimported.has("licence"))
+        assertEquals(null, ModelBundleCodec.recordParams(reimported).licence)
     }
 
     @Test

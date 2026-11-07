@@ -1260,16 +1260,10 @@ private fun CuratedCommunityCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Button(
-                // NOTE: languages ride the entry JSON itself (importFromEntryJson
-                // reads entry.languages); these params only reach repo imports.
-                onClick = {
-                    // TASK-820 follow-up (GH #128 user finding): the entry's
-                    // languages MUST ride the import, or the record is born
-                    // with an empty list and its card never shows the
-                    // language signal.
-                    viewModel.importExternalFromUrl(
-                        entry.entryUrl, entry.family, languages = entry.languages)
-                },
+                // Catalog pick: the entry's metadata (languages for both
+                // dialects per importExternalFromCatalogEntry, plus the
+                // schema-1 name/licence/streaming transport) rides the import.
+                onClick = { viewModel.importExternalFromCatalogEntry(entry) },
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
             ) {
                 Icon(Icons.Default.CloudDownload, contentDescription = null)
@@ -2362,8 +2356,7 @@ private fun ExternalModelsSection(
                         val manual = if (linkMode) linkUrl.trim().isNotBlank() else false
                         urlDialogOpen = false
                         when {
-                            entry != null -> viewModel.importExternalFromUrl(
-                                entry.entryUrl, entry.family, languages = entry.languages)
+                            entry != null -> viewModel.importExternalFromCatalogEntry(entry)
                             manual -> viewModel.importExternalFromUrl(
                                 linkUrl.trim(), selection.family,
                                 ctcModelType = selection.ctcModelType,
