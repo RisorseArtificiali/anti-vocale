@@ -254,6 +254,17 @@
             </intent-filter>
         </receiver>
 
+        <!-- TASK-963: the Recover action of the wiped-imports notification;
+             not exported, reached only through its explicit PendingIntent. -->
+        <receiver
+            android:name=".receiver.WipedImportRepairReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.antivocale.app.REPAIR_WIPED_IMPORTS" />
+            </intent-filter>
+        </receiver>
+
         <!-- Activity for receiving shared audio files.
              TASK-927 review V6: configChanges keeps a mid-batch rotation from
              recreating this activity. The recreation guard would finish the

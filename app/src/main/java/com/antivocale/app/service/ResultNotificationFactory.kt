@@ -752,12 +752,14 @@ class ResultNotificationFactory(private val context: Context) {
          *   suspension outcome)
          * - 2503: SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID (TASK-684
          *   generic interrupted-runs summary)
+         * - 2504: WipedImportRepairReceiver.NOTIFICATION_ID (TASK-963 wiped-import
+         *   recovery notice)
          * - 2601..2603: RESULT_CATCHUP_DIGEST_ID_BASE..+RANGE (TASK-889
          *   cold-start burst digest, one id per voice-note source; 2601
          *   was the voice-note offer slot until the offer mode was
          *   removed, TASK-272, then reclaimed here; 2603 joined with the
          *   TASK-966 watched-folder source)
-         * New fixed ids or bands go under the base; 2301..2400 and 2504..2999
+         * New fixed ids or bands go under the base; 2301..2400 and 2505..2999
          * are free headroom.
          */
         const val RESULT_NOTIFICATION_ID_BASE = 3000

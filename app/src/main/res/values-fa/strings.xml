@@ -1342,4 +1342,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">تازه‌ها</string>
     <string name="whats_new_summary">تازه‌های این نسخه</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">بازیابی مدل‌ها</string>
+    <string name="notification_channel_model_repair_description">اعلان‌ها وقتی پاک‌کننده فضای ذخیره‌سازی سیستم مدلی واردشده را حذف می‌کند و درباره نتیجه بازیابی.</string>
+    <string name="wiped_imports_title">پاک‌کننده سیستم فایل‌های مدل را حذف کرد</string>
+    <string name="wiped_imports_text">پاک‌کننده فضای ذخیره‌سازی سیستم فایل‌های %1$d مدل واردشده را حذف کرد: %2$s. برای دانلود دوباره از منبع اصلی، «بازیابی» را بزنید.</string>
+    <string name="wiped_imports_names_overflow">+ %1$d مورد دیگر</string>
+    <string name="wiped_imports_recover_action">بازیابی</string>
+    <string name="wiped_imports_recovered_title">بازیابی تمام شد</string>
+    <string name="wiped_imports_recovered_text">فایل‌های %1$d مدل دوباره دانلود شد و آماده استفاده است.</string>
+    <string name="wiped_imports_failed_title">بازیابی مدل ناموفق بود</string>
+    <string name="wiped_imports_failed_text">دانلود دوباره کامل نشد. برای وارد کردن دوباره مدل به‌صورت دستی، تب مدل‌ها را باز کنید.</string>
 </resources>

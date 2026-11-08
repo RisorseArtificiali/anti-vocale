@@ -1205,4 +1205,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Novidades</string>
     <string name="whats_new_summary">Novidades desta versão</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">Recuperação de modelos</string>
+    <string name="notification_channel_model_repair_description">Avisos quando um limpador de armazenamento do sistema apaga um modelo importado e sobre o resultado da recuperação.</string>
+    <string name="wiped_imports_title">Limpador do sistema apagou arquivos do modelo</string>
+    <string name="wiped_imports_text">Um limpador de armazenamento do sistema apagou os arquivos de %1$d modelo(s) importado(s): %2$s. Toque em Recuperar para baixá-los de novo da fonte original.</string>
+    <string name="wiped_imports_names_overflow">+ %1$d mais</string>
+    <string name="wiped_imports_recover_action">Recuperar</string>
+    <string name="wiped_imports_recovered_title">Recuperação concluída</string>
+    <string name="wiped_imports_recovered_text">Os arquivos de %1$d modelo(s) foram baixados de novo e já podem ser usados.</string>
+    <string name="wiped_imports_failed_title">Falha na recuperação do modelo</string>
+    <string name="wiped_imports_failed_text">O download não foi concluído. Abra a aba Modelos para importar o modelo de novo manualmente.</string>
 </resources>

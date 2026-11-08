@@ -1353,4 +1353,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Wat is er nieuw</string>
     <string name="whats_new_summary">Wat is er nieuw in deze versie</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">Modelherstel</string>
+    <string name="notification_channel_model_repair_description">Meldingen wanneer een opschoontool van het systeem een geïmporteerd model verwijdert, en over de uitkomst van het herstel.</string>
+    <string name="wiped_imports_title">Opschoontool van het systeem verwijderde modelbestanden</string>
+    <string name="wiped_imports_text">Een opschoontool van de systeemopslag heeft de bestanden van %1$d geïmporteerd model(len) verwijderd: %2$s. Tik op Herstellen om ze opnieuw te downloaden van de oorspronkelijke bron.</string>
+    <string name="wiped_imports_names_overflow">+ %1$d extra</string>
+    <string name="wiped_imports_recover_action">Herstellen</string>
+    <string name="wiped_imports_recovered_title">Herstel voltooid</string>
+    <string name="wiped_imports_recovered_text">De bestanden van %1$d model(len) zijn opnieuw gedownload en weer bruikbaar.</string>
+    <string name="wiped_imports_failed_title">Herstellen mislukt</string>
+    <string name="wiped_imports_failed_text">De download is niet voltooid. Open het tabblad Modellen om het model handmatig opnieuw te importeren.</string>
 </resources>

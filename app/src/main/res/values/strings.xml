@@ -1361,4 +1361,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">What\'s New</string>
     <string name="whats_new_summary">Release notes for this version</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">Model recovery</string>
+    <string name="notification_channel_model_repair_description">Notices when a system storage cleaner deletes an imported model, and about the outcome of a recovery.</string>
+    <string name="wiped_imports_title">System cleaner deleted model files</string>
+    <string name="wiped_imports_text">%1$d imported model(s) had their files deleted by a system storage cleaner: %2$s. Tap Recover to download them again from the original source.</string>
+    <string name="wiped_imports_names_overflow">+ %1$d more</string>
+    <string name="wiped_imports_recover_action">Recover</string>
+    <string name="wiped_imports_recovered_title">Model recovery finished</string>
+    <string name="wiped_imports_recovered_text">%1$d model(s) were downloaded again and are ready to use.</string>
+    <string name="wiped_imports_failed_title">Model recovery failed</string>
+    <string name="wiped_imports_failed_text">The re-download did not complete. Open the Models tab to import the model again manually.</string>
 </resources>

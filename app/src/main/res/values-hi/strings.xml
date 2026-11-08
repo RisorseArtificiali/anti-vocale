@@ -1336,4 +1336,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">नया क्या है</string>
     <string name="whats_new_summary">इस वर्शन में नया क्या है</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">मॉडल पुनर्प्राप्ति</string>
+    <string name="notification_channel_model_repair_description">जब सिस्टम स्टोरेज क्लीनर आयातित मॉडल हटाता है और पुनर्प्राप्ति के नतीजे के बारे में सूचनाएँ।</string>
+    <string name="wiped_imports_title">सिस्टम क्लीनर ने मॉडल फ़ाइलें हटाईं</string>
+    <string name="wiped_imports_text">सिस्टम स्टोरेज क्लीनर ने %1$d आयातित मॉडल की फ़ाइलें हटा दीं: %2$s. मूल स्रोत से दोबारा डाउनलोड करने के लिए "पुनर्प्राप्त करें" पर टैप करें।</string>
+    <string name="wiped_imports_names_overflow">+ %1$d और</string>
+    <string name="wiped_imports_recover_action">पुनर्प्राप्त करें</string>
+    <string name="wiped_imports_recovered_title">पुनर्प्राप्ति पूरी हुई</string>
+    <string name="wiped_imports_recovered_text">%1$d मॉडल की फ़ाइलें दोबारा डाउनलोड कर दी गई हैं और वे उपयोग के लिए तैयार हैं।</string>
+    <string name="wiped_imports_failed_title">मॉडल पुनर्प्राप्ति विफल</string>
+    <string name="wiped_imports_failed_text">दोबारा डाउनलोड पूरा नहीं हुआ। मॉडल को दोबारा हाथ से आयात करने के लिए मॉडल्स टैब खोलें।</string>
 </resources>

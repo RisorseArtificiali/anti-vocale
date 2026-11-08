@@ -47,6 +47,8 @@ class ReservedNotificationIdContractTest {
         assertTrue(CrashQuarantineCheck.NOTIFICATION_ID < base)
         assertTrue(SuspendedRunRecovery.NOTIFICATION_ID < base)
         assertTrue(SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID < base)
+        // TASK-963: the wiped-import recovery notice.
+        assertTrue(com.antivocale.app.receiver.WipedImportRepairNotifications.NOTIFICATION_ID < base)
         assertTrue(TranscriptionOrchestrator.MEMORY_MARGIN_WARNING_ID < base)
         assertTrue(com.antivocale.app.util.MemoryKillStartupCheck.NOTIFICATION_ID < base)
         assertTrue(SubtitleChoiceTimeoutWorker.NOTIFICATION_ID < base)
@@ -101,6 +103,10 @@ class ReservedNotificationIdContractTest {
             // suspension id, same documented-headroom rule.
             "interrupted-runs-fixed" to (SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID..
                 SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID),
+            // TASK-963: the wiped-import recovery notice, same
+            // documented-headroom rule.
+            "wiped-import-repair-fixed" to (com.antivocale.app.receiver.WipedImportRepairNotifications.NOTIFICATION_ID..
+                com.antivocale.app.receiver.WipedImportRepairNotifications.NOTIFICATION_ID),
             // TASK-889: the cold-start catch-up burst digest band (one id
             // per voice-note source; both clients' cold sweeps fire at the
             // same app start, so a shared id would lose one digest).

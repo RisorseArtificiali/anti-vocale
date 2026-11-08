@@ -1367,4 +1367,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Що нового</string>
     <string name="whats_new_summary">Новинки цієї версії</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">Відновлення моделей</string>
+    <string name="notification_channel_model_repair_description">Сповіщення, коли системне очищення сховища видаляє імпортовану модель, і про результат відновлення.</string>
+    <string name="wiped_imports_title">Системне очищення видалило файли моделі</string>
+    <string name="wiped_imports_text">Системне очищення сховища видалило файли імпортованих моделей (%1$d шт.): %2$s. Торкніться «Відновити», щоб завантажити їх знову з первинного джерела.</string>
+    <string name="wiped_imports_names_overflow">+ ще %1$d</string>
+    <string name="wiped_imports_recover_action">Відновити</string>
+    <string name="wiped_imports_recovered_title">Відновлення завершено</string>
+    <string name="wiped_imports_recovered_text">Файли моделей у кількості %1$d завантажено знову, і вони готові до використання.</string>
+    <string name="wiped_imports_failed_title">Не вдалося відновити моделі</string>
+    <string name="wiped_imports_failed_text">Повторне завантаження не завершилося. Відкрийте вкладку Моделі та імпортуйте модель знову вручну.</string>
 </resources>

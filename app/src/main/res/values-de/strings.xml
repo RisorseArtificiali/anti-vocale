@@ -1337,4 +1337,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Neuigkeiten</string>
     <string name="whats_new_summary">Neuigkeiten zu dieser Version</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">Modell-Wiederherstellung</string>
+    <string name="notification_channel_model_repair_description">Hinweise, wenn ein System-Speicherbereiniger ein importiertes Modell löscht, und zum Ergebnis der Wiederherstellung.</string>
+    <string name="wiped_imports_title">Systembereinigung hat Modelldateien gelöscht</string>
+    <string name="wiped_imports_text">Ein System-Speicherbereiniger hat die Dateien von %1$d importierten Modell(en) gelöscht: %2$s. Tippe auf Wiederherstellen, um sie erneut von der ursprünglichen Quelle herunterzuladen.</string>
+    <string name="wiped_imports_names_overflow">+ %1$d weitere</string>
+    <string name="wiped_imports_recover_action">Wiederherstellen</string>
+    <string name="wiped_imports_recovered_title">Wiederherstellung abgeschlossen</string>
+    <string name="wiped_imports_recovered_text">Die Dateien von %1$d Modell(en) wurden erneut heruntergeladen und sind einsatzbereit.</string>
+    <string name="wiped_imports_failed_title">Wiederherstellung fehlgeschlagen</string>
+    <string name="wiped_imports_failed_text">Der erneute Download wurde nicht abgeschlossen. Öffne den Tab Modelle und importiere das Modell erneut von Hand.</string>
 </resources>

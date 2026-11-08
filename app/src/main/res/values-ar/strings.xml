@@ -1234,4 +1234,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">ما الجديد</string>
     <string name="whats_new_summary">ما الجديد في هذا الإصدار</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">استرداد النماذج</string>
+    <string name="notification_channel_model_repair_description">إشعارات عندما يحذف منظّف مساحة التخزين في النظام نموذجًا مستوردًا، وعن نتيجة عملية الاسترداد.</string>
+    <string name="wiped_imports_title">منظّف النظام حذف ملفات النموذج</string>
+    <string name="wiped_imports_text">حذف منظّف مساحة التخزين في النظام ملفات نماذج مستوردة عددها %1$d: %2$s. اضغط زر الاسترداد لتنزيلها مرة أخرى من المصدر الأصلي.</string>
+    <string name="wiped_imports_names_overflow">+ %1$d أخرى</string>
+    <string name="wiped_imports_recover_action">استرداد</string>
+    <string name="wiped_imports_recovered_title">اكتمل الاسترداد</string>
+    <string name="wiped_imports_recovered_text">أُعيد تنزيل ملفات نماذج عددها %1$d وهي جاهزة للاستخدام.</string>
+    <string name="wiped_imports_failed_title">فشل استرداد النموذج</string>
+    <string name="wiped_imports_failed_text">لم يكتمل إعادة التنزيل. افتح تبويب النماذج لإعادة استيراد النموذج يدويًا.</string>
 </resources>

@@ -1337,4 +1337,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Yenilikler</string>
     <string name="whats_new_summary">Bu sürümdeki yenilikler</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">Model kurtarma</string>
+    <string name="notification_channel_model_repair_description">Sistem depolama temizleyicisi içe aktarılan bir modeli sildiğinde ve kurtarma girişiminin sonucu hakkında bildirimler.</string>
+    <string name="wiped_imports_title">Sistem temizleyici model dosyalarını sildi</string>
+    <string name="wiped_imports_text">Sistem depolama temizleyicisi %1$d içe aktarılan modelin dosyalarını sildi: %2$s. Orijinal kaynaktan yeniden indirmek için Kurtar düğmesine dokunun.</string>
+    <string name="wiped_imports_names_overflow">+ %1$d tane daha</string>
+    <string name="wiped_imports_recover_action">Kurtar</string>
+    <string name="wiped_imports_recovered_title">Kurtarma tamamlandı</string>
+    <string name="wiped_imports_recovered_text">%1$d modelin dosyaları yeniden indirildi ve kullanılmaya hazır.</string>
+    <string name="wiped_imports_failed_title">Model kurtarma başarısız</string>
+    <string name="wiped_imports_failed_text">Yeniden indirme tamamlanmadı. Modeli elle yeniden içe aktarmak için Modeller sekmesini açın.</string>
 </resources>

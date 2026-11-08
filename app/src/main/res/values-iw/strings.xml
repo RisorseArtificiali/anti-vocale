@@ -1349,4 +1349,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">מה חדש</string>
     <string name="whats_new_summary">מה חדש בגרסה זו</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">שחזור מודלים</string>
+    <string name="notification_channel_model_repair_description">התראות כשמנקה אחסון של המערכת מוחק מודל מיובא, ועל תוצאת השחזור.</string>
+    <string name="wiped_imports_title">מנקה של המערכת מחק קובצי מודל</string>
+    <string name="wiped_imports_text">מנקה אחסון של המערכת מחק את הקבצים של %1$d מהמודלים המיובאים: %2$s. הקש על "שחזר" כדי להוריד אותם שוב מהמקור המקורי.</string>
+    <string name="wiped_imports_names_overflow">+ %1$d נוספים</string>
+    <string name="wiped_imports_recover_action">שחזר</string>
+    <string name="wiped_imports_recovered_title">השחזור הסתיים</string>
+    <string name="wiped_imports_recovered_text">הקבצים של %1$d מהמודלים הורדו שוב והם מוכנים לשימוש.</string>
+    <string name="wiped_imports_failed_title">שחזור המודל נכשל</string>
+    <string name="wiped_imports_failed_text">ההורדה החוזרת לא הושלמה. פתח את הלשונית מודלים וייבא את המודל מחדש באופן ידני.</string>
 </resources>

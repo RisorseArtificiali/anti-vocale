@@ -60,6 +60,13 @@ class NotificationChannelHelperTest {
     }
 
     @Test
+    fun `MODEL_REPAIR has correct id and properties`() {
+        assertEquals("model_repair_channel", AppNotificationChannel.MODEL_REPAIR.id)
+        assertEquals(NotificationManager.IMPORTANCE_DEFAULT, AppNotificationChannel.MODEL_REPAIR.importance)
+        assertEquals(true, AppNotificationChannel.MODEL_REPAIR.showBadge)
+    }
+
+    @Test
     fun `all channel IDs are unique`() {
         val ids = AppNotificationChannel.entries.map { it.id }
         assertEquals(
@@ -70,12 +77,13 @@ class NotificationChannelHelperTest {
     }
 
     @Test
-    fun `enum has exactly 5 entries`() {
-        // TASK-272: the offer channel died with the offer mode (5 entries;
-        // an upgrade keeps the orphaned system channel, it posts nothing).
+    fun `enum has exactly 6 entries`() {
+        // TASK-272: the offer channel died with the offer mode (an upgrade
+        // keeps the orphaned system channel, it posts nothing). TASK-963
+        // added MODEL_REPAIR (6 entries).
         assertEquals(
-            "AppNotificationChannel should have exactly 5 entries",
-            5,
+            "AppNotificationChannel should have exactly 6 entries",
+            6,
             AppNotificationChannel.entries.size
         )
     }

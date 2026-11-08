@@ -80,6 +80,22 @@ enum class AppNotificationChannel(
         descriptionResId = R.string.notification_channel_tasker_fallback_description,
         importance = NotificationManager.IMPORTANCE_HIGH,
         showBadge = true
+    ),
+    /**
+     * TASK-963: the wiped-import recovery notice (a platform storage
+     * cleaner deleted an external model's files while its record
+     * survived). IMPORTANCE_DEFAULT like [INTERRUPTED_RUNS]: informative,
+     * not heads-up, and its own channel so the user can silence recovery
+     * notices without touching result notifications. The Recover action
+     * starts a multi-gigabyte download the USER chose to run, on whatever
+     * network they can see when they tap.
+     */
+    MODEL_REPAIR(
+        id = "model_repair_channel",
+        nameResId = R.string.notification_channel_model_repair,
+        descriptionResId = R.string.notification_channel_model_repair_description,
+        importance = NotificationManager.IMPORTANCE_DEFAULT,
+        showBadge = true
     );
 
     companion object {

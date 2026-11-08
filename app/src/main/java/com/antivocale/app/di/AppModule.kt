@@ -222,6 +222,37 @@ object AppModule {
             repoListing = com.antivocale.app.data.HuggingFaceRepoListing(okHttpClient),
         )
 
+    /**
+     * TASK-963: the wiped-import repairer, a singleton because its captured
+     * state (dangling candidates, selections) must survive from the startup
+     * capture to the notification's Recover tap, minutes or hours later.
+     * Provided via @Provides (not @Inject), the [ExternalModelStore]
+     * precedent: the reimport lambda parameter is invisible to Dagger.
+     */
+    @Provides
+    @Singleton
+    fun provideExternalImportRepairer(
+        store: ExternalModelStore,
+        preferencesManager: PreferencesManager,
+        importer: com.antivocale.app.data.ExternalModelImportOperations,
+    ): com.antivocale.app.data.ExternalImportRepairer =
+        com.antivocale.app.data.ExternalImportRepairer(
+            store,
+            preferencesManager,
+            reimport = { record ->
+                importer.importFromUrl(
+                    url = requireNotNull(record.sourceUrl) {
+                        "repair candidate without a sourceUrl: ${record.id}"
+                    },
+                    modelType = record.modelType,
+                    family = record.family,
+                    options = record.options,
+                    languages = record.languages,
+                    streaming = record.streaming,
+                )
+            },
+        )
+
     @Provides
     @Singleton
     fun provideLitertLmUrlImporter(

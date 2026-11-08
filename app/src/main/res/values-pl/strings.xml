@@ -1365,4 +1365,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Nowości</string>
     <string name="whats_new_summary">Nowości w tej wersji</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">Przywracanie modeli</string>
+    <string name="notification_channel_model_repair_description">Powiadomienia, gdy systemowe narzędzie do czyszczenia pamięci usuwa zaimportowany model, oraz o wyniku przywracania.</string>
+    <string name="wiped_imports_title">Narzędzie systemowe usunęło pliki modeli</string>
+    <string name="wiped_imports_text">Systemowe narzędzie do czyszczenia pamięci usunęło pliki zaimportowanych modeli (%1$d szt.): %2$s. Dotknij Przywróć, aby pobrać je ponownie z pierwotnego źródła.</string>
+    <string name="wiped_imports_names_overflow">+ %1$d więcej</string>
+    <string name="wiped_imports_recover_action">Przywróć</string>
+    <string name="wiped_imports_recovered_title">Przywracanie zakończone</string>
+    <string name="wiped_imports_recovered_text">Pliki modeli w liczbie %1$d pobrano ponownie i można z nich korzystać.</string>
+    <string name="wiped_imports_failed_title">Nie udało się przywrócić modeli</string>
+    <string name="wiped_imports_failed_text">Pobieranie nie zostało ukończone. Otwórz zakładkę Modele i zaimportuj model ponownie ręcznie.</string>
 </resources>

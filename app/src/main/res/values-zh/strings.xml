@@ -1164,4 +1164,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">更新内容</string>
     <string name="whats_new_summary">此版本的更新内容</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">模型恢复</string>
+    <string name="notification_channel_model_repair_description">当系统存储清理工具删除已导入的模型时发出的通知，以及恢复结果。</string>
+    <string name="wiped_imports_title">系统清理工具删除了模型文件</string>
+    <string name="wiped_imports_text">系统存储清理工具删除了 %1$d 个已导入模型的文件：%2$s。点按“恢复”可从原始来源重新下载。</string>
+    <string name="wiped_imports_names_overflow">及另外 %1$d 个</string>
+    <string name="wiped_imports_recover_action">恢复</string>
+    <string name="wiped_imports_recovered_title">模型恢复完成</string>
+    <string name="wiped_imports_recovered_text">已重新下载 %1$d 个模型的文件，可以使用了。</string>
+    <string name="wiped_imports_failed_title">模型恢复失败</string>
+    <string name="wiped_imports_failed_text">重新下载未完成。请打开“模型”标签页手动重新导入模型。</string>
 </resources>

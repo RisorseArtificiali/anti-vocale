@@ -1177,4 +1177,16 @@
     <!-- TASK-929: the What's-New dialog (the update auto-popup and its About hub card) -->
     <string name="whats_new_title">Uutta</string>
     <string name="whats_new_summary">Tämän version uutuudet</string>
+
+    <!-- TASK-963: wiped-import recovery notice (platform storage cleaners) -->
+    <string name="notification_channel_model_repair">Mallien palautus</string>
+    <string name="notification_channel_model_repair_description">Ilmoitukset, kun järjestelmän tallennustilan siivous poistaa tuodun mallin, sekä palautuksen lopputuloksesta.</string>
+    <string name="wiped_imports_title">Järjestelmän siivous poisti mallitiedostoja</string>
+    <string name="wiped_imports_text">Järjestelmän tallennustilan siivous poisti tuotujen mallien tiedostot (%1$d kpl): %2$s. Napauta Palauta, jolloin ne ladataan uudelleen alkuperäisestä lähteestä.</string>
+    <string name="wiped_imports_names_overflow">+ %1$d lisää</string>
+    <string name="wiped_imports_recover_action">Palauta</string>
+    <string name="wiped_imports_recovered_title">Palautus valmis</string>
+    <string name="wiped_imports_recovered_text">Mallien (%1$d kpl) tiedostot on ladattu uudelleen ja ne ovat valmiita käytettäväksi.</string>
+    <string name="wiped_imports_failed_title">Mallin palautus epäonnistui</string>
+    <string name="wiped_imports_failed_text">Uudelleenlataus ei valmistunut. Avaa Mallit-välilehti ja tuo malli uudelleen käsin.</string>
 </resources>

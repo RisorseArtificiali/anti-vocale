@@ -30,6 +30,7 @@ class BridgeApplication : Application(), Configuration.Provider {
     @Inject lateinit var launcherIconManager: com.antivocale.app.ui.appearance.LauncherIconManager
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var externalModelStore: com.antivocale.app.data.ExternalModelStore
+    @Inject lateinit var externalImportRepairer: com.antivocale.app.data.ExternalImportRepairer
     @Inject lateinit var logDao: com.antivocale.app.data.local.LogDao
     @Inject lateinit var scheduledFolderStore: com.antivocale.app.data.ScheduledFolderStore
     @Inject lateinit var voiceNoteDetectionCoordinators: com.antivocale.app.data.VoiceNoteDetectionCoordinators
@@ -196,6 +197,30 @@ class BridgeApplication : Application(), Configuration.Provider {
         }.onFailure { e ->
             android.util.Log.e("BridgeApplication", "Crash-quarantine check failed (marker cleared, no quarantine applied)", e)
         }
+        // TASK-963: the repairer's capture runs FIRST, inside the same blocking
+        // window, because the cleaner's reset is what erases the user's selection
+        // of a wiped-but-repairable record. ORDERING IS LOAD-BEARING: moving
+        // capture() after cleanIfNeeded() compiles and repairs fine, but the
+        // selection restore silently dies (capture would read the already-reset
+        // default). The repair itself runs ONLY when the user taps Recover on
+        // the wiped-imports notification (no automatic re-download of
+        // gigabyte payloads; maintainer decision).
+        val wipedImportCandidates = runCatching {
+            kotlinx.coroutines.runBlocking { externalImportRepairer.capture() }
+        }.onFailure { e ->
+            // Its own containment: a capture failure must not also skip the
+            // cleaner's TASK-342 reset below (the retired 'gemma4_gguf' id
+            // has this cleaner as its ONLY reset site).
+            android.util.Log.e("BridgeApplication", "External-import repair capture failed (will retry on next launch)", e)
+        }.getOrDefault(emptyList())
+        if (wipedImportCandidates.isNotEmpty()) {
+            runCatching {
+                com.antivocale.app.receiver.WipedImportRepairNotifications
+                    .postWiped(this, wipedImportCandidates)
+            }.onFailure { e ->
+                android.util.Log.e("BridgeApplication", "Wiped-imports notification failed", e)
+            }
+        }
         // Also before syncAll: a persisted external backend id whose record is gone
         // (deleted through another path, files vanished, quarantined) must fall back
         // to the default backend, or every transcription request fails on an
@@ -211,9 +236,11 @@ class BridgeApplication : Application(), Configuration.Provider {
         // run accumulate invisibly; reconcile the external root against the store's
         // records. Launched, not runBlocking: the delete can span GBs and must not
         // block cold start; contained so a sweep failure never crashes startup.
-        // No import can be in flight yet (every import entry is UI or debug-SPI
-        // driven, in-process), so no in-flight dir needs excluding.
-        applicationScope.launch(Dispatchers.IO) {
+        // No import can be in flight when this sweep starts (the UI and
+        // debug-SPI entries need a user, and the TASK-963 repairer JOINS
+        // this job before its first download), so no in-flight dir needs
+        // excluding. A future non-UI import entry point must do the same.
+        val externalDirSweepJob = applicationScope.launch(Dispatchers.IO) {
             runCatching {
                 com.antivocale.app.data.OrphanedExternalModelDirCleaner(externalModelStore) {
                     java.io.File(filesDir, com.antivocale.app.data.EXTERNAL_MODELS_DIR_NAME)
@@ -222,6 +249,9 @@ class BridgeApplication : Application(), Configuration.Provider {
                 android.util.Log.e("BridgeApplication", "External-model dir sweep failed (will retry on next launch)", e)
             }
         }
+        // TASK-963: the repairer joins that job before downloading anything
+        // (handed over here because the singleton cannot reach the local).
+        externalImportRepairer.onSweepLaunched(externalDirSweepJob)
         // GH #51: rows left QUEUED/PROCESSING by a process death can never complete
         // (START_NOT_STICKY restores nothing); fail them so they don't render as a
         // permanently in-flight queue. Runs at process start; the sweep is the
