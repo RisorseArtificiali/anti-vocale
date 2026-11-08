@@ -99,6 +99,9 @@ class TestSpiConformanceTest {
             // the same one-shot class as externalMigrationDone.
             "whatsNewLastShownVersion",
             "pendingBackendLoad", // TASK-640: crash marker, write-path only
+            // TASK-963: the wiped-repair pending snapshot, repair-internal
+            // state (op=records shows the dangling set it names).
+            "wipedRepairCapturedActive", "wipedRepairCapturedPin",
             "modelPath", // rendered as activeModelPath/paths.llm
             "externalModelsJson", // op=records covers it
         )

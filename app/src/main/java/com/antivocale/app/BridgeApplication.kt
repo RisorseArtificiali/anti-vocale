@@ -251,13 +251,18 @@ class BridgeApplication : Application(), Configuration.Provider {
         // thread (the blocking window above owns only the preference capture;
         // the scan re-reads the store and stats one dir per record). The scan
         // result feeds only the notification: the repair re-derives the same
-        // set at tap time, so no ordering against this launch matters.
+        // set at tap time, so no ordering against this launch matters. An
+        // empty scan also retires the pending selection snapshot (nothing
+        // dangling: a kept snapshot would re-apply a selection the user has
+        // since replaced).
         applicationScope.launch(Dispatchers.IO) {
             runCatching {
                 val wiped = externalImportRepairer.scanWipedImports()
                 if (wiped.isNotEmpty()) {
                     com.antivocale.app.receiver.WipedImportRepairNotifications
                         .postWiped(this@BridgeApplication, wiped)
+                } else {
+                    externalImportRepairer.clearCapturedSelectionsIfIdle()
                 }
             }.onFailure { e ->
                 android.util.Log.e("BridgeApplication", "Wiped-imports scan or notification failed", e)

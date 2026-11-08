@@ -1348,4 +1348,6 @@
     <string name="wiped_imports_recovered_text">%1$d मॉडल की फ़ाइलें दोबारा डाउनलोड कर दी गई हैं और वे उपयोग के लिए तैयार हैं।</string>
     <string name="wiped_imports_failed_title">मॉडल पुनर्प्राप्ति विफल</string>
     <string name="wiped_imports_failed_text">दोबारा डाउनलोड पूरा नहीं हुआ। मॉडल को दोबारा हाथ से आयात करने के लिए मॉडल्स टैब खोलें।</string>
+    <string name="wiped_imports_progress_title">मॉडल पुनर्प्राप्ति जारी है</string>
+    <string name="wiped_imports_progress_text">हटाई गई मॉडल फ़ाइलें फिर से डाउनलोड हो रही हैं। इसमें कुछ मिनट लग सकते हैं।</string>
 </resources>

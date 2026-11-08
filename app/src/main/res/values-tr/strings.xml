@@ -1349,4 +1349,6 @@
     <string name="wiped_imports_recovered_text">%1$d modelin dosyaları yeniden indirildi ve kullanılmaya hazır.</string>
     <string name="wiped_imports_failed_title">Model kurtarma başarısız</string>
     <string name="wiped_imports_failed_text">Yeniden indirme tamamlanmadı. Modeli elle yeniden içe aktarmak için Modeller sekmesini açın.</string>
+    <string name="wiped_imports_progress_title">Model kurtarma işlemi sürüyor</string>
+    <string name="wiped_imports_progress_text">Silinen model dosyaları yeniden indiriliyor. Bu işlem birkaç dakika sürebilir.</string>
 </resources>

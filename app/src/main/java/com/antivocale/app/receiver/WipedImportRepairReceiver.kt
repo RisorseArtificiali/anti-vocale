@@ -50,9 +50,14 @@ class WipedImportRepairReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_REPAIR_WIPED_IMPORTS) return
         runCatching {
-            // Consume the actionable notice: tapping an ACTION button does
-            // not trigger autoCancel (only the notification body does).
-            WipedImportRepairNotifications.cancelActionable(context)
+            // Consume the actionable notice (tapping an ACTION button does
+            // not trigger autoCancel; only the notification body does) and
+            // show the in-progress state in its place: a multi-gigabyte
+            // download with no visible surface is indistinguishable from a
+            // dead tap. The outcome below replaces it on the same id; if
+            // the process dies mid-download, the next cold start's scan
+            // re-posts the wiped notice.
+            WipedImportRepairNotifications.postInProgress(context)
             applicationScope.launch(Dispatchers.IO) {
                 val result = try {
                     repairer.repairAll()
@@ -109,6 +114,21 @@ object WipedImportRepairNotifications {
     fun cancelActionable(context: Context) {
         context.getSystemService(NotificationManager::class.java)
             .cancel(NOTIFICATION_ID)
+    }
+
+    /** The in-progress state between the Recover tap and the outcome: the
+     *  same id, so the outcome replaces it in place. */
+    fun postInProgress(context: Context) {
+        context.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
+        post(context) {
+            ResultNotificationFactory(context).alertNotification(
+                title = context.getString(R.string.wiped_imports_progress_title),
+                text = context.getString(R.string.wiped_imports_progress_text),
+                priority = NotificationCompat.PRIORITY_DEFAULT,
+                channel = AppNotificationChannel.MODEL_REPAIR,
+                onlyAlertOnce = true,
+            )
+        }
     }
 
     /** State 1, posted at startup when the scan found dangling candidates:

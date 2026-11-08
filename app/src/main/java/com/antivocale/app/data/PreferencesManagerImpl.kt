@@ -47,6 +47,10 @@ class PreferencesManagerImpl(
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val TRANSCRIPTION_BACKEND = stringPreferencesKey("transcription_backend")
         private val REFINEMENT_MODEL_BACKEND_ID = stringPreferencesKey("refinement_model_backend_id")
+        private val WIPED_REPAIR_CAPTURED_ACTIVE =
+            stringPreferencesKey("wiped_repair_captured_active")
+        private val WIPED_REPAIR_CAPTURED_PIN =
+            stringPreferencesKey("wiped_repair_captured_pin")
         private val SHERPA_MODEL_PATH_PREFIX = "sherpa_model_path_"
         /**
          * Data-store keys of the pre-consolidation per-model path preferences, mapped to
@@ -466,6 +470,29 @@ class PreferencesManagerImpl(
             preferences[TRANSCRIPTION_BACKEND] = backendId
         }
         cache.updateAndGet { it.copy(transcriptionBackend = backendId) }
+    }
+
+    // TASK-963: the wiped-repair pending snapshot. No cache entry: the only
+    // reader is the repairer's restore, which reads it at tap time, and the
+    // distinctUntilChanged concern does not apply (no UI collector).
+    override val wipedRepairCapturedActive: Flow<String> =
+        dataStore.data.map { it[WIPED_REPAIR_CAPTURED_ACTIVE] ?: "" }
+            .distinctUntilChanged()
+
+    override suspend fun saveWipedRepairCapturedActive(backendId: String) {
+        dataStore.edit { preferences ->
+            preferences[WIPED_REPAIR_CAPTURED_ACTIVE] = backendId
+        }
+    }
+
+    override val wipedRepairCapturedPin: Flow<String> =
+        dataStore.data.map { it[WIPED_REPAIR_CAPTURED_PIN] ?: "" }
+            .distinctUntilChanged()
+
+    override suspend fun saveWipedRepairCapturedPin(backendId: String) {
+        dataStore.edit { preferences ->
+            preferences[WIPED_REPAIR_CAPTURED_PIN] = backendId
+        }
     }
 
     override fun sherpaModelPath(entryId: String): Flow<String?> {

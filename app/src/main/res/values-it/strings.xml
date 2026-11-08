@@ -1355,4 +1355,6 @@
     <string name="wiped_imports_recovered_text">I file dei modelli (%1$d) sono stati riscaricati e sono pronti all\'uso.</string>
     <string name="wiped_imports_failed_title">Ripristino non riuscito</string>
     <string name="wiped_imports_failed_text">Il nuovo download non è stato completato. Apri la scheda Modelli per reimportare il modello manualmente.</string>
+    <string name="wiped_imports_progress_title">Ripristino del modello in corso</string>
+    <string name="wiped_imports_progress_text">Download dei file del modello eliminato in corso. Può richiedere qualche minuto.</string>
 </resources>

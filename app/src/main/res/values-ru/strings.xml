@@ -1378,4 +1378,6 @@
     <string name="wiped_imports_recovered_text">Файлы моделей в количестве %1$d скачаны заново и готовы к использованию.</string>
     <string name="wiped_imports_failed_title">Не удалось восстановить модели</string>
     <string name="wiped_imports_failed_text">Повторная загрузка не завершилась. Откройте вкладку Модели и импортируйте модель заново вручную.</string>
+    <string name="wiped_imports_progress_title">Идёт восстановление модели</string>
+    <string name="wiped_imports_progress_text">Файлы удалённой модели загружаются заново. Это может занять несколько минут.</string>
 </resources>

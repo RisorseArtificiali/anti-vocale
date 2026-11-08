@@ -1176,4 +1176,6 @@
     <string name="wiped_imports_recovered_text">已重新下载 %1$d 个模型的文件，可以使用了。</string>
     <string name="wiped_imports_failed_title">模型恢复失败</string>
     <string name="wiped_imports_failed_text">重新下载未完成。请打开“模型”标签页手动重新导入模型。</string>
+    <string name="wiped_imports_progress_title">模型恢复进行中</string>
+    <string name="wiped_imports_progress_text">正在重新下载已删除的模型文件，可能需要几分钟。</string>
 </resources>

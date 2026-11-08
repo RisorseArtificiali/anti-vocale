@@ -1361,4 +1361,6 @@
     <string name="wiped_imports_recovered_text">הקבצים של %1$d מהמודלים הורדו שוב והם מוכנים לשימוש.</string>
     <string name="wiped_imports_failed_title">שחזור המודל נכשל</string>
     <string name="wiped_imports_failed_text">ההורדה החוזרת לא הושלמה. פתח את הלשונית מודלים וייבא את המודל מחדש באופן ידני.</string>
+    <string name="wiped_imports_progress_title">שחזור המודל מתבצע</string>
+    <string name="wiped_imports_progress_text">קבצי המודל שנמחקו מורדים שוב. התהליך עשוי להימשך מספר דקות.</string>
 </resources>

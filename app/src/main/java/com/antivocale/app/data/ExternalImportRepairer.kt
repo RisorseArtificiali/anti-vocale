@@ -2,6 +2,8 @@ package com.antivocale.app.data
 
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * TASK-963: user-approved repair for wiped external imports. Platform storage
@@ -24,19 +26,26 @@ import kotlinx.coroutines.flow.first
  *
  * Two phases, because [DanglingBackendCleaner] resets a dangling active
  * backend id at startup BEFORE a repair could finish. [captureSelections]
- * runs synchronously before the cleaner and snapshots only the two
- * preference ids (the cheap, order-dependent half; the dangling-record scan
- * does not need the blocking window, TASK-899's startup lesson). The scan
- * itself, [scanWipedImports], runs off the main thread at startup to post
- * the notification, and [repairAll] RE-DERIVES its candidates at tap time:
- * the tap can land hours or process restarts later, and a stale notification
+ * runs synchronously before the cleaner and persists the two external
+ * preference ids it reads (the cheap, order-dependent half; the
+ * dangling-record scan does not need the blocking window, TASK-899's
+ * startup lesson). The snapshot lives in PREFERENCES, not memory: the
+ * Recover tap can land in a later process than the one that captured,
+ * because the notification survives process death and the cleaner's reset
+ * erases the preference before that later launch reads it. The scan,
+ * [scanWipedImports], runs off the main thread at startup to post the
+ * notification, and [repairAll] RE-DERIVES its candidates at tap time: the
+ * tap can land hours or process restarts later, and a stale notification
  * must not claim a failure (or re-download gigabytes) for a model the user
- * already restored by hand. [repairAll] joins the orphan-dir sweep first
+ * already restored by hand. Even then, the tap still applies the persisted
+ * selection snapshot when its gates pass, so a hand-repaired model lands
+ * back where the user had it. [repairAll] joins the orphan-dir sweep first
  * (its "no import can be in flight" invariant would otherwise let the sweep
  * delete a repair download in progress; the sweep job reaches this singleton
  * through [onSweepLaunched] because the launch site's local job is otherwise
- * out of reach), then restores the captured selections once the record is
- * loadable again.
+ * out of reach) and is single-flight: a second Recover tap suspends until
+ * the first repair finishes instead of downloading the same gigabytes
+ * twice.
  *
  * Provided via [AppModule][com.antivocale.app.di.AppModule] (not `@Inject`)
  * because the reimport lambda parameter is invisible to Dagger, the same
@@ -67,14 +76,11 @@ class ExternalImportRepairer(
      *  a stale notification with nothing left to do, not a failure. */
     data class RepairResult(val attempted: Int, val repairedIds: List<String>)
 
-    /** Backend ids the user had selected, captured before the
-     * DanglingBackendCleaner could reset the preference. Captured as any
-     * external: id, unfiltered by dangling-ness: loadability is validated
-     * again at restore time, and the restore's still-default gate already
-     * keeps ids whose record was never wiped out (their preference was
-     * never reset). Null = no external backend was selected. */
-    private var capturedActive: String? = null
-    private var capturedPin: String? = null
+    /** Single-flight guard for [repairAll]: a double tap or a tap racing a
+     *  manual Models-tab re-import must not run two multi-gigabyte
+     *  downloads of the same payload. The second caller suspends until the
+     *  first finishes, then re-derives an empty candidate set. */
+    private val repairMutex = Mutex()
 
     /** The startup orphan-dir sweep, registered by its single writer
      *  (BridgeApplication, right after launching it) so [repairAll] can
@@ -89,15 +95,22 @@ class ExternalImportRepairer(
     }
 
     /** Phase 1, synchronous at startup BEFORE DanglingBackendCleaner:
-     * snapshot the two selection preferences, so the cleaner's reset cannot
-     * erase what the user had selected. Two warm DataStore reads are the
+     * persist the external selections into the repair-pending preference
+     * keys, so the cleaner's reset cannot erase what the user had selected
+     * and a later process can still restore it. A default read stays
+     * untouched on purpose: it either precedes the cleaner's own reset
+     * (the next scan decides whether the pending snapshot is still needed)
+     * or is a deliberate deselection with the models intact, which the
+     * idle-scan clear below handles. Two warm DataStore reads are the
      * whole blocking cost; the record scan is [scanWipedImports], off the
      * main thread. */
     suspend fun captureSelections() {
-        fun externalOrNull(backendId: String): String? =
-            backendId.takeIf { it.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX) }
-        capturedActive = externalOrNull(preferencesManager.transcriptionBackend.first())
-        capturedPin = externalOrNull(preferencesManager.refinementModelBackendId.first())
+        preferencesManager.transcriptionBackend.first()
+            .takeIf { it.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX) }
+            ?.let { preferencesManager.saveWipedRepairCapturedActive(it) }
+        preferencesManager.refinementModelBackendId.first()
+            .takeIf { it.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX) }
+            ?.let { preferencesManager.saveWipedRepairCapturedPin(it) }
     }
 
     /** The dangling-but-repairable records right now. Startup calls this to
@@ -106,32 +119,43 @@ class ExternalImportRepairer(
      *  before the isLoadable directory stat (isLoadable's single predicate,
      *  EXCEPT quarantine: a quarantined record is deliberately parked as
      *  unsafe, and re-downloading would not change why it was flagged). */
-    suspend fun scanWipedImports(): List<ExternalModelRecord> {
-        val dangling = store.records().filter { record ->
+    suspend fun scanWipedImports(): List<ExternalModelRecord> =
+        store.records().filter { record ->
             record.source == ExternalModelSource.URL &&
                 !record.sourceUrl.isNullOrBlank() &&
                 !record.quarantined &&
                 !store.isLoadable(record)
+        }.also { dangling ->
+            if (dangling.isNotEmpty()) {
+                android.util.Log.i(
+                    TAG, "Wiped imports repairable: ${dangling.joinToString { it.id }}")
+            }
         }
-        if (dangling.isNotEmpty()) {
-            android.util.Log.i(
-                TAG,
-                "Wiped imports repairable: ${dangling.joinToString { it.id }}; " +
-                    "captured selections active=${capturedActive ?: "none"} pin=${capturedPin ?: "none"}")
-        }
-        return dangling
+
+    /** Clears the pending selection snapshot when a startup scan found
+     *  nothing dangling: either nothing was ever wiped this cycle or the
+     *  user already fixed it, and a pending snapshot for an intact model
+     *  would re-apply a selection the user has since replaced. Called from
+     *  the startup scan path ONLY (a tap-time scan finding nothing must
+     *  NOT clear the snapshot: that is exactly the state the restore is
+     *  for). */
+    suspend fun clearCapturedSelectionsIfIdle() {
+        preferencesManager.saveWipedRepairCapturedActive("")
+        preferencesManager.saveWipedRepairCapturedPin("")
     }
 
     /** Phase 2, launched by the notification's Recover action on the
      * application scope: join the orphan-dir sweep, re-derive the
-     * candidates, re-import each from its pinned source, then restore the
-     * captured selections. A candidate the user already re-imported from
-     * the Models tab is no longer dangling and drops out of the scan
+     * candidates, re-import each from its pinned source, then apply the
+     * persisted selection snapshot. The restore runs even when the scan
+     * found nothing to download: a hand-repaired model with the
+     * preference still on the cleaner's default is exactly the state the
+     * snapshot exists to fix. A candidate the user already re-imported
+     * from the Models tab is no longer dangling and drops out of the scan
      * before any download. */
-    suspend fun repairAll(): RepairResult {
+    suspend fun repairAll(): RepairResult = repairMutex.withLock {
         sweepJob?.join()
         val candidates = scanWipedImports()
-        if (candidates.isEmpty()) return RepairResult(attempted = 0, repairedIds = emptyList())
         // old id -> fresh id for repairs whose source drifted past the
         // dedupe (the stale record was deleted; the fresh copy registered
         // a new id). Run-local: it exists only between this repair and its
@@ -174,38 +198,48 @@ class ExternalImportRepairer(
                     TAG, "Repair of ${record.displayName} (${record.id}) failed; leaving it dangling", e)
             }
         }
-        if (repaired.isNotEmpty()) restoreCapturedSelections(driftReplacements)
-        return RepairResult(attempted = candidates.size, repairedIds = repaired)
+        restoreCapturedSelections(driftReplacements)
+        RepairResult(attempted = candidates.size, repairedIds = repaired)
     }
 
-    /** Restores a captured backend id only when (a) a record for it is
-     * LOADABLE again, re-pointed at the fresh id when the dedupe drifted,
-     * and (b) the user has not picked something else meanwhile: a repair
-     * download spans minutes and gigabytes, and a fresh explicit choice
-     * made in that window wins over the pre-wipe selection. */
+    /** Applies the persisted selection snapshot only when (a) a record for
+     * it is LOADABLE again, re-pointed at the fresh id when the dedupe
+     * drifted, and (b) the user has not picked something else meanwhile: a
+     * repair download spans minutes and gigabytes, and a fresh explicit
+     * choice made in that window wins over the pre-wipe selection. A
+     * consumed snapshot is cleared; a refused one stays, because a failed
+     * repair leaves the cycle open for the next launch's notification. */
     private suspend fun restoreCapturedSelections(driftReplacements: Map<String, String>) {
-        capturedActive?.let { captured ->
-            val stillDefault = preferencesManager.transcriptionBackend.first() ==
-                PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
-            if (stillDefault) {
-                val restored = restoreId(
-                    captured.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX), driftReplacements)
-                if (restored != null) {
-                    preferencesManager.saveTranscriptionBackend(restored)
-                    android.util.Log.i(TAG, "Restored active backend $restored after repair")
+        preferencesManager.wipedRepairCapturedActive.first()
+            .takeIf { it.isNotBlank() }
+            ?.let { captured ->
+                val stillDefault = preferencesManager.transcriptionBackend.first() ==
+                    PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
+                if (stillDefault) {
+                    val restored = restoreId(
+                        captured.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX),
+                        driftReplacements)
+                    if (restored != null) {
+                        preferencesManager.saveTranscriptionBackend(restored)
+                        preferencesManager.saveWipedRepairCapturedActive("")
+                        android.util.Log.i(TAG, "Restored active backend $restored after repair")
+                    }
                 }
             }
-        }
-        capturedPin?.let { captured ->
-            val stillBlank = preferencesManager.refinementModelBackendId.first().isBlank()
-            if (stillBlank) {
-                val restored = restoreId(
-                    captured.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX), driftReplacements)
-                if (restored != null) {
-                    preferencesManager.saveRefinementModelBackendId(restored)
+        preferencesManager.wipedRepairCapturedPin.first()
+            .takeIf { it.isNotBlank() }
+            ?.let { captured ->
+                val stillBlank = preferencesManager.refinementModelBackendId.first().isBlank()
+                if (stillBlank) {
+                    val restored = restoreId(
+                        captured.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX),
+                        driftReplacements)
+                    if (restored != null) {
+                        preferencesManager.saveRefinementModelBackendId(restored)
+                        preferencesManager.saveWipedRepairCapturedPin("")
+                    }
                 }
             }
-        }
     }
 
     /** The backend id to restore for a captured record id: the same id

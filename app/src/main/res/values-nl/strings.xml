@@ -1365,4 +1365,6 @@
     <string name="wiped_imports_recovered_text">De bestanden van %1$d model(len) zijn opnieuw gedownload en weer bruikbaar.</string>
     <string name="wiped_imports_failed_title">Herstellen mislukt</string>
     <string name="wiped_imports_failed_text">De download is niet voltooid. Open het tabblad Modellen om het model handmatig opnieuw te importeren.</string>
+    <string name="wiped_imports_progress_title">Modelherstel wordt uitgevoerd</string>
+    <string name="wiped_imports_progress_text">De verwijderde modelbestanden worden opnieuw gedownload. Dit kan enkele minuten duren.</string>
 </resources>

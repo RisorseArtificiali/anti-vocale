@@ -1189,4 +1189,6 @@
     <string name="wiped_imports_recovered_text">Mallien (%1$d kpl) tiedostot on ladattu uudelleen ja ne ovat valmiita käytettäväksi.</string>
     <string name="wiped_imports_failed_title">Mallin palautus epäonnistui</string>
     <string name="wiped_imports_failed_text">Uudelleenlataus ei valmistunut. Avaa Mallit-välilehti ja tuo malli uudelleen käsin.</string>
+    <string name="wiped_imports_progress_title">Mallin palautus käynnissä</string>
+    <string name="wiped_imports_progress_text">Poistettujen mallitiedostojen lataaminen käynnissä uudelleen. Tämä voi kestää muutaman minuutin.</string>
 </resources>

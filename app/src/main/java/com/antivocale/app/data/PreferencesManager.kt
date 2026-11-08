@@ -297,6 +297,23 @@ interface PreferencesManager {
     suspend fun saveThemePreference(theme: String)
     suspend fun saveThemeMode(mode: String)
     suspend fun saveTranscriptionBackend(backendId: String)
+
+    /**
+     * TASK-963: the repairer's pre-cleaner selection snapshot, persisted
+     * because the Recover tap can land in a LATER process than the one
+     * that captured (the notification survives process death; the
+     * in-memory capture does not). Blank = nothing pending. Cleared when a
+     * restore consumes it or when a startup scan finds nothing dangling;
+     * not backed up: a stale pending restore has no meaning on another
+     * device.
+     */
+    val wipedRepairCapturedActive: Flow<String>
+    suspend fun saveWipedRepairCapturedActive(backendId: String)
+
+    /** TASK-963: the refinement-pin half of the same snapshot. */
+    val wipedRepairCapturedPin: Flow<String>
+    suspend fun saveWipedRepairCapturedPin(backendId: String)
+
     suspend fun saveSherpaModelPath(entryId: String, path: String)
     suspend fun clearSherpaModelPath(entryId: String)
 

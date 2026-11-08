@@ -1217,4 +1217,6 @@
     <string name="wiped_imports_recovered_text">Os arquivos de %1$d modelo(s) foram baixados de novo e já podem ser usados.</string>
     <string name="wiped_imports_failed_title">Falha na recuperação do modelo</string>
     <string name="wiped_imports_failed_text">O download não foi concluído. Abra a aba Modelos para importar o modelo de novo manualmente.</string>
+    <string name="wiped_imports_progress_title">Recuperação do modelo em andamento</string>
+    <string name="wiped_imports_progress_text">Baixando novamente os arquivos do modelo excluído. Isso pode levar alguns minutos.</string>
 </resources>

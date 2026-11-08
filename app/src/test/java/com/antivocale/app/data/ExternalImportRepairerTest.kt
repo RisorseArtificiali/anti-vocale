@@ -262,4 +262,83 @@ class ExternalImportRepairerTest {
         assertEquals(ExternalImportRepairer.RepairResult(0, emptyList()), repaired)
         assertEquals(0, calls.size)
     }
+
+    @Test
+    fun `the persisted snapshot restores a hand-repaired model in a later process`() = runTest {
+        // The cross-process shape: process N captures the selection and
+        // persists it; the cleaner resets the preference; the process dies;
+        // the user re-imports the model by hand; the tap lands in a fresh
+        // process whose in-memory capture would read the already-reset
+        // default. The persisted snapshot must survive all of that and
+        // re-apply the selection even though nothing needed downloading.
+        store.add(record("later", dirPresent = false))
+        prefs._transcriptionBackend.value = "external:later"
+
+        val first = ExternalImportRepairer(store, prefs, reimport = reimport)
+        first.captureSelections()
+        prefs._transcriptionBackend.value = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
+
+        // The hand re-import happens in a fresh process: a new repairer on
+        // the same persisted preferences, and no capture call at all.
+        val second = ExternalImportRepairer(store, prefs, reimport = reimport)
+        val handmade = java.io.File(filesRoot, "later-handmade").apply { mkdirs() }
+        store.update(record("later", dirPresent = false).copy(dir = handmade.absolutePath))
+
+        val repaired = second.repairAll()
+
+        assertEquals(ExternalImportRepairer.RepairResult(0, emptyList()), repaired)
+        assertEquals(0, calls.size)
+        assertEquals("external:later", prefs._transcriptionBackend.value)
+        // The snapshot is consumed by the restore.
+        assertEquals("", prefs._wipedRepairCapturedActive.value)
+    }
+
+    @Test
+    fun `a second recover tap while a repair runs is single-flight`() = runTest {
+        store.add(record("once", dirPresent = false))
+        val gate = CompletableDeferred<Unit>()
+        val firstArrived = CompletableDeferred<Unit>()
+        // A deliberately slow first repair: the second tap must suspend on
+        // the singleton's mutex, not launch a duplicate download.
+        val slowReimport: suspend (ExternalModelRecord) -> ExternalModelRecord = { record ->
+            firstArrived.complete(Unit)
+            gate.await()
+            calls += record
+            val dir = java.io.File(filesRoot, "${record.id}-repaired").apply { mkdirs() }
+            record.copy(dir = dir.absolutePath).also { store.update(it) }
+        }
+        val repairer = ExternalImportRepairer(store, prefs, reimport = slowReimport)
+
+        val first = async { repairer.repairAll() }
+        runCurrent()
+        firstArrived.await()
+        val second = async { repairer.repairAll() }
+        runCurrent()
+        gate.complete(Unit)
+
+        assertEquals(ExternalImportRepairer.RepairResult(1, listOf("once")), first.await())
+        // The second call waited on the lock, re-derived an empty candidate
+        // set, and downloaded nothing.
+        assertEquals(ExternalImportRepairer.RepairResult(0, emptyList()), second.await())
+        assertEquals(1, calls.size)
+    }
+
+    @Test
+    fun `an idle startup scan retires the pending snapshot`() = runTest {
+        store.add(record("pending", dirPresent = false))
+        prefs._transcriptionBackend.value = "external:pending"
+        val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
+        repairer.captureSelections()
+        assertEquals("external:pending", prefs._wipedRepairCapturedActive.value)
+
+        // The model comes back (hand re-import) with nothing left dangling:
+        // the startup idle path retires the snapshot so a later stale tap
+        // cannot re-apply a selection the user has since replaced.
+        val handmade = java.io.File(filesRoot, "pending-handmade").apply { mkdirs() }
+        store.update(record("pending", dirPresent = false).copy(dir = handmade.absolutePath))
+        assertTrue(repairer.scanWipedImports().isEmpty())
+        repairer.clearCapturedSelectionsIfIdle()
+
+        assertEquals("", prefs._wipedRepairCapturedActive.value)
+    }
 }

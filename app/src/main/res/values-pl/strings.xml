@@ -1377,4 +1377,6 @@
     <string name="wiped_imports_recovered_text">Pliki modeli w liczbie %1$d pobrano ponownie i można z nich korzystać.</string>
     <string name="wiped_imports_failed_title">Nie udało się przywrócić modeli</string>
     <string name="wiped_imports_failed_text">Pobieranie nie zostało ukończone. Otwórz zakładkę Modele i zaimportuj model ponownie ręcznie.</string>
+    <string name="wiped_imports_progress_title">Trwa przywracanie modelu</string>
+    <string name="wiped_imports_progress_text">Ponowne pobieranie usuniętych plików modelu. Może to potrwać kilka minut.</string>
 </resources>
