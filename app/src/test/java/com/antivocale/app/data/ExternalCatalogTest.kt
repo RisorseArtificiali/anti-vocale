@@ -209,7 +209,11 @@ class ExternalCatalogTest {
         // Round 2: + fritter streaming english (Nemotron 0.6B streaming
         // transducer, same manifest dialect; the INDEX entry carries the
         // streaming flag, the manifest has no such field).
-        assertEquals(39, entries.size)
+        // + parakeet tdt ultra int8 (TASK-970: moondream fine-tune; our 11-language
+        // FLEURS bench: 11/11 wins over v3 stock (avg 9.95 vs 12.40 WER); real
+        // WhatsApp audio: v3 wins (the read-speech vs real-audio tradeoff) ->
+        // catalog alternative, default stays v3; hosted at csukuangfj repo)
+        assertEquals(40, entries.size)
 
         // The three schema-1 manifest entries: family/languages from the index,
         // entryUrl is the live manifest (no committed asset; see the
@@ -302,6 +306,8 @@ class ExternalCatalogTest {
             // TASK-953: the French distil pick (the heavy tier lost to it on
             // every axis and is NOT published).
             Triple("french.json", "WHISPER" to "", 3),
+            // TASK-970: the Ultra quality alternative (4-file transducer).
+            Triple("parakeet-ultra.json", "TRANSDUCER" to "nemo_transducer", 4),
             // GH #183 maintainer decision: the German full fine-tune ships
             // ALONGSIDE turbo (domain pick: CV15 3.00 on its training
             // domain, FLEURS 7.48 vs turbo 6.01 on ours).
@@ -340,6 +346,7 @@ class ExternalCatalogTest {
             "finnish.json" to "fi",
             "dutch.json" to "nl",
             "french.json" to "fr",
+            "parakeet-ultra.json" to "en",
             "german-large.json" to "de",
         ).forEach { (file, lang) ->
             val obj = org.json.JSONObject(
@@ -372,7 +379,7 @@ class ExternalCatalogTest {
         // languages (TASK-596: orukeet now declares its full 24-language
         // set, so it joins the German results; TASK-855: transcribepsy
         // EU declares de too)
-        assertEquals(7, ExternalCatalog.filter(entries, "de").size)
+        assertEquals(8, ExternalCatalog.filter(entries, "de").size)
         // TASK-652: the six IndicConformer entries surface via their codes.
         // TASK-663: Dolphin declares the same six codes, so each surfaces
         // exactly the IndicConformer entry plus Dolphin (order: Dolphin first).
@@ -388,10 +395,10 @@ class ExternalCatalogTest {
         val moonshine = ExternalCatalog.filter(entries, "moonshine")
         assertEquals(3, moonshine.size)
         assertEquals(setOf(ModelFamily.MOONSHINE), moonshine.map { it.family }.toSet())
-        assertEquals(3, ExternalCatalog.filter(entries, "uk").size)
+        assertEquals(4, ExternalCatalog.filter(entries, "uk").size)
         assertEquals(3, ExternalCatalog.filter(entries, "vi").size)
         // TASK-855: transcribepsy EU declares es (and the other 19).
-        assertEquals(5, ExternalCatalog.filter(entries, "es").size)
+        assertEquals(6, ExternalCatalog.filter(entries, "es").size)
     }
 
     /** TASK-652 review: pin the six entry files like the omnilingual

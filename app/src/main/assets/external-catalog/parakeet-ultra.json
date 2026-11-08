@@ -1,0 +1,33 @@
+{
+  "name": "Parakeet TDT Ultra int8 (moondream, best read-speech quality)",
+  "family": "TRANSDUCER",
+  "modelType": "nemo_transducer",
+  "languages": ["en","de","fr","es","it","pt","ru","uk","hr","sl","lv","lt","et","fi","sv","da","nl","pl","cs","sk","hu","ro","bg","el","mt"],
+  "options": {},
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-ultra-int8/resolve/main/encoder.int8.onnx",
+      "sha256": "b43072e1b721f18a3df03fcfeb763ff7c4debdf29843598a3aba2f703e2780a3",
+      "size": 652282345
+    },
+    {
+      "name": "decoder.int8.onnx",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-ultra-int8/resolve/main/decoder.int8.onnx",
+      "sha256": "1fab98fe6c12aded87d2da66272cc9e148d0a0044ce3850a12fe56302ec4a922",
+      "size": 11845274
+    },
+    {
+      "name": "joiner.int8.onnx",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-ultra-int8/resolve/main/joiner.int8.onnx",
+      "sha256": "8a71aaccfdba3d451775507a889afd2257d2e754463fd81095c8c8f290f924c2",
+      "size": 6355277
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-ultra-int8/resolve/main/tokens.txt",
+      "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d",
+      "size": 93939
+    }
+  ]
+}
