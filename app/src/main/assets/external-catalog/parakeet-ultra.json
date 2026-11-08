@@ -20,7 +20,7 @@
     {
       "name": "joiner.int8.onnx",
       "url": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-ultra-int8/resolve/main/joiner.int8.onnx",
-      "sha256": "8a71aaccfdba3d451775507a889afd2257d2e754463fd81095c8c8f290f924c2",
+      "sha256": "8a71aaccfdba3d451775507a889afd2257d2e754463fd81095a8c8f290f924c2",
       "size": 6355277
     },
     {
