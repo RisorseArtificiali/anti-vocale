@@ -1116,6 +1116,18 @@ bundle_restore_download_active,"A download of this model is still in progress. W
 model_download_restore_active,"A restore of this model is in progress. Wait for it to finish, then download it again.",plain,
 whats_new_title,What\'s New,plain,
 whats_new_summary,Release notes for this version,plain,
+notification_channel_model_repair,Model recovery,plain,
+notification_channel_model_repair_description,"Notices when a system storage cleaner deletes an imported model, and about the outcome of a recovery.",plain,
+wiped_imports_title,System cleaner deleted model files,plain,
+wiped_imports_text,%1$d imported model(s) had their files deleted by a system storage cleaner: %2$s. Tap Recover to download them again from the original source.,formatted,"keep verbatim: ['%1$d', '%2$s']"
+wiped_imports_names_overflow,+ %1$d more,formatted,keep verbatim: ['%1$d']
+wiped_imports_recover_action,Recover,plain,
+wiped_imports_recovered_title,Model recovery finished,plain,
+wiped_imports_recovered_text,%1$d model(s) were downloaded again and are ready to use.,formatted,keep verbatim: ['%1$d']
+wiped_imports_failed_title,Model recovery failed,plain,
+wiped_imports_failed_text,The re-download did not complete. Open the Models tab to import the model again manually.,plain,
+wiped_imports_progress_title,Model recovery in progress,plain,
+wiped_imports_progress_text,Downloading the deleted model files again. This can take a few minutes.,plain,
 logs_entries_deleted [one],%d entry deleted,plural,supply only the quantities the locale table lists
 logs_entries_deleted [other],%d entries deleted,plural,supply only the quantities the locale table lists
 settings_search_matches [one],%1$d match,plural,supply only the quantities the locale table lists
