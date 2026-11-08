@@ -757,6 +757,11 @@ class ExternalModelImporter(
                 modelType = modelType,
                 languages = effectiveLanguages,
                 options = options,
+                // TASK-968: the streaming flag rides the re-import (an
+                // index entry re-importing the same files with streaming
+                // flipped to true must upgrade the record, not keep the
+                // stale offline import's flag).
+                streaming = streaming || existing.streaming,
                 // Licence: a fresh declaration refreshes, an absent one
                 // PRESERVES the existing value (the sourceUrl/linkedCatalog
                 // carry-preservation rule: a plain re-import must not erase
