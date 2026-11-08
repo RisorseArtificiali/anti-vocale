@@ -13,6 +13,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.ExternalImportRepairer
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.di.ApplicationScope
+import com.antivocale.app.service.ResultNotificationFactory
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.canPostNotification
 import dagger.hilt.android.AndroidEntryPoint
@@ -23,10 +24,16 @@ import kotlinx.coroutines.launch
 
 /**
  * TASK-963: the Recover action on the wiped-imports notification. The
- * broadcast carries no payload on purpose: the repairer singleton kept the
- * candidates and captured selections from its startup capture, so a
- * notification posted by an earlier process instance still works after the
- * process that armed it is gone.
+ * broadcast carries no payload on purpose: the repairer re-derives its
+ * candidates from the store at tap time, so a notification posted by an
+ * earlier process instance still works after the process that armed it is
+ * gone, and a stale tap on an already-restored model is a no-op rather than
+ * a failure.
+ *
+ * Deliberately NOT routed through NotificationActionReceiver like the other
+ * notification actions: the repair needs Hilt injection (the repairer
+ * singleton and the application scope), and this dedicated @AndroidEntryPoint
+ * receiver is the one-component way to get both.
  *
  * No goAsync: a repair spans minutes of multi-gigabyte downloads, far past
  * any broadcast window, so holding one would only risk the system killing
@@ -43,27 +50,22 @@ class WipedImportRepairReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_REPAIR_WIPED_IMPORTS) return
         runCatching {
-            // The actionable notice is consumed by the tap; the outcome
-            // re-posts on the same id below.
-            context.getSystemService(NotificationManager::class.java)
-                .cancel(WipedImportRepairNotifications.NOTIFICATION_ID)
+            // Consume the actionable notice: tapping an ACTION button does
+            // not trigger autoCancel (only the notification body does).
+            WipedImportRepairNotifications.cancelActionable(context)
             applicationScope.launch(Dispatchers.IO) {
-                val repaired = try {
+                val result = try {
                     repairer.repairAll()
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     Log.e(TAG, "Wiped-import repair failed (manual re-import stays available)", e)
-                    emptyList()
+                    null
                 }
                 runCatching {
-                    val nm = context.getSystemService(NotificationManager::class.java)
-                    nm.cancel(WipedImportRepairNotifications.NOTIFICATION_ID)
-                    if (repaired.isNotEmpty()) {
-                        WipedImportRepairNotifications.postRecovered(context, repaired.size)
-                    } else {
-                        WipedImportRepairNotifications.postFailed(context)
-                    }
+                    WipedImportRepairNotifications.postOutcome(
+                        context, attempted = result?.attempted ?: 1,
+                        repairedCount = result?.repairedIds?.size ?: 0)
                 }.onFailure { e ->
                     Log.w(TAG, "Failed to post the repair outcome notification", e)
                 }
@@ -80,11 +82,14 @@ class WipedImportRepairReceiver : BroadcastReceiver() {
 }
 
 /**
- * TASK-963: the three states of the wiped-import recovery notice, on ONE
- * fixed id and the [AppNotificationChannel.MODEL_REPAIR] channel. Every
- * post creates the channel first and gates on [canPostNotification] (the
- * shared range-review gate); the posts are contained so a notification
- * failure never breaks startup or the repair.
+ * TASK-963: the states of the wiped-import recovery notice, on ONE fixed id
+ * and the [AppNotificationChannel.MODEL_REPAIR] channel. The one-shot
+ * outcome states compose through [ResultNotificationFactory.alertNotification]
+ * (the family's documented home for plain alerts); only the actionable wiped
+ * state, which returns a built Notification carrying a Recover action, keeps
+ * its own builder here. Every post creates the channel first and gates on
+ * [canPostNotification] (the shared range-review gate); the posts are
+ * contained so a notification failure never breaks startup or the repair.
  */
 object WipedImportRepairNotifications {
 
@@ -99,32 +104,52 @@ object WipedImportRepairNotifications {
     private const val RC_LAUNCH_APP = 0
     private const val RC_RECOVER = 1
 
-    /** State 1, posted by BridgeApplication at startup when capture() found
-     *  dangling candidates: what the cleaner deleted, with the Recover
-     *  action that alone decides to spend the network. */
+    /** Dismisses the actionable wiped notice (the Recover tap's first
+     *  effect; the outcome below re-posts on the same id). */
+    fun cancelActionable(context: Context) {
+        context.getSystemService(NotificationManager::class.java)
+            .cancel(NOTIFICATION_ID)
+    }
+
+    /** State 1, posted at startup when the scan found dangling candidates:
+     * what the cleaner deleted, with the Recover action that alone decides
+     * to spend the network. */
     fun postWiped(context: Context, candidates: List<ExternalModelRecord>) {
         post(context) { wipedNotification(context, candidates) }
     }
 
-    /** State 2, posted by the receiver when at least one record is
-     *  loadable again. */
-    fun postRecovered(context: Context, count: Int) {
-        post(context) {
-            baseBuilder(context)
-                .setContentTitle(context.getString(R.string.wiped_imports_recovered_title))
-                .setContentText(context.getString(R.string.wiped_imports_recovered_text, count))
-                .build()
+    /** States 2 and 3, the repair outcome on the same id: recovered when
+     *  anything is loadable again, the honest failure (manual fallback
+     *  named) when something was attempted and nothing recovered, and
+     *  NOTHING when nothing was dangling at tap time (a stale notification
+     *  with nothing left to do is not a failure). The receiver's exception
+     *  arm passes attempted 1 with 0 repaired, landing on the failure. */
+    fun postOutcome(context: Context, attempted: Int, repairedCount: Int) {
+        if (repairedCount > 0) {
+            post(context) { recoveredAlert(context, repairedCount) }
+        } else if (attempted > 0) {
+            postFailed(context)
         }
     }
 
-    /** State 3, posted by the receiver when nothing recovered: the honest
-     *  failure with the manual fallback named. */
+    private fun recoveredAlert(context: Context, count: Int): Notification =
+        ResultNotificationFactory(context).alertNotification(
+            title = context.getString(R.string.wiped_imports_recovered_title),
+            text = context.getString(R.string.wiped_imports_recovered_text, count),
+            priority = NotificationCompat.PRIORITY_DEFAULT,
+            channel = AppNotificationChannel.MODEL_REPAIR,
+        )
+
+    /** The failed arm stays public: the receiver posts it directly when the
+     *  repair coroutine itself died before producing a result. */
     fun postFailed(context: Context) {
         post(context) {
-            baseBuilder(context)
-                .setContentTitle(context.getString(R.string.wiped_imports_failed_title))
-                .setContentText(context.getString(R.string.wiped_imports_failed_text))
-                .build()
+            ResultNotificationFactory(context).alertNotification(
+                title = context.getString(R.string.wiped_imports_failed_title),
+                text = context.getString(R.string.wiped_imports_failed_text),
+                priority = NotificationCompat.PRIORITY_DEFAULT,
+                channel = AppNotificationChannel.MODEL_REPAIR,
+            )
         }
     }
 
@@ -161,6 +186,9 @@ object WipedImportRepairNotifications {
             .build()
     }
 
+    /** The wiped notice's base: unlike the outcome alerts this state is
+     *  actionable and BigText, so it keeps its own builder (the factory's
+     *  alert family builds plain one-shots). */
     private fun baseBuilder(context: Context): NotificationCompat.Builder =
         NotificationCompat.Builder(context, AppNotificationChannel.MODEL_REPAIR.id)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
@@ -176,15 +204,14 @@ object WipedImportRepairNotifications {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-    private fun post(context: Context, build: () -> Notification) {
+    private fun post(context: Context, build: () -> Notification) = runCatching {
         val channel = AppNotificationChannel.MODEL_REPAIR
         channel.create(context)
-        if (!canPostNotification(context, channel)) return
-        runCatching {
+        if (canPostNotification(context, channel)) {
             context.getSystemService(NotificationManager::class.java)
                 .notify(NOTIFICATION_ID, build())
-        }.onFailure { e ->
-            Log.w("WipedImportRepair", "Failed to post the wiped-import notification", e)
         }
+    }.onFailure { e ->
+        Log.w("WipedImportRepair", "Failed to post the wiped-import notification", e)
     }
 }

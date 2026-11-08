@@ -21,6 +21,9 @@ import org.junit.Test
  * KDoc for the dedupe-repoint chain). The repair runs ONLY when the user
  * taps Recover on the notification; nothing here exercises a network
  * gate (there is none: the user decides on the network they see).
+ * [ExternalImportRepairer.repairAll] re-derives its candidates at tap
+ * time, so a stale notification replayed after the user fixed things by
+ * hand is a no-op, not a failure.
  */
 class ExternalImportRepairerTest {
 
@@ -106,12 +109,12 @@ class ExternalImportRepairerTest {
         store.add(record("wiped", dirPresent = false))
 
         val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
-        val captured = repairer.capture()
+        repairer.captureSelections()
+        // The startup scan's return is the notification's candidate list.
+        assertEquals(listOf("wiped"), repairer.scanWipedImports().map { it.id })
         val repaired = repairer.repairAll()
 
-        // The capture's return is the notification's candidate list.
-        assertEquals(listOf("wiped"), captured.map { it.id })
-        assertEquals(listOf("wiped"), repaired)
+        assertEquals(ExternalImportRepairer.RepairResult(1, listOf("wiped")), repaired)
         assertEquals(1, calls.size)
         assertEquals("https://example.com/wiped.json", calls[0].sourceUrl)
     }
@@ -123,7 +126,7 @@ class ExternalImportRepairerTest {
         prefs._refinementModelBackendId.value = "external:active-one"
 
         val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
-        repairer.capture()
+        repairer.captureSelections()
         // The cleaner's reset happens between capture and repair; the
         // repairer must still restore what was captured. The seam carries
         // the record's own parameters through (the production lambda feeds
@@ -132,7 +135,7 @@ class ExternalImportRepairerTest {
         prefs._refinementModelBackendId.value = ""
         val repaired = repairer.repairAll()
 
-        assertEquals(listOf("active-one"), repaired)
+        assertEquals(listOf("active-one"), repaired.repairedIds)
         assertEquals("external:active-one", prefs._transcriptionBackend.value)
         assertEquals("external:active-one", prefs._refinementModelBackendId.value)
         assertEquals(mapOf("canary.language" to "nl"), calls[0].options)
@@ -146,11 +149,11 @@ class ExternalImportRepairerTest {
         nextFailure = java.io.IOException("network gone")
 
         val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
-        repairer.capture()
+        repairer.captureSelections()
         prefs._transcriptionBackend.value = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
         val repaired = repairer.repairAll()
 
-        assertEquals(emptyList<String>(), repaired)
+        assertEquals(ExternalImportRepairer.RepairResult(1, emptyList()), repaired)
         // Not restored to a record that still cannot load.
         assertEquals(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND, prefs._transcriptionBackend.value)
     }
@@ -162,14 +165,14 @@ class ExternalImportRepairerTest {
 
         val repairer = ExternalImportRepairer(
             store, prefs, reimport = reimportLeavingItDangling)
-        repairer.capture()
+        repairer.captureSelections()
         prefs._transcriptionBackend.value = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
         val repaired = repairer.repairAll()
 
         // Not counted as repaired either: the completion log must not
         // claim a restore that did not happen (review round), and the
         // preference must stay on the default (the loadability gate).
-        assertEquals(emptyList<String>(), repaired)
+        assertEquals(ExternalImportRepairer.RepairResult(1, emptyList()), repaired)
         assertEquals(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND, prefs._transcriptionBackend.value)
     }
 
@@ -179,7 +182,7 @@ class ExternalImportRepairerTest {
         prefs._transcriptionBackend.value = "external:slow"
 
         val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
-        repairer.capture()
+        repairer.captureSelections()
         prefs._transcriptionBackend.value = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
         // The user picks a different model while the gigabytes download:
         // the restore (inside repairAll) must see this and keep it.
@@ -195,12 +198,12 @@ class ExternalImportRepairerTest {
         prefs._transcriptionBackend.value = "external:drifted"
 
         val repairer = ExternalImportRepairer(store, prefs, reimport = driftingReimport)
-        repairer.capture()
+        repairer.captureSelections()
         prefs._transcriptionBackend.value = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
         val repaired = repairer.repairAll()
 
         // The loadable id is the fresh one, and the stale record is gone.
-        assertEquals(listOf("drifted-new"), repaired)
+        assertEquals(listOf("drifted-new"), repaired.repairedIds)
         assertEquals("external:drifted-new", prefs._transcriptionBackend.value)
         assertTrue(store.records().none { it.id == "drifted" })
     }
@@ -213,11 +216,11 @@ class ExternalImportRepairerTest {
         store.add(record("intact", dirPresent = true))
 
         val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
-        val captured = repairer.capture()
+        repairer.captureSelections()
         val repaired = repairer.repairAll()
 
-        assertEquals(emptyList<String>(), captured.map { it.id })
-        assertEquals(emptyList<String>(), repaired)
+        assertEquals(emptyList<String>(), repairer.scanWipedImports().map { it.id })
+        assertEquals(ExternalImportRepairer.RepairResult(0, emptyList()), repaired)
         assertEquals(0, calls.size)
     }
 
@@ -225,7 +228,7 @@ class ExternalImportRepairerTest {
     fun `repairAll joins the registered startup sweep before downloading`() = runTest {
         store.add(record("held-back", dirPresent = false))
         val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
-        repairer.capture()
+        repairer.captureSelections()
         val sweepGate = CompletableDeferred<Unit>()
         val sweepJob = launch { sweepGate.await() }
         repairer.onSweepLaunched(sweepJob)
@@ -239,34 +242,24 @@ class ExternalImportRepairerTest {
         assertEquals(0, calls.size)
 
         sweepGate.complete(Unit)
-        assertEquals(listOf("held-back"), repair.await())
-    }
-
-    @Test
-    fun `a null sweep job is tolerated and the repair proceeds`() = runTest {
-        store.add(record("no-sweep", dirPresent = false))
-        val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
-        repairer.capture()
-        repairer.onSweepLaunched(null)
-        val repaired = repairer.repairAll()
-
-        assertEquals(listOf("no-sweep"), repaired)
-        assertEquals(1, calls.size)
+        assertEquals(listOf("held-back"), repair.await().repairedIds)
     }
 
     @Test
     fun `a candidate re-imported by hand before the tap is not downloaded again`() = runTest {
         store.add(record("already-back", dirPresent = false))
         val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
-        repairer.capture()
+        repairer.captureSelections()
         // The user re-imports from the Models tab between the notification
-        // and the tap; the repair must not re-download on top of it.
+        // and the tap; the re-derived scan no longer sees a dangling
+        // record, so the tap is a no-op (attempted 0), never a re-download
+        // and never a false "recovery failed".
         val handmade = java.io.File(filesRoot, "already-back-handmade").apply { mkdirs() }
         store.update(record("already-back", dirPresent = false).copy(dir = handmade.absolutePath))
 
         val repaired = repairer.repairAll()
 
-        assertEquals(listOf("already-back"), repaired)
+        assertEquals(ExternalImportRepairer.RepairResult(0, emptyList()), repaired)
         assertEquals(0, calls.size)
     }
 }

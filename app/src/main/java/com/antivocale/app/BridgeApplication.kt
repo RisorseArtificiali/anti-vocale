@@ -197,29 +197,24 @@ class BridgeApplication : Application(), Configuration.Provider {
         }.onFailure { e ->
             android.util.Log.e("BridgeApplication", "Crash-quarantine check failed (marker cleared, no quarantine applied)", e)
         }
-        // TASK-963: the repairer's capture runs FIRST, inside the same blocking
-        // window, because the cleaner's reset is what erases the user's selection
-        // of a wiped-but-repairable record. ORDERING IS LOAD-BEARING: moving
-        // capture() after cleanIfNeeded() compiles and repairs fine, but the
-        // selection restore silently dies (capture would read the already-reset
-        // default). The repair itself runs ONLY when the user taps Recover on
-        // the wiped-imports notification (no automatic re-download of
-        // gigabyte payloads; maintainer decision).
-        val wipedImportCandidates = runCatching {
-            kotlinx.coroutines.runBlocking { externalImportRepairer.capture() }
+        // TASK-963: the repairer's selection capture runs FIRST, inside the
+        // same blocking window, because the cleaner's reset is what erases
+        // the user's selection of a wiped-but-repairable record. ORDERING IS
+        // LOAD-BEARING: moving captureSelections() after cleanIfNeeded()
+        // compiles and repairs fine, but the selection restore silently dies
+        // (the capture would read the already-reset default). Only the two
+        // preference reads need this window (TASK-899's startup lesson): the
+        // dangling scan and the wiped-imports notification post run async
+        // below, and the repair itself runs ONLY when the user taps Recover
+        // (no automatic re-download of gigabyte payloads; maintainer
+        // decision).
+        runCatching {
+            kotlinx.coroutines.runBlocking { externalImportRepairer.captureSelections() }
         }.onFailure { e ->
             // Its own containment: a capture failure must not also skip the
             // cleaner's TASK-342 reset below (the retired 'gemma4_gguf' id
             // has this cleaner as its ONLY reset site).
             android.util.Log.e("BridgeApplication", "External-import repair capture failed (will retry on next launch)", e)
-        }.getOrDefault(emptyList())
-        if (wipedImportCandidates.isNotEmpty()) {
-            runCatching {
-                com.antivocale.app.receiver.WipedImportRepairNotifications
-                    .postWiped(this, wipedImportCandidates)
-            }.onFailure { e ->
-                android.util.Log.e("BridgeApplication", "Wiped-imports notification failed", e)
-            }
         }
         // Also before syncAll: a persisted external backend id whose record is gone
         // (deleted through another path, files vanished, quarantined) must fall back
@@ -252,6 +247,22 @@ class BridgeApplication : Application(), Configuration.Provider {
         // TASK-963: the repairer joins that job before downloading anything
         // (handed over here because the singleton cannot reach the local).
         externalImportRepairer.onSweepLaunched(externalDirSweepJob)
+        // TASK-963: the wiped-import scan and its notification, off the main
+        // thread (the blocking window above owns only the preference capture;
+        // the scan re-reads the store and stats one dir per record). The scan
+        // result feeds only the notification: the repair re-derives the same
+        // set at tap time, so no ordering against this launch matters.
+        applicationScope.launch(Dispatchers.IO) {
+            runCatching {
+                val wiped = externalImportRepairer.scanWipedImports()
+                if (wiped.isNotEmpty()) {
+                    com.antivocale.app.receiver.WipedImportRepairNotifications
+                        .postWiped(this@BridgeApplication, wiped)
+                }
+            }.onFailure { e ->
+                android.util.Log.e("BridgeApplication", "Wiped-imports scan or notification failed", e)
+            }
+        }
         // GH #51: rows left QUEUED/PROCESSING by a process death can never complete
         // (START_NOT_STICKY restores nothing); fail them so they don't render as a
         // permanently in-flight queue. Runs at process start; the sweep is the
