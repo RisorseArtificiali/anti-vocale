@@ -209,23 +209,33 @@ class ExternalCatalogTest {
         // Round 2: + fritter streaming english (Nemotron 0.6B streaming
         // transducer, same manifest dialect; the INDEX entry carries the
         // streaming flag, the manifest has no such field).
-        assertEquals(38, entries.size)
+        assertEquals(39, entries.size)
 
         // The three schema-1 manifest entries: family/languages from the index,
         // entryUrl is the live manifest (no committed asset; see the
         // asset-pairing test's exemption).
-        // TASK-968 device finding: the STREAMING entry was pulled. Daniel's
-        // published int8 artifact is an OFFLINE export of the hybrid (no
-        // decode_chunk_len anywhere in the encoder): streaming=true dies at
-        // the TASK-720 gate, and without the flag the name heuristic rejects
-        // it. Relisted only when the artifact is a true online export.
+        // TASK-968 follow-up: the streaming twin is BACK. The 7a23e80c pull
+        // rested on a refuted premise (the encoder IS a streaming NeMo
+        // export: cache tensors, works through OnlineRecognizer; the
+        // bundled streaming Nemotron ALSO lacks decode_chunk_len, it is a
+        // zipformer-only key). The real bug was the TASK-720 gate applying
+        // the zipformer probe to a NeMo export; it now discriminates NeMo
+        // exports (model_type "EncDec*") on chunk_shift instead.
         val fritter = ExternalCatalog.filter(entries, "fritter")
-        assertEquals(1, fritter.size)
+        assertEquals(2, fritter.size)
         assertEquals(ModelFamily.TRANSDUCER, fritter[0].family)
         assertEquals(listOf("en"), fritter[0].languages)
         assertEquals("https://models.carrotcakeai.com/asr/fritter/latest/manifest.json",
             fritter[0].entryUrl)
         assertFalse(fritter[0].streaming)
+        // The streaming twin: index-authored streaming flag is the ONLY
+        // streaming transport for a schema-1 manifest.
+        assertEquals("Fritter Streaming English int8 (Nemotron 0.6B, CC-BY-NC)", fritter[1].name)
+        assertEquals(ModelFamily.TRANSDUCER, fritter[1].family)
+        assertEquals(listOf("en"), fritter[1].languages)
+        assertEquals("https://models.carrotcakeai.com/asr/fritter-streaming/latest/manifest.json",
+            fritter[1].entryUrl)
+        assertTrue(fritter[1].streaming)
         val sabich = ExternalCatalog.filter(entries, "sabich")
         assertEquals(1, sabich.size)
         assertEquals(ModelFamily.TRANSDUCER, sabich[0].family)

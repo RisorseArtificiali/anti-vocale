@@ -705,12 +705,12 @@ class ExternalModelImporter(
         support.validateImportedModel(metadataValue)
 
         // TASK-720: streaming flag vs the actual encoder graph (family-routed;
-        // plain zipformers). The wrong combination aborts the process at first
-        // decode, so it dies HERE instead. No second scan: this modelType
-        // maps to no required keys, so the metadata scan above short-circuited
-        // without reading; this probe is the file's only head+tail read.
-        ModelFamilySupport.forFamily(family)
-            .streamingFlagMismatch(metadataFile, streaming)
+        // plain zipformers; a NeMo export fails open inside the gate, its
+        // model_type value starts with "EncDec"). The wrong combination aborts
+        // the process at first decode, so it dies HERE instead. The metadata
+        // scan above short-circuited without reading for this modelType; the
+        // gate's own model_type and graph probes are bounded head+tail reads.
+        support.streamingFlagMismatch(metadataFile, streaming)
             ?.let { throw IllegalArgumentException(it) }
 
         // TASK-304: cheap header/magic integrity at registration, before the

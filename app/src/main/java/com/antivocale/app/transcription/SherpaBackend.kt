@@ -111,7 +111,10 @@ class SherpaBackend(
             // zipformer entries at import time. The wrong-family guard for
             // "" is the file-shape plan (encoder/decoder/joiner roles), not
             // metadata; the streaming-vs-offline flag mismatch is caught by
-            // [zipformerGraphIsStreaming] at import and load (TASK-720).
+            // [TransducerSupport.streamingFlagMismatch] at import and load
+            // (TASK-720), routed by export shape: [zipformerGraphIsStreaming]
+            // for k2 zipformer exports, chunk_shift presence for NeMo
+            // EncDec exports.
             else -> emptyList()
         }
 

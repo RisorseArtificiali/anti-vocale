@@ -214,7 +214,9 @@ sealed interface ModelFamilySupport {
      * first native load). Returns the rejection message when the record's
      * declared streaming flag contradicts the encoder graph, null when the
      * family has no opinion (default) or the graph is undeterminable
-     * (fail open).
+     * (fail open). The transducer gate discriminates by export shape:
+     * [SherpaBackend.zipformerGraphIsStreaming] for model_type-absent (k2
+     * zipformer) exports, chunk_shift presence for NeMo EncDec* exports.
      */
     fun streamingFlagMismatch(encoderFile: java.io.File, declaredStreaming: Boolean): String? = null
 
@@ -333,8 +335,9 @@ object TransducerSupport : ModelFamilySupport {
      *  mismatched load aborts the process at first decode). */
     internal const val STREAMING_FLAG_MISMATCH =
         "the entry's streaming flag contradicts the encoder graph " +
-            "(streaming exports carry decode_chunk_len metadata and comment 'streaming zipformer2'; " +
-            "offline ones say 'non-streaming zipformer2'): fix the flag or pick the matching export, " +
+            "(streaming zipformers carry decode_chunk_len or comment 'streaming zipformer2', " +
+            "streaming NeMo exports (model_type EncDec*) carry chunk_shift; " +
+            "the offline exports carry none of these): fix the flag or pick the matching export, " +
             "the mismatched combination would crash at first transcription"
 
     private const val EXPORT_GUIDANCE =
@@ -385,9 +388,20 @@ object TransducerSupport : ModelFamilySupport {
     override fun valueMetadataKey(): String = "vocab_size"
 
     override fun streamingFlagMismatch(encoderFile: java.io.File, declaredStreaming: Boolean): String? {
-        // Plain zipformers only (modelType ""); NeMo exports are covered by
-        // the metadata key gate, qwen3 by its own loader contract.
-        val graphStreaming = SherpaBackend.zipformerGraphIsStreaming(encoderFile) ?: return null
+        // Discriminator routed by export shape. A NeMo export (model_type
+        // "EncDec*", e.g. EncDecHybridRNNTCTCBPEModel) carries no zipformer
+        // markers (decode_chunk_len is a zipformer-only key) but its own:
+        // streaming NeMo exports carry chunk_shift (bundled Nemotron 112,
+        // Fritter streaming 56), offline ones none of the chunk keys. Any
+        // other shape (model_type absent: a k2 zipformer or a scan miss;
+        // non-NeMo value) falls to the zipformer probe, undeterminable fails
+        // open - a scan that missed model_type misses chunk_shift too.
+        val encoderType = SherpaBackend.onnxMetadataValue(encoderFile, "model_type")
+        val graphStreaming = if (encoderType != null && encoderType.trim().startsWith("EncDec")) {
+            SherpaBackend.onnxMetadataValue(encoderFile, "chunk_shift") != null
+        } else {
+            SherpaBackend.zipformerGraphIsStreaming(encoderFile) ?: return null
+        }
         return if (graphStreaming != declaredStreaming) STREAMING_FLAG_MISMATCH else null
     }
 

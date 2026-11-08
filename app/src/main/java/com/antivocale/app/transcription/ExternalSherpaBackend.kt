@@ -299,7 +299,10 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                             numThreads = externalConfig.numThreads,
                             debug = false,
                             provider = externalConfig.provider,
-                            // Streaming zipformers carry no modelType metadata: "" (Nemotron pattern).
+                            // Streaming externals are NeMo EncDec exports: the
+                            // encoder DOES carry model_type (and chunk_shift,
+                            // the gate's NeMo discriminator), but the ONLINE
+                            // loader wants no modelType: "" (Nemotron pattern).
                             modelType = "",
                         ),
                         featConfig = FeatureConfig(sampleRate = 16000, featureDim = 80),
