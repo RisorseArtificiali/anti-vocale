@@ -248,6 +248,33 @@ android {
         aidl = true
     }
 
+    androidResources {
+        // The AAB carries every LIBRARY locale (AndroidX and friends ship
+        // dozens, values-te among them); Play's translation validation
+        // started rejecting bundles with languages it cannot translate
+        // (v1.16.0's first publish: "languages are not supported for
+        // translation: te"). The filter is DERIVED from the res tree, so a
+        // new values-XX locale rides along automatically instead of rotting
+        // as a third hand-maintained list beside the picker and
+        // locales_config.xml; the assert keeps a non-locale values-* folder
+        // (a future values-night) from poisoning the list with a build
+        // error instead of a silent strip. Base-language LIBRARY resources
+        // of listed entries still ride along (generic pt beside pt-rBR):
+        // the strip drops languages ABSENT from the list, and every
+        // survivor is a language Play can translate. Deliberately
+        // module-wide, so the F-Droid APK and nightly match: library
+        // locales outside the app's own picker were never a feature.
+        val resLocales = file("src/main/res")
+            .listFiles { f -> f.isDirectory && f.name.startsWith("values-") }
+            .orEmpty()
+            .map { it.name.removePrefix("values-") }
+            .filter { it.isNotBlank() }
+        require(resLocales.all { Regex("[a-z]{2}(-r[A-Z]{2})?").matches(it) }) {
+            "non-locale values-* folder in src/main/res would poison localeFilters: $resLocales"
+        }
+        localeFilters += resLocales + "en"
+    }
+
     packaging {
         jniLibs {
             useLegacyPackaging = true
