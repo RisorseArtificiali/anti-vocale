@@ -1,0 +1,4 @@
+Uusia malleja: Parakeet Ultra (noin 20% tarkempi), Fritter suoratoisto englanniksi, Sabich, ranskan- ja saksankieliset hienosäädöt
+Uutta: Signal-ääniviestit kirjoitetaan automaattisesti katsottujen kansioiden kautta
+Parannettu: Hugging Face -tuonnit löytävät mallit alikansioista
+Parannettu: vertailutestien virheet selittyvät omalla kielelläsi

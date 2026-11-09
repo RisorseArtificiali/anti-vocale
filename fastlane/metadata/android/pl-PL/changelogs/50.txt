@@ -1,0 +1,5 @@
+Nowość: jeśli czyścicz telefonu usunie pobrane modele, aplikacja to zauważy i przywróci je jednym dotknięciem
+Nowe modele: Parakeet Ultra (ok. 20% dokładniejszy), Fritter streaming po angielsku, Sabich, dostrajanie francuskie i niemieckie
+Nowość: notatki głosowe Signal transkrybują się same przez obserwowane foldery
+Lepiej: importy z Hugging Face znajdują modele w podfolderach
+Lepiej: błędy testów wyjaśniają się w twoim języku

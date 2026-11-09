@@ -1,0 +1,5 @@
+Nouveau : si un nettoyeur supprime les modèles téléchargés, l'appli le remarque et les restaure en un geste
+Nouveaux modèles : Parakeet Ultra (20 % plus précis), Fritter streaming anglais, Sabich, affinages français et allemand
+Nouveau : les vocaux Signal se transcrivent seuls (dossiers surveillés)
+Amélioré : les imports Hugging Face trouvent les modèles en sous-dossiers
+Amélioré : les échecs de benchmark s'expliquent dans votre langue

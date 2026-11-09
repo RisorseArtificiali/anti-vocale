@@ -1,0 +1,5 @@
+Yeni: telefon temizleyicisi indirilen modelleri silerse uygulama fark eder ve tek dokunuşla geri getirir
+Yeni modeller: Parakeet Ultra (yaklaşık %20 daha isabetli), Fritter İngilizce akış, Sabich, Fransızca ve Almanca ince ayar
+Yeni: Signal sesli mesajları izlenen klasörlerle kendiliğinden yazıya dökülür
+İyileştirildi: Hugging Face içe aktarımları alt klasörlerdeki modelleri bulur
+İyileştirildi: kıyas hataları kendi dilinizde açıklanır

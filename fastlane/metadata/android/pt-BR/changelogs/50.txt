@@ -1,0 +1,5 @@
+Novo: se um limpador do telefone apagar os modelos baixados, o app percebe e os restaura com um toque
+Modelos novos: Parakeet Ultra (cerca de 20% mais preciso), Fritter streaming em inglês, Sabich, ajustes finos de francês e alemão
+Novo: as mensagens de voz do Signal se transcrevem sozinhas nas pastas assistidas
+Melhorado: importações do Hugging Face encontram modelos em subpastas
+Melhorado: as falhas dos benchmarks se explicam no seu idioma

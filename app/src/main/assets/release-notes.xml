@@ -1,4 +1,10 @@
 <en-US>
+What's new in 1.16.0:
+• New: if a phone cleaner deletes downloaded models, the app notices and restores them in one tap
+• New models: Parakeet Ultra (about 20% more accurate), Fritter streaming English, Sabich, French and German fine-tunes
+• New: Signal voice notes transcribe automatically via watched folders
+• Improved: Hugging Face imports find models in subfolders
+• Improved: benchmark failures explain themselves in your language
 What's new in 1.15.0:
 • New: WhatsApp voice notes transcribe themselves as they arrive (opt-in, on-device)
 • New: play recent audio in its history row (speed, skip silences)
@@ -51,6 +57,12 @@ What's new in 1.12.0:
 • Fixed: clearer low-memory and corrupt-model errors</en-US>
 
 <it-IT>
+Novità della versione 1.16.0:
+• Nuovo: se un pulitore del telefono cancella i modelli scaricati, l'app se ne accorge e li ripristina con un tocco
+• Nuovi modelli: Parakeet Ultra (20% più accurato), Fritter streaming inglese, Sabich, fine-tune francese e tedesco
+• Nuovo: i vocali Signal si trascrivono da soli tramite le cartelle osservate
+• Migliorato: le importazioni da Hugging Face trovano i modelli nelle sottocartelle
+• Migliorato: gli errori dei benchmark ora parlano la tua lingua
 Novità della versione 1.15.0:
 • Nuovo: i vocali WhatsApp si trascrivono da soli
 • Nuovo: riproduci l'audio recente in Cronologia (velocità, salta i silenzi)
@@ -308,6 +320,12 @@ Novità dalla versione 1.0.3:
 • Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)</it-IT>
 
 <de-DE>
+Neuigkeiten in Version 1.16.0:
+• Neu: löscht ein Handy-Reiniger heruntergeladene Modelle, merkt die App es und stellt sie mit einem Tipp wieder her
+• Neue Modelle: Parakeet Ultra (rund 20% genauer), Fritter (streaming Englisch), Sabich, Französisch- und Deutsch-Feintuning
+• Neu: Signal-Sprachnachrichten werden über beobachtete Ordner selbst transkribiert
+• Verbessert: Hugging-Face-Importe finden Modelle in Unterordnern
+• Verbessert: Benchmark-Fehler erklären sich in deiner Sprache
 Neuigkeiten in Version 1.15.0:
 • Neu: WhatsApp-Sprachnachrichten werden selbst transkribiert
 • Neu: Audio in der Verlaufszeile abspielen (Geschwindigkeit, Pausen überspringen)
@@ -330,6 +348,12 @@ Neuigkeiten in Version 1.14.0:
 • Verbessert: kompakter Erweitert-Bereich, Gemma-Downloads auf eigener Seite</de-DE>
 
 <es-ES>
+Novedades de la versión 1.16.0:
+• Nuevo: si un limpiador del teléfono borra los modelos descargados, la app lo nota y los restaura con un toque
+• Modelos nuevos: Parakeet Ultra (20% más preciso), Fritter streaming en inglés, Sabich, ajustes de francés y alemán
+• Nuevo: las notas de voz de Signal se transcriben solas con las carpetas vigiladas
+• Mejorado: las importaciones de Hugging Face encuentran modelos en subcarpetas
+• Mejorado: los fallos de las pruebas se explican en tu idioma
 Novedades de la versión 1.15.0:
 • Nuevo: las notas de voz de WhatsApp se transcriben solas
 • Nuevo: reproduce el audio reciente en su fila del Historial (velocidad)
@@ -352,6 +376,12 @@ Novedades de la versión 1.14.0:
 • Mejorado: sección Avanzado compacta, descargas de Gemma en su propia página</es-ES>
 
 <fr-FR>
+Nouveautés de la version 1.16.0 :
+• Nouveau : si un nettoyeur supprime les modèles téléchargés, l'appli le remarque et les restaure en un geste
+• Nouveaux modèles : Parakeet Ultra (20 % plus précis), Fritter streaming anglais, Sabich, affinages français et allemand
+• Nouveau : les vocaux Signal se transcrivent seuls (dossiers surveillés)
+• Amélioré : les imports Hugging Face trouvent les modèles en sous-dossiers
+• Amélioré : les échecs de benchmark s'expliquent dans votre langue
 Nouveautés de la version 1.15.0 :
 • Nouveau : les vocaux WhatsApp se transcrivent seuls
 • Nouveau : écoutez l'audio récent dans sa ligne d'historique (vitesse)
@@ -374,6 +404,12 @@ Nouveautés de la version 1.14.0 :
 • Amélioré : section Avancé compacte, téléchargements Gemma sur leur propre page</fr-FR>
 
 <pt-BR>
+Novidades da versão 1.16.0:
+• Novo: se um limpador do telefone apagar os modelos baixados, o app percebe e os restaura com um toque
+• Modelos novos: Parakeet Ultra (cerca de 20% mais preciso), Fritter streaming em inglês, Sabich, ajustes finos de francês e alemão
+• Novo: as mensagens de voz do Signal se transcrevem sozinhas nas pastas assistidas
+• Melhorado: importações do Hugging Face encontram modelos em subpastas
+• Melhorado: as falhas dos benchmarks se explicam no seu idioma
 Novidades da versão 1.15.0:
 • Novo: as mensagens de voz do WhatsApp se transcrevem sozinhas
 • Novo: ouça o áudio recente na própria linha do Histórico (velocidade)
@@ -396,6 +432,12 @@ Novidades da versão 1.14.0:
 • Melhorado: seção Avançada compacta, downloads do Gemma em página própria</pt-BR>
 
 <ru-RU>
+Что нового в версии 1.16.0:
+• Новое: если системный очиститель удалит скачанные модели, приложение заметит и вернёт их одним нажатием
+• Новые модели: Parakeet Ultra (примерно на 20% точнее), Fritter (стриминг английского), Sabich, французская и немецкая дообученные версии
+• Новое: голосовые Signal расшифровываются сами через наблюдаемые папки
+• Улучшено: импорт с Hugging Face находит модели в подпапках
+• Улучшено: ошибки бенчмарков объясняются на вашем языке
 Что нового в версии 1.15.0:
 • Новое: голосовые WhatsApp расшифровываются сами
 • Новое: прослушайте недавнюю запись в строке Истории (скорость, пропуск тишины)
@@ -418,6 +460,12 @@ Novidades da versão 1.14.0:
 • Улучшено: компактный раздел «Дополнительно», загрузки Gemma на отдельной странице</ru-RU>
 
 <tr-TR>
+Sürüm 1.16.0'daki yenilikler:
+• Yeni: telefon temizleyicisi indirilen modelleri silerse uygulama fark eder ve tek dokunuşla geri getirir
+• Yeni modeller: Parakeet Ultra (yaklaşık %20 daha isabetli), Fritter İngilizce akış, Sabich, Fransızca ve Almanca ince ayar
+• Yeni: Signal sesli mesajları izlenen klasörlerle kendiliğinden yazıya dökülür
+• İyileştirildi: Hugging Face içe aktarımları alt klasörlerdeki modelleri bulur
+• İyileştirildi: kıyas hataları kendi dilinizde açıklanır
 Sürüm 1.15.0'daki yenilikler:
 • Yeni: WhatsApp sesli mesajları kendiliğinden yazıya dökülür
 • Yeni: son kaydın sesini geçmiş satırından dinleyin (hız, sessizlik atlama)
@@ -440,6 +488,12 @@ Sürüm 1.14.0'daki yenilikler:
 • İyileştirildi: kompakt Gelişmiş bölümü, Gemma indirmeleri kendi sayfasında</tr-TR>
 
 <pl-PL>
+Nowości w wersji 1.16.0:
+• Nowość: jeśli czyścicz telefonu usunie pobrane modele, aplikacja to zauważy i przywróci je jednym dotknięciem
+• Nowe modele: Parakeet Ultra (ok. 20% dokładniejszy), Fritter streaming po angielsku, Sabich, dostrajanie francuskie i niemieckie
+• Nowość: notatki głosowe Signal transkrybują się same przez obserwowane foldery
+• Lepiej: importy z Hugging Face znajdują modele w podfolderach
+• Lepiej: błędy testów wyjaśniają się w twoim języku
 Nowości w wersji 1.15.0:
 • Nowość: notatki głosowe WhatsApp transkrybują się same
 • Nowość: odsłuchaj nagranie niedawnej transkrypcji w jej wierszu (prędkość)
@@ -462,6 +516,12 @@ Nowości w wersji 1.14.0:
 • Ulepszone: kompaktowa sekcja Zaawansowane, pobieranie Gemma na osobnej stronie</pl-PL>
 
 <hi-IN>
+संस्करण 1.16.0 में नया क्या है:
+• नया: फ़ोन का क्लीनर डाउनलोड किए मॉडल मिटा दे, तो ऐप इसे पकड़ती है और एक टैप में उन्हें वापस ला देती है
+• नए मॉडल: Parakeet Ultra (करीब 20% ज़्यादा सटीक), Fritter स्ट्रीमिंग अंग्रेज़ी, Sabich, फ़्रेंच और जर्मन फ़ाइन-ट्यून
+• नया: Signal वॉइस नोट्स देखी फ़ोल्डर से अपने आप ट्रांसक्राइब होते हैं
+• बेहतर: Hugging Face से आयात उपफ़ोल्डरों में मॉडल ढूंढता है
+• बेहतर: बेंचमार्क की ग़लतियाँ अब आपकी भाषा में समझाई जाती हैं
 संस्करण 1.15.0 में नया क्या है:
 • नया: WhatsApp वॉइस नोट्स अपने आप ट्रांसक्राइब होते हैं (स्वेच्छा से, डिवाइस पर)
 • नया: हाल की रिकॉर्डिंग का ऑडियो उसकी पंक्ति में सुनें (प्लेबैक गति, मौन छोड़ें)
@@ -484,6 +544,12 @@ Nowości w wersji 1.14.0:
 • बेहतर: कॉम्पैक्ट एडवांस्ड सेक्शन, Gemma डाउनलोड अलग पेज पर</hi-IN>
 
 <uk>
+Новинки версії 1.16.0:
+• Нове: якщо системний чистильник видалить завантажені моделі, застосунок помітить і поверне їх одним дотиком
+• Нові моделі: Parakeet Ultra (приблизно на 20% точніший), Fritter (стримінг англійської), Sabich, французька та німецька донавчені версії
+• Нове: голосові Signal розшифровуються самі через відстежувані теки
+• Краще: імпорт із Hugging Face знаходить моделі у підтеках
+• Краще: помилки бенчмарків пояснюються вашою мовою
 Новинки версії 1.15.0:
 • Нове: голосові WhatsApp розшифровуються самі (за бажанням, на пристрої)
 • Нове: слухайте запис просто в рядку Історії (швидкість, пропуск тиші)
@@ -505,6 +571,12 @@ Nowości w wersji 1.14.0:
 • Нове: інтерфейс китайською; каталог спільноти понад 30 моделей з фільтром мови
 • Покращено: компактний розділ «Додатково», завантаження Gemma на окремій сторінці</uk>
 <he-IL>
+מה חדש בגרסה 1.16.0:
+• חדש: אם מנקה של הטלפון מוחק מודלים שהורדו, האפליקציה מבחינה בזה ומשחזרת אותם בנגיעה אחת
+• מודלים חדשים: Parakeet Ultra (מדויק בכ־20%), Fritter סטרימינג באנגלית, Sabich, כוונון עדין בצרפתית ובגרמנית
+• חדש: הודעות קוליות ב־Signal מתועתקות אוטומטית דרך תיקיות מעקב
+• משופר: ייבוא מ־Hugging Face מוצא מודלים בתת־תיקיות
+• משופר: כשלי בנצ'מרק מוסברים בשפה שלכם
 מה חדש בגרסה 1.15.0:
 • חדש: הודעות קוליות ב־WhatsApp מתועתקות אוטומטית (בבחירה, על המכשיר)
 • חדש: השמיעו את האודיו של תעתיק אחרון בשורת ההיסטוריה שלו (מהירות, דילוג על שקט)
@@ -526,6 +598,12 @@ Nowości w wersji 1.14.0:
 • חדש: ממשק בסינית; קטלוג הקהילה מעל 30 מודלים, מסונן לפי שפה
 • שופר: מקטע מתקדם קומפקטי, הורדות Gemma בעמוד משלהן</he-IL>
 <fa-IR>
+چه چیز جدید‌های نسخه 1.16.0:
+• جدید: اگر پاک‌کننده‌ی گوشی مدل‌های دانلودشده را پاک کند، برنامه متوجه می‌شود و با یک لمس آن‌ها را برمی‌گرداند
+• مدل‌های جدید: Parakeet Ultra (حدود ۲۰٪ دقیق‌تر)، Fritter استریم انگلیسی، Sabich، تنظیم دقیق فرانسوی و آلمانی
+• جدید: پیام‌های صوتی سیگنال از طریق پوشه‌های تحت نظر خودکار پیاده می‌شوند
+• بهبود: درون‌ریزی از Hugging Face مدل‌ها را در زیرپوشه‌ها پیدا می‌کند
+• بهبود: خطاهای محک‌ها به زبان خودتان توضیح داده می‌شوند
 چه چیز جدید‌های نسخه 1.15.0:
 • جدید: پیام‌های صوتی واتس‌اپ خودکار پیاده‌سازی می‌شوند
 • جدید: صدای پیام‌های اخیر را در ردیف تاریخچه پخش کنید (سرعت پخش، رد کردن سکوت‌ها)
@@ -547,6 +625,12 @@ Nowości w wersji 1.14.0:
 • جدید: رابط چینی؛ کاتالوگ جامعه بالای 30 مدل، فیلتر زبان
 • بهبود: بخش پیشرفته فشرده، دانلودهای Gemma در صفحه خودشان</fa-IR>
 <zh-CN>
+1.16.0 版本更新：
+• 新增：手机清理工具误删已下载的模型时，应用会发现并一键恢复
+• 新模型：Parakeet Ultra（准确率约高 20%）、Fritter 英语流式、Sabich、法语和德语微调版
+• 新增：Signal 语音消息可通过受监视文件夹自动转写
+• 改进：Hugging Face 导入能找到子文件夹中的模型
+• 改进：基准测试失败会用你的语言解释原因
 1.15.0 版本更新：
 • 新增：WhatsApp 语音消息自动转写（可选择开启，仅在设备上）
 • 新增：在历史记录条目中直接回放最近的录音（支持播放速度和跳过静音）

@@ -1,0 +1,4 @@
+Nieuwe modellen: Parakeet Ultra (ongeveer 20% nauwkeuriger), Fritter streaming in het Engels, Sabich, Franse en Duitse finetunes
+Nieuw: Signal-spraakberichten worden automatisch uitgeschreven via gevolgde mappen
+Verbeterd: Hugging Face-imports vinden modellen in submappen
+Verbeterd: benchmarkfouten worden in je eigen taal uitgelegd

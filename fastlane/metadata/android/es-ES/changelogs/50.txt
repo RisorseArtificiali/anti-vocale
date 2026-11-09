@@ -1,0 +1,5 @@
+Nuevo: si un limpiador del teléfono borra los modelos descargados, la app lo nota y los restaura con un toque
+Modelos nuevos: Parakeet Ultra (20% más preciso), Fritter streaming en inglés, Sabich, ajustes de francés y alemán
+Nuevo: las notas de voz de Signal se transcriben solas con las carpetas vigiladas
+Mejorado: las importaciones de Hugging Face encuentran modelos en subcarpetas
+Mejorado: los fallos de las pruebas se explican en tu idioma

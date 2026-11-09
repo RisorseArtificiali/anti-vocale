@@ -1,0 +1,5 @@
+New: if a phone cleaner deletes downloaded models, the app notices and restores them in one tap
+New models: Parakeet Ultra (about 20% more accurate), Fritter streaming English, Sabich, French and German fine-tunes
+New: Signal voice notes transcribe automatically via watched folders
+Improved: Hugging Face imports find models in subfolders
+Improved: benchmark failures explain themselves in your language

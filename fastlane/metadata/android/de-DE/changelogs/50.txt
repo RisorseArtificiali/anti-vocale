@@ -1,0 +1,5 @@
+Neu: löscht ein Handy-Reiniger heruntergeladene Modelle, merkt die App es und stellt sie mit einem Tipp wieder her
+Neue Modelle: Parakeet Ultra (rund 20% genauer), Fritter (streaming Englisch), Sabich, Französisch- und Deutsch-Feintuning
+Neu: Signal-Sprachnachrichten werden über beobachtete Ordner selbst transkribiert
+Verbessert: Hugging-Face-Importe finden Modelle in Unterordnern
+Verbessert: Benchmark-Fehler erklären sich in deiner Sprache
