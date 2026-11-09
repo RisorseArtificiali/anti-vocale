@@ -55,18 +55,21 @@ class ExternalImportRepairer(
     private val store: ExternalModelStore,
     private val preferencesManager: PreferencesManager,
     /** Re-imports one record from its pinned source; the production wiring
-     *  calls [ExternalModelImporter.importFromUrl] with the record's own
-     *  parameters. A one-call lambda rather than the wider
-     *  ExternalModelImportOperations interface: this class forwards exactly
-     *  one operation and wants it fake-able without the network. CONTRACT
-     *  the repair depends on: the returned record is the SAME id, because
-     *  the importer's same-hash dedupe repoints a dangling record at the
-     *  fresh copy instead of registering a new one (the canonical comment
-     *  is ExternalModelImporter's dedupe block). When upstream content
-     *  drifts and the dedupe misses, the returned id DIFFERS: the repairer
-     *  then deletes the stale record and re-points captured selections at
-     *  the fresh id, so the drift is visible in the log instead of
-     *  leaving a phantom. */
+     *  ([reimportFor]) calls [ExternalModelImporter]
+     *  `.importFromUrlWithMetadata` with the record's own parameters (the
+     *  metadata carrier, so a streaming record's flag survives the
+     *  catalog-entry arm; plain importFromUrl drops caller parameters
+     *  there by its entry-driven contract). A one-call lambda rather than
+     *  the wider ExternalModelImportOperations interface: this class
+     *  forwards exactly one operation and wants it fake-able without the
+     *  network. CONTRACT the repair depends on: the returned record is
+     *  the SAME id, because the importer's same-hash dedupe repoints a
+     *  dangling record at the fresh copy instead of registering a new one
+     *  (the canonical comment is ExternalModelImporter's dedupe block).
+     *  When upstream content drifts and the dedupe misses, the returned
+     *  id DIFFERS: the repairer then deletes the stale record and
+     *  re-points captured selections at the fresh id, so the drift is
+     *  visible in the log instead of leaving a phantom. */
     private val reimport: suspend (ExternalModelRecord) -> ExternalModelRecord,
 ) {
     /** The repair outcome the notification consumes: how many dangling
@@ -260,7 +263,38 @@ class ExternalImportRepairer(
         return null
     }
 
-    private companion object {
-        const val TAG = "ExternalImportRepairer"
+    companion object {
+        private const val TAG = "ExternalImportRepairer"
+
+        /**
+         * The production re-import lambda, fed by AppModule: forward the
+         * record's OWN parameters through [ExternalModelImportOperations]
+         * `.importFromUrlWithMetadata`, never plain `.importFromUrl`.
+         * The difference is load-bearing (the maintainer's Fritter
+         * Streaming repair failed instantly): importFromUrl's
+         * catalog-entry branch is entry-driven and DROPS the caller's
+         * parameters, so a streaming record's flag never reached the
+         * synthesis and a declaring manifest was rejected ("import it
+         * from its catalog entry"), the exact path the record itself came
+         * from. The metadata carrier forwards streaming, name, and
+         * licence, which is what a repair re-imports: the record AS IT
+         * WAS, including the flag that made it importable.
+         */
+        fun reimportFor(
+            importer: ExternalModelImportOperations,
+        ): suspend (ExternalModelRecord) -> ExternalModelRecord = { record ->
+            importer.importFromUrlWithMetadata(
+                url = requireNotNull(record.sourceUrl) {
+                    "repair candidate without a sourceUrl: ${record.id}"
+                },
+                displayName = record.displayName,
+                licence = record.licence,
+                modelType = record.modelType,
+                options = record.options,
+                family = record.family,
+                languages = record.languages,
+                streaming = record.streaming,
+            )
+        }
     }
 }

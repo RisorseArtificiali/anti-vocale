@@ -250,18 +250,7 @@ object AppModule {
         com.antivocale.app.data.ExternalImportRepairer(
             store,
             preferencesManager,
-            reimport = { record ->
-                importer.importFromUrl(
-                    url = requireNotNull(record.sourceUrl) {
-                        "repair candidate without a sourceUrl: ${record.id}"
-                    },
-                    modelType = record.modelType,
-                    family = record.family,
-                    options = record.options,
-                    languages = record.languages,
-                    streaming = record.streaming,
-                )
-            },
+            reimport = com.antivocale.app.data.ExternalImportRepairer.reimportFor(importer),
         )
 
     @Provides

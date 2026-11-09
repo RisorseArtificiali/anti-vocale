@@ -79,6 +79,7 @@ object ExternalManifestV1 {
         overrideLanguages: List<String> = emptyList(),
         overrideLicence: String? = null,
         overrideStreaming: Boolean = false,
+        overrideOptions: Map<String, String> = emptyMap(),
     ): ExternalModelEntryJson.Entry {
         val o = JSONObject(text)
         val filesJson = o.optJSONObject("files")
@@ -190,7 +191,11 @@ object ExternalManifestV1 {
             family = family,
             modelType = modelType,
             languages = overrideLanguages,
-            options = emptyMap(),
+            // Caller-declared options win: manifests do not declare options
+            // today, and the repair's carrier must restore what the user's
+            // record had (a code-review finding 2026-11-09: the streaming
+            // fix addressed the flag but options were the same drop class).
+            options = overrideOptions,
             files = files,
             streaming = streaming,
             licence = licence,

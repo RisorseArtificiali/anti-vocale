@@ -413,6 +413,7 @@ class ExternalModelImporter(
         family: ModelFamily = ModelFamily.TRANSDUCER,
         languages: List<String> = emptyList(),
         streaming: Boolean = false,
+        options: Map<String, String> = emptyMap(),
         onProgress: ExternalImportProgress = NOOP_PROGRESS,
     ): ExternalModelRecord {
         val text = repoListing.fetchText(entryUrl)
@@ -424,6 +425,7 @@ class ExternalModelImporter(
                 overrideLanguages = languages,
                 overrideLicence = licence,
                 overrideStreaming = streaming,
+                overrideOptions = options,
             )
         } else {
             ExternalModelEntryJson.parse(text)
@@ -443,6 +445,9 @@ class ExternalModelImporter(
                     it.copy(
                         name = displayName ?: it.name,
                         licence = licence ?: it.licence,
+                        // Caller-declared options win over the entry's own
+                        // (mirroring the name/licence merge semantics).
+                        options = it.options + options,
                         streaming = mergedStreaming,
                         // A merge that flips streaming on MUST also clear the
                         // modelType (mirroring the synthesis arm): a record
@@ -525,6 +530,7 @@ class ExternalModelImporter(
             family = family,
             languages = languages,
             streaming = streaming,
+            options = options,
             onProgress = onProgress,
         )
     }

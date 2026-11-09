@@ -97,6 +97,81 @@ class ExternalImportRepairerTest {
         )
     }
 
+    /** The typed capture of one metadata-carrier call. */
+    private data class MetadataCall(
+        val url: String,
+        val displayName: String?,
+        val licence: String?,
+        val options: Map<String, String>,
+        val family: ModelFamily,
+        val languages: List<String>,
+        val streaming: Boolean,
+    )
+
+    /** Captures which entry the production lambda routes through: a
+     *  streaming record MUST take the metadata carrier, because plain
+     *  importFromUrl drops the caller's parameters on catalog URLs and a
+     *  declaring manifest then rejects the repair (the maintainer's
+     *  Fritter Streaming failure, fixed 2026-11-09). */
+    private class CapturingOperations(
+        private val response: ExternalModelRecord,
+    ) : ExternalModelImportOperations {
+        var urlCalls = 0
+        var metadataCall: MetadataCall? = null
+
+        override suspend fun importFromDirectory(
+            src: java.io.File, modelType: String?, family: ModelFamily,
+            options: Map<String, String>, languages: List<String>, streaming: Boolean,
+            displayName: String?, linkedCatalog: LinkedCatalogRef?, licence: String?,
+        ): ExternalModelRecord = throw UnsupportedOperationException()
+
+        override suspend fun importFromTreeUri(
+            context: android.content.Context, treeUri: android.net.Uri, modelType: String?,
+            family: ModelFamily, options: Map<String, String>, languages: List<String>,
+            streaming: Boolean,
+        ): ExternalModelRecord = throw UnsupportedOperationException()
+
+        override suspend fun importFromUrl(
+            url: String, modelType: String?, family: ModelFamily,
+            options: Map<String, String>, languages: List<String>, streaming: Boolean,
+            onProgress: ExternalImportProgress,
+        ): ExternalModelRecord {
+            urlCalls += 1
+            throw UnsupportedOperationException("the repair must use the metadata carrier")
+        }
+
+        override suspend fun importFromUrlWithMetadata(
+            url: String, displayName: String?, licence: String?, modelType: String?,
+            options: Map<String, String>, family: ModelFamily, languages: List<String>,
+            streaming: Boolean, onProgress: ExternalImportProgress,
+        ): ExternalModelRecord {
+            metadataCall = MetadataCall(
+                url, displayName, licence, options, family, languages, streaming)
+            return response
+        }
+    }
+
+    @Test
+    fun `the production reimport routes through the metadata carrier with the record's own flags`() = runTest {
+        val streamingRecord = record(
+            "streaming-one", dirPresent = false, streaming = true,
+            options = mapOf("canary.language" to "nl"))
+        val ops = CapturingOperations(response = streamingRecord)
+
+        ExternalImportRepairer.reimportFor(ops)(streamingRecord)
+
+        assertEquals(0, ops.urlCalls)
+        val call = ops.metadataCall!!
+        assertEquals("https://example.com/streaming-one.json", call.url)
+        assertEquals("Model streaming-one", call.displayName)
+        assertTrue(call.streaming)
+        assertEquals(ModelFamily.CANARY, call.family)
+        assertEquals(listOf("nl"), call.languages)
+        // The record's user-authored options ride the carrier too (the
+        // code-review round's options-drop finding).
+        assertEquals(mapOf("canary.language" to "nl"), call.options)
+    }
+
     @Before
     fun setup() {
         prefs = FakePreferencesManager()
