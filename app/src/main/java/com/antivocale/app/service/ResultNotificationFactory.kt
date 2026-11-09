@@ -104,25 +104,17 @@ class ResultNotificationFactory(private val context: Context) {
     fun noModelNotification(): Notification {
         // TASK-328: the no-model notification, ONE builder (was a line-for-line
         // pair in InferenceService and TranscriptionNotificationListener).
-        val openIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            putExtra(MainActivity.EXTRA_NAVIGATE_TO_MODEL_TAB, true)
-        }
-        val openPendingIntent = PendingIntent.getActivity(
-            context, RC_ERROR_LAUNCH_MODEL_TAB, openIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
         return NotificationCompat.Builder(context, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
             .setContentTitle(context.getString(R.string.notification_no_model_title))
             .setContentText(context.getString(R.string.notification_no_model_message))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(openPendingIntent)
+            .setContentIntent(modelsTabPendingIntent())
             .setAutoCancel(true)
             .addAction(
                 android.R.drawable.ic_menu_set_as,
                 context.getString(R.string.notification_no_model_action),
-                openPendingIntent
+                modelsTabPendingIntent()
             )
             .build()
     }
@@ -175,13 +167,19 @@ class ResultNotificationFactory(private val context: Context) {
          *  catch-up digest's settle update); the first post sounds, the
          *  update must not. */
         onlyAlertOnce: Boolean = false,
+        /** TASK-963 follow-up: callers whose notice is ABOUT a screen land
+         *  there instead of a plain launch (the wiped-imports outcomes open
+         *  the Models tab, where the dangling/recovered card lives; a tap
+         *  that consumes the notice and lands nowhere loses the message;
+         *  the transitional in-progress arm passes it too). */
+        contentIntent: PendingIntent? = null,
     ): Notification =
         NotificationCompat.Builder(context, channel.id)
             .setContentTitle(title)
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
             .setPriority(priority)
-            .setContentIntent(plainLaunchPendingIntent())
+            .setContentIntent(contentIntent ?: plainLaunchPendingIntent())
             .setOnlyAlertOnce(onlyAlertOnce)
             .setAutoCancel(true)
             .build()
@@ -309,6 +307,18 @@ class ResultNotificationFactory(private val context: Context) {
         context, RC_ERROR_LAUNCH_DEFAULT,
         Intent(context, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    /** The Models-tab landing intent, ONE construction for every notice
+     *  whose copy names that screen (the no-model notification, the
+     *  TASK-963 wiped-imports arms): same intent shape stays one
+     *  PendingIntent record (the TASK-625 rule this class documents). */
+    fun modelsTabPendingIntent(): PendingIntent = PendingIntent.getActivity(
+        context, RC_LAUNCH_MODEL_TAB,
+        Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            .putExtra(MainActivity.EXTRA_NAVIGATE_TO_MODEL_TAB, true),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
@@ -711,7 +721,7 @@ class ResultNotificationFactory(private val context: Context) {
         // Mirror the services' launch-band constants so the same intent shape
         // stays a single PendingIntent whichever builder produced it.
         private const val RC_ERROR_LAUNCH_DEFAULT = 0
-        private const val RC_ERROR_LAUNCH_MODEL_TAB = 1
+        private const val RC_LAUNCH_MODEL_TAB = 1
         private const val RC_ERROR_LAUNCH_SETTINGS_ROW = 2
 
         // TASK-684: the suspension notification's action band. Fixed codes:

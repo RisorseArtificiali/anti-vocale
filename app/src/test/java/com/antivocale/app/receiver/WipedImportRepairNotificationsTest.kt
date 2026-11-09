@@ -68,4 +68,35 @@ class WipedImportRepairNotificationsTest {
         assertTrue(text, text.contains("+ 2 more"))
         assertTrue(text, text.contains("5"))
     }
+
+    @Test
+    fun `wiped body tap lands on the Models tab and does not cancel the actionable notice`() {
+        val notification = WipedImportRepairNotifications.wipedNotification(
+            context, listOf(record("a")))
+
+        // The actionable notice must survive a body tap: auto-cancel would
+        // swallow the Recover action with it (the maintainer's report).
+        assertEquals(0, notification.flags and android.app.Notification.FLAG_AUTO_CANCEL)
+        val intent = Shadows.shadowOf(notification.contentIntent).savedIntent
+        assertEquals(
+            ComponentName(context.packageName, com.antivocale.app.MainActivity::class.java.name),
+            intent.component)
+        assertEquals(true, intent.getBooleanExtra(com.antivocale.app.MainActivity.EXTRA_NAVIGATE_TO_MODEL_TAB, false))
+    }
+
+    @Test
+    fun `failed outcome tap lands on the Models tab and auto-cancels`() {
+        WipedImportRepairNotifications.postFailed(context)
+
+        val manager = context.getSystemService(android.app.NotificationManager::class.java)
+        val shadow = Shadows.shadowOf(manager)
+        val notification = shadow.allNotifications.single()
+        // The terminal outcome may auto-cancel: the tap follows its own
+        // instruction and lands where the information lives.
+        assertEquals(
+            android.app.Notification.FLAG_AUTO_CANCEL,
+            notification.flags and android.app.Notification.FLAG_AUTO_CANCEL)
+        val intent = Shadows.shadowOf(notification.contentIntent).savedIntent
+        assertEquals(true, intent.getBooleanExtra(com.antivocale.app.MainActivity.EXTRA_NAVIGATE_TO_MODEL_TAB, false))
+    }
 }

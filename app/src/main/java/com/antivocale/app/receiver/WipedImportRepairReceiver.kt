@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.antivocale.app.MainActivity
 import com.antivocale.app.R
 import com.antivocale.app.data.ExternalImportRepairer
 import com.antivocale.app.data.ExternalModelRecord
@@ -106,7 +105,6 @@ object WipedImportRepairNotifications {
      *  collapses to a count so a wide wipe stays one readable line. */
     private const val VISIBLE_NAME_LIMIT = 3
 
-    private const val RC_LAUNCH_APP = 0
     private const val RC_RECOVER = 1
 
     /** Dismisses the actionable wiped notice (the Recover tap's first
@@ -127,6 +125,7 @@ object WipedImportRepairNotifications {
                 priority = NotificationCompat.PRIORITY_DEFAULT,
                 channel = AppNotificationChannel.MODEL_REPAIR,
                 onlyAlertOnce = true,
+                contentIntent = modelsTabIntent(context),
             )
         }
     }
@@ -158,6 +157,7 @@ object WipedImportRepairNotifications {
             text = context.getString(R.string.wiped_imports_recovered_text, count),
             priority = NotificationCompat.PRIORITY_DEFAULT,
             channel = AppNotificationChannel.MODEL_REPAIR,
+            contentIntent = modelsTabIntent(context),
         )
 
     /** The failed arm stays public: the receiver posts it directly when the
@@ -169,6 +169,7 @@ object WipedImportRepairNotifications {
                 text = context.getString(R.string.wiped_imports_failed_text),
                 priority = NotificationCompat.PRIORITY_DEFAULT,
                 channel = AppNotificationChannel.MODEL_REPAIR,
+                contentIntent = modelsTabIntent(context),
             )
         }
     }
@@ -208,21 +209,21 @@ object WipedImportRepairNotifications {
 
     /** The wiped notice's base: unlike the outcome alerts this state is
      *  actionable and BigText, so it keeps its own builder (the factory's
-     *  alert family builds plain one-shots). */
+     *  alert family builds plain one-shots). NOT auto-cancel (TASK-963
+     *  follow-up): a body tap must not swallow the Recover action; the
+     *  outcome posts replace this notice on the same id, [cancelActionable]
+     *  dismisses it, and a swipe is the user's explicit choice. */
     private fun baseBuilder(context: Context): NotificationCompat.Builder =
         NotificationCompat.Builder(context, AppNotificationChannel.MODEL_REPAIR.id)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(launchPendingIntent(context))
-            .setAutoCancel(true)
+            .setContentIntent(modelsTabIntent(context))
+            .setAutoCancel(false)
 
-    private fun launchPendingIntent(context: Context): PendingIntent =
-        PendingIntent.getActivity(
-            context, RC_LAUNCH_APP,
-            Intent(context, MainActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+    /** The factory's Models-tab intent, hoisted so the receiver does not
+     *  repeat the construction expression at every arm. */
+    private fun modelsTabIntent(context: Context): PendingIntent =
+        ResultNotificationFactory(context).modelsTabPendingIntent()
 
     private fun post(context: Context, build: () -> Notification) = runCatching {
         val channel = AppNotificationChannel.MODEL_REPAIR
