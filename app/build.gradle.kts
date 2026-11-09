@@ -270,6 +270,29 @@ android {
         unitTests {
             isReturnDefaultValues = true
             isIncludeAndroidResources = true
+            all { test ->
+                // TASK-960 incident #4 (2026-11-09, run 42550173620): with
+                // no maxHeapSize set, AGP leaves the fork ceiling to the
+                // JVM default (physical RAM / 4: ~4g on the 16g CI
+                // runner), and the single test fork died on CI with an
+                // observed instrument-time OutOfMemoryError ("can't
+                // create byte array" at JPLISAgent.c:844) cascading
+                // through every remaining class for 45 minutes while the
+                // same suite ran green on roomier hosts. WORKING
+                // HYPOTHESIS (no heap dump survived): per-classloader
+                // Robolectric accumulation in one fork (the suite runs
+                // four SDK configs: ~242 default-36, 52x sdk=34, 15x
+                // sdk=31, 1x sdk=28). The containment, valid under any
+                // accumulation reading: periodic forking. forkEvery counts
+                // TEST CLASSES (the suite runs ~311 per flavor), so 100
+                // replaces the fork 3-4 times per run and releases the
+                // accumulated classspaces for a few JVM cold starts. Do
+                // NOT cap maxHeapSize here instead: any fixed cap below
+                // the runner's own RAM-derived ceiling just moves the OOM
+                // earlier. The deeper fix (unifying the SDK pins so fewer
+                // classspaces exist at all) is tracked in its own task.
+                test.forkEvery = 100
+            }
         }
     }
 }
