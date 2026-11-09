@@ -14,6 +14,7 @@ import com.antivocale.app.data.ShortcutIconStore
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.EXTERNAL_MODELS_DIR_NAME
+import com.antivocale.app.data.ExternalModelDeleter
 import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.catalog.BundledModelCatalog
@@ -181,6 +182,16 @@ object AppModule {
     @Singleton
     fun provideExternalModelStore(preferencesManager: PreferencesManager): ExternalModelStore =
         ExternalModelStore(preferencesManager)
+
+    // TASK-974: the shared external-model delete semantics (store row, files,
+    // selection resets). No @Inject constructor: ExternalModelStore itself is
+    // provided here (the defaulted-lambda Dagger gotcha documented on it).
+    @Provides
+    @Singleton
+    fun provideExternalModelDeleter(
+        externalModelStore: ExternalModelStore,
+        preferencesManager: PreferencesManager,
+    ): ExternalModelDeleter = ExternalModelDeleter(externalModelStore, preferencesManager)
 
     // TASK-670 (GH #83): the voiceprint store, app-private files only.
     @Provides

@@ -18,6 +18,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.di.ApplicationScope
 import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.ShareTargetManager
+import com.antivocale.app.data.ExternalModelDeleter
 import com.antivocale.app.data.ExternalModelImportOperations
 import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelRecord
@@ -91,6 +92,12 @@ class ModelViewModel @Inject constructor(
     @ApplicationContext private val ctx: Context,
     private val backendRegistry: BackendRegistry,
     private val externalModelStore: ExternalModelStore,
+    // TASK-974: the shared delete semantics this class used to inline. The
+    // default wires the SAME store+preferences pair so manual construction
+    // (the view-model tests) needs no explicit argument; Hilt ignores
+    // defaults and injects the AppModule singleton.
+    private val externalModelDeleter: ExternalModelDeleter =
+        ExternalModelDeleter(externalModelStore, preferencesManager),
     // TASK-801: the hot valid-records snapshot the registry already keeps
     // fresh; collecting it here adds no second decode of the records
     // preference and survives ViewModel re-creation for free.
@@ -1827,24 +1834,16 @@ class ModelViewModel @Inject constructor(
     }
 
     /**
-     * Deletes a record: store first (so family sync sees the new world), then the files.
-     * When the deleted model is the persisted active backend, reset to the default backend
-     * (otherwise the orchestrator's registry lookup would fall through to the LLM loader).
+     * Deletes a record through the shared [ExternalModelDeleter] semantics
+     * (store row, files, selection resets); this function keeps only the UI
+     * follow-ups: clear the shown model when the active backend was reset,
+     * resync the share aliases, confirm with a snackbar.
      */
     fun deleteExternalModel(record: ExternalModelRecord) {
         viewModelScope.launch(Dispatchers.IO) {
-            externalModelStore.delete(record.id)
-            File(record.dir).deleteRecursively()
-            if (preferencesManager.transcriptionBackend.first() == record.backendId) {
-                preferencesManager.saveTranscriptionBackend(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
+            val outcome = externalModelDeleter.delete(record)
+            if (outcome.resetActiveBackend) {
                 _uiState.update { it.copy(modelPath = "", modelName = "") }
-            }
-            // TASK-761: a refinement pin on the deleted model would keep
-            // degrading every two-pass run (the orchestrator honors the
-            // pin, the load fails, phase 1 silently skips) while the
-            // dropdown falls back to "Inherit active model".
-            if (preferencesManager.refinementModelBackendId.first() == record.backendId) {
-                preferencesManager.saveRefinementModelBackendId("")
             }
             shareTargetManager.syncAll()
             _snackbarEvent.tryEmit(SnackbarEvent.Message(

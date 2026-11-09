@@ -1,5 +1,6 @@
 package com.antivocale.app.testing
 
+import com.antivocale.app.data.ExternalModelDeleter
 import com.antivocale.app.data.ExternalModelRecord
 import java.io.File
 import com.antivocale.app.data.ExternalModelImportOperations
@@ -75,6 +76,9 @@ internal class TestSpiOps(
      *  Same null-under-fakes story. */
     private val voiceNoteAutoTranscriber: com.antivocale.app.data.VoiceNoteAutoTranscriber? = null,
 ) {
+    /** TASK-974: the record_delete op runs the shared delete semantics over
+     *  the same store+preferences pair every other op uses. */
+    private val externalModelDeleter = ExternalModelDeleter(externalModels, preferences)
 
     suspend fun handle(
         op: String?,
@@ -92,6 +96,7 @@ internal class TestSpiOps(
             OP_GET -> get()
             OP_SET -> set(key, value, entry)
             OP_RECORDS -> records()
+            OP_RECORD_DELETE -> recordDelete(value)
             OP_IDENTITY_CACHE -> identityCache()
             OP_IMPORT -> importModel(url, family, modelType, entry, licence, streaming)
             OP_NOTIFY_MEMORY_ERROR -> notifyMemoryError()
@@ -573,6 +578,38 @@ internal class TestSpiOps(
             .put("op", OP_RECORDS)
             .put("count", list.size)
             .put("records", array)
+            .toString()
+    }
+
+    /**
+     * TASK-974: delete one imported external record, the scripted twin of the
+     * Models tab's delete (trials could import via op=import but never clean
+     * up after themselves, so devices accumulated dangling debris with dead
+     * pinned sources). [value] is the record id from op=records; the
+     * external: backend prefix is tolerated and stripped. ONE call does the
+     * whole cleanup through the shared [ExternalModelDeleter]: record, files,
+     * and the selection resets when the deleted model was the active backend
+     * or the refinement pin, so a scripted teardown never dangles a
+     * selection. One deliberate divergence from the UI delete: no immediate
+     * share-alias resync (the op stays free of Android framework
+     * dependencies); the aliases converge at the next startup sync. An
+     * unknown id is idempotent: deleted=false, no side effects.
+     */
+    private suspend fun recordDelete(value: String?): String {
+        if (value.isNullOrBlank()) {
+            throw IllegalArgumentException("missing 'value' extra (a record id, see op=records)")
+        }
+        val id = value.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX)
+        val record = externalModels.records().firstOrNull { it.id == id }
+        val outcome = record?.let { externalModelDeleter.delete(it) }
+            ?: ExternalModelDeleter.Outcome(
+                existed = false, resetActiveBackend = false, clearedRefinementPin = false)
+        return JSONObject()
+            .put("op", OP_RECORD_DELETE)
+            .put("id", id)
+            .put("deleted", outcome.existed)
+            .put("resetActiveBackend", outcome.resetActiveBackend)
+            .put("clearedRefinementPin", outcome.clearedRefinementPin)
             .toString()
     }
 
@@ -1259,6 +1296,8 @@ internal class TestSpiOps(
         const val OP_GET = "get"
         const val OP_SET = "set"
         const val OP_RECORDS = "records"
+        /** TASK-974: value=<record id>, the Models-tab delete without UI (see recordDelete). */
+        const val OP_RECORD_DELETE = "record_delete"
         internal const val OP_IDENTITY_CACHE = "identity_cache"
         const val OP_IMPORT = "import"
         const val OP_NOTIFY_MEMORY_ERROR = "notify_memory_error"
@@ -1325,7 +1364,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024

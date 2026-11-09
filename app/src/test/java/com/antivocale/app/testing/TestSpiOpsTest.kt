@@ -107,10 +107,17 @@ class TestSpiOpsTest {
         ops = TestSpiOps(fake, ExternalModelStore(fake), fakeImporter)
     }
 
-    private fun record(id: String = "a1b2c3d4e5f6") = ExternalModelRecord(
+    private fun record(
+        id: String = "a1b2c3d4e5f6",
+        // The record_delete tests pass a temp dir: the deleter really calls
+        // deleteRecursively() on it, and the default Android path must never
+        // be touched on the host (the ModelViewModelExternalImportTest
+        // delete-row precedent).
+        dir: String = "/data/user/0/com.antivocale.app/files/models/external/gigaam-v3-$id",
+    ) = ExternalModelRecord(
         id = id,
         displayName = "GigaAM v3",
-        dir = "/data/user/0/com.antivocale.app/files/models/external/gigaam-v3-$id",
+        dir = dir,
         family = ModelFamily.TRANSDUCER,
         modelType = "nemo_transducer",
         languages = listOf("ru"),
@@ -480,6 +487,55 @@ class TestSpiOpsTest {
     }
 
     @Test
+    fun `record delete removes the record and tolerates the backend prefix`() = runTest {
+        val dir = java.nio.file.Files.createTempDirectory("spi-record-delete").toFile()
+        dir.resolve("encoder.int8.onnx").writeText("payload")
+        val rec = record(dir = dir.absolutePath)
+        fake._externalModelsJson.value = ExternalModelListJson.encode(listOf(rec))
+
+        val json = JSONObject(ops.handle(TestSpiOps.OP_RECORD_DELETE, value = rec.backendId))
+        assertTrue(json.getBoolean("deleted"))
+        assertEquals(rec.id, json.getString("id"))
+        // Nothing pointed at the record: the one-call cleanup reports no resets.
+        assertFalse(json.getBoolean("resetActiveBackend"))
+        assertFalse(json.getBoolean("clearedRefinementPin"))
+        // The files went with the record.
+        assertFalse(dir.exists())
+
+        val after = JSONObject(ops.handle(TestSpiOps.OP_RECORDS))
+        assertEquals(0, after.getInt("count"))
+        // An unknown id stays idempotent: no error, deleted=false, no side effects.
+        val unknown = JSONObject(ops.handle(TestSpiOps.OP_RECORD_DELETE, value = "no-such-id"))
+        assertFalse(unknown.getBoolean("deleted"))
+    }
+
+    @Test
+    fun `record delete resets the active backend and refinement pin that pointed at it`() = runTest {
+        val dir = java.nio.file.Files.createTempDirectory("spi-record-delete").toFile()
+        val rec = record(dir = dir.absolutePath)
+        fake._externalModelsJson.value = ExternalModelListJson.encode(listOf(rec))
+        fake._transcriptionBackend.value = rec.backendId
+        fake._refinementModelBackendId.value = rec.backendId
+
+        val json = JSONObject(ops.handle(TestSpiOps.OP_RECORD_DELETE, value = rec.id))
+        assertTrue(json.getBoolean("deleted"))
+        assertTrue(json.getBoolean("resetActiveBackend"))
+        assertTrue(json.getBoolean("clearedRefinementPin"))
+        // The UI delete's semantics: the selection lands on safe defaults,
+        // never dangling at the deleted record.
+        assertEquals(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND, fake._transcriptionBackend.value)
+        assertEquals("", fake._refinementModelBackendId.value)
+        assertFalse(dir.exists())
+        assertEquals(0, JSONObject(ops.handle(TestSpiOps.OP_RECORDS)).getInt("count"))
+    }
+
+    @Test
+    fun `record delete without a value answers the error contract`() = runTest {
+        val json = JSONObject(ops.handle(TestSpiOps.OP_RECORD_DELETE))
+        assertTrue(json.getString("error").contains("record id"))
+    }
+
+    @Test
     fun `unload without a backend manager answers the SPI error contract, not a throw`() = runTest {
         // The unit fakes construct TestSpiOps without the manager (debug
         // receiver passes the live singleton). handle()'s runCatching must
@@ -497,7 +553,7 @@ class TestSpiOpsTest {
         // help is a known op: it must NOT carry the unknown-op error (device
         // verification 2026-09-03 caught the dispatch bug this pins).
         assertFalse(json.has("error"))
-        assertEquals(listOf("get", "set", "records", "identity_cache", "import", "notify_memory_error", "clipboard", "notifications", "unload", "voice_note_state", "model_download", "clear_orphaned", "bundle_export", "bundle_import", "model_present", "search", "log", "log_read", "log_delete", "voice_note_watermark_reset", "voice_note_simulate", "notify_text", "help"), json.getJSONArray("ops").optStringList())
+        assertEquals(listOf("get", "set", "records", "record_delete", "identity_cache", "import", "notify_memory_error", "clipboard", "notifications", "unload", "voice_note_state", "model_download", "clear_orphaned", "bundle_export", "bundle_import", "model_present", "search", "log", "log_read", "log_delete", "voice_note_watermark_reset", "voice_note_simulate", "notify_text", "help"), json.getJSONArray("ops").optStringList())
         assertEquals(ops.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))
         assertTrue(json.getString("transcription").contains("com.antivocale.app.PROCESS_REQUEST"))
