@@ -31,6 +31,10 @@ jobs:
 
       - name: Install dependencies
         # Shared with android-release.yml's scripts-tests step, pinned there.
+        # Step-level timeout for the same runner-wedge class as that file's
+        # TASK-960 incident #4 (a stuck pip install pins a runner for the
+        # 360-min default with no diagnostic).
+        timeout-minutes: 15
         run: pip install -r scripts/requirements-test.txt
 
       - name: Dry-run validation (nothing is committed)

@@ -109,6 +109,14 @@ jobs:
       # client list does not contain.) The suite is flavor-shared: 611 tests
       # pass identically under both flavors.
       - name: Run unit tests (fdroid debug)
+        # TASK-960 incident #4 (2026-11-09): this step wedged twice on CI
+        # (two different runners, 60+ min, cancel never landed; green
+        # locally in every shape). A step-level timeout turns that wedge
+        # class into a normal step failure, so the failure-conditional
+        # upload below runs and the log names the stall. 45 min is ~10x
+        # the slowest legitimate green step (green workflows finish in
+        # 7-16 min END TO END); do not lower it for flake comfort.
+        timeout-minutes: 45
         run: ./gradlew :app:testFdroidDebugUnitTest --console=plain
 
       # TASK-920: scripts/tests rides with the JVM suite in this job because
@@ -121,11 +129,16 @@ jobs:
           python-version: '3.12'
 
       - name: Scripts unit tests
+        # Same wedge class as the unit-test timeout above (a stuck pip
+        # install is the classic runner hang); step-level so a failure()
+        # diagnostic step can still run.
+        timeout-minutes: 15
         run: |
           python3 -m pip install --quiet -r scripts/requirements-test.txt
           python3 -m pytest scripts/tests -q
 
       - name: Android Lint (errors fatal; warnings baseline-pinned, TASK-251)
+        timeout-minutes: 30
         run: ./gradlew :app:lintFdroidDebug --console=plain
 
       - name: Upload test results on failure
