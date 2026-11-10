@@ -19,6 +19,8 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -169,6 +171,33 @@ class ModelViewModelExternalImportTest : ViewModelTeardownTest() {
                 ),
         ))
 
+    }
+
+    @Test
+    fun `wiped ids ride the same emission as the records`() = runTest {
+        // TASK-965: the combined state derives both from ONE records
+        // emission (no two-chain skew) and routes through isLoadable, the
+        // single loadability predicate (dir gone, NOT quarantined).
+        val root = java.nio.file.Files.createTempDirectory("wiped-ids")
+        fun rec(id: String, present: Boolean, quarantined: Boolean = false): ExternalModelRecord {
+            val dir = root.resolve(id).toFile()
+            if (present) dir.mkdirs()
+            return sampleRecord().copy(
+                id = id, displayName = "Model $id", dir = dir.absolutePath,
+                quarantined = quarantined)
+        }
+        val store = com.antivocale.app.data.ExternalModelStore(fakePrefs)
+        store.add(rec("present-one", present = true))
+        store.add(rec("gone-one", present = false))
+        store.add(rec("quar-one", present = false, quarantined = true))
+        // WhileSubscribed arms on the first collector; the map runs on
+        // Dispatchers.Default (flowOn), so await the real emission instead
+        // of runCurrent-ing the test scheduler.
+        val state = viewModel.externalModelState.first { it.records.isNotEmpty() }
+        val wiped = state.wipedIds
+        assertTrue(wiped.toString(), "gone-one" in wiped)
+        assertTrue(wiped.toString(), "present-one" !in wiped)
+        assertTrue(wiped.toString(), "quar-one" !in wiped)
     }
 
     @Test

@@ -359,6 +359,7 @@
     <string name="model_selected_message">%1$s valittu</string>
     <string name="model_use_missing_files">Mallin %1$s tiedostot puuttuvat tai ovat epätäydelliset. Lataa variantti uudelleen Mallit-välilehdeltä.</string>
     <string name="model_demoted_notice">Ei valittu automaattisesti: tämä malli ei tuottanut tekstiä, vaikka äänessä oli puhetta. Valitse se uudelleen antaaksesi sille uuden mahdollisuuden.</string>
+    <string name="external_model_wiped_notice">Järjestelmän tallennustilan siivous poisti sen. Tuo se uudelleen yllä olevilla tuontitoiminnoilla.</string>
     <string name="delete">Poista</string>
     <string name="variant_more_actions">Lisää toimintoja</string>
     <string name="download">Lataa</string>

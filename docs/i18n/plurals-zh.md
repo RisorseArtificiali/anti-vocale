@@ -1,6 +1,6 @@
 # Plural rules for values-zh
 
-Extracted from values/strings.xml (1133 strings, 14 plural keys).
+Extracted from values/strings.xml (1134 strings, 14 plural keys).
 
 CLDR cardinal categories for zh: **other**
 

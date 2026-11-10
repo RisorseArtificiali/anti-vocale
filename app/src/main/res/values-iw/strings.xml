@@ -406,6 +406,7 @@
     <string name="model_selected_message">%1$s נבחר</string>
     <string name="model_use_missing_files">קבצי המודל של %1$s חסרים או חלקיים. הורד מחדש את הגרסה מהלשונית מודלים.</string>
     <string name="model_demoted_notice">לא נבחר אוטומטית: המודל הזה לא הניב טקסט למרות שהיה דיבור. בחרו בו שוב כדי לתת לו הזדמנות נוספת.</string>
+    <string name="external_model_wiped_notice">הוסר על ידי ניקוי האחסון של המערכת. ייבאו אותו מחדש בפעולות הייבוא למעלה.</string>
     <string name="delete">מחיקה</string>
     <string name="variant_more_actions">פעולות נוספות</string>
     <string name="download">הורדה</string>

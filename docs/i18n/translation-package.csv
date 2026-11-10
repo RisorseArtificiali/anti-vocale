@@ -340,6 +340,7 @@ active_badge,Active,plain,
 model_selected_message,%1$s selected,formatted,keep verbatim: ['%1$s']
 model_use_missing_files,The model files for %1$s are missing or incomplete. Re-download the variant from the Model tab.,formatted,keep verbatim: ['%1$s']
 model_demoted_notice,Not chosen automatically: this model produced no text while speech was present. Pick it again to give it another chance.,plain,
+external_model_wiped_notice,Removed by the system storage cleanup. Re-import it from the import actions above.,plain,
 delete,Delete,plain,
 variant_more_actions,More actions,plain,
 download,Download,plain,

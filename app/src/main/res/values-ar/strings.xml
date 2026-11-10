@@ -343,6 +343,7 @@
     <string name="model_selected_message">تم اختيار %1$s</string>
     <string name="model_use_missing_files">ملفات النموذج %1$s مفقودة أو غير مكتملة. أعد تنزيل هذا الإصدار من علامة تبويب النماذج.</string>
     <string name="model_demoted_notice">لم يُختر تلقائيًا: لم يُنتج هذا النموذج أي نص رغم وجود كلام. اختره مرة أخرى لمنحه فرصة أخرى.</string>
+    <string name="external_model_wiped_notice">أزالته عملية تنظيف مساحة التخزين في النظام. أعد استيراده بإجراءات الاستيراد أعلاه.</string>
     <string name="delete">حذف</string>
     <string name="variant_more_actions">إجراءات أخرى</string>
     <string name="download">تنزيل</string>

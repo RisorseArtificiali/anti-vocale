@@ -410,6 +410,8 @@
     <string name="model_use_missing_files">The model files for %1$s are missing or incomplete. Re-download the variant from the Model tab.</string>
     <!-- TASK-675: honest one-line reason on a demoted model card. -->
     <string name="model_demoted_notice">Not chosen automatically: this model produced no text while speech was present. Pick it again to give it another chance.</string>
+    <!-- TASK-965: the storage-cleaner cause on a wiped external card. -->
+    <string name="external_model_wiped_notice">Removed by the system storage cleanup. Re-import it from the import actions above.</string>
     <string name="delete">Delete</string>
     <string name="variant_more_actions">More actions</string>
     <string name="download">Download</string>

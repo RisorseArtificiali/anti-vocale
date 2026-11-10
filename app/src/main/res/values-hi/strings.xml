@@ -378,6 +378,7 @@
     <string name="model_selected_message">%1$s चुना गया</string>
     <string name="model_use_missing_files">%1$s की मॉडल फ़ाइलें ग़ायब या अधूरी हैं। मॉडल टैब से उस वैरिएंट को फिर से डाउनलोड करें।</string>
     <string name="model_demoted_notice">अब यह मॉडल अपने आप नहीं चुना जाता: भाषण मौजूद होने पर भी इसने कोई टेक्स्ट नहीं बनाया। इसे फिर से चुनकर इसे एक और मौका दें।</string>
+    <string name="external_model_wiped_notice">सिस्टम स्टोरेज सफ़ाई द्वारा हटाया गया। इसे ऊपर दी गई आयात क्रियाओं से दुबारा आयात करें।</string>
     <string name="delete">मिटाएं</string>
     <string name="variant_more_actions">और कार्य</string>
     <string name="download">डाउनलोड करें</string>

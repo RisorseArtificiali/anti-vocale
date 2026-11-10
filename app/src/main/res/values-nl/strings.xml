@@ -410,6 +410,7 @@
     <string name="model_use_missing_files">De modelbestanden van %1$s ontbreken of zijn onvolledig. Download de variant opnieuw via het tabblad Modellen.</string>
     <!-- TASK-675: honest one-line reason on a demoted model card. -->
     <string name="model_demoted_notice">Niet automatisch gekozen: dit model gaf geen tekst terwijl er spraak was. Kies het opnieuw om het nog een kans te geven.</string>
+    <string name="external_model_wiped_notice">Verwijderd door de opslagopschoning van het systeem. Importeer het opnieuw met de importacties hierboven.</string>
     <string name="delete">Verwijderen</string>
     <string name="variant_more_actions">Meer acties</string>
     <string name="download">Downloaden</string>

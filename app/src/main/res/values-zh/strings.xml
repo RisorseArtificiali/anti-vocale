@@ -343,6 +343,7 @@
     <string name="model_selected_message">已选择 %1$s</string>
     <string name="model_use_missing_files">%1$s 的模型文件缺失或不完整。请在模型页重新下载该版本。</string>
     <string name="model_demoted_notice">未自动选用：检测到语音时该模型没有生成任何文本。重新选择它，再给它一次机会。</string>
+    <string name="external_model_wiped_notice">已被系统存储清理移除。请使用上方的导入操作重新导入。</string>
     <string name="delete">删除</string>
     <string name="variant_more_actions">更多操作</string>
     <string name="download">下载</string>

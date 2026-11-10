@@ -70,6 +70,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -79,6 +80,13 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
+
+/** TASK-965: the external cards' combined state (see
+ * [ModelViewModel.externalModelState]); one emission carries both. */
+data class ExternalModelsState(
+    val records: List<ExternalModelRecord> = emptyList(),
+    val wipedIds: Set<String> = emptySet(),
+)
 
 @HiltViewModel
 class ModelViewModel @Inject constructor(
@@ -1484,9 +1492,23 @@ class ModelViewModel @Inject constructor(
      * so this reads recordsFlow, not the loadability-filtered
      * validRecordsFlow.
      */
-    val externalModels: StateFlow<List<ExternalModelRecord>> =
+    /** TASK-965: the imported cards' ONE state: the record list and the
+     *  wiped-id set derive from a SINGLE records emission, so a repaired
+     *  record cannot flash the wiped line for a frame (two independent
+     *  stateIn chains on the same DataStore key update out of order; the
+     *  code-review round's skew finding). The dir stats run off-main
+     *  (flowOn Default, the records provider's own discipline). */
+    val externalModelState: StateFlow<ExternalModelsState> =
         externalModelStore.recordsFlow
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+            .map { records ->
+                ExternalModelsState(
+                    records = records,
+                    wipedIds = records
+                        .filter { !it.quarantined && !externalModelStore.isLoadable(it) }
+                        .mapTo(mutableSetOf()) { it.id })
+            }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExternalModelsState())
 
     /** Persisted active backend id, for card active-state keyed on identity (not display name). */
     val activeBackendId: StateFlow<String> =

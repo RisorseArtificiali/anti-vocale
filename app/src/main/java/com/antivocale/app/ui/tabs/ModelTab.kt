@@ -1917,7 +1917,8 @@ private fun ExternalModelsSection(
      *  has an external-record branch building ExternalConfig). */
     onBenchmark: ((ExternalModelRecord) -> Unit)? = null,
 ) {
-    val records by viewModel.externalModels.collectAsState()
+    val externalModelState by viewModel.externalModelState.collectAsState()
+    val records = externalModelState.records
     // TASK-675: the honest one-line reason travels to external cards too.
     val demotedBackendIds by viewModel.demotedBackendIds.collectAsState()
     val importState by viewModel.externalImportState.collectAsState()
@@ -2143,6 +2144,7 @@ private fun ExternalModelsSection(
                 record = record,
                 isActive = activeBackendId == record.backendId,
                 demoted = record.backendId in demotedBackendIds,
+                wiped = record.id in externalModelState.wipedIds,
                 onUse = { viewModel.useExternalModel(record) },
                 onDelete = { onDeleteRequest(record) },
                 // A quarantined record can never resolve a benchmark: hide
@@ -2416,6 +2418,9 @@ private fun ExternalModelCard(
     isActive: Boolean,
     /** TASK-675: renders the honest silent-decode reason; Use stays available. */
     demoted: Boolean = false,
+    /** TASK-965: renders the storage-cleaner cause; the recovery
+     *  notification (TASK-963) and the import actions restore it. */
+    wiped: Boolean = false,
     onUse: () -> Unit,
     onDelete: () -> Unit,
     onBenchmark: (() -> Unit)? = null,
@@ -2491,6 +2496,16 @@ private fun ExternalModelCard(
             if (demoted) {
                 Text(
                     text = stringResource(R.string.model_demoted_notice),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            // TASK-965: the storage-cleaner cause on a wiped card (the
+            // bare "the model is gone" was the reporter's complaint).
+            if (wiped) {
+                Text(
+                    text = stringResource(R.string.external_model_wiped_notice),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
