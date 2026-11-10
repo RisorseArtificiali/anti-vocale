@@ -34,7 +34,7 @@ import org.robolectric.annotation.Config
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class LogsViewModelRetranscribeNamesTest : ViewModelTeardownTest() {
 
     private lateinit var manager: TranscriptionBackendManager

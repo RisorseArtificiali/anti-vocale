@@ -46,7 +46,6 @@ import kotlinx.coroutines.SupervisorJob
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@org.robolectric.annotation.Config(sdk = [34])
 class ModelViewModelExternalImportTest : ViewModelTeardownTest() {
 
     private val testDispatcher = StandardTestDispatcher()

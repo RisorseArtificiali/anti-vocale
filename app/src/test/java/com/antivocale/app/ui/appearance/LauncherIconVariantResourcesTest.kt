@@ -17,7 +17,6 @@ import org.robolectric.RobolectricTestRunner
  * alias-to-XML pin (enum id -> resource name <-> alias -> XML layer name).
  */
 @RunWith(RobolectricTestRunner::class)
-@org.robolectric.annotation.Config(sdk = [34])
 class LauncherIconVariantResourcesTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()

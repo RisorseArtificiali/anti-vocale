@@ -30,7 +30,7 @@ import org.robolectric.annotation.Config
  * silently no-ops again and this fails here instead.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class PreferencesManagerCatalogUrlTest {
 
 

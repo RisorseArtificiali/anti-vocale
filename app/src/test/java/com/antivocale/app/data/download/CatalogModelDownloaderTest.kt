@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config
  * lives in the downloader code anymore.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class CatalogModelDownloaderTest {
 
     private fun syntheticGatedEntry() = com.antivocale.app.data.catalog.CatalogEntry(

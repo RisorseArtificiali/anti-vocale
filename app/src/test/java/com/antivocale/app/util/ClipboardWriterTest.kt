@@ -18,7 +18,6 @@ import org.robolectric.annotation.Config
  * FeedbackHelperTest, NotificationActionReceiverTest).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class ClipboardWriterTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()

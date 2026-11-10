@@ -18,7 +18,6 @@ import org.robolectric.annotation.Config
  * covers (share audio, the subtitles variant, subtitle import).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class AudioRequestIntentTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()

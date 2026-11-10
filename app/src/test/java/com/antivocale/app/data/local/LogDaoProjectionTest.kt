@@ -25,7 +25,6 @@ import org.robolectric.annotation.Config
  * device trial.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34])
 class LogDaoProjectionTest {
 
     private lateinit var db: AppDatabase

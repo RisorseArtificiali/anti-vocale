@@ -28,7 +28,7 @@ import java.util.Locale
  * 12 locales).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = android.app.Application::class)
+@Config(application = android.app.Application::class)
 class FormattedResourcesPipelineTest {
 
     private fun repoFile(relative: String): File = RepoFiles.resolve(relative)

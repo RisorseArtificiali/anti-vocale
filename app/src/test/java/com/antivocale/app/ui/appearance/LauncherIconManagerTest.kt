@@ -31,7 +31,6 @@ import com.antivocale.app.util.ComponentAliasSync
 private class SimulatedProcessDeath : Error()
 
 @RunWith(RobolectricTestRunner::class)
-@org.robolectric.annotation.Config(sdk = [34])
 class LauncherIconManagerTest {
 
     private lateinit var context: Context

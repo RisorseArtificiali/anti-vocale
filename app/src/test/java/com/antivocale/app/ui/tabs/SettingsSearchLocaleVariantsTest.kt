@@ -25,7 +25,6 @@ import org.robolectric.annotation.Config
  * read's pre-33 fallback source).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class SettingsSearchLocaleVariantsTest {
 
     private val base: Context = ApplicationProvider.getApplicationContext()

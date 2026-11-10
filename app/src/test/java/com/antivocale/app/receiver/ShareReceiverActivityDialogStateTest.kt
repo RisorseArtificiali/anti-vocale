@@ -23,7 +23,6 @@ import org.robolectric.annotation.Config
  * composition: create() only, the surface never attaches.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class ShareReceiverActivityDialogStateTest {
 
     /** The shortcut flow's stay-alive entry: no stream + marker opens the

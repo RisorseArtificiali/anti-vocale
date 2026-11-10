@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * REAL localized resource: the relaxed mock Context answers "".
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = android.app.Application::class)
+@Config(application = android.app.Application::class)
 class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBase() {
 
     @get:Rule

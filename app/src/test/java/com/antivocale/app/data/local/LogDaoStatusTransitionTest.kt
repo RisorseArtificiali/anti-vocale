@@ -18,7 +18,6 @@ import org.robolectric.annotation.Config
  * the transitions the orchestrator/service rely on.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34])
 class LogDaoStatusTransitionTest {
 
     private lateinit var db: AppDatabase

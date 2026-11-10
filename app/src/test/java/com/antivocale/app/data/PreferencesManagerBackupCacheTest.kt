@@ -31,7 +31,7 @@ import org.robolectric.annotation.Config
  * tests (the REAL Impl over a temp store).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class PreferencesManagerBackupCacheTest {
 
     @get:Rule

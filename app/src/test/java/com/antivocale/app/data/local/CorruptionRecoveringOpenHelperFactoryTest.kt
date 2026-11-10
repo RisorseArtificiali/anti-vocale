@@ -35,7 +35,6 @@ import org.robolectric.annotation.Config
  * path is a pure passthrough.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class CorruptionRecoveringOpenHelperFactoryTest {
 
     private val dbName = "anti_vocale_database"

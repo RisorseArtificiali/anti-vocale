@@ -38,7 +38,6 @@ import org.robolectric.annotation.Config
  * and the first file's dialog (and its enqueue) was lost silently.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class LogsViewModelBatchIntakeTest : ViewModelTeardownTest() {
 
     private lateinit var viewModel: LogsViewModel

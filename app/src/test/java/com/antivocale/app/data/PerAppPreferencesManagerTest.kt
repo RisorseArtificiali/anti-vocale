@@ -21,7 +21,7 @@ import kotlinx.coroutines.runBlocking
  * Uses Robolectric to provide Android Context for DataStore file access.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class PerAppPreferencesManagerTest {
 
     private lateinit var context: Context

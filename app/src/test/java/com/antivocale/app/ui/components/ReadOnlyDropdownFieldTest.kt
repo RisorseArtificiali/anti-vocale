@@ -23,7 +23,6 @@ import org.robolectric.annotation.Config
  * pixel height is identical for a short and a wrapped-long value.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class ReadOnlyDropdownFieldTest {
 
     @get:Rule

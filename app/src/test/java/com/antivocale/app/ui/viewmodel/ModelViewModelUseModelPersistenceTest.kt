@@ -57,7 +57,7 @@ import kotlinx.coroutines.SupervisorJob
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class ModelViewModelUseModelPersistenceTest : ViewModelTeardownTest() {
 
     private val testDispatcher = StandardTestDispatcher()

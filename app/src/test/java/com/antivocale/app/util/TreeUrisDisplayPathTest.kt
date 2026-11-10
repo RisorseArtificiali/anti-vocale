@@ -15,7 +15,6 @@ import org.robolectric.RuntimeEnvironment
  * the display name for opaque (cloud) ids.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class TreeUrisDisplayPathTest {
 
     private val context: Context get() = RuntimeEnvironment.getApplication()

@@ -21,7 +21,6 @@ import org.robolectric.annotation.Config
  * id namespace) or existing setups and completed-row dedup would break.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class VoiceNoteSourceTest {
 
     @Test

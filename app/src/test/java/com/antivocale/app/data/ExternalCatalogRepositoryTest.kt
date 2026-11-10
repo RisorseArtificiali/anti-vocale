@@ -18,7 +18,6 @@ import java.nio.file.Files
  * override validation. Robolectric only for the asset fallback path.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class ExternalCatalogRepositoryTest {
 
     private val defaultUrl = PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL

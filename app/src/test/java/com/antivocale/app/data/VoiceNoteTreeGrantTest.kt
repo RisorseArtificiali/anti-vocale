@@ -29,7 +29,6 @@ import org.robolectric.annotation.Config
  * real DocumentsUI pass.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class VoiceNoteTreeGrantTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()

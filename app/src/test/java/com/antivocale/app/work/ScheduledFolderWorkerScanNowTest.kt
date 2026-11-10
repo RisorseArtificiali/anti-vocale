@@ -16,7 +16,6 @@ import org.robolectric.annotation.Config
  * pinned (PR #28 precedent).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class ScheduledFolderWorkerScanNowTest {
 
     @Test

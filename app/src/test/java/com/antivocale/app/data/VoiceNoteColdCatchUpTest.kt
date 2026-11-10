@@ -32,7 +32,6 @@ import org.junit.rules.TemporaryFolder
  * detector's own save path is what updates it.
  */
 @org.junit.runner.RunWith(org.robolectric.RobolectricTestRunner::class)
-@org.robolectric.annotation.Config(sdk = [34])
 class VoiceNoteColdCatchUpTest {
 
     /** TASK-906: the detector's SAF-lane context (Robolectric application). */

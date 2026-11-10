@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config
  * CopyResult shape and its message mapping.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class SharedAudioHandlerAcceptanceTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()

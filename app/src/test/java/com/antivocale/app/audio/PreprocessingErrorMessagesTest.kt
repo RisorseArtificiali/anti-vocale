@@ -16,7 +16,7 @@ import org.robolectric.annotation.Config
  * (when the path carried a clean extension) and the track MIME (the reason).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class PreprocessingErrorMessagesTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()

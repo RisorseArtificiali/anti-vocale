@@ -20,7 +20,6 @@ import org.robolectric.annotation.Config
  * failed decode leaves no partial file behind.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class ShortcutIconStoreTest {
 
     private lateinit var store: ShortcutIconStore

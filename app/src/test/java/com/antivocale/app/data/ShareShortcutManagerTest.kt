@@ -27,7 +27,6 @@ import org.robolectric.Shadows.shadowOf
  * each ShortcutInfo's rank, never through list order.
  */
 @RunWith(RobolectricTestRunner::class)
-@org.robolectric.annotation.Config(sdk = [34])
 class ShareShortcutManagerTest {
 
     private lateinit var context: Context

@@ -17,7 +17,7 @@ import android.content.Context
  * combination is already covered by the whole existing Robolectric suite.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = android.app.Application::class)
+@Config(application = android.app.Application::class)
 class BytemanRobolectricColoadTest {
 
     @Before

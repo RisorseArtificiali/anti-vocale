@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config
  * manager code anymore.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class ModelManagerCatalogTest {
 
     private lateinit var context: Context

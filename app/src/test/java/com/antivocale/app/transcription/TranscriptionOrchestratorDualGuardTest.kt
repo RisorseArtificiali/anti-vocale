@@ -32,7 +32,6 @@ import java.io.File
  * F4 arm runs the full orchestrator with a phase-2 load failure.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34])
 class TranscriptionOrchestratorDualGuardTest : TranscriptionOrchestratorTestBase() {
 
     private val fastText =

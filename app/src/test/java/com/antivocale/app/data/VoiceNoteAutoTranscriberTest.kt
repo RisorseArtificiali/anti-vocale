@@ -28,7 +28,6 @@ import org.robolectric.annotation.Config
  * VoiceNoteSenderResolutionTest, next to its siblings.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class VoiceNoteAutoTranscriberTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()

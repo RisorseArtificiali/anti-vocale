@@ -24,7 +24,6 @@ import org.robolectric.annotation.GraphicsMode
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@org.robolectric.annotation.Config(sdk = [34])
 class ShareShortcutIconsTest {
 
     private val background = Color.rgb(0x12, 0x8C, 0x7E)

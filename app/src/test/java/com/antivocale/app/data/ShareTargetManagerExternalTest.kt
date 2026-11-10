@@ -30,7 +30,6 @@ import java.nio.file.Files
  * deleting the last record disables it; the blank-alias skip writes nothing.
  */
 @RunWith(RobolectricTestRunner::class)
-@org.robolectric.annotation.Config(sdk = [34])
 class ShareTargetManagerExternalTest {
 
     private lateinit var context: Context

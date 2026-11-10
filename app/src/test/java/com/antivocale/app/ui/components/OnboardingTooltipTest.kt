@@ -30,7 +30,7 @@ import org.robolectric.annotation.Config
  * and Compose UI testing for layout and interaction verification.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class OnboardingTooltipTest {
 
     /**

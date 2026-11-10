@@ -25,7 +25,7 @@ import org.robolectric.annotation.Config
  * the test pins the real loadability definition rather than a hand-made flow.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = android.app.Application::class)
+@Config(application = android.app.Application::class)
 class BackendRegistryQuarantineTest {
 
     @Before

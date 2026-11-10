@@ -25,7 +25,7 @@ import org.robolectric.annotation.Config
  * selections and downloaded-model state, so every entry id is pinned.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class PreferencesManagerMigrationTest {
 
     private val legacyKeys = mapOf(

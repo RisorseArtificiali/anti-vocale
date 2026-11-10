@@ -19,7 +19,6 @@ import org.robolectric.annotation.Config
  * no longer read at all (the coordinator's live value is the only source).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class VoiceNoteTreeGrantResolveUriTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()

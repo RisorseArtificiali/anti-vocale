@@ -28,7 +28,6 @@ import org.robolectric.RobolectricTestRunner
  * round trip is still in flight.
  */
 @RunWith(RobolectricTestRunner::class)
-@org.robolectric.annotation.Config(sdk = [34])
 class RemoteOmnivoiceBackendTest {
 
     @get:Rule

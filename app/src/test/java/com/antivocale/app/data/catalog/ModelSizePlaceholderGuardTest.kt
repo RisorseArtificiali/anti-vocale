@@ -43,7 +43,6 @@ import java.util.Locale
  * so a fix lands in the right file.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34])
 class ModelSizePlaceholderGuardTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()

@@ -27,7 +27,6 @@ import org.robolectric.annotation.Config
  * startActivityForResult, and the dead end on the posted error notification.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class ShareReceiverActivityShortcutTest {
 
     /** The intent ShareShortcutManager.buildShortcut builds (alias component + marker, no stream). */

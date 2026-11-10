@@ -24,7 +24,7 @@ import org.robolectric.annotation.Config
  * replayed tour must not re-seed), a code = the favorite.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class PreferencesManagerModelFilterTest {
 
     private val filterKey = stringPreferencesKey("model_filter_language")

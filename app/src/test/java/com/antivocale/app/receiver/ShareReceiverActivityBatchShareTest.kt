@@ -27,7 +27,6 @@ import org.robolectric.annotation.Config
  * paused looper, so the assertions stay synchronous).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class ShareReceiverActivityBatchShareTest {
 
     private fun multiStreamIntent(vararg uris: Uri): Intent =

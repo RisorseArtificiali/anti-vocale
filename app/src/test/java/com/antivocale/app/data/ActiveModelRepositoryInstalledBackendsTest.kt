@@ -19,7 +19,7 @@ import org.junit.Test
  * and the external-records arm.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class ActiveModelRepositoryInstalledBackendsTest {
 
     private fun repo(

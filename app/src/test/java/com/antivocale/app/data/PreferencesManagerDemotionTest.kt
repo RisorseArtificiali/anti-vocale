@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config
  * the key entirely so a cleared state reads like a fresh install.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(application = Application::class)
 class PreferencesManagerDemotionTest {
 
     private val demotedKey = stringSetPreferencesKey("demoted_backends")

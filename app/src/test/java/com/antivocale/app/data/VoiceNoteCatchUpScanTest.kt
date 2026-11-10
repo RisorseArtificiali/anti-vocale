@@ -26,7 +26,6 @@ import org.junit.rules.TemporaryFolder
  * in tearDown so no scan outlives the test.
  */
 @org.junit.runner.RunWith(org.robolectric.RobolectricTestRunner::class)
-@org.robolectric.annotation.Config(sdk = [34])
 class VoiceNoteCatchUpScanTest {
 
     /** TASK-906: the detector's SAF-lane context; these tests ride the raw

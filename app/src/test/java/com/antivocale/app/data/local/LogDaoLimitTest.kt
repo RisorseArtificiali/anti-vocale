@@ -20,7 +20,6 @@ import org.robolectric.annotation.Config
  * (500) and the recent-first ordering.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34])
 class LogDaoLimitTest {
 
     private lateinit var db: AppDatabase

@@ -31,7 +31,7 @@ import java.io.File
  * identity (swiping the notification away does not re-arm within the process).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = android.app.Application::class)
+@Config(application = android.app.Application::class)
 class MemoryMarginWarningTest {
 
     private lateinit var context: Context
