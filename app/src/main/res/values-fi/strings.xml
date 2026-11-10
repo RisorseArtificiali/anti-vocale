@@ -881,6 +881,7 @@
     <string name="external_import">Tuo</string>
     <string name="external_importing">Tuodaan mallia…</string>
     <string name="external_importing_file">Tuodaan %1$s (%2$d/%3$d)…</string>
+    <string name="external_import_cancelled">Lataus peruutettu</string>
     <string name="external_import_failed">Tuonti epäonnistui: %1$s</string>
     <string name="external_imported">Tuotu: %1$s</string>
     <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->

@@ -1,6 +1,6 @@
 # Plural rules for values-ar
 
-Extracted from values/strings.xml (1134 strings, 14 plural keys).
+Extracted from values/strings.xml (1135 strings, 14 plural keys).
 
 CLDR cardinal categories for ar: **zero, one, two, few, many, other**
 

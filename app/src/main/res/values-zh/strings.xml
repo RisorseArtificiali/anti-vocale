@@ -841,6 +841,7 @@
     <string name="external_import">导入</string>
     <string name="external_importing">正在导入模型…</string>
     <string name="external_importing_file">正在导入 %1$s（第 %2$d 个，共 %3$d 个）…</string>
+    <string name="external_import_cancelled">下载已取消</string>
     <string name="external_import_failed">导入失败：%1$s</string>
     <string name="external_imported">已导入 %1$s</string>
     <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->

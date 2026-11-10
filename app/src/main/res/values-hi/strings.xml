@@ -948,6 +948,7 @@
     <string name="external_import">इंपोर्ट करें</string>
     <string name="external_importing">मॉडल इंपोर्ट हो रहा है…</string>
     <string name="external_importing_file">%1$s इंपोर्ट हो रहा है (%2$d/%3$d)…</string>
+    <string name="external_import_cancelled">डाउनलोड रद्द किया गया</string>
     <string name="external_import_failed">इंपोर्ट विफल: %1$s</string>
     <string name="external_imported">%1$s इंपोर्ट हुआ</string>
     <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->

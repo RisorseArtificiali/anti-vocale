@@ -1024,6 +1024,7 @@
     <string name="external_import">Importeren</string>
     <string name="external_importing">Model importeren…</string>
     <string name="external_importing_file">%1$s importeren (%2$d van %3$d)…</string>
+    <string name="external_import_cancelled">Download geannuleerd</string>
     <string name="external_import_failed">Importeren mislukt: %1$s</string>
     <string name="external_imported">%1$s geïmporteerd</string>
     <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->

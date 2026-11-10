@@ -998,6 +998,7 @@
     <string name="external_import">ייבוא</string>
     <string name="external_importing">מייבא מודל…</string>
     <string name="external_importing_file">מייבא את %1$s (%2$d מתוך %3$d)…</string>
+    <string name="external_import_cancelled">ההורדה בוטלה</string>
     <string name="external_import_failed">הייבוא נכשל: %1$s</string>
     <string name="external_imported">יובא %1$s</string>
     <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->

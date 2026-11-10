@@ -838,6 +838,7 @@ external_url_hint,HuggingFace repo or catalog-entry JSON URL,plain,
 external_import,Import,plain,
 external_importing,Importing model…,plain,
 external_importing_file,Importing %1$s (%2$d of %3$d)…,formatted,"keep verbatim: ['%1$s', '%2$d', '%3$d']"
+external_import_cancelled,Download cancelled,plain,
 external_import_failed,Import failed: %1$s,formatted,keep verbatim: ['%1$s']
 external_imported,Imported %1$s,formatted,keep verbatim: ['%1$s']
 bundle_restored_builtin,Restored %1$s,formatted,keep verbatim: ['%1$s']

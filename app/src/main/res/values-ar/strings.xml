@@ -841,6 +841,7 @@
     <string name="external_import">استيراد</string>
     <string name="external_importing">جارٍ استيراد النموذج…</string>
     <string name="external_importing_file">جارٍ استيراد %1$s (%2$d من %3$d)…</string>
+    <string name="external_import_cancelled">تم إلغاء التنزيل</string>
     <string name="external_import_failed">فشل الاستيراد: %1$s</string>
     <string name="external_imported">تم استيراد %1$s</string>
     <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->

@@ -87,6 +87,14 @@ class ModelViewModelExternalImportTest : ViewModelTeardownTest() {
          *  it (one scripted failure for the retry-affordance round trip). */
         var nextFailure: Exception? = null
 
+        /** TASK-979: when set, importFromUrl counts its latch and suspends
+         *  until cancelled (the in-flight shape the cancel button targets). */
+        var blockUntilCancelled = false
+
+        /** TASK-979: the same knob for the folder path (no retry closure:
+         *  its cancel must land in Idle, not a cancelled-message Error). */
+        var blockTreeUntilCancelled = false
+
         private fun record(url: String?, modelType: String?, family: ModelFamily,
                            options: Map<String, String>, languages: List<String>) {
             calls.add(ImportCall(url, modelType, family, options, languages))
@@ -110,6 +118,10 @@ class ModelViewModelExternalImportTest : ViewModelTeardownTest() {
         ): ExternalModelRecord {
             this.treeUri = treeUri
             record(null, modelType, family, options, languages)
+            if (blockTreeUntilCancelled) {
+                latch.countDown()
+                kotlinx.coroutines.awaitCancellation()
+            }
             latch.countDown()
             return sampleRecord()
         }
@@ -130,6 +142,10 @@ class ModelViewModelExternalImportTest : ViewModelTeardownTest() {
             onProgress: com.antivocale.app.data.ExternalImportProgress,
         ): ExternalModelRecord {
             record(url, modelType, family, options, languages)
+            if (blockUntilCancelled) {
+                latch.countDown()
+                kotlinx.coroutines.awaitCancellation()
+            }
             // The latch counts down FIRST on the scripted-failure path too:
             // the class contract is countdown at end-of-method, and a throw
             // before it stalled awaitImporter for the full 5s timeout in
@@ -345,6 +361,65 @@ class ModelViewModelExternalImportTest : ViewModelTeardownTest() {
         val retry = fakeImporter.calls.last()
         assertEquals("zipformer_ctc", retry.modelType)
         assertEquals(ModelFamily.CTC, retry.family)
+    }
+
+    @Test
+    fun `cancelling a url import offers the cancelled state with the retry (TASK-979)`() = runTest {
+        fakeImporter.blockUntilCancelled = true
+        viewModel.importExternalFromUrl(
+            url = "https://example.com/models/big.json",
+            family = ModelFamily.WHISPER)
+        // The blocked phase waits on the LATCH, not awaitImporter: the
+        // import stays Importing by design until cancelled, and the poll
+        // loop would spin its full 5s deadline every run (review finding).
+        assertTrue(fakeImporter.latch.await(5, TimeUnit.SECONDS))
+        assertTrue(viewModel.externalImportState.value is ModelViewModel.ExternalImportState.Importing)
+
+        viewModel.cancelExternalImport()
+        val deadline = System.currentTimeMillis() + 5_000
+        while (viewModel.externalImportState.value !is ModelViewModel.ExternalImportState.Cancelled &&
+            System.currentTimeMillis() < deadline) {
+            Thread.sleep(20)
+        }
+        val state = viewModel.externalImportState.value
+        assertTrue("cancel lands in the dedicated Cancelled state that carries retry",
+            state is ModelViewModel.ExternalImportState.Cancelled)
+        state as ModelViewModel.ExternalImportState.Cancelled
+        // The mock context renders getString as "str:<id>": asserting that
+        // prefix proves the message came from the localized cancelled
+        // string, not from the exception's own text (the real wording is
+        // pinned by the i18n gates, not here).
+        assertTrue("the localized cancelled string, not an exception text",
+            state.message.startsWith("str:"))
+        assertTrue("resume is the same affordance", state.retry != null)
+
+        // The retry re-dispatches and (knob off) completes to Idle.
+        fakeImporter.blockUntilCancelled = false
+        fakeImporter.rearmLatch()
+        state.retry!!.invoke()
+        awaitImporter()
+        assertEquals(ModelViewModel.ExternalImportState.Idle,
+            viewModel.externalImportState.value)
+        assertEquals(2, fakeImporter.calls.size)
+    }
+
+    @Test
+    fun `cancelling a folder import returns to Idle with no error line (TASK-979)`() = runTest {
+        fakeImporter.blockTreeUntilCancelled = true
+        viewModel.importExternalFromFolder(
+            context = mockk(relaxed = true), treeUri = Uri.parse("content://tree/xyz"),
+            family = ModelFamily.WHISPER)
+        assertTrue(fakeImporter.latch.await(5, TimeUnit.SECONDS))
+        assertTrue(viewModel.externalImportState.value is ModelViewModel.ExternalImportState.Importing)
+
+        viewModel.cancelExternalImport()
+        val deadline = System.currentTimeMillis() + 5_000
+        while (viewModel.externalImportState.value is ModelViewModel.ExternalImportState.Importing &&
+            System.currentTimeMillis() < deadline) {
+            Thread.sleep(20)
+        }
+        assertEquals("a folder cancel has no retry closure: silent Idle",
+            ModelViewModel.ExternalImportState.Idle, viewModel.externalImportState.value)
     }
 
     @Test

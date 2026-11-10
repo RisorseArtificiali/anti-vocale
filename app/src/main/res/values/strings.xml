@@ -1032,6 +1032,7 @@
     <string name="external_import">Import</string>
     <string name="external_importing">Importing model…</string>
     <string name="external_importing_file">Importing %1$s (%2$d of %3$d)…</string>
+    <string name="external_import_cancelled">Download cancelled</string>
     <string name="external_import_failed">Import failed: %1$s</string>
     <string name="external_imported">Imported %1$s</string>
     <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->

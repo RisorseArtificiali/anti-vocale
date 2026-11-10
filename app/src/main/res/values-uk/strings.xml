@@ -1012,6 +1012,7 @@
     <string name="external_import">Імпортувати</string>
     <string name="external_importing">Імпортування моделі…</string>
     <string name="external_importing_file">Імпортування %1$s (%2$d з %3$d)…</string>
+    <string name="external_import_cancelled">Завантаження скасовано</string>
     <string name="external_import_failed">Не вдалося імпортувати: %1$s</string>
     <string name="external_imported">Імпортовано %1$s</string>
     <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->

@@ -1202,23 +1202,37 @@ private fun ExternalImportStateView(
     // home (the import section) so a shared error state cannot stack N
     // identical buttons under every community card that also shows it.
     allowRetry: Boolean = false,
+    // TASK-979: the in-flight import's cancel handle.
+    onCancel: () -> Unit = {},
 ) {
     when (state) {
         is ModelViewModel.ExternalImportState.Importing -> Column(
             modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
         ) {
-            Text(
-                if (state.fileCount > 0)
-                    stringResource(
-                        R.string.external_importing_file,
-                        state.fileName, state.fileIndex + 1, state.fileCount)
-                else
-                    stringResource(R.string.external_importing),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (state.fileCount > 0)
+                        stringResource(
+                            R.string.external_importing_file,
+                            state.fileName, state.fileIndex + 1, state.fileCount)
+                    else
+                        stringResource(R.string.external_importing),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                // TASK-979: the missing abort. Built-in downloads always
+                // had one; a multi-GB community import on mobile data was
+                // unstoppable except by killing the app. Prompt on the
+                // download path (the 971 cooperative seam); the cancelled
+                // URL import then offers the SAME Retry that a failed one
+                // does, so what was interrupted is one tap back.
+                TextButton(onClick = onCancel) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
             if (state.fileCount > 0) {
                 DownloadProgressView(
                     downloadState = DownloadState.Downloading(
@@ -1266,6 +1280,34 @@ private fun ExternalImportStateView(
                 }
             }
         }
+        is ModelViewModel.ExternalImportState.Cancelled -> Column(
+            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
+        ) {
+            // TASK-979: the bare cancelled line, NOT the "Import failed:"
+            // wrapper or the error color (the review pass caught the
+            // failure template swallowing the cancel: the user chose to
+            // stop, nothing broke).
+            Text(
+                state.message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (allowRetry && state.retry != null) {
+                var retryDispatched by androidx.compose.runtime.remember(state) {
+                    androidx.compose.runtime.mutableStateOf(false)
+                }
+                TextButton(
+                    onClick = {
+                        retryDispatched = true
+                        state.retry.invoke()
+                    },
+                    enabled = !retryDispatched,
+                    modifier = Modifier.align(Alignment.End),
+                ) {
+                    Text(stringResource(R.string.external_catalog_retry))
+                }
+            }
+        }
         else -> {}
     }
 }
@@ -1305,7 +1347,13 @@ private fun CuratedCommunityCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.external_import))
             }
-            ExternalImportStateView(importState)
+            // TASK-979: the card wires its own cancel too - the review pass
+            // caught the default no-op here, a dead Cancel button on exactly
+            // the multi-GB download the card itself started. Unlike Retry
+            // (allowRetry: N cards must not stack N identical retry
+            // buttons), cancel renders wherever the progress renders: the
+            // abort matters at the surface the user is looking at.
+            ExternalImportStateView(importState, onCancel = viewModel::cancelExternalImport)
         }
     }
 }
@@ -2161,7 +2209,7 @@ private fun ExternalModelsSection(
             }
 
 
-        ExternalImportStateView(importState, allowRetry = true)
+        ExternalImportStateView(importState, allowRetry = true, onCancel = viewModel::cancelExternalImport)
 
         // Gap between the import buttons/state and the first card
         if (records.isNotEmpty()) Spacer(modifier = Modifier.height(8.dp))

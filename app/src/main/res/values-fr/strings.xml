@@ -849,6 +849,7 @@
     <string name="external_import">Importer</string>
     <string name="external_importing">Importation du modèle…</string>
     <string name="external_importing_file">Importation de %1$s (%2$d sur %3$d)…</string>
+    <string name="external_import_cancelled">Téléchargement annulé</string>
     <string name="external_import_failed">Échec de l\'importation : %1$s</string>
     <string name="external_imported">%1$s importé</string>
     <!-- TASK-924: the builtin-restore arm of the offline bundle transfer -->
