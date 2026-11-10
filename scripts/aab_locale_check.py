@@ -21,7 +21,7 @@ from pathlib import Path
 # bundletool normalizes to BCP-47-ish (pt-BR) and Hebrew reports as both
 # iw (legacy) and he in different tool versions, so the comparison maps
 # both spellings onto one key.
-RES_LOCALE = re.compile(r"^values-([a-z]{2,3}(?:-r[A-Z]{2})?|b\+[A-Za-z]+(?:\+[A-Za-z]+)*)$")
+RES_LOCALE = re.compile(r"^values-([a-z]{2,3}(?:-r[A-Z]{2})?|b\+[A-Za-z]+(?:\+[A-Za-z0-9]+)*)$")
 DUMP_LOCALE = re.compile(r'^\s*locale:\s*"([^"]+)"', re.M)
 
 
@@ -47,14 +47,21 @@ def normalize_locale(tag: str) -> str:
     two-letter form passes through. Region suffixes keep a dash.
     """
     tag = tag.strip()
-    # Grandfathered BCP-47 folder form (values-b+sr+Latn): the language
-    # follows the b+ marker.
+    # Grandfathered BCP-47 folder form (values-b+sr+Latn, numeric UN M.49
+    # regions included): the language follows the b+ marker.
     if tag.startswith("b+"):
         return tag[2:].replace("+", "-")
     tag = tag.replace("+", "-")
     if "-r" in tag:
         lang, region = tag.split("-r", 1)
         tag = f"{lang}-{region}"
+    # Legacy language spellings carry regions too (iw-IL, in-ID): map the
+    # language component, whatever the region.
+    parts = tag.split("-")
+    legacy = {"iw": "he", "in": "id", "ji": "yi"}
+    if parts[0] in legacy:
+        parts[0] = legacy[parts[0]]
+    tag = "-".join(parts)
     if tag == "iw":
         return "he"
     if tag == "in":
@@ -103,6 +110,9 @@ def _main() -> int:
         print("usage: aab_locale_check.py --check <bundletool-dump.txt> <res-dir>", file=sys.stderr)
         return 2
     dump_path, res_dir = args[1], args[2]
+    if not Path(res_dir).is_dir():
+        print(f"FAIL: res dir not found or unreadable: {res_dir}", file=sys.stderr)
+        return 2
     offenders = unexpected_locales(Path(dump_path).read_text(), res_dir)
     if offenders:
         print(

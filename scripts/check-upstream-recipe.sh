@@ -48,7 +48,8 @@ if ! curl -fsSL --max-time 60 "$UPSTREAM_API" -o "$WORK/recipe.yml"; then
   exit 4
 fi
 
-if ! grep -qE "versionName: ${VERSION}$" "$WORK/recipe.yml"; then
+VERSION_RE="${VERSION//./\\.}"
+if ! grep -qE "versionName: ${VERSION_RE}\$" "$WORK/recipe.yml"; then
   echo "ABSENT: upstream fdroiddata master does not carry $VERSION yet (bot not landed; expected within ~24h of the tag)"
   exit 3
 fi

@@ -67,6 +67,24 @@ class AabLocaleGateTest(unittest.TestCase):
         dump = 'locale: "pt"\nlocale: "pt-BR"\n'
         self.assertEqual(unexpected_locales(dump, self.RES), [])
 
+    def test_numeric_region_b_plus_folder_and_es_419_dump(self):
+        # Code-review round 2026-11-10: values-b+es+419 (numeric UN M.49
+        # region) must count as an app locale, and a dumped es-419 must not
+        # be a phantom offender.
+        with TemporaryDirectory() as tmp:
+            (Path(tmp) / "values-b+es+419").mkdir()
+            self.assertIn("b+es+419", res_locales(tmp))
+            dump = 'locale: "es-419"\nlocale: "en"'
+            self.assertEqual(unexpected_locales(dump, tmp), [])
+
+    def test_legacy_language_with_region_is_mapped(self):
+        # Older bundletool dumps legacy codes with a region (iw-IL, in-ID);
+        # the app ships values-in: the gate must not flag id-ID.
+        with TemporaryDirectory() as tmp:
+            (Path(tmp) / "values-in").mkdir()
+            dump = 'locale: "in-ID"'
+            self.assertEqual(unexpected_locales(dump, tmp), [])
+
     def test_our_own_full_set_passes(self):
         dump = "\n".join(f'  locale: "{loc}"' for loc in
                          ("ar", "de", "es", "fa", "fi", "fr", "he", "hi", "it",

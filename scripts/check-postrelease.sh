@@ -33,7 +33,9 @@ cd "$APP_REPO"
 # No --tags: moving tags the repo also carries (nightly) would clobber and
 # fail the fetch; this check needs origin/main and the ONE release tag.
 git fetch -q origin main
-git fetch -q origin "+refs/tags/$TAG:refs/tags/$TAG"
+if ! git fetch -q origin "+refs/tags/$TAG:refs/tags/$TAG"; then
+  fail "the tag fetch failed (a locally diverged $TAG would refuse the update): fetch --force the tag or delete the stale local one, then re-run"
+fi
 
 FAILURES=0
 WARNINGS=0
@@ -56,9 +58,9 @@ else
 fi
 
 # 3. exactly one index-*.json, named for the next version, not the released one.
-INDEXES="$(ls app/src/main/assets/external-catalog/index-*.json 2>/dev/null | xargs -n1 basename | tr '\n' ' ')"
+INDEXES="$(ls app/src/main/assets/external-catalog/index-*.json 2>/dev/null | xargs -r -n1 basename | tr '\n' ' ')"
 COUNT="$(printf '%s' "$INDEXES" | wc -w | tr -d ' ')"
-if [ "$COUNT" = "1" ] && ! printf '%s' "$INDEXES" | grep -q "index-$VERSION.json"; then
+if [ "$COUNT" = "1" ] && ! printf '%s' "$INDEXES" | grep -qF "index-$VERSION.json"; then
   ok "catalog index is $INDEXES(exactly one, not the released version's)"
 else
   fail "catalog index state: [$INDEXES] (want exactly one index-*.json, NOT index-$VERSION.json; the snapshot bump REPLACES the file)"

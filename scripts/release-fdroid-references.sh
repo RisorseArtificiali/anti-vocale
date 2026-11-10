@@ -115,7 +115,9 @@ if [ "$PHASE" = "prepare" ]; then
   say "phase 0.5/4: lane-base guard (upstream/master or nothing)"
   git -C "$FORK_CHECKOUT" remote get-url upstream >/dev/null 2>&1 ||
     git -C "$FORK_CHECKOUT" remote add upstream "https://gitlab.com/fdroid/fdroiddata.git"
-  git -C "$FORK_CHECKOUT" fetch -q upstream master
+  if ! git -C "$FORK_CHECKOUT" fetch -q upstream master; then
+    fail "the upstream master fetch failed (transient network, VPN, or GitLab blip): retry prepare; do not confuse this with a lane-base violation"
+  fi
   UP_TIP="$(git -C "$FORK_CHECKOUT" rev-parse upstream/master)"
   BASE_TIP="$(git -C "$FORK_CHECKOUT" merge-base HEAD upstream/master)"
   BRANCH="$(git -C "$FORK_CHECKOUT" rev-parse --abbrev-ref HEAD)"
