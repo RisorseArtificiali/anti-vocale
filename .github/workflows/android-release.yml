@@ -261,6 +261,22 @@ jobs:
           sed -i 's|storeFile=.*|storeFile=release.keystore|' keystore.properties
           ./gradlew bundlePlayStoreRelease
 
+      # TASK-976: the AAB locale gate. Play's translation validation
+      # rejects bundles carrying languages it cannot translate, and the
+      # AAB inherits every LIBRARY locale (AndroidX ships dozens; v1.16.0's
+      # first publish died on Telugu). The gradle localeFilters strip them;
+      # this verifies the ARTIFACT so a config regression or a new library
+      # locale fails HERE, minutes after the bundle build, instead of at
+      # the store upload (which burns the release-event publish and needs
+      # the recovery dispatch). One step, no cache: the gate fires on
+      # release runs weeks apart, and the script self-downloads the pinned
+      # bundletool jar (32MB, version-keyed) when missing.
+      - name: Verify AAB locale set (Play translation gate)
+        if: steps.playstore-aab.outcome == 'success'
+        run: |
+          ./scripts/check-aab-locales.sh \
+            app/build/outputs/bundle/playStoreRelease/app-playStore-release.aab
+
       - name: Extract release notes
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||

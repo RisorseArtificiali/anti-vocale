@@ -62,3 +62,41 @@ afterwards every `binary:` URL already resolves (the 2026-09-04 race: bot MR
 - The bot MR ("Update Anti-Vocale to NNN") is usually preferable to a manual
   MR (precedent 2026-08-21: manual MR closed in favor of the bot's), but the
   bot arrives 1-2 days after the tag: run the cross-check in that window.
+
+## PRIMA / DURANTE / DOPO: the deterministic guards (TASK-976, from the v1.16.0 day)
+
+Every guard below is a script with an exit-code contract; the release flow
+calls them, and a human never has to remember the trap they close.
+
+PRIMA (before any lane or dispatch):
+- `scripts/check-upstream-recipe.sh vX.Y.Z` - probes upstream fdroiddata
+  master: exit 0 bot landed AND the full cross-check passes (a fork lane
+  adds nothing; finalize will skip the push), 1 landed but RED (the
+  correction-MR path is the fix), 3 not landed yet (the lane is the
+  reference path), 4 probe failure (never guess).
+- prepare's phase 0.5 runs that probe AND the lane-base guard: the fork
+  checkout's merge-base with upstream/master must EQUAL upstream/master's
+  tip. The v1.16.0 weblate failure was a lane riding the fork's fossil
+  master, duplicating changes that had landed upstream. Fix when the guard
+  fires: `git -C <fork> checkout -b anti-vocale-X.Y.Z upstream/master` and
+  regenerate with new-fdroid-version.py.
+
+DURANTE:
+- The AAB locale gate runs in android-release.yml right after the bundle
+  build: `scripts/check-aab-locales.sh <aab>` asserts the bundle's locale
+  set against the res tree (Play's translation validation rejects
+  untranslatable library locales; v1.16.0's first publish died on "te").
+  Locally: same script; bundletool auto-downloads to ~/.cache/anti-vocale.
+- Play's gated publish: `scripts/release-approve-play.sh <run-id>` lists
+  the pending environment, and with `--yes` approves it with the INTEGER
+  ids the API returned (a string id 422s).
+
+DOPO:
+- `scripts/check-postrelease.sh vX.Y.Z` - one verdict over the whole
+  post-release state: tag fully merged into main, versionName is the next
+  SNAPSHOT, exactly one index-*.json not named for the released version,
+  and upstream's recipe present and green (absent = WARN, the bot lands
+  within ~a day; re-run later). The runbook's Post-release section OWNS
+  this step (docs/release-runbook.md): every release path terminates at
+  the script printing POST-RELEASE STATE OK.
+

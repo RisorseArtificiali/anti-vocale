@@ -92,6 +92,48 @@ if [ "$PHASE" = "prepare" ]; then
     fail "release-preflight.sh exited nonzero: fix the named blocker(s) above before dispatching (the exit code, not the text, is the verdict)"
   fi
 
+  # TASK-976 phase 0.5: the upstream probe and the lane-base guard. The
+  # v1.16.0 incident: our lane rode the fork's FOSSIL master, duplicated
+  # changes that had landed upstream, and the weblate merge-conflict job
+  # failed on the conflict with ourselves. Two deterministic stops here:
+  # (a) the probe reports whether the bot already landed this version, so
+  #     the operator knows a lane may be unnecessary before doing anything;
+  # (b) when a lane IS in play, its base must BE upstream/master: the
+  #     merge-base must equal upstream/master's tip, not merely contain it;
+  #     that makes the fossil base and a previous-lane chain both fail
+  #     loudly at prepare instead of at fdroiddata's CI.
+  say "phase 0.5/4: upstream bot probe"
+  UPSTREAM_PROBE="$("$HERE/check-upstream-recipe.sh" "$TAG")" && PROBE_RC=0 || PROBE_RC=$?
+  echo "$UPSTREAM_PROBE"
+  case "$PROBE_RC" in
+    0) say "bot already landed $TAG upstream and the cross-check is green: a fork lane adds nothing on fdroiddata's side (finalize will skip the push); the dispatch below is still needed for OUR signed assets" ;;
+    1) fail "upstream carries $TAG but its recipe is RED (wrong pin or dead URLs): the correction-MR path is the right fix; inspect check-upstream-recipe.sh output above before anything else" ;;
+    3) say "bot has not landed $TAG yet: the lane is the reference path" ;;
+    *) fail "upstream probe itself failed (exit $PROBE_RC): never guess the bot's state" ;;
+  esac
+
+  say "phase 0.5/4: lane-base guard (upstream/master or nothing)"
+  git -C "$FORK_CHECKOUT" remote get-url upstream >/dev/null 2>&1 ||
+    git -C "$FORK_CHECKOUT" remote add upstream "https://gitlab.com/fdroid/fdroiddata.git"
+  git -C "$FORK_CHECKOUT" fetch -q upstream master
+  UP_TIP="$(git -C "$FORK_CHECKOUT" rev-parse upstream/master)"
+  BASE_TIP="$(git -C "$FORK_CHECKOUT" merge-base HEAD upstream/master)"
+  BRANCH="$(git -C "$FORK_CHECKOUT" rev-parse --abbrev-ref HEAD)"
+  if [ "$BASE_TIP" != "$UP_TIP" ]; then
+    # The base matters only when a lane will be PUSHED (probe 3: the bot has
+    # not landed) or CORRECTED (probe 1: upstream carries a red recipe). When
+    # the bot already landed green (probe 0), the fork branch is irrelevant
+    # to fdroiddata - a stale base must not block the dispatch that still
+    # produces OUR signed assets (code-review finding 2026-11-10).
+    if [ "$PROBE_RC" = "0" ]; then
+      say "WARNING: fork checkout '$BRANCH' is not upstream/master-based; irrelevant now (upstream already carries $TAG), but recreate from upstream/master before the next lane flow"
+    else
+      fail "fork checkout is on '$BRANCH' whose merge-base with upstream/master is NOT upstream/master's tip (fossil base or a previous-lane chain: the weblate rebase will conflict with landed changes). Fix: git -C $FORK_CHECKOUT checkout -b anti-vocale-${TAG#v} upstream/master && regenerate with new-fdroid-version.py"
+    fi
+  else
+    say "lane '$BRANCH' is upstream/master plus local commits (merge-base == upstream tip)"
+  fi
+
   say "phase 1/4: mirror sync (fetches the fork; the remote is written only at finalize)"
   DRY_RUN="${DRY_RUN:-0}" "$HERE/sync-fdroid-mirror.sh"
 
@@ -241,6 +283,27 @@ for _, old_lit, new_lit in INERT_LITERAL_REPLACES:
 sys.stdout.write(text)
 "
 }
+# TASK-976: the STRUCTURAL bot-first gate, before the content comparison
+# below. The v1.16.0 incident: our fossil-based lane differed from the
+# landed master content, the content-comparison skip stayed unreachable,
+# the fork push ran, and fdroiddata's weblate job failed on the duplicate.
+# Policy, from the probe's exit code: present+green -> NO push even when
+# our generated content differs (upstream's landed version IS the recipe;
+# a fork branch would only conflict with it); present+red -> fall through
+# to the push path (the correction MR is exactly right); absent -> normal
+# push. Exit 4 (probe failure) also falls through: the content comparison
+# below gets the final word, unchanged.
+UP_PROBE_OUT="$("$HERE/check-upstream-recipe.sh" "$TAG")" && UP_PROBE_RC=0 || UP_PROBE_RC=$?
+echo "$UP_PROBE_OUT"
+if [ "$UP_PROBE_RC" = "0" ]; then
+  say "upstream carries $TAG and validates green: no fork push, no MR (a fork branch would duplicate landed changes and fail the weblate rebase)"
+  say "watch the fdroiddata master pipeline for the build of $TAG"
+  say "then close the day: scripts/check-postrelease.sh $TAG must print POST-RELEASE STATE OK (the upstream leg may WARN until the bot lands; re-run)"
+  exit 0
+fi
+[ "$UP_PROBE_RC" = "1" ] &&
+  say "WARNING: upstream carries $TAG but its recipe is red; continuing on the correction-MR path"
+
 MASTER_RAW=""
 # Anonymous API against fdroid/fdroiddata (note: no hyphen; the fork is
 # fdroid-data, the upstream is fdroiddata): the /-/raw/ endpoint answers
@@ -254,6 +317,7 @@ if [ -n "$MASTER_RAW" ]; then
              <(normalize_recipe < "$FORK_CHECKOUT/$RECIPE_REL") >/dev/null; then
     say "fdroiddata master already carries this recipe content (the bot landed it): no fork push, no MR needed"
     say "watch the fdroiddata master pipeline for the build of $TAG"
+    say "then close the day: scripts/check-postrelease.sh $TAG must print POST-RELEASE STATE OK (the upstream leg may WARN until the bot lands; re-run)"
     exit 0
   fi
 else
@@ -374,6 +438,7 @@ echo "   $PL_URL"
 case "$PL_ST" in
   success)
     say "pipeline green; F-Droid release flow complete (merge is the admins')"
+    say "then close the day: scripts/check-postrelease.sh $TAG must print POST-RELEASE STATE OK (the upstream leg may WARN until the bot lands; re-run)"
     ;;
   running | pending | created | manual | preparing)
     say "pipeline still $PL_ST; re-run finalize later, or watch $PL_URL"
