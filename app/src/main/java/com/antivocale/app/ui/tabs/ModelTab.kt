@@ -1227,8 +1227,8 @@ private fun ExternalImportStateView(
                 // had one; a multi-GB community import on mobile data was
                 // unstoppable except by killing the app. Prompt on the
                 // download path (the 971 cooperative seam); the cancelled
-                // URL import then offers the SAME Retry that a failed one
-                // does, so what was interrupted is one tap back.
+                // URL import then offers the SAME Retry a failed one does
+                // (a from-scratch re-dispatch; see cancelExternalImport).
                 TextButton(onClick = onCancel) {
                     Text(stringResource(R.string.action_cancel))
                 }
@@ -1258,26 +1258,7 @@ private fun ExternalImportStateView(
                 color = MaterialTheme.colorScheme.error,
             )
             if (allowRetry && state.retry != null) {
-                // The dispatch window between tap and the Importing flip
-                // still reads Error, so a second tap would enqueue a
-                // duplicate multi-GB import; the flag disables until the
-                // state actually moves (review finding).
-                var retryDispatched by androidx.compose.runtime.remember(state) {
-                    androidx.compose.runtime.mutableStateOf(false)
-                }
-                TextButton(
-                    onClick = {
-                        retryDispatched = true
-                        state.retry.invoke()
-                    },
-                    enabled = !retryDispatched,
-                    modifier = Modifier.align(Alignment.End),
-                ) {
-                    // The tab's existing localized Retry label (the same
-                    // word the catalog error row uses); a fifth near-copy
-                    // retry string was a review finding.
-                    Text(stringResource(R.string.external_catalog_retry))
-                }
+                RetryTextButton(state.retry, Modifier.align(Alignment.End))
             }
         }
         is ModelViewModel.ExternalImportState.Cancelled -> Column(
@@ -1293,22 +1274,37 @@ private fun ExternalImportStateView(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (allowRetry && state.retry != null) {
-                var retryDispatched by androidx.compose.runtime.remember(state) {
-                    androidx.compose.runtime.mutableStateOf(false)
-                }
-                TextButton(
-                    onClick = {
-                        retryDispatched = true
-                        state.retry.invoke()
-                    },
-                    enabled = !retryDispatched,
-                    modifier = Modifier.align(Alignment.End),
-                ) {
-                    Text(stringResource(R.string.external_catalog_retry))
-                }
+                RetryTextButton(state.retry, Modifier.align(Alignment.End))
             }
         }
         else -> {}
+    }
+}
+
+/**
+ * TASK-969/979: the ONE retry button both terminal import states render
+ * (Error and Cancelled share it; the review pass caught the two inline
+ * copies drifting into near-duplicate territory). The dispatch window
+ * between tap and the Importing flip still reads the terminal state, so a
+ * second tap would enqueue a duplicate multi-GB import; the state-keyed
+ * flag disables the button until the state actually moves (review
+ * finding). The label reuses the tab's existing localized Retry string
+ * (a fifth near-copy retry string was a review finding).
+ */
+@Composable
+private fun RetryTextButton(retry: () -> Unit, modifier: Modifier) {
+    var retryDispatched by androidx.compose.runtime.remember(retry) {
+        androidx.compose.runtime.mutableStateOf(false)
+    }
+    TextButton(
+        onClick = {
+            retryDispatched = true
+            retry()
+        },
+        enabled = !retryDispatched,
+        modifier = modifier,
+    ) {
+        Text(stringResource(R.string.external_catalog_retry))
     }
 }
 
@@ -1347,7 +1343,7 @@ private fun CuratedCommunityCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.external_import))
             }
-            // TASK-979: the card wires its own cancel too - the review pass
+            // TASK-979: the card wires its own cancel too; the review pass
             // caught the default no-op here, a dead Cancel button on exactly
             // the multi-GB download the card itself started. Unlike Retry
             // (allowRetry: N cards must not stack N identical retry

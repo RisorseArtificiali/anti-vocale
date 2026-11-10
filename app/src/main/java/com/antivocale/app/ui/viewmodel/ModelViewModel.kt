@@ -1498,12 +1498,14 @@ class ModelViewModel @Inject constructor(
 
         /**
          * TASK-979: the user-chosen stop. Same retry closure contract as
-         * [Error] (a cancelled URL import resumes through it), but it is NOT
-         * a failure: the renderer shows the bare message, not the
-         * "Import failed: ..." wrapper, and without the error color (a
-         * cancel the user picked must not read as something breaking).
-         * Folder/bundle cancels (no closure) go straight to [Idle]
-         * instead of this state.
+         * [Error], but it is NOT a failure: the renderer shows the bare
+         * message, not the "Import failed: ..." wrapper, and without the
+         * error color (a cancel the user picked must not read as something
+         * breaking). The retry RE-DISPATCHES the same import from scratch:
+         * the cancel's cleanup deletes the partial dir, so this is not a
+         * byte-level resume (review finding; the Range machinery only
+         * resumes within one ladder's attempts). Folder/bundle cancels
+         * (no closure) go straight to [Idle] instead of this state.
          */
         data class Cancelled(val message: String, val retry: (() -> Unit)? = null) : ExternalImportState()
     }
@@ -1808,8 +1810,10 @@ class ModelViewModel @Inject constructor(
     private val externalImportMutex = Mutex()
 
     /** TASK-979: the in-flight import's Job (the cancel handle; null when
-     *  idle). @Volatile: the terminal arms write it from the IO coroutine
-     *  while the cancel button reads it on Main. */
+     *  idle). Written ONLY by dispatch (main) and cancelExternalImport
+     *  (main); the terminal arms deliberately never write it (a queued
+     *  import may already hold the field). @Volatile anyway: the IO
+     *  coroutine's cancel machinery reads the job's state cross-thread. */
     @Volatile
     private var externalImportJob: kotlinx.coroutines.Job? = null
 
@@ -1828,11 +1832,28 @@ class ModelViewModel @Inject constructor(
     ) {
         val noop: (Int, Int, String, Long, Long) -> Unit = { _, _, _, _, _ -> }
         viewModelScope.launch(Dispatchers.IO) {
+            // TASK-979 review: the hash/registration tail after the last
+            // download has no suspension points, so a late cancel can race
+            // a genuinely-completed block; onSuccess must not report
+            // "Imported" for a job the user cancelled.
+            val self = kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]!!
             externalImportMutex.withLock {
                 _externalImportState.value = ExternalImportState.Importing()
                 runCatching { block(onProgress ?: noop) }
                     .fold(
                         onSuccess = { outcome ->
+                            if (self.isCancelled) {
+                                // The same terminal shape as an explicit
+                                // cancel; the block finished, but the user
+                                // had already withdrawn consent.
+                                _externalImportState.value = if (retry != null) {
+                                    ExternalImportState.Cancelled(
+                                        ctx.getString(R.string.external_import_cancelled), retry)
+                                } else {
+                                    ExternalImportState.Idle
+                                }
+                                return@fold
+                            }
                             _externalImportState.value = ExternalImportState.Idle
                             // TASK-979: the job field is deliberately NOT
                             // cleared by the terminal arms: a queued import
@@ -1871,23 +1892,26 @@ class ModelViewModel @Inject constructor(
                         },
                         onFailure = { e ->
                             // TASK-979: a user cancel is not a failure to
-                            // report. The cooperative seam (971) stops the
-                            // download within ~1s; the partial dir is already
-                            // cleaned by importCleaningUpOnFailure (the
-                            // CancellationException rides its generic arm).
+                            // report. The cooperative seam (971) makes the
+                            // cancel prompt on the DOWNLOAD loop (~1s); the
+                            // post-download tail (the sha256 pass over a
+                            // multi-GB file, the registration) has no
+                            // suspension points, so a cancel landing there
+                            // takes effect at the next suspension (review
+                            // finding: the button looks dead for that
+                            // window; the state is still correct after it).
                             // A cancelled URL import lands in the dedicated
-                            // Cancelled state carrying the retry closure:
-                            // RESUME is then the same affordance (per-file
-                            // resume where the server honors Range), without
-                            // the failure wrapper a real error renders
-                            // through (review finding: "Import failed:
-                            // Download cancelled" reads as breakage the user
-                            // chose). Folder/bundle cancels (no closure)
-                            // return to Idle with no line at all. The
-                            // exception is rethrown after the state write:
-                            // swallowing it would complete the coroutine
-                            // "normally" inside a cancelled scope (review
-                            // finding; the coroutine rule).
+                            // Cancelled state carrying the retry closure
+                            // (which re-dispatches from scratch; see the
+                            // Cancelled KDoc), without the failure wrapper
+                            // a real error renders through (review finding:
+                            // "Import failed: Download cancelled" reads as
+                            // breakage the user chose). Folder/bundle
+                            // cancels (no closure) return to Idle with no
+                            // line at all. The exception is rethrown after
+                            // the state write: swallowing it would complete
+                            // the coroutine "normally" inside a cancelled
+                            // scope (review finding; the coroutine rule).
                             if (e is kotlinx.coroutines.CancellationException) {
                                 if (retry != null) {
                                     _externalImportState.value = ExternalImportState.Cancelled(
@@ -1919,10 +1943,12 @@ class ModelViewModel @Inject constructor(
     /**
      * TASK-979: cancels the in-flight external import. Prompt on the
      * download path (the 971 cooperative seam checks the job at every
-     * throttled progress tick, ~1s); a folder copy between files is the
-     * slower bound (documented in the task). The partial dir is cleaned by
-     * the import's own failure tail; a URL import's Cancelled state carries
-     * the Retry closure, so what the user interrupted is one tap away.
+     * throttled progress tick, ~1s); the post-download hash/registration
+     * tail and a folder copy between files are the slower bounds (no
+     * suspension points; documented in the task). The partial dir is
+     * cleaned by the import's own failure tail; a URL import's Cancelled
+     * state carries the Retry closure, which re-dispatches the same import
+     * FROM SCRATCH (the cleanup deleted the partial files; review finding).
      * The handle is nulled HERE rather than in the terminal arms: a queued
      * import may already hold the field (the double-dispatch race), and a
      * stale completed-job handle is a harmless cancel no-op either way.
