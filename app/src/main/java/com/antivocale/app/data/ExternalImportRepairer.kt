@@ -54,6 +54,10 @@ import kotlinx.coroutines.sync.withLock
 class ExternalImportRepairer(
     private val store: ExternalModelStore,
     private val preferencesManager: PreferencesManager,
+    /** TASK-973: the Remove action's deleter (the same semantics as the
+     *  Models tab's delete; required, so skipping it fails at construction
+     *  instead of at the first Remove tap). */
+    private val deleter: ExternalModelDeleter,
     /** Re-imports one record from its pinned source; the production wiring
      *  ([reimportFor]) calls [ExternalModelImporter]
      *  `.importFromUrlWithMetadata` with the record's own parameters (the
@@ -77,7 +81,18 @@ class ExternalImportRepairer(
      *  [repairAll] returns (the id that resolved, which is the fresh id on
      *  dedupe drift). Attempted 0 means nothing was dangling at tap time:
      *  a stale notification with nothing left to do, not a failure. */
-    data class RepairResult(val attempted: Int, val repairedIds: List<String>)
+    data class RepairResult(
+        val attempted: Int,
+        val repairedIds: List<String>,
+        /** TASK-973: candidates that failed on NETWORK grounds (DNS, socket,
+         *  timeout): retrying on a working network can still recover them. */
+        val networkFailedIds: List<String> = emptyList(),
+        /** TASK-973: candidates whose pinned source proved dead or unusable
+         *  (HTTP 4xx on the manifest, content the importer rejects): retrying
+         *  cannot help, and the ids persist into the dead-source set so the
+         *  startup notice and future taps stop counting them. */
+        val sourceFailedIds: List<String> = emptyList(),
+    )
 
     /** Single-flight guard for [repairAll]: a double tap or a tap racing a
      *  manual Models-tab re-import must not run two multi-gigabyte
@@ -122,11 +137,29 @@ class ExternalImportRepairer(
      *  before the isLoadable directory stat (isLoadable's single predicate,
      *  EXCEPT quarantine: a quarantined record is deliberately parked as
      *  unsafe, and re-downloading would not change why it was flagged). */
-    suspend fun scanWipedImports(): List<ExternalModelRecord> =
-        store.records().filter { record ->
+    suspend fun scanWipedImports(): List<ExternalModelRecord> {
+        val dead = preferencesManager.wipedRepairDeadSources.first()
+        if (dead.isEmpty()) return scanWipedImports(dead)
+        // Prune ids that no longer name a dangling record: a hand re-import
+        // keeps the SAME id (the dedupe repoints it), and a stale dead
+        // entry would otherwise hide a future wipe of that record from
+        // this scan forever (the 2026-11-10 review's re-wipe scenario).
+        val dangling = dead.filterNot { id ->
+            val record = store.records().firstOrNull { it.id == id }
+            record == null || store.isLoadable(record)
+        }.toSet()
+        if (dangling != dead) {
+            preferencesManager.saveWipedRepairDeadSources(dangling)
+        }
+        return scanWipedImports(dangling)
+    }
+
+    private suspend fun scanWipedImports(dead: Set<String>): List<ExternalModelRecord> {
+        return store.records().filter { record ->
             record.source == ExternalModelSource.URL &&
                 !record.sourceUrl.isNullOrBlank() &&
                 !record.quarantined &&
+                record.id !in dead &&
                 !store.isLoadable(record)
         }.also { dangling ->
             if (dangling.isNotEmpty()) {
@@ -134,6 +167,7 @@ class ExternalImportRepairer(
                     TAG, "Wiped imports repairable: ${dangling.joinToString { it.id }}")
             }
         }
+    }
 
     /** Clears the pending selection snapshot when a startup scan found
      *  nothing dangling: either nothing was ever wiped this cycle or the
@@ -156,15 +190,49 @@ class ExternalImportRepairer(
      * snapshot exists to fix. A candidate the user already re-imported
      * from the Models tab is no longer dangling and drops out of the scan
      * before any download. */
+    /** TASK-973: the failed notice's Remove action. Deletes every record
+     *  in the persisted dead-source set through the shared deleter (record,
+     *  files, selection resets) and clears the set. Re-derives from the
+     *  preference, never from intent payloads: a stale notification still
+     *  removes exactly what a later process marked dead. Idempotent: an
+     *  empty set is a no-op. Returns the removed record ids. */
+    suspend fun removeDeadSources(): List<String> {
+        val dead = preferencesManager.wipedRepairDeadSources.first()
+        if (dead.isEmpty()) return emptyList()
+        val removed = mutableListOf<String>()
+        val pruned = dead.toMutableSet()
+        for (id in dead) {
+            val record = store.records().firstOrNull { it.id == id } ?: continue
+            if (store.isLoadable(record)) {
+                // A stale Remove tap after a manual re-import (the dedupe
+                // keeps the SAME id): the record holds fresh files, so the
+                // delete is refused and the id leaves the dead set.
+                pruned -= id
+                continue
+            }
+            if (deleter.delete(record).existed) removed += id
+        }
+        // Cleared wholesale: records that vanished by other means leave the
+        // set too (their ids no longer name anything).
+        preferencesManager.saveWipedRepairDeadSources(emptySet())
+        return removed
+    }
+
     suspend fun repairAll(): RepairResult = repairMutex.withLock {
         sweepJob?.join()
-        val candidates = scanWipedImports()
+        // ONE read of the dead set owns both the candidate filter and the
+        // skip decision (a Remove tap between two reads would leave the
+        // snapshot and the guard disagreeing).
+        val dead = preferencesManager.wipedRepairDeadSources.first()
+        val candidates = scanWipedImports(dead)
         // old id -> fresh id for repairs whose source drifted past the
         // dedupe (the stale record was deleted; the fresh copy registered
         // a new id). Run-local: it exists only between this repair and its
         // selection restore.
         val driftReplacements = mutableMapOf<String, String>()
         val repaired = mutableListOf<String>()
+        val networkFailed = mutableListOf<String>()
+        val sourceFailed = mutableListOf<String>()
         for (record in candidates) {
             try {
                 val fresh = reimport(record)
@@ -196,13 +264,31 @@ class ExternalImportRepairer(
             } catch (e: Exception) {
                 // The record stays dangling; the manual re-import in the
                 // Models tab remains the fallback, and the next launch's
-                // scan picks it up again.
+                // scan picks it up again. TASK-973: the failure is TYPED so
+                // the outcome notice can offer the right action: IOException
+                // (DNS, socket, timeout) is the network class a retry can
+                // fix; anything else is the importer rejecting the source's
+                // content or its HTTP status, which no retry changes.
+                val dead = isSourceDead(e)
+                if (dead) sourceFailed += record.id else networkFailed += record.id
                 android.util.Log.w(
-                    TAG, "Repair of ${record.displayName} (${record.id}) failed; leaving it dangling", e)
+                    TAG, "Repair of ${record.displayName} (${record.id}) failed" +
+                        " (${if (dead) "dead-source" else "retryable"}); leaving it dangling", e)
             }
         }
         restoreCapturedSelections(driftReplacements)
-        RepairResult(attempted = candidates.size, repairedIds = repaired)
+        // TASK-973: persist the dead-source set for the next scan and tap.
+        // The skip guard above means no dead id was attempted, so nothing
+        // needs subtracting: the old set plus this repair's source deaths.
+        val nextDead = dead + sourceFailed
+        if (nextDead != dead) {
+            preferencesManager.saveWipedRepairDeadSources(nextDead)
+        }
+        RepairResult(
+            attempted = candidates.size,
+            repairedIds = repaired,
+            networkFailedIds = networkFailed,
+            sourceFailedIds = sourceFailed)
     }
 
     /** Applies the persisted selection snapshot only when (a) a record for
@@ -265,6 +351,22 @@ class ExternalImportRepairer(
 
     companion object {
         private const val TAG = "ExternalImportRepairer"
+
+        /**
+         * TASK-973: is this failure PROVEN dead, the only state that may
+         * retire a record? The 2026-11-10 review inverted the question
+         * this classifier answers: device-local failures this feature's
+         * own audience hits (disk-full pre-flight, temp-file rename) and
+         * the multi-GB download's own HTTP layer (DownloadException.
+         * HttpError carries the code ResumeDownloadHelper saw) are
+         * TRANSIENT like any network state - a retry on a working network
+         * with space can succeed. DEAD is only a 4xx-class answer from
+         * the SOURCE itself (HttpSourceException: 404/410 and friends,
+         * 429 excluded); a content rejection is NOT proven dead (the
+         * publisher can fix the manifest), so it stays retryable.
+         */
+        private fun isSourceDead(e: Throwable): Boolean =
+            e is HttpSourceException && e.code != 429 && e.code < 500
 
         /**
          * The production re-import lambda, fed by AppModule: forward the

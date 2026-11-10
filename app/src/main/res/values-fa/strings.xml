@@ -1354,6 +1354,11 @@
     <string name="wiped_imports_recovered_text">فایل‌های %1$d مدل دوباره دانلود شد و آماده استفاده است.</string>
     <string name="wiped_imports_failed_title">بازیابی مدل ناموفق بود</string>
     <string name="wiped_imports_failed_text">دانلود دوباره کامل نشد. برای وارد کردن دوباره مدل به‌صورت دستی، تب مدل‌ها را باز کنید.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">منبع مدل در دسترس نیست</string>
+    <string name="wiped_imports_source_failed_text">%1$d مدل دیگر از منبع اصلی‌اش دانلود نمی‌شود. ورودی‌های خراب را حذف کنید یا مدل را از تب مدل‌ها دوباره به‌صورت دستی درون‌ریزی کنید.</string>
+    <string name="wiped_imports_remove_action">حذف</string>
+    <string name="wiped_imports_removed_text">%1$d ورودی مدل خراب از تب مدل‌ها حذف شد.</string>
     <string name="wiped_imports_progress_title">بازیابی مدل در جریان است</string>
     <string name="wiped_imports_progress_text">فایل‌های مدل حذف‌شده دوباره دانلود می‌شوند. این کار ممکن است چند دقیقه طول بکشد.</string>
 </resources>

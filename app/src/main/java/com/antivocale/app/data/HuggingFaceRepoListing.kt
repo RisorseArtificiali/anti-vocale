@@ -6,6 +6,16 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
+ * TASK-973: an HTTP-level failure of a source fetch, carrying the status
+ * code so callers can separate TRANSIENT server states (429, 5xx: retrying
+ * later can succeed) from DEAD ones (404/410: the source is gone). Extends
+ * IllegalArgumentException so every pre-existing catch of the old string
+ * form keeps its semantics.
+ */
+class HttpSourceException(val code: Int, url: String) :
+    IllegalArgumentException("fetch failed: HTTP $code for $url")
+
+/**
  * HuggingFace repository listing for URL imports (spec: external models platform v2a,
  * Task 8). Files backed by LFS expose a server-side sha256 oid (a real integrity pin);
  * plain files expose only a git sha1, so their pin is computed on first download
@@ -43,7 +53,7 @@ class HuggingFaceRepoListing(
             .build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw IllegalArgumentException("HuggingFace listing failed: HTTP ${response.code} for $repoId")
+                throw HttpSourceException(response.code, repoId)
             }
             val body = response.body?.string() ?: throw IllegalArgumentException("empty listing body")
             val entries = JSONArray(body)
@@ -91,7 +101,7 @@ class HuggingFaceRepoListing(
         val request = okhttp3.Request.Builder().url(url).build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw IllegalArgumentException("fetch failed: HTTP ${response.code} for $url")
+                throw HttpSourceException(response.code, url)
             }
             return response.body?.string() ?: throw IllegalArgumentException("empty body for $url")
         }

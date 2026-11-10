@@ -1349,6 +1349,11 @@
     <string name="wiped_imports_recovered_text">Die Dateien von %1$d Modell(en) wurden erneut heruntergeladen und sind einsatzbereit.</string>
     <string name="wiped_imports_failed_title">Wiederherstellung fehlgeschlagen</string>
     <string name="wiped_imports_failed_text">Der erneute Download wurde nicht abgeschlossen. Öffne den Tab Modelle und importiere das Modell erneut von Hand.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">Modellquelle nicht mehr verfügbar</string>
+    <string name="wiped_imports_source_failed_text">%1$d Modell(e) können nicht mehr von ihrer ursprünglichen Quelle geladen werden. Entferne die defekten Einträge oder importiere das Modell manuell über den Modelle-Tab erneut.</string>
+    <string name="wiped_imports_remove_action">Entfernen</string>
+    <string name="wiped_imports_removed_text">%1$d defekte Modell-Einträge aus dem Modelle-Tab entfernt.</string>
     <string name="wiped_imports_progress_title">Modellwiederherstellung läuft</string>
     <string name="wiped_imports_progress_text">Die gelöschten Modelldateien werden erneut heruntergeladen. Dies kann einige Minuten dauern.</string>
 </resources>

@@ -45,6 +45,7 @@ class BackupSettingsKeysTest {
         "pending_backend_load" to "transient",
         "wiped_repair_captured_active" to "transient (TASK-963 in-flight repair snapshot)",
         "wiped_repair_captured_pin" to "transient (TASK-963 in-flight repair snapshot)",
+        "wiped_repair_dead_sources" to "transient (TASK-973 dead-source marker, recomputed by the next repair)",
         "keep_alive_timeout" to "legacy (v2 superseded it)",
         "\$SHERPA_MODEL_PATH_PREFIX\$entryId" to "template pattern (per-entry derived key)",
         "remote_omnivoice_endpoint" to "secret-adjacent config",

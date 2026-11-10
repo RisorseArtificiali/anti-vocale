@@ -1361,6 +1361,11 @@
     <string name="wiped_imports_recovered_text">הקבצים של %1$d מהמודלים הורדו שוב והם מוכנים לשימוש.</string>
     <string name="wiped_imports_failed_title">שחזור המודל נכשל</string>
     <string name="wiped_imports_failed_text">ההורדה החוזרת לא הושלמה. פתח את הלשונית מודלים וייבא את המודל מחדש באופן ידני.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">מקור המודל אינו זמין</string>
+    <string name="wiped_imports_source_failed_text">לא ניתן עוד להוריד %1$d מודל(ים) מהמקור המקורי. הסירו את הרשומות התקולות או ייבאו את המודל מחדש ידנית מלשונית המודלים.</string>
+    <string name="wiped_imports_remove_action">הסרה</string>
+    <string name="wiped_imports_removed_text">%1$d רשומות מודל תקולות הוסרו מלשונית המודלים.</string>
     <string name="wiped_imports_progress_title">שחזור המודל מתבצע</string>
     <string name="wiped_imports_progress_text">קבצי המודל שנמחקו מורדים שוב. התהליך עשוי להימשך מספר דקות.</string>
 </resources>

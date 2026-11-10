@@ -47,6 +47,23 @@ class WipedImportRepairReceiver : BroadcastReceiver() {
     @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
 
     override fun onReceive(context: Context, intent: Intent) {
+        // TASK-973: the Remove action has its own arm (it never downloads:
+        // it deletes the records the last repair proved dead).
+        if (intent.action == ACTION_REMOVE_DEAD_WIPED_IMPORTS) {
+            runCatching {
+                applicationScope.launch(Dispatchers.IO) {
+                    val removed = runCatching { repairer.removeDeadSources() }
+                        .onFailure { e -> Log.e(TAG, "Dead-source removal failed", e) }
+                        .getOrDefault(emptyList())
+                    runCatching {
+                        WipedImportRepairNotifications.postRemoved(context, removed.size)
+                    }
+                }
+            }.onFailure { e ->
+                Log.e(TAG, "Failed to launch the dead-source removal", e)
+            }
+            return
+        }
         if (intent.action != ACTION_REPAIR_WIPED_IMPORTS) return
         runCatching {
             // Consume the actionable notice (tapping an ACTION button does
@@ -68,8 +85,11 @@ class WipedImportRepairReceiver : BroadcastReceiver() {
                 }
                 runCatching {
                     WipedImportRepairNotifications.postOutcome(
-                        context, attempted = result?.attempted ?: 1,
-                        repairedCount = result?.repairedIds?.size ?: 0)
+                        context,
+                        attempted = result?.attempted ?: 1,
+                        repairedCount = result?.repairedIds?.size ?: 0,
+                        networkFailedCount = result?.networkFailedIds?.size ?: 0,
+                        sourceFailedCount = result?.sourceFailedIds?.size ?: 0)
                 }.onFailure { e ->
                     Log.w(TAG, "Failed to post the repair outcome notification", e)
                 }
@@ -82,6 +102,9 @@ class WipedImportRepairReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "WipedImportRepairReceiver"
         const val ACTION_REPAIR_WIPED_IMPORTS = "com.antivocale.app.REPAIR_WIPED_IMPORTS"
+        /** TASK-973: the failed notice's Remove action (dead sources only). */
+        const val ACTION_REMOVE_DEAD_WIPED_IMPORTS =
+            "com.antivocale.app.REMOVE_DEAD_WIPED_IMPORTS"
     }
 }
 
@@ -106,6 +129,7 @@ object WipedImportRepairNotifications {
     private const val VISIBLE_NAME_LIMIT = 3
 
     private const val RC_RECOVER = 1
+    private const val RC_REMOVE_DEAD = 3
 
     /** Dismisses the actionable wiped notice (the Recover tap's first
      *  effect; the outcome below re-posts on the same id). */
@@ -143,11 +167,24 @@ object WipedImportRepairNotifications {
      *  NOTHING when nothing was dangling at tap time (a stale notification
      *  with nothing left to do is not a failure). The receiver's exception
      *  arm passes attempted 1 with 0 repaired, landing on the failure. */
-    fun postOutcome(context: Context, attempted: Int, repairedCount: Int) {
-        if (repairedCount > 0) {
+    fun postOutcome(
+        context: Context,
+        attempted: Int,
+        repairedCount: Int,
+        networkFailedCount: Int = 0,
+        sourceFailedCount: Int = 0,
+    ) {
+        if (sourceFailedCount > 0) {
+            // The actionable state wins over the recovered tone when both
+            // occurred: a silent dead-marking under a "recovery finished"
+            // notice leaves the broken entry with no remedy (the Remove
+            // action lives only here). The recovered models are visible on
+            // the Models tab.
+            post(context) { failedNotification(context, networkFailedCount, sourceFailedCount) }
+        } else if (repairedCount > 0) {
             post(context) { recoveredAlert(context, repairedCount) }
-        } else if (attempted > 0) {
-            postFailed(context)
+        } else if (attempted > 0 || networkFailedCount > 0) {
+            post(context) { failedNotification(context, networkFailedCount, sourceFailedCount) }
         }
     }
 
@@ -160,13 +197,53 @@ object WipedImportRepairNotifications {
             contentIntent = modelsTabIntent(context),
         )
 
-    /** The failed arm stays public: the receiver posts it directly when the
-     *  repair coroutine itself died before producing a result. */
-    fun postFailed(context: Context) {
+    /** TASK-973: the typed failure. Network failures keep the retryable
+     *  copy and RE-ARM the Recover action (the maintainer's own friction:
+     *  the old failed notice carried no action). Source failures carry the
+     *  unavailable-source copy and the Remove action; a mixed outcome
+     *  carries both actions and the source copy (the counts ride in the
+     *  text; only source count is named, the network retry is the action). */
+    private fun failedNotification(
+        context: Context,
+        networkFailedCount: Int,
+        sourceFailedCount: Int,
+    ): Notification {
+        val builder = baseBuilder(context)
+            // The terminal outcome may auto-cancel (the actionable wiped
+            // notice must not); everything else rides baseBuilder.
+            .setAutoCancel(true)
+        if (sourceFailedCount > 0) {
+            builder
+                .setContentTitle(context.getString(R.string.wiped_imports_source_failed_title))
+                .setContentText(
+                    context.getString(R.string.wiped_imports_source_failed_text, sourceFailedCount))
+                .addAction(
+                    android.R.drawable.ic_menu_delete,
+                    context.getString(R.string.wiped_imports_remove_action),
+                    removePendingIntent(context))
+        } else {
+            builder
+                .setContentTitle(context.getString(R.string.wiped_imports_failed_title))
+                .setContentText(context.getString(R.string.wiped_imports_failed_text))
+        }
+        if (networkFailedCount > 0 || sourceFailedCount == 0) {
+            builder.addAction(
+                android.R.drawable.stat_sys_download,
+                context.getString(R.string.wiped_imports_recover_action),
+                recoverPendingIntent(context))
+        }
+        return builder.build()
+    }
+
+    /** TASK-973: the Remove outcome, on the same id. A no-op removal
+     *  (stale second tap) posts nothing: a "Removed 0" confirmation would
+     *  claim work that did not happen. */
+    fun postRemoved(context: Context, removedCount: Int) {
+        if (removedCount == 0) return
         post(context) {
             ResultNotificationFactory(context).alertNotification(
-                title = context.getString(R.string.wiped_imports_failed_title),
-                text = context.getString(R.string.wiped_imports_failed_text),
+                title = context.getString(R.string.wiped_imports_source_failed_title),
+                text = context.getString(R.string.wiped_imports_removed_text, removedCount),
                 priority = NotificationCompat.PRIORITY_DEFAULT,
                 channel = AppNotificationChannel.MODEL_REPAIR,
                 contentIntent = modelsTabIntent(context),
@@ -188,13 +265,7 @@ object WipedImportRepairNotifications {
         val text = context.getString(R.string.wiped_imports_text, candidates.size, namesLine)
         // Explicit component, not a package-scoped action alone: the
         // receiver is not exported, so the PendingIntent must name it.
-        val recover = PendingIntent.getBroadcast(
-            context, RC_RECOVER,
-            Intent(context, WipedImportRepairReceiver::class.java).apply {
-                action = WipedImportRepairReceiver.ACTION_REPAIR_WIPED_IMPORTS
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val recover = recoverPendingIntent(context)
         return baseBuilder(context)
             .setContentTitle(context.getString(R.string.wiped_imports_title))
             .setContentText(text)
@@ -224,6 +295,22 @@ object WipedImportRepairNotifications {
      *  repeat the construction expression at every arm. */
     private fun modelsTabIntent(context: Context): PendingIntent =
         ResultNotificationFactory(context).modelsTabPendingIntent()
+
+    private fun recoverPendingIntent(context: Context): PendingIntent =
+        PendingIntent.getBroadcast(
+            context, RC_RECOVER,
+            Intent(context, WipedImportRepairReceiver::class.java).apply {
+                action = WipedImportRepairReceiver.ACTION_REPAIR_WIPED_IMPORTS
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+    private fun removePendingIntent(context: Context): PendingIntent =
+        PendingIntent.getBroadcast(
+            context, RC_REMOVE_DEAD,
+            Intent(context, WipedImportRepairReceiver::class.java).apply {
+                action = WipedImportRepairReceiver.ACTION_REMOVE_DEAD_WIPED_IMPORTS
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
     private fun post(context: Context, build: () -> Notification) = runCatching {
         val channel = AppNotificationChannel.MODEL_REPAIR

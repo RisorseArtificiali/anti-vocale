@@ -1377,6 +1377,11 @@
     <string name="wiped_imports_recovered_text">Pliki modeli w liczbie %1$d pobrano ponownie i można z nich korzystać.</string>
     <string name="wiped_imports_failed_title">Nie udało się przywrócić modeli</string>
     <string name="wiped_imports_failed_text">Pobieranie nie zostało ukończone. Otwórz zakładkę Modele i zaimportuj model ponownie ręcznie.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">Źródło modelu niedostępne</string>
+    <string name="wiped_imports_source_failed_text">%1$d model(i) nie można już pobrać z oryginalnego źródła. Usuń uszkodzone wpisy lub zaimportuj model ponownie ręcznie z karty Modele.</string>
+    <string name="wiped_imports_remove_action">Usuń</string>
+    <string name="wiped_imports_removed_text">Usunięto %1$d uszkodzonych wpisów modelu z karty Modele.</string>
     <string name="wiped_imports_progress_title">Trwa przywracanie modelu</string>
     <string name="wiped_imports_progress_text">Ponowne pobieranie usuniętych plików modelu. Może to potrwać kilka minut.</string>
 </resources>

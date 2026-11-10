@@ -308,7 +308,13 @@ interface PreferencesManager {
      * device.
      */
     val wipedRepairCapturedActive: Flow<String>
+    /** TASK-973: record ids whose pinned source proved dead or unusable in
+     *  a repair; the startup scan and the Recover candidates exclude them
+     *  (retrying cannot help), and the failed notice offers their removal.
+     *  Transient like the whole wiped-repair family: not backed up. */
+    val wipedRepairDeadSources: Flow<Set<String>>
     suspend fun saveWipedRepairCapturedActive(backendId: String)
+    suspend fun saveWipedRepairDeadSources(ids: Set<String>)
 
     /** TASK-963: the refinement-pin half of the same snapshot. */
     val wipedRepairCapturedPin: Flow<String>

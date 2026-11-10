@@ -246,10 +246,12 @@ object AppModule {
         store: ExternalModelStore,
         preferencesManager: PreferencesManager,
         importer: com.antivocale.app.data.ExternalModelImportOperations,
+        deleter: com.antivocale.app.data.ExternalModelDeleter,
     ): com.antivocale.app.data.ExternalImportRepairer =
         com.antivocale.app.data.ExternalImportRepairer(
             store,
             preferencesManager,
+            deleter = deleter,
             reimport = com.antivocale.app.data.ExternalImportRepairer.reimportFor(importer),
         )
 

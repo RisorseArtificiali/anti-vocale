@@ -1217,6 +1217,11 @@
     <string name="wiped_imports_recovered_text">Os arquivos de %1$d modelo(s) foram baixados de novo e já podem ser usados.</string>
     <string name="wiped_imports_failed_title">Falha na recuperação do modelo</string>
     <string name="wiped_imports_failed_text">O download não foi concluído. Abra a aba Modelos para importar o modelo de novo manualmente.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">Fonte do modelo indisponível</string>
+    <string name="wiped_imports_source_failed_text">%1$d modelo(s) não pode mais ser baixado da fonte original. Remova as entradas quebradas ou importe o modelo novamente manualmente na aba Modelos.</string>
+    <string name="wiped_imports_remove_action">Remover</string>
+    <string name="wiped_imports_removed_text">%1$d entradas quebradas do modelo removidas da aba Modelos.</string>
     <string name="wiped_imports_progress_title">Recuperação do modelo em andamento</string>
     <string name="wiped_imports_progress_text">Baixando novamente os arquivos do modelo excluído. Isso pode levar alguns minutos.</string>
 </resources>

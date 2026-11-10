@@ -1349,6 +1349,11 @@
     <string name="wiped_imports_recovered_text">%1$d modelin dosyaları yeniden indirildi ve kullanılmaya hazır.</string>
     <string name="wiped_imports_failed_title">Model kurtarma başarısız</string>
     <string name="wiped_imports_failed_text">Yeniden indirme tamamlanmadı. Modeli elle yeniden içe aktarmak için Modeller sekmesini açın.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">Model kaynağı kullanılamıyor</string>
+    <string name="wiped_imports_source_failed_text">%1$d model artık özgün kaynağından indirilemiyor. Bozuk kayıtları kaldırın veya modeli Modeller sekmesinden elle yeniden içe aktarın.</string>
+    <string name="wiped_imports_remove_action">Kaldır</string>
+    <string name="wiped_imports_removed_text">Modeller sekmesinden %1$d bozuk model kaydı kaldırıldı.</string>
     <string name="wiped_imports_progress_title">Model kurtarma işlemi sürüyor</string>
     <string name="wiped_imports_progress_text">Silinen model dosyaları yeniden indiriliyor. Bu işlem birkaç dakika sürebilir.</string>
 </resources>

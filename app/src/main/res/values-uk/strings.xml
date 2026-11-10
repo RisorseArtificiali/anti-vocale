@@ -1379,6 +1379,11 @@
     <string name="wiped_imports_recovered_text">Файли моделей у кількості %1$d завантажено знову, і вони готові до використання.</string>
     <string name="wiped_imports_failed_title">Не вдалося відновити моделі</string>
     <string name="wiped_imports_failed_text">Повторне завантаження не завершилося. Відкрийте вкладку Моделі та імпортуйте модель знову вручну.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">Джерело моделі недоступне</string>
+    <string name="wiped_imports_source_failed_text">%1$d модель(і) більше не можна завантажити з первинного джерела. Видаліть зламані записи або імпортуйте модель вручну на вкладці «Моделі».</string>
+    <string name="wiped_imports_remove_action">Видалити</string>
+    <string name="wiped_imports_removed_text">З вкладки «Моделі» видалено зламаних записів: %1$d.</string>
     <string name="wiped_imports_progress_title">Триває відновлення моделі</string>
     <string name="wiped_imports_progress_text">Файли видаленої моделі завантажуються знову. Це може тривати кілька хвилин.</string>
 </resources>

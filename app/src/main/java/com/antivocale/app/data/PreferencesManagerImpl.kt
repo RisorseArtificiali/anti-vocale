@@ -51,6 +51,10 @@ class PreferencesManagerImpl(
             stringPreferencesKey("wiped_repair_captured_active")
         private val WIPED_REPAIR_CAPTURED_PIN =
             stringPreferencesKey("wiped_repair_captured_pin")
+        // TASK-973: record ids whose source proved dead (the native set
+        // form, same as DEMOTED_BACKENDS above).
+        private val WIPED_REPAIR_DEAD_SOURCES =
+            stringSetPreferencesKey("wiped_repair_dead_sources")
         private val SHERPA_MODEL_PATH_PREFIX = "sherpa_model_path_"
         /**
          * Data-store keys of the pre-consolidation per-model path preferences, mapped to
@@ -482,6 +486,18 @@ class PreferencesManagerImpl(
     override suspend fun saveWipedRepairCapturedActive(backendId: String) {
         dataStore.edit { preferences ->
             preferences[WIPED_REPAIR_CAPTURED_ACTIVE] = backendId
+        }
+    }
+
+    override val wipedRepairDeadSources: Flow<Set<String>> =
+        dataStore.data.map { preferences ->
+            preferences[WIPED_REPAIR_DEAD_SOURCES] ?: emptySet()
+        }
+
+    override suspend fun saveWipedRepairDeadSources(ids: Set<String>) {
+        dataStore.edit { preferences ->
+            if (ids.isEmpty()) preferences.remove(WIPED_REPAIR_DEAD_SOURCES)
+            else preferences[WIPED_REPAIR_DEAD_SOURCES] = ids
         }
     }
 

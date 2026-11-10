@@ -7,6 +7,7 @@ import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelSource
 import com.antivocale.app.data.ModelFamily
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -85,8 +86,45 @@ class WipedImportRepairNotificationsTest {
     }
 
     @Test
+    fun `source-failed outcome carries the Remove action and the dead copy`() {
+        WipedImportRepairNotifications.postOutcome(
+            context, attempted = 1, repairedCount = 0, sourceFailedCount = 1)
+
+        val manager = context.getSystemService(android.app.NotificationManager::class.java)
+        val notification = Shadows.shadowOf(manager).allNotifications.single()
+        val text = notification.extras.getCharSequence(android.app.Notification.EXTRA_TEXT).toString()
+        assertTrue(text, text.contains("no longer be downloaded"))
+        val actions = notification.actions!!.map { it.title }
+        // TASK-973: a pure source failure offers removal, not a retry.
+        assertTrue(actions.toString(), actions.contains("Remove"))
+        assertFalse(actions.toString(), actions.contains("Recover"))
+    }
+
+    @Test
+    fun `a no-op removal posts nothing`() {
+        WipedImportRepairNotifications.postRemoved(context, 0)
+        val manager = context.getSystemService(android.app.NotificationManager::class.java)
+        assertTrue(Shadows.shadowOf(manager).allNotifications.isEmpty())
+    }
+
+    @Test
+    fun `network-failed outcome re-arms the Recover action`() {
+        WipedImportRepairNotifications.postOutcome(
+            context, attempted = 1, repairedCount = 0, networkFailedCount = 1)
+
+        val manager = context.getSystemService(android.app.NotificationManager::class.java)
+        val notification = Shadows.shadowOf(manager).allNotifications.single()
+        val title = notification.extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString()
+        assertEquals("Model recovery failed", title)
+        val actions = notification.actions!!.map { it.title }
+        // The maintainer's own friction: the old failed notice had no action.
+        assertTrue(actions.toString(), actions.contains("Recover"))
+    }
+
+    @Test
     fun `failed outcome tap lands on the Models tab and auto-cancels`() {
-        WipedImportRepairNotifications.postFailed(context)
+        WipedImportRepairNotifications.postOutcome(
+            context, attempted = 1, repairedCount = 0, networkFailedCount = 1)
 
         val manager = context.getSystemService(android.app.NotificationManager::class.java)
         val shadow = Shadows.shadowOf(manager)

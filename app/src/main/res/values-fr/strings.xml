@@ -1217,6 +1217,11 @@
     <string name="wiped_imports_recovered_text">Les fichiers de %1$d modèle(s) ont été téléchargés à nouveau et sont prêts à l\'emploi.</string>
     <string name="wiped_imports_failed_title">Échec de la récupération</string>
     <string name="wiped_imports_failed_text">Le nouveau téléchargement ne s\'est pas terminé. Ouvrez l\'onglet Modèles pour réimporter le modèle manuellement.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">Source du modèle indisponible</string>
+    <string name="wiped_imports_source_failed_text">%1$d modèle(s) ne peut plus être téléchargé depuis sa source d\'origine. Supprimez les entrées cassées ou réimportez le modèle manuellement depuis l\'onglet Modèles.</string>
+    <string name="wiped_imports_remove_action">Supprimer</string>
+    <string name="wiped_imports_removed_text">%1$d entrées de modèle cassées supprimées de l\'onglet Modèles.</string>
     <string name="wiped_imports_progress_title">Restauration du modèle en cours</string>
     <string name="wiped_imports_progress_text">Les fichiers du modèle supprimé sont en cours de téléchargement. Cela peut prendre quelques minutes.</string>
 </resources>

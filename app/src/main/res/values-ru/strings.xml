@@ -1378,6 +1378,11 @@
     <string name="wiped_imports_recovered_text">Файлы моделей в количестве %1$d скачаны заново и готовы к использованию.</string>
     <string name="wiped_imports_failed_title">Не удалось восстановить модели</string>
     <string name="wiped_imports_failed_text">Повторная загрузка не завершилась. Откройте вкладку Модели и импортируйте модель заново вручную.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">Источник модели недоступен</string>
+    <string name="wiped_imports_source_failed_text">%1$d модель(и) больше нельзя скачать из первоисточника. Удалите битые записи или импортируйте модель вручную на вкладке «Модели».</string>
+    <string name="wiped_imports_remove_action">Удалить</string>
+    <string name="wiped_imports_removed_text">Из вкладки «Модели» удалено битых записей: %1$d.</string>
     <string name="wiped_imports_progress_title">Идёт восстановление модели</string>
     <string name="wiped_imports_progress_text">Файлы удалённой модели загружаются заново. Это может занять несколько минут.</string>
 </resources>

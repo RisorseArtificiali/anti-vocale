@@ -119,7 +119,9 @@ internal class FakePreferencesManager : PreferencesManager {
     val _wipedRepairCapturedActive = MutableStateFlow("")
     override val wipedRepairCapturedActive: Flow<String> get() = _wipedRepairCapturedActive
     val _wipedRepairCapturedPin = MutableStateFlow("")
+    val _wipedRepairDeadSources = MutableStateFlow(emptySet<String>())
     override val wipedRepairCapturedPin: Flow<String> get() = _wipedRepairCapturedPin
+    override val wipedRepairDeadSources: Flow<Set<String>> = _wipedRepairDeadSources
     override fun sherpaModelPath(entryId: String): Flow<String?> = _sherpaModelPath(entryId)
     override val externalCatalogUrl: Flow<String> get() = _externalCatalogUrl
     override suspend fun saveExternalCatalogUrl(url: String) { _externalCatalogUrl.value = url }
@@ -214,6 +216,8 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveTranscriptionBackend(backendId: String) { _transcriptionBackend.value = backendId }
     override suspend fun saveWipedRepairCapturedActive(backendId: String) { _wipedRepairCapturedActive.value = backendId }
     override suspend fun saveWipedRepairCapturedPin(backendId: String) { _wipedRepairCapturedPin.value = backendId }
+
+    override suspend fun saveWipedRepairDeadSources(ids: Set<String>) { _wipedRepairDeadSources.value = ids }
     override suspend fun saveSherpaModelPath(entryId: String, path: String) { _sherpaModelPath(entryId).value = path }
     override suspend fun clearSherpaModelPath(entryId: String) { _sherpaModelPath(entryId).value = null }
     override suspend fun saveExternalMigrationDone(done: Boolean) { _externalMigrationDone.value = done }

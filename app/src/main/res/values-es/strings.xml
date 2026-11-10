@@ -1217,6 +1217,11 @@
     <string name="wiped_imports_recovered_text">Los archivos de %1$d modelo(s) se han vuelto a descargar y ya se pueden usar.</string>
     <string name="wiped_imports_failed_title">No se pudo recuperar el modelo</string>
     <string name="wiped_imports_failed_text">La descarga no se completó. Abre la pestaña Modelos para importar el modelo de nuevo manualmente.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">Origen del modelo no disponible</string>
+    <string name="wiped_imports_source_failed_text">%1$d modelo(s) ya no se puede descargar de su origen original. Elimina las entradas rotas o importa el modelo de nuevo manualmente desde la pestaña Modelos.</string>
+    <string name="wiped_imports_remove_action">Eliminar</string>
+    <string name="wiped_imports_removed_text">Se eliminaron %1$d entradas rotas del modelo de la pestaña Modelos.</string>
     <string name="wiped_imports_progress_title">Recuperación del modelo en curso</string>
     <string name="wiped_imports_progress_text">Se están descargando de nuevo los archivos del modelo eliminado. Puede tardar unos minutos.</string>
 </resources>

@@ -1189,6 +1189,11 @@
     <string name="wiped_imports_recovered_text">Mallien (%1$d kpl) tiedostot on ladattu uudelleen ja ne ovat valmiita käytettäväksi.</string>
     <string name="wiped_imports_failed_title">Mallin palautus epäonnistui</string>
     <string name="wiped_imports_failed_text">Uudelleenlataus ei valmistunut. Avaa Mallit-välilehti ja tuo malli uudelleen käsin.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">Mallin lähde ei ole käytettävissä</string>
+    <string name="wiped_imports_source_failed_text">%1$d mallia ei voi enää ladata alkuperäisestä lähteestään. Poista rikkinäiset merkinnät tai tuo malli uudelleen manuaalisesti Mallit-välilehdeltä.</string>
+    <string name="wiped_imports_remove_action">Poista</string>
+    <string name="wiped_imports_removed_text">Poistettiin %1$d rikkinäistä mallimerkintää Mallit-välilehdeltä.</string>
     <string name="wiped_imports_progress_title">Mallin palautus käynnissä</string>
     <string name="wiped_imports_progress_text">Poistettujen mallitiedostojen lataaminen käynnissä uudelleen. Tämä voi kestää muutaman minuutin.</string>
 </resources>

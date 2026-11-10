@@ -1246,6 +1246,11 @@
     <string name="wiped_imports_recovered_text">أُعيد تنزيل ملفات نماذج عددها %1$d وهي جاهزة للاستخدام.</string>
     <string name="wiped_imports_failed_title">فشل استرداد النموذج</string>
     <string name="wiped_imports_failed_text">لم يكتمل إعادة التنزيل. افتح تبويب النماذج لإعادة استيراد النموذج يدويًا.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">مصدر النموذج غير متاح</string>
+    <string name="wiped_imports_source_failed_text">لم يعد يمكن تنزيل %1$d نموذج من مصدره الأصلي. احذف الإدخالات المعطلة أو أعد استيراد النموذج يدويًا من تبويب النماذج.</string>
+    <string name="wiped_imports_remove_action">إزالة</string>
+    <string name="wiped_imports_removed_text">تمت إزالة %1$d إدخال نموذج معطل من تبويب النماذج.</string>
     <string name="wiped_imports_progress_title">جارٍ استعادة النموذج</string>
     <string name="wiped_imports_progress_text">يتم تنزيل ملفات النموذج المحذوف مرة أخرى. قد يستغرق ذلك بضع دقائق.</string>
 </resources>

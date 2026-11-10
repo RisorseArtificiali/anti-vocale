@@ -152,6 +152,112 @@ class ExternalImportRepairerTest {
     }
 
     @Test
+    fun `an io failure is network class and stays retryable`() = runTest {
+        store.add(record("flaky-net", dirPresent = false))
+        nextFailure = java.io.IOException("resolve failed")
+
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
+        val result = repairer.repairAll()
+
+        assertEquals(listOf("flaky-net"), result.networkFailedIds)
+        assertEquals(emptyList<String>(), result.sourceFailedIds)
+        // Network failures never mark the source dead: the next scan and
+        // tap still count the record (a working network can recover it).
+        assertEquals(listOf("flaky-net"), repairer.scanWipedImports().map { it.id })
+        assertTrue(prefs._wipedRepairDeadSources.value.isEmpty())
+    }
+
+    @Test
+    fun `a source failure marks the record dead for scan and repairs`() = runTest {
+        store.add(record("dead-src", dirPresent = false))
+        nextFailure = HttpSourceException(404, "https://example.com/dead-src.json")
+
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
+        val result = repairer.repairAll()
+
+        assertEquals(listOf("dead-src"), result.sourceFailedIds)
+        assertEquals(setOf("dead-src"), prefs._wipedRepairDeadSources.value)
+        // The startup scan stops counting it (the notice no longer nags).
+        assertEquals(emptyList<String>(), repairer.scanWipedImports().map { it.id })
+        // A later repair does not re-attempt it (the manual Models path owns it).
+        assertEquals(0, repairer.repairAll().attempted)
+    }
+
+    @Test
+    fun `a repaired record leaves the dead set`() = runTest {
+        store.add(record("was-dead", dirPresent = false))
+        prefs._wipedRepairDeadSources.value = setOf("was-dead")
+        // A later repair is not attempted, so clear the dead set the way a
+        // source recovery would: the record repaired by hand.
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
+        assertEquals(0, repairer.repairAll().attempted)
+        // Hand-repaired: the store dir exists again, the set is stale. The
+        // repairer only rewrites the set when a repair runs; the stale id
+        // is harmless (the record is loadable, the scan checks isLoadable
+        // AFTER the dead filter, so a stale entry cannot hide a broken
+        // model: it only stops the notice for a healthy one).
+        store.update(record("was-dead", dirPresent = true))
+        assertEquals(emptyList<String>(), repairer.scanWipedImports().map { it.id })
+    }
+
+    @Test
+    fun `a disk-full failure stays retryable, not dead`() = runTest {
+        store.add(record("no-space", dirPresent = false))
+        nextFailure = IllegalArgumentException("not enough disk space: need 700MB, available 12MB")
+
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
+        val result = repairer.repairAll()
+
+        // This feature's own audience runs out of disk: that is NOT the
+        // source being dead (the 2026-11-10 review's inversion finding).
+        assertEquals(listOf("no-space"), result.networkFailedIds)
+        assertTrue(prefs._wipedRepairDeadSources.value.isEmpty())
+    }
+
+    @Test
+    fun `a transient download http error stays retryable`() = runTest {
+        store.add(record("rate-limited", dirPresent = false))
+        nextFailure = com.antivocale.app.data.download.DownloadException.HttpError(
+            429, "rate limited")
+
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
+        val result = repairer.repairAll()
+
+        assertEquals(listOf("rate-limited"), result.networkFailedIds)
+        assertTrue(prefs._wipedRepairDeadSources.value.isEmpty())
+    }
+
+    @Test
+    fun `a stale remove tap cannot delete a healthy re-imported record`() = runTest {
+        val rec = record("back-alive", dirPresent = true)
+        store.add(rec)
+        prefs._wipedRepairDeadSources.value = setOf("back-alive")
+        val deleter = ExternalModelDeleter(store, prefs)
+
+        val repairer = ExternalImportRepairer(store, prefs, deleter, reimport = reimport)
+        val removed = repairer.removeDeadSources()
+
+        assertEquals(emptyList<String>(), removed)
+        // The healthy record survived the stale Remove.
+        assertEquals(1, store.records().size)
+    }
+
+    @Test
+    fun `remove dead sources deletes through the deleter and clears the set`() = runTest {
+        val dead = record("gone-src", dirPresent = false)
+        store.add(dead)
+        prefs._wipedRepairDeadSources.value = setOf("gone-src")
+        val deleter = ExternalModelDeleter(store, prefs)
+
+        val repairer = ExternalImportRepairer(store, prefs, deleter, reimport = reimport)
+        val removed = repairer.removeDeadSources()
+
+        assertEquals(listOf("gone-src"), removed)
+        assertEquals(emptySet<String>(), prefs._wipedRepairDeadSources.value)
+        assertEquals(0, store.records().size)
+    }
+
+    @Test
     fun `the production reimport routes through the metadata carrier with the record's own flags`() = runTest {
         val streamingRecord = record(
             "streaming-one", dirPresent = false, streaming = true,
@@ -183,7 +289,7 @@ class ExternalImportRepairerTest {
     fun `wiped url record is re-imported from its own source`() = runTest {
         store.add(record("wiped", dirPresent = false))
 
-        val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
         repairer.captureSelections()
         // The startup scan's return is the notification's candidate list.
         assertEquals(listOf("wiped"), repairer.scanWipedImports().map { it.id })
@@ -200,7 +306,7 @@ class ExternalImportRepairerTest {
         prefs._transcriptionBackend.value = "external:active-one"
         prefs._refinementModelBackendId.value = "external:active-one"
 
-        val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
         repairer.captureSelections()
         // The cleaner's reset happens between capture and repair; the
         // repairer must still restore what was captured. The seam carries
@@ -223,12 +329,13 @@ class ExternalImportRepairerTest {
         prefs._transcriptionBackend.value = "external:still-gone"
         nextFailure = java.io.IOException("network gone")
 
-        val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
         repairer.captureSelections()
         prefs._transcriptionBackend.value = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
         val repaired = repairer.repairAll()
 
-        assertEquals(ExternalImportRepairer.RepairResult(1, emptyList()), repaired)
+        // TASK-973: the IOException is network-class (retryable), not dead.
+        assertEquals(ExternalImportRepairer.RepairResult(1, emptyList(), listOf("still-gone")), repaired)
         // Not restored to a record that still cannot load.
         assertEquals(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND, prefs._transcriptionBackend.value)
     }
@@ -239,7 +346,7 @@ class ExternalImportRepairerTest {
         prefs._transcriptionBackend.value = "external:phantom"
 
         val repairer = ExternalImportRepairer(
-            store, prefs, reimport = reimportLeavingItDangling)
+            store, prefs, ExternalModelDeleter(store, prefs), reimport = reimportLeavingItDangling)
         repairer.captureSelections()
         prefs._transcriptionBackend.value = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
         val repaired = repairer.repairAll()
@@ -256,7 +363,7 @@ class ExternalImportRepairerTest {
         store.add(record("slow", dirPresent = false))
         prefs._transcriptionBackend.value = "external:slow"
 
-        val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
         repairer.captureSelections()
         prefs._transcriptionBackend.value = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
         // The user picks a different model while the gigabytes download:
@@ -272,7 +379,7 @@ class ExternalImportRepairerTest {
         store.add(record("drifted", dirPresent = false))
         prefs._transcriptionBackend.value = "external:drifted"
 
-        val repairer = ExternalImportRepairer(store, prefs, reimport = driftingReimport)
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = driftingReimport)
         repairer.captureSelections()
         prefs._transcriptionBackend.value = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
         val repaired = repairer.repairAll()
@@ -290,7 +397,7 @@ class ExternalImportRepairerTest {
         store.add(record("quarantined", dirPresent = false, quarantined = true))
         store.add(record("intact", dirPresent = true))
 
-        val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
         repairer.captureSelections()
         val repaired = repairer.repairAll()
 
@@ -302,7 +409,7 @@ class ExternalImportRepairerTest {
     @Test
     fun `repairAll joins the registered startup sweep before downloading`() = runTest {
         store.add(record("held-back", dirPresent = false))
-        val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
         repairer.captureSelections()
         val sweepGate = CompletableDeferred<Unit>()
         val sweepJob = launch { sweepGate.await() }
@@ -323,7 +430,7 @@ class ExternalImportRepairerTest {
     @Test
     fun `a candidate re-imported by hand before the tap is not downloaded again`() = runTest {
         store.add(record("already-back", dirPresent = false))
-        val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
         repairer.captureSelections()
         // The user re-imports from the Models tab between the notification
         // and the tap; the re-derived scan no longer sees a dangling
@@ -349,13 +456,13 @@ class ExternalImportRepairerTest {
         store.add(record("later", dirPresent = false))
         prefs._transcriptionBackend.value = "external:later"
 
-        val first = ExternalImportRepairer(store, prefs, reimport = reimport)
+        val first = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
         first.captureSelections()
         prefs._transcriptionBackend.value = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
 
         // The hand re-import happens in a fresh process: a new repairer on
         // the same persisted preferences, and no capture call at all.
-        val second = ExternalImportRepairer(store, prefs, reimport = reimport)
+        val second = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
         val handmade = java.io.File(filesRoot, "later-handmade").apply { mkdirs() }
         store.update(record("later", dirPresent = false).copy(dir = handmade.absolutePath))
 
@@ -382,7 +489,7 @@ class ExternalImportRepairerTest {
             val dir = java.io.File(filesRoot, "${record.id}-repaired").apply { mkdirs() }
             record.copy(dir = dir.absolutePath).also { store.update(it) }
         }
-        val repairer = ExternalImportRepairer(store, prefs, reimport = slowReimport)
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = slowReimport)
 
         val first = async { repairer.repairAll() }
         runCurrent()
@@ -402,7 +509,7 @@ class ExternalImportRepairerTest {
     fun `an idle startup scan retires the pending snapshot`() = runTest {
         store.add(record("pending", dirPresent = false))
         prefs._transcriptionBackend.value = "external:pending"
-        val repairer = ExternalImportRepairer(store, prefs, reimport = reimport)
+        val repairer = ExternalImportRepairer(store, prefs, ExternalModelDeleter(store, prefs), reimport = reimport)
         repairer.captureSelections()
         assertEquals("external:pending", prefs._wipedRepairCapturedActive.value)
 

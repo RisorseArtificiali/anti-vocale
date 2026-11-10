@@ -1373,6 +1373,13 @@
     <string name="wiped_imports_recovered_text">%1$d model(s) were downloaded again and are ready to use.</string>
     <string name="wiped_imports_failed_title">Model recovery failed</string>
     <string name="wiped_imports_failed_text">The re-download did not complete. Open the Models tab to import the model again manually.</string>
+    <!-- TASK-973: the source-unavailable outcome (dead or unusable pinned
+         source) and its removal affordance; the network-failed outcome
+         keeps the strings above and re-arms the Recover action. -->
+    <string name="wiped_imports_source_failed_title">Model source unavailable</string>
+    <string name="wiped_imports_source_failed_text">%1$d model(s) can no longer be downloaded from their original source. Remove the broken entries, or import the model again manually from the Models tab.</string>
+    <string name="wiped_imports_remove_action">Remove</string>
+    <string name="wiped_imports_removed_text">Removed %1$d broken model entries from the Models tab.</string>
     <string name="wiped_imports_progress_title">Model recovery in progress</string>
     <string name="wiped_imports_progress_text">Downloading the deleted model files again. This can take a few minutes.</string>
 </resources>

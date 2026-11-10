@@ -1365,6 +1365,11 @@
     <string name="wiped_imports_recovered_text">De bestanden van %1$d model(len) zijn opnieuw gedownload en weer bruikbaar.</string>
     <string name="wiped_imports_failed_title">Herstellen mislukt</string>
     <string name="wiped_imports_failed_text">De download is niet voltooid. Open het tabblad Modellen om het model handmatig opnieuw te importeren.</string>
+    <!-- TASK-973 -->
+    <string name="wiped_imports_source_failed_title">Modelbron niet beschikbaar</string>
+    <string name="wiped_imports_source_failed_text">%1$d model(len) kan niet langer worden gedownload van de originele bron. Verwijder de kapotte items of importeer het model opnieuw via het tabblad Modellen.</string>
+    <string name="wiped_imports_remove_action">Verwijderen</string>
+    <string name="wiped_imports_removed_text">%1$d kapotte modelitems verwijderd uit het tabblad Modellen.</string>
     <string name="wiped_imports_progress_title">Modelherstel wordt uitgevoerd</string>
     <string name="wiped_imports_progress_text">De verwijderde modelbestanden worden opnieuw gedownload. Dit kan enkele minuten duren.</string>
 </resources>

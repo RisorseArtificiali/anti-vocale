@@ -1126,6 +1126,10 @@ wiped_imports_recovered_title,Model recovery finished,plain,
 wiped_imports_recovered_text,%1$d model(s) were downloaded again and are ready to use.,formatted,keep verbatim: ['%1$d']
 wiped_imports_failed_title,Model recovery failed,plain,
 wiped_imports_failed_text,The re-download did not complete. Open the Models tab to import the model again manually.,plain,
+wiped_imports_source_failed_title,Model source unavailable,plain,
+wiped_imports_source_failed_text,"%1$d model(s) can no longer be downloaded from their original source. Remove the broken entries, or import the model again manually from the Models tab.",formatted,keep verbatim: ['%1$d']
+wiped_imports_remove_action,Remove,plain,
+wiped_imports_removed_text,Removed %1$d broken model entries from the Models tab.,formatted,keep verbatim: ['%1$d']
 wiped_imports_progress_title,Model recovery in progress,plain,
 wiped_imports_progress_text,Downloading the deleted model files again. This can take a few minutes.,plain,
 logs_entries_deleted [one],%d entry deleted,plural,supply only the quantities the locale table lists
