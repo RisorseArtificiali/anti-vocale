@@ -9,8 +9,17 @@
     native <methods>;
 }
 
-# Keep data classes used in intents
--keep class com.antivocale.app.data.** { *; }
+# TASK-883: the package-wide keep on com.antivocale.app.data.** was removed.
+# Evidence from the R8 config analyzer + mapping (fdroidRelease): the rule kept
+# 1007 classes unrenamed (355 of them compiler-generated inline lambdas), i.e.
+# about half of every kept class in the build, while the package has ZERO
+# reflective surfaces: no Parcelable/Serializable (no CREATOR contract), no
+# Class.forName, no JNI string lookups (sherpa and LiteRT-LM look up only
+# their own packages, kept below), and all serialization is compile-time
+# kotlinx (its generated serializers are referenced statically and carry their
+# own consumer rules). If a release-only NameNotFoundException ever traces
+# back here, the 1.1.1 playbook applies: restore the keep for the named class
+# only, never the package.
 
 # Annotation processing classes (not needed at runtime)
 -dontwarn javax.lang.model.**
