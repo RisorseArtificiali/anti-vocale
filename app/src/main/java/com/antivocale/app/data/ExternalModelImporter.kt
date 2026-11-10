@@ -5,6 +5,9 @@ import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 
 import com.antivocale.app.transcription.Language
@@ -626,6 +629,10 @@ class ExternalModelImporter(
         val targetDir = freshTargetDir(root, displayName)
         val declaredNames = triples.map { it.canonicalName }.toSet()
 
+        // TASK-971: captured ONCE in the suspend body; the progress lambda
+        // below is a plain (non-suspend) callback inside a blocking loop,
+        // so this is the handle it uses to make cancellation prompt.
+        val downloadJob = currentCoroutineContext().job
         return importCleaningUpOnFailure(targetDir) {
             val pins = HashMap<String, FilePin>()
             for ((fileIndex, triple) in triples.withIndex()) {
@@ -638,6 +645,16 @@ class ExternalModelImporter(
                         estimatedSizeBytes = triple.size,
                     ),
                     onProgress = { bytes, total, _ ->
+                        // TASK-971: the download loop is a blocking read/write
+                        // cycle with no suspension points; the throttled
+                        // progress callback (~1/s) is the one place a cancel
+                        // can take effect promptly, so the cooperative cancel
+                        // of the repair's service surfaces HERE instead of at
+                        // the end of a multi-GB file.
+                        if (downloadJob.isCancelled) {
+                            throw kotlinx.coroutines.CancellationException(
+                                "repair cancelled during download")
+                        }
                         onProgress(fileIndex, triples.size, triple.canonicalName, bytes, total)
                     },
                 )

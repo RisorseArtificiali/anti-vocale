@@ -183,6 +183,12 @@ object AppModule {
     fun provideExternalModelStore(preferencesManager: PreferencesManager): ExternalModelStore =
         ExternalModelStore(preferencesManager)
 
+    // TASK-971: the repair's progress seam (see the relay class KDoc).
+    @Provides
+    @Singleton
+    fun provideExternalImportProgressRelay(): com.antivocale.app.data.ExternalImportProgressRelay =
+        com.antivocale.app.data.ExternalImportProgressRelay()
+
     // TASK-974: the shared external-model delete semantics (store row, files,
     // selection resets). No @Inject constructor: ExternalModelStore itself is
     // provided here (the defaulted-lambda Dagger gotcha documented on it).
@@ -247,12 +253,13 @@ object AppModule {
         preferencesManager: PreferencesManager,
         importer: com.antivocale.app.data.ExternalModelImportOperations,
         deleter: com.antivocale.app.data.ExternalModelDeleter,
+        progressRelay: com.antivocale.app.data.ExternalImportProgressRelay,
     ): com.antivocale.app.data.ExternalImportRepairer =
         com.antivocale.app.data.ExternalImportRepairer(
             store,
             preferencesManager,
             deleter = deleter,
-            reimport = com.antivocale.app.data.ExternalImportRepairer.reimportFor(importer),
+            reimport = com.antivocale.app.data.ExternalImportRepairer.reimportFor(importer, progressRelay),
         )
 
     @Provides

@@ -44,18 +44,20 @@ class WipedImportRepairNotificationsTest {
     )
 
     @Test
-    fun `recover action targets the receiver explicitly with the repair action`() {
+    fun `recover action targets the foreground service explicitly`() {
         val notification = WipedImportRepairNotifications.wipedNotification(
             context, listOf(record("a"), record("b")))
 
         val action = notification.actions!!.single()
         val intent = Shadows.shadowOf(action.actionIntent).savedIntent
 
-        assertEquals(WipedImportRepairReceiver.ACTION_REPAIR_WIPED_IMPORTS, intent.action)
-        // Explicit component, not just a package-scoped action: the
-        // receiver is android:exported="false".
+        // TASK-971: the run belongs to the foreground service (the system
+        // starts it in the foreground straight from the tap); explicit
+        // component, the service is android:exported="false".
         assertEquals(
-            ComponentName(context.packageName, WipedImportRepairReceiver::class.java.name),
+            ComponentName(
+                context.packageName,
+                com.antivocale.app.service.WipedImportRepairService::class.java.name),
             intent.component)
     }
 

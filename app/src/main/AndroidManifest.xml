@@ -696,6 +696,14 @@
                 android:value="ai_inference" />
         </service>
 
+        <!-- TASK-971: foreground surface for the Recover-triggered
+             wiped-import repair; started ONLY from the notification tap. -->
+        <service
+            android:name=".service.WipedImportRepairService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <!-- Foreground service for model download + extraction -->
         <service
             android:name=".service.ExtractionService"

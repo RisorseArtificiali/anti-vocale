@@ -22,23 +22,18 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * TASK-963: the Recover action on the wiped-imports notification. The
- * broadcast carries no payload on purpose: the repairer re-derives its
- * candidates from the store at tap time, so a notification posted by an
- * earlier process instance still works after the process that armed it is
- * gone, and a stale tap on an already-restored model is a no-op rather than
- * a failure.
+ * TASK-963/971: two arms of the wiped-imports notification family. The
+ * REPAIR arm is now a router: current notices address
+ * WipedImportRepairService directly (foreground service, per-file
+ * progress, process survives the download), and this arm exists so a
+ * Recover PendingIntent armed by an EARLIER process (they address this
+ * component by name) still lands in the service. The REMOVE arm
+ * (TASK-973) stays here: deletion is seconds, not a download, and needs
+ * the Hilt-injected repairer this @AndroidEntryPoint receiver provides.
  *
- * Deliberately NOT routed through NotificationActionReceiver like the other
- * notification actions: the repair needs Hilt injection (the repairer
- * singleton and the application scope), and this dedicated @AndroidEntryPoint
- * receiver is the one-component way to get both.
- *
- * No goAsync: a repair spans minutes of multi-gigabyte downloads, far past
- * any broadcast window, so holding one would only risk the system killing
- * the process as a stuck receiver. The work runs on the application scope
- * (the injected process-lifetime scope; hand-building one is a documented
- * project rule violation) and the receiver returns immediately.
+ * No goAsync on the Remove arm: the delete runs on the
+ * application scope (the injected process-lifetime scope) and the
+ * receiver returns immediately.
  */
 @AndroidEntryPoint
 class WipedImportRepairReceiver : BroadcastReceiver() {
@@ -65,37 +60,17 @@ class WipedImportRepairReceiver : BroadcastReceiver() {
             return
         }
         if (intent.action != ACTION_REPAIR_WIPED_IMPORTS) return
+        // TASK-971: the repair runs INSIDE WipedImportRepairService
+        // (foreground: the process survives the multi-gigabyte download and
+        // the notice carries per-file progress). This arm stays as the
+        // router for staler PendingIntents posted by earlier processes; a
+        // tap on a current notice addresses the service directly.
         runCatching {
-            // Consume the actionable notice (tapping an ACTION button does
-            // not trigger autoCancel; only the notification body does) and
-            // show the in-progress state in its place: a multi-gigabyte
-            // download with no visible surface is indistinguishable from a
-            // dead tap. The outcome below replaces it on the same id; if
-            // the process dies mid-download, the next cold start's scan
-            // re-posts the wiped notice.
-            WipedImportRepairNotifications.postInProgress(context)
-            applicationScope.launch(Dispatchers.IO) {
-                val result = try {
-                    repairer.repairAll()
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Log.e(TAG, "Wiped-import repair failed (manual re-import stays available)", e)
-                    null
-                }
-                runCatching {
-                    WipedImportRepairNotifications.postOutcome(
-                        context,
-                        attempted = result?.attempted ?: 1,
-                        repairedCount = result?.repairedIds?.size ?: 0,
-                        networkFailedCount = result?.networkFailedIds?.size ?: 0,
-                        sourceFailedCount = result?.sourceFailedIds?.size ?: 0)
-                }.onFailure { e ->
-                    Log.w(TAG, "Failed to post the repair outcome notification", e)
-                }
-            }
+            context.startForegroundService(
+                android.content.Intent(
+                    context, com.antivocale.app.service.WipedImportRepairService::class.java))
         }.onFailure { e ->
-            Log.e(TAG, "Failed to launch the wiped-import repair", e)
+            Log.e(TAG, "Failed to start the wiped-import repair service", e)
         }
     }
 
@@ -130,29 +105,7 @@ object WipedImportRepairNotifications {
 
     private const val RC_RECOVER = 1
     private const val RC_REMOVE_DEAD = 3
-
-    /** Dismisses the actionable wiped notice (the Recover tap's first
-     *  effect; the outcome below re-posts on the same id). */
-    fun cancelActionable(context: Context) {
-        context.getSystemService(NotificationManager::class.java)
-            .cancel(NOTIFICATION_ID)
-    }
-
-    /** The in-progress state between the Recover tap and the outcome: the
-     *  same id, so the outcome replaces it in place. */
-    fun postInProgress(context: Context) {
-        context.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
-        post(context) {
-            ResultNotificationFactory(context).alertNotification(
-                title = context.getString(R.string.wiped_imports_progress_title),
-                text = context.getString(R.string.wiped_imports_progress_text),
-                priority = NotificationCompat.PRIORITY_DEFAULT,
-                channel = AppNotificationChannel.MODEL_REPAIR,
-                onlyAlertOnce = true,
-                contentIntent = modelsTabIntent(context),
-            )
-        }
-    }
+    private const val RC_CANCEL = 4
 
     /** State 1, posted at startup when the scan found dangling candidates:
      * what the cleaner deleted, with the Recover action that alone decides
@@ -293,15 +246,47 @@ object WipedImportRepairNotifications {
 
     /** The factory's Models-tab intent, hoisted so the receiver does not
      *  repeat the construction expression at every arm. */
+    /** TASK-971: the foreground-service state: the same fixed id as every
+     *  other state, ongoing (the service's lifecycle owns it), with the
+     *  service-targeted Cancel action. [detail] carries the per-file line
+     *  (filenames and counts are locale-free); null = the opening copy. */
+    fun progressNotification(context: Context, detail: String? = null): Notification {
+        val cancel = android.app.PendingIntent.getService(
+            context, RC_CANCEL,
+            android.content.Intent(
+                context, com.antivocale.app.service.WipedImportRepairService::class.java).apply {
+                action = com.antivocale.app.service.WipedImportRepairService.ACTION_CANCEL
+            },
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+        return NotificationCompat.Builder(context, AppNotificationChannel.MODEL_REPAIR.id)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setContentTitle(context.getString(R.string.wiped_imports_progress_title))
+            .setContentText(detail ?: context.getString(R.string.wiped_imports_progress_text))
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(ResultNotificationFactory(context).modelsTabPendingIntent())
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                context.getString(R.string.action_cancel),
+                cancel)
+            .build()
+    }
+
+    /** In-place progress update through the family's posting container. */
+    fun postProgress(context: Context, detail: String) = post(context) {
+        progressNotification(context, detail)
+    }
+
     private fun modelsTabIntent(context: Context): PendingIntent =
         ResultNotificationFactory(context).modelsTabPendingIntent()
 
     private fun recoverPendingIntent(context: Context): PendingIntent =
-        PendingIntent.getBroadcast(
+        // TASK-971: the foreground service owns the run; the system starts
+        // it in the foreground directly from the action tap (the documented
+        // pattern; the receiver's broadcast arm only serves stale notices).
+        PendingIntent.getForegroundService(
             context, RC_RECOVER,
-            Intent(context, WipedImportRepairReceiver::class.java).apply {
-                action = WipedImportRepairReceiver.ACTION_REPAIR_WIPED_IMPORTS
-            },
+            Intent(context, com.antivocale.app.service.WipedImportRepairService::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
     private fun removePendingIntent(context: Context): PendingIntent =

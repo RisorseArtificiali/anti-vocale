@@ -384,6 +384,7 @@ class ExternalImportRepairer(
          */
         fun reimportFor(
             importer: ExternalModelImportOperations,
+            progressRelay: ExternalImportProgressRelay? = null,
         ): suspend (ExternalModelRecord) -> ExternalModelRecord = { record ->
             importer.importFromUrlWithMetadata(
                 url = requireNotNull(record.sourceUrl) {
@@ -396,6 +397,7 @@ class ExternalImportRepairer(
                 family = record.family,
                 languages = record.languages,
                 streaming = record.streaming,
+                onProgress = { i, c, n, b, t -> progressRelay?.invoke(i, c, n, b, t) },
             )
         }
     }
