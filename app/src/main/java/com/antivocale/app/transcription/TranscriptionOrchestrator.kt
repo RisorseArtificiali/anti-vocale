@@ -4,6 +4,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.R
+import com.antivocale.app.ui.AppNavigation
 import com.antivocale.app.manager.EngineWedgeTimeoutException
 import com.antivocale.app.util.DecodedOfTotalFormat
 import com.antivocale.app.util.SubtitleParser
@@ -2546,9 +2547,15 @@ class TranscriptionOrchestrator @Inject constructor(
                 val nm = context.getSystemService(NotificationManager::class.java)
                 nm.notify(
                     MEMORY_MARGIN_WARNING_ID,
+                    // TASK-975: the warning names the memory-protection row;
+                    // the settings-row deep link lands there. The factory is
+                    // built inline twice (the notify argument list admits no
+                    // local val); the constructor's channel-create is idempotent.
                     ResultNotificationFactory(context).alertNotification(
                         title = context.getString(R.string.memory_margin_warning_title),
                         text = context.getString(R.string.memory_margin_warning_body, label),
+                        contentIntent = ResultNotificationFactory(context)
+                            .settingsRowPendingIntent(AppNavigation.ROW_KEY_MEMORY_PROTECTION),
                     ))
             }.onFailure { Log.w(TAG, "Could not post the memory-margin warning", it) }
         }

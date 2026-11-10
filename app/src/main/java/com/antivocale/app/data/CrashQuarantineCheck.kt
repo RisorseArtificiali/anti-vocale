@@ -54,9 +54,13 @@ class CrashQuarantineCheck(
 
     suspend fun check(context: Context) {
         val record = apply() ?: return
-        ResultNotificationFactory(context).alertNotification(
+        val factory = ResultNotificationFactory(context)
+        factory.alertNotification(
             title = context.getString(R.string.external_model_quarantined_title),
             text = context.getString(R.string.external_model_quarantined_text, record.displayName),
+            // TASK-975: the copy says "Delete and re-import the model in
+            // the Models tab"; the tap now opens that tab.
+            contentIntent = factory.modelsTabPendingIntent(),
         ).let { notification ->
             context.getSystemService(NotificationManager::class.java)
                 .notify(NOTIFICATION_ID, notification)
