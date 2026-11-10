@@ -405,20 +405,19 @@ class VoiceNoteDetector(
             if (grantedTreeUri != null) catchUpScanViaSaf(folder, now)
             return
         }
-        val notes = listing
-            .filter { it.isFile && VoiceNoteFilter.isVoiceNoteName(source, it.name) }
-        val ripe = notes.filter { now - it.lastModified() >= catchUpDelayMs }
-        if (ripe.isNotEmpty()) {
-            Log.i(TAG, "catch-up emitted ${ripe.size} note(s) from ${folder.name}")
-            ripe.forEach { file -> onDetection(entryFor(file.absolutePath)) }
-        }
-        if (ripe.size == notes.size) {
-            clearCatchUp(folder)
-        } else {
-            // Fresh files: another round once the youngest goes quiet
-            // (the entry stays pending; launchCatchUp does not re-gate).
-            launchCatchUp(folder)
-        }
+        // TASK-907 review pass: both arms share ONE tail. The raw arm hand
+        // rolled the quiet gate, emission and clear gate beside serveRipe,
+        // and the two copies drifted (the clear-gate denominator bug this
+        // pass repairs); delegating deletes the drift class and adopts the
+        // mtime emission stamp the cold lane already documents as the
+        // 833 sender-matcher invariant (never the scan time). The name
+        // filter runs before the map so siblings pay no stat syscall
+        // (serveRipe's re-filter is idempotent).
+        serveRipe(
+            listing
+                .filter { it.isFile && VoiceNoteFilter.isVoiceNoteName(source, it.name) }
+                .map { SweepFile(it.absolutePath, it.lastModified()) },
+            folder, now, lane = "831 catch-up")
     }
 
     /**
@@ -436,31 +435,43 @@ class VoiceNoteDetector(
                 Log.w(TAG, "831 SAF re-fire: walk failed for ${folder.name} (${source.name})")
                 return
             }
-            serveRipe(files, folder, now)
+            serveRipe(files, folder, now, lane = "831 SAF re-fire")
             return
         }
         val docId = safListFolders(treeUri)?.get(folder.name) ?: run {
             Log.w(TAG, "831 SAF re-fire: folder ${folder.name} not in the grant (${source.name})")
             return
         }
-        serveRipe(safListFolderMtimes(treeUri, docId).map { (name, mtime) ->
+        // TASK-907 honest-null: a FAILED query keeps the pending entry (the
+        // note is a fact to hold, not an empty folder to clear); an empty
+        // map only ever means the query succeeded and the folder is empty.
+        val mtimes = safListFolderMtimes(treeUri, docId) ?: run {
+            Log.w(TAG, "831 SAF re-fire: listing failed for ${folder.name} (${source.name})")
+            return
+        }
+        serveRipe(mtimes.map { (name, mtime) ->
             SweepFile("${folder.absolutePath}/$name", mtime)
-        }, folder, now)
+        }, folder, now, lane = "831 SAF re-fire")
     }
 
     /** Shared tail of both 831 re-fire arms: quiet gate, emission, and the
-     *  clear-vs-relaunch decision on the pending entry. */
-    private fun serveRipe(files: List<SweepFile>, folder: File, now: Long) {
-        val ripe = files
-            .filter { VoiceNoteFilter.isVoiceNoteName(source, it.name) }
-            .filter { now - it.lastModified >= catchUpDelayMs }
+     *  clear-vs-relaunch decision on the pending entry. The clear gate
+     *  counts the VOICE-NOTE subset, mirroring the raw arm's
+     *  ripe-vs-notes comparison: a non-qualifying sibling (.nomedia, a
+     *  stray temp file) must not hold the entry pending in a relaunch
+     *  loop every [catchUpDelayMs] forever (TASK-907 review pass).
+     *  [lane] only names the serving lane in the emission log, so a
+     *  logcat burst still tells the raw and SAF lanes apart. */
+    private fun serveRipe(files: List<SweepFile>, folder: File, now: Long, lane: String) {
+        val candidates = files.filter { VoiceNoteFilter.isVoiceNoteName(source, it.name) }
+        val ripe = candidates.filter { now - it.lastModified >= catchUpDelayMs }
         if (ripe.isNotEmpty()) {
-            Log.i(TAG, "831 re-fire emitted ${ripe.size} note(s) from ${folder.name}")
+            Log.i(TAG, "$lane emitted ${ripe.size} note(s) from ${folder.name}")
             ripe.forEach { f ->
                 onDetection(entryFor(f.path).copy(detectedAtMs = f.lastModified))
             }
         }
-        if (ripe.size == files.size) {
+        if (ripe.size == candidates.size) {
             clearCatchUp(folder)
         } else {
             launchCatchUp(folder)
@@ -602,15 +613,29 @@ class VoiceNoteDetector(
                 // window released the captured grant; the LIVE one is the
                 // only URI the provider will answer for.
                 val liveUri = grantedTreeUri ?: treeUri
-                statCache.getOrPut(statCacheKey(liveUri, folder)) {
-                    safListFolderMtimes(liveUri, docId)
-                }[name]
+                // Cache only SUCCESSFUL queries (review pass): getOrPut
+                // over an orEmpty() would memoize a transient provider
+                // failure as an empty folder and drop every fresh note in
+                // it for the whole round; a failed query stays uncached so
+                // the next stat retries it.
+                val statKey = statCacheKey(liveUri, folder)
+                val listing = statCache[statKey]
+                    ?: safListFolderMtimes(liveUri, docId)?.also { statCache[statKey] = it }
+                listing?.get(name)
             })
     }
 
     /** One folder's current name-to-mtime map via a single children
-     *  query (the settle round's per-folder cache fills from this). */
-    private fun safListFolderMtimes(treeUri: String, folderDocId: String): Map<String, Long> =
+     *  query (the settle round's per-folder cache fills from this).
+     *  TASK-907 honest-null: null means the query itself failed (no
+     *  cursor, or the provider threw); an empty map only means the
+     *  query succeeded and the folder holds no datable children. The
+     *  re-fire keeps its pending entry on null; the settle lane reads
+     *  a null as "no stat" (retry). Directories are skipped (the F4
+     *  rule safWalkTree's own level-2 query carries: a directory
+     *  whose name matches the note predicate must never become a
+     *  note). */
+    private fun safListFolderMtimes(treeUri: String, folderDocId: String): Map<String, Long>? =
         runCatching {
             val tree = Uri.parse(treeUri)
             val out = mutableMapOf<String, Long>()
@@ -618,14 +643,16 @@ class VoiceNoteDetector(
                 DocumentsContract.buildChildDocumentsUriUsingTree(tree, folderDocId),
                 arrayOf(
                     DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_MIME_TYPE,
                     DocumentsContract.Document.COLUMN_LAST_MODIFIED),
                 null, null, null)?.use { c ->
                 while (c.moveToNext()) {
-                    if (!c.isNull(1)) out[c.getString(0)] = c.getLong(1)
+                    if (c.getString(1) == DocumentsContract.Document.MIME_TYPE_DIR) continue
+                    if (!c.isNull(2)) out[c.getString(0)] = c.getLong(2)
                 }
-            }
+            } ?: return@runCatching null
             out
-        }.getOrDefault(emptyMap())
+        }.getOrNull()
 
     /**
      * TASK-906: two-level DocumentsContract walk over the held tree
