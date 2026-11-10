@@ -260,6 +260,19 @@ class InferenceService : Service(), TranscriptionListener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "onStartCommand called, action=${intent?.action}")
 
+        // TASK-978: the foreground promotion is the FIRST statement, before
+        // every early-return arm. Every startForegroundService delivery
+        // re-arms the system's fgRequired expectation, and the 1.16.0 crash
+        // (LogsViewModel.continueBrowseIntake's enqueue; map e0234b8f,
+        // deobfuscated) was exactly that window expiring. On a live service
+        // the call is an idempotent same-id refresh; on a cold start it
+        // closes the window at the earliest runnable moment. The control
+        // actions below arrive through getService PendingIntents (no
+        // expectation), so promoting for them too costs only a same-id
+        // repost; a control tap that revived a dead service gets a brief
+        // honest notification before the idle stop.
+        startForeground(NOTIFICATION_ID, createNotification(getString(R.string.processing_audio)))
+
         if (intent?.action == ACTION_CANCEL) {
             handleCancelRequest()
             return START_NOT_STICKY
@@ -270,15 +283,16 @@ class InferenceService : Service(), TranscriptionListener {
             return START_NOT_STICKY
         }
 
-        // Chunk navigation: mutate the live cursor and re-post. The service is already
-        // foreground for the active job, so this delivers a command rather than starting work.
+        // Chunk navigation: mutate the live cursor and re-post.
         val navAction = intent?.action
         if (navAction == ACTION_NAV_PREV || navAction == ACTION_NAV_NEXT || navAction == ACTION_NAV_LIVE) {
             handleChunkNavAction(navAction)
+            // TASK-978 review: a nav tap on a dead-process notification
+            // (chunkNavState null, nothing rendered) would otherwise leave
+            // the revived foreground service stranded like the cancel arms.
+            stopIfBatchIdle()
             return START_NOT_STICKY
         }
-
-        startForeground(NOTIFICATION_ID, createNotification(getString(R.string.processing_audio)))
 
         val filePath = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)
 
@@ -563,16 +577,41 @@ class InferenceService : Service(), TranscriptionListener {
             val removed = requestQueue.removeIf { it.taskId == taskId }
             if (!removed) {
                 Log.i(TAG, "Per-task cancel for unknown/finished $taskId; nothing to do")
+                // TASK-978 review: a control delivery that revived a dead
+                // process lands here with an empty queue. The delivery
+                // promotion (onStartCommand's first statement) put this
+                // fresh instance in the FOREGROUND; without a stop it
+                // would strand an unswipeable notification forever (the
+                // pre-promotion code leaked a background service instead,
+                // which the system reaps on its own).
+                stopIfBatchIdle()
                 return
             }
             pendingCount.decrementAndGet()
             inFlightTaskIds.remove(taskId)
             Log.i(TAG, "Per-task cancel removed queued $taskId")
+            // TASK-978 review: the delivery promotion reposts the bare
+            // "Processing audio" shape; restore the chunk-nav view (if a
+            // job is showing one) so a queue-only cancel does not degrade
+            // the live notification until the next progress tick.
+            if (chunkNavState != null) renderChunkNavNotification()
         }
         serviceScope.launch {
             runCatching { logDao.failNonTerminal(taskId, "Cancelled", durationMs = 0) }
                 .onFailure { Log.w(TAG, "Failed to close cancelled row for $taskId", it) }
         }
+    }
+
+    /**
+     * TASK-978: the control-action arms can arrive on a service that has
+     * no work (a stale notification tap reviving a dead process). The
+     * delivery promotion made them foreground; this retires the service
+     * when there is nothing to do so nothing strands.
+     */
+    private fun stopIfBatchIdle() {
+        if (!batchIdle()) return
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     /**

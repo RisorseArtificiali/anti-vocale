@@ -222,4 +222,49 @@ class InferenceServiceNotificationTest {
                 ?.endsWith("ETA 2s") == true
         )
     }
+
+    @Test
+    fun `every delivery promotes the service before any early-return arm (TASK-978)`() {
+        // The 1.16.0 crash class: a startForegroundService delivery whose
+        // window expired because the promotion sat BELOW the early-return
+        // arms. Every startForegroundService delivery re-arms fgRequired,
+        // so the promotion must be the first statement of onStartCommand -
+        // including for the getService-delivered control actions, where it
+        // is an idempotent same-id repost. Each arm drives a FRESH service:
+        // the cancel arms tear the foreground state down for an unknown id,
+        // which would clear the shadow's record on a shared instance.
+        fun promotedService(intentFactory: (android.content.Context) -> Intent): Boolean {
+            val service = Robolectric.buildService(InferenceService::class.java)
+                .create().get()
+            service.onStartCommand(intentFactory(service), 0, 1)
+            // Either witness proves the promotion: the live notification for
+            // arms that stay foreground, or isForegroundStopped for the arms
+            // whose idle-retire (stopIfBatchIdle, the review round's
+            // stranded-service fix) already cleared the notification (the
+            // ExtractionServiceTest precedent: you cannot stopForeground
+            // without having first started it).
+            val shadow = Shadows.shadowOf(service)
+            return shadow.lastForegroundNotification != null || shadow.isForegroundStopped
+        }
+
+        assertTrue(
+            "a nav delivery must still promote the service to foreground",
+            promotedService { ctx ->
+                Intent(ctx, InferenceService::class.java)
+                    .setAction(InferenceService.ACTION_NAV_PREV)
+            })
+        assertTrue(
+            "the batch-cancel arm must not return before the foreground promotion",
+            promotedService { ctx ->
+                Intent(ctx, InferenceService::class.java)
+                    .setAction(InferenceService.ACTION_CANCEL)
+            })
+        assertTrue(
+            "the per-task cancel arm must not return before the foreground promotion",
+            promotedService { ctx ->
+                Intent(ctx, InferenceService::class.java)
+                    .setAction(InferenceService.ACTION_CANCEL_TASK)
+                    .putExtra(InferenceService.EXTRA_CANCEL_TASK_ID, "some-task")
+            })
+    }
 }
