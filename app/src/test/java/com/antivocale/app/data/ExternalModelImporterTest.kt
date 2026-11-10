@@ -649,4 +649,99 @@ class ExternalModelImporterTest {
             .joinToString("") { "%02x".format(it) }
         return sha to bytes.size.toLong()
     }
+
+    // ==================== TASK-969: transient-download retry ====================
+
+    @Test
+    fun `a transient 503 on one file rides the retry ladder and the import completes`() = runTest {
+        LocalModelServer().use { server ->
+            val manifestUrl = server.serveSchema1Manifest(model = "fritter-streaming")
+            // Two CDN hiccups on the big file, then the pinned bytes: without
+            // the ladder the first 503 fails the import outright, so the
+            // completed record IS the proof the retries ran.
+            server.failNext("encoder.int8.onnx", failures = 2)
+            importer.transientDownloadRetryMs = longArrayOf(0, 0, 0)
+
+            val record = importer.importFromEntryJson(
+                manifestUrl,
+                displayName = "Fritter Streaming English int8 (Nemotron 0.6B, CC-BY-NC)",
+                licence = "CC-BY-NC-4.0",
+                languages = listOf("en"),
+                streaming = true)
+            assertEquals(LocalModelServer.CANONICAL_FILES.toSet(), record.files.keys)
+            assertTrue("the flaky file verified against its pin after the retries",
+                record.files.values.all { it.verified })
+            assertEquals("two failed attempts plus the successful one", 3,
+                server.requestsServed("encoder.int8.onnx"))
+        }
+    }
+
+    @Test
+    fun `an exhausted retry ladder fails the import and cleans the partial dir`() = runTest {
+        LocalModelServer().use { server ->
+            val manifestUrl = server.serveSchema1Manifest(model = "fritter-streaming")
+            server.failNext("encoder.int8.onnx", failures = 99)
+            importer.transientDownloadRetryMs = longArrayOf(0, 0, 0)
+
+            val outcome = kotlin.runCatching {
+                importer.importFromEntryJson(
+                    manifestUrl,
+                    displayName = "Fritter Streaming English int8",
+                    licence = "CC-BY-NC-4.0",
+                    languages = listOf("en"),
+                    streaming = true)
+            }
+            assertTrue(outcome.isFailure)
+            assertEquals("no record persisted", 0, store.records().size)
+            assertEquals("the cleanup removed the partial target dir", 0, filesRoot.listFiles()?.size)
+            assertEquals("initial attempt plus the whole ladder", 4,
+                server.requestsServed("encoder.int8.onnx"))
+        }
+    }
+
+    @Test
+    fun `a hard 404 fails after exactly one attempt`() = runTest {
+        LocalModelServer().use { server ->
+            val manifestUrl = server.serveSchema1Manifest(model = "fritter-streaming")
+            // One 404, then the good bytes WOULD be served: a policy that
+            // wrongly retried hard 4xx would ride the ladder and succeed;
+            // the strict taxonomy must fail fast on attempt one.
+            server.failNext("encoder.int8.onnx", failures = 1, status = 404)
+            importer.transientDownloadRetryMs = longArrayOf(0, 0, 0)
+
+            val outcome = kotlin.runCatching {
+                importer.importFromEntryJson(
+                    manifestUrl,
+                    displayName = "Fritter Streaming English int8",
+                    licence = "CC-BY-NC-4.0",
+                    languages = listOf("en"),
+                    streaming = true)
+            }
+            assertTrue(outcome.isFailure)
+            assertEquals("a gone file is honest failure, not a ladder delay", 1,
+                server.requestsServed("encoder.int8.onnx"))
+            assertEquals(0, store.records().size)
+        }
+    }
+
+    @Test
+    fun `the transient taxonomy admits network errors and server-side codes only`() {
+        // The filter handed to the shared ladder (isRetryable): the DNS
+        // churn, timeout, and reset shapes arrive as NetworkError since the
+        // connect/read boxing; 429 and 5xx clear with time; every other
+        // 4xx, auth, and the stale-temp signal are not this ladder's to
+        // retry (416 keeps its own unconditional recovery in the shared
+        // loop).
+        fun http(code: Int) = com.antivocale.app.data.download.DownloadException.HttpError(
+            code, "Download failed: HTTP $code")
+        assertTrue(importer.isTransientDownloadFailure(
+            com.antivocale.app.data.download.DownloadException.NetworkError("reset")))
+        assertTrue(importer.isTransientDownloadFailure(http(429)))
+        assertTrue(importer.isTransientDownloadFailure(http(503)))
+        assertFalse(importer.isTransientDownloadFailure(http(404)))
+        assertFalse(importer.isTransientDownloadFailure(
+            com.antivocale.app.data.download.DownloadException.Unauthorized("401")))
+        assertFalse(importer.isTransientDownloadFailure(
+            com.antivocale.app.data.download.DownloadException.RangeNotSatisfiable("416")))
+    }
 }

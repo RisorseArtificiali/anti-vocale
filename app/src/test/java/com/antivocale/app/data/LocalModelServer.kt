@@ -19,11 +19,27 @@ class LocalModelServer : AutoCloseable {
     private val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
     private val documents = HashMap<String, ByteArray>()
 
+    /** TASK-969: remaining forced failures per path (see [failNext]). */
+    private val failureBudget = HashMap<String, Int>()
+    private val failureStatus = HashMap<String, Int>()
+
+    /** TASK-969: requests received per path (forced failures included), so
+     *  tests can pin HOW MANY attempts a retry policy actually made. */
+    private val requestCounts = HashMap<String, Int>()
+
     val baseUrl: String get() = "http://127.0.0.1:${server.address.port}/"
 
     init {
         server.createContext("/") { exchange ->
             val path = exchange.requestURI.path.removePrefix("/")
+            requestCounts[path] = (requestCounts[path] ?: 0) + 1
+            val budget = failureBudget[path]
+            if (budget != null && budget > 0) {
+                failureBudget[path] = budget - 1
+                exchange.sendResponseHeaders(failureStatus[path] ?: 503, -1)
+                exchange.close()
+                return@createContext
+            }
             val bytes = documents[path]
             if (bytes == null) {
                 exchange.sendResponseHeaders(404, -1)
@@ -34,6 +50,19 @@ class LocalModelServer : AutoCloseable {
             exchange.close()
         }
         server.start()
+    }
+
+    /** Requests received for [path], forced failures included. */
+    fun requestsServed(path: String): Int = requestCounts[path] ?: 0
+
+    /**
+     * TASK-969: makes an already-served [path] answer [status] for its next
+     * [failures] requests, then serve the registered bytes normally again
+     * (the bytes stay pinned, so a retried download still verifies).
+     */
+    fun failNext(path: String, failures: Int, status: Int = 503) {
+        failureBudget[path] = failures
+        failureStatus[path] = status
     }
 
     /** Registers a text document; returns its full url. */

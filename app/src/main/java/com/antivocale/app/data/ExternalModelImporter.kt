@@ -12,10 +12,12 @@ import kotlinx.coroutines.withContext
 
 import com.antivocale.app.transcription.Language
 import com.antivocale.app.data.download.DownloadConfig
+import com.antivocale.app.data.download.DownloadException
 import com.antivocale.app.data.download.DownloadedModelIntegrity
 import com.antivocale.app.data.download.details
 import com.antivocale.app.data.download.HashVerifier
 import com.antivocale.app.data.download.ResumeDownloadHelper
+import com.antivocale.app.data.download.downloadWithRetry
 import com.antivocale.app.transcription.ModelFamilyDetector
 import com.antivocale.app.transcription.ModelFamilySupport
 import com.antivocale.app.transcription.SherpaBackend
@@ -143,6 +145,16 @@ class ExternalModelImporter(
          * diverge from the dialog path it mirrors (seventh review round).
          */
         fun isCatalogEntryUrl(url: String): Boolean = url.trim().endsWith(".json")
+
+        /** TASK-969: the connection-class retry ladder (5s/15s/30s/45s).
+         *  Attempts start at roughly t=0/5/20/50/95s, so the last attempt
+         *  clears the observed DNS-churn window (~1min on the RMX3853)
+         *  with margin; a 3-rung 5/15/30 ladder's final attempt would
+         *  land at t=50s, still INSIDE that window (review finding). The
+         *  values ride the [transientDownloadRetryMs] seam in tests, and
+         *  the resume machinery continues every attempt from the partial
+         *  file where the server honors Range. */
+        internal val TRANSIENT_DOWNLOAD_RETRY_MS = longArrayOf(5_000, 15_000, 30_000, 45_000)
 
         /** TASK-924: moves a verified staging dir into an arbitrary target
          *  the caller has already clean-replaced (the builtin bundle
@@ -637,13 +649,26 @@ class ExternalModelImporter(
             val pins = HashMap<String, FilePin>()
             for ((fileIndex, triple) in triples.withIndex()) {
                 val target = File(targetDir, triple.canonicalName)
-                val result = ResumeDownloadHelper.downloadWithResume(
+                // TASK-969: the connection-level retry rides the SHARED
+                // ladder (downloadWithRetry) with this caller's strict
+                // taxonomy and a fixed 5s/15s/30s/45s backoff; the resume
+                // machinery makes every attempt continue from the partial
+                // file WHERE THE SERVER HONORS Range (a 200 answer to the
+                // Range request restarts from byte 0; correct, but the
+                // seconds-not-gigabytes promise is conditional on the
+                // server, review finding), so a DNS-churn window or a CDN
+                // reset costs seconds, not the whole download. The typed
+                // failures unbox INSIDE the call (the helper boxes them in
+                // its Result; unwrapping outside would hide them from the
+                // ladder - caught by the e2e test).
+                val file = downloadWithRetry(
                     DownloadConfig(
                         url = triple.url,
                         tempFile = target,
                         targetFile = target,
                         estimatedSizeBytes = triple.size,
                     ),
+                    tag = "ExternalModelImporter",
                     onProgress = { bytes, total, _ ->
                         // TASK-971: the download loop is a blocking read/write
                         // cycle with no suspension points; the throttled
@@ -657,12 +682,13 @@ class ExternalModelImporter(
                         }
                         onProgress(fileIndex, triples.size, triple.canonicalName, bytes, total)
                     },
-                )
+                    delaysMs = transientDownloadRetryMs,
+                    isRetryable = { it is DownloadException && isTransientDownloadFailure(it) },
+                ).getOrThrow()
                 // The resume machinery leaves a .size sidecar next to the target; model
                 // directories must stay clean (the engine walks them for size and users
                 // browse them), so drop it once the file is complete and verified.
                 ResumeDownloadHelper.sizeSidecar(target).delete()
-                val file = result.getOrThrow()
                 // Split-ONNX completeness rides the hash-verification pass (the
                 // same streamed chunks feed the sidecar scanner): an
                 // external-data reference inside a downloaded .onnx whose sidecar
@@ -689,6 +715,40 @@ class ExternalModelImporter(
                 licence = licence)
         }
     }
+
+    /**
+     * TASK-969: the retry seam (the catchUpDelayMs precedent): the live
+     * ladder is [TRANSIENT_DOWNLOAD_RETRY_MS]; tests shrink it to keep the
+     * suite fast. Volatile because the repair service reads the importer
+     * from IO threads. Passed to the shared downloadWithRetry as its
+     * delaysMs (attempts = ladder size + 1). Copy-on-init: a test's
+     * element-level write must never reach the companion's shared array
+     * (review finding).
+     */
+    @androidx.annotation.VisibleForTesting
+    @Volatile
+    internal var transientDownloadRetryMs: LongArray = TRANSIENT_DOWNLOAD_RETRY_MS.copyOf()
+
+    /**
+     * The retryable half of the download error taxonomy, handed to the
+     * shared ladder as its isRetryable filter: network-shaped failures and
+     * the server-side transient codes (the connect/read phases box their
+     * IOExceptions as NetworkError since this task, so this arm is the DNS
+     * churn, timeout, and reset shapes). 429 rides the ladder (rate limits
+     * clear); other 4xx do not (the bytes are simply not there; aligned
+     * with the TASK-973 dead-source classifier, which also refuses to
+     * retire a source on these). A raw non-Download exception is not
+     * retryable either: after the boxing, one of those is not a
+     * connection shape.
+     */
+    @androidx.annotation.VisibleForTesting
+    internal fun isTransientDownloadFailure(e: DownloadException): Boolean =
+        when (e) {
+            is DownloadException.NetworkError -> true
+            is DownloadException.HttpError ->
+                e.statusCode == 429 || e.statusCode >= 500
+            else -> false
+        }
 
     /** Shared registration tail: metadata validation, same-hash dedupe, store.add. */
     private suspend fun registerImported(

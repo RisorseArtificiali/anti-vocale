@@ -150,9 +150,35 @@ object ResumeDownloadHelper {
             connection.setRequestProperty("Range", "bytes=$partialSize-")
         }
 
-        connection.connect()
+        // TASK-969: one taxonomy at the source, precisely scoped to the
+        // NETWORK operations. The connect and the status-line read below
+        // are the two pre-body network touchpoints, and the body read and
+        // stream open carry their own boxing further down; together they
+        // cover the raw-IOException leak shapes (UnknownHostException,
+        // SocketTimeoutException, connection reset) that every protocol
+        // failure was already typed and boxed for, so the retry layers
+        // above see ONE failure shape. File-side writes stay raw by
+        // design (see the stream-open comment).
+        try {
+            connection.connect()
+        } catch (e: java.io.IOException) {
+            onStateChange(DownloadState.Error(e.message ?: "network error"))
+            return Result.failure(DownloadException.NetworkError(e.message ?: "network error", e))
+        }
 
-        val totalBytes = when (connection.responseCode) {
+        // The status-line read is a SOCKET read of its own: a server that
+        // accepts the connection and then stalls or resets before the
+        // headers throws HERE, so it boxes like connect (a raw escape
+        // would bypass the retry ladder for exactly the stall class it
+        // exists for). The header getters inside the when read the
+        // already-cached response, no network.
+        val statusCode = try {
+            connection.responseCode
+        } catch (e: java.io.IOException) {
+            onStateChange(DownloadState.Error(e.message ?: "network error"))
+            return Result.failure(DownloadException.NetworkError(e.message ?: "network error", e))
+        }
+        val totalBytes = when (statusCode) {
             HttpURLConnection.HTTP_OK -> {
                 // Server doesn't support range (ignored our Range header).
                 // Start fresh by deleting the partial temp file.
@@ -221,7 +247,18 @@ object ResumeDownloadHelper {
 
         config.tempFile.parentFile?.mkdirs()
 
-        val inputStream = connection.inputStream
+        // TASK-969: the stream OPEN is network-facing (the status read
+        // succeeded, but the body stream can still fail on some stacks);
+        // it boxes like the connect phase. The write side below stays RAW
+        // on purpose: a disk failure is honest, immediate, and not a
+        // connection ladder's to retry.
+        val inputStream = try {
+            connection.inputStream
+        } catch (e: java.io.IOException) {
+            onStateChange(DownloadState.Error(e.message ?: "network error"))
+            return Result.failure(
+                DownloadException.NetworkError(e.message ?: "network error", e))
+        }
         val outputStream = FileOutputStream(config.tempFile, true) // append for resume
         val buffer = ByteArray(BUFFER_SIZE)
 
@@ -230,7 +267,18 @@ object ResumeDownloadHelper {
 
         try {
             var bytesRead: Int
-            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+            while (true) {
+                // TASK-969: only the READ boxes as NetworkError (the body
+                // stall and reset shapes); a write failure inside the loop
+                // stays raw so the ladder above refuses it.
+                try {
+                    bytesRead = inputStream.read(buffer)
+                } catch (e: java.io.IOException) {
+                    onStateChange(DownloadState.Error(e.message ?: "network error"))
+                    return Result.failure(
+                        DownloadException.NetworkError(e.message ?: "network error", e))
+                }
+                if (bytesRead == -1) break
                 if (config.isCancelled()) {
                     onStateChange(DownloadState.Cancelled("User cancelled"))
                     return Result.failure(DownloadException.Cancelled("Download cancelled"))
@@ -263,8 +311,8 @@ object ResumeDownloadHelper {
             connection.disconnect()
         }
 
-        // Emit final 100% progress — the throttle may have skipped the last update
-        // so the UI could be stuck at 96-99% without this.
+        // Emit final 100% progress; the throttle may have skipped the last
+        // update, so the UI could be stuck at 96-99% without this.
         onProgress(totalBytes, totalBytes, 1f)
         onStateChange(
             DownloadState.Downloading(
@@ -274,7 +322,7 @@ object ResumeDownloadHelper {
             )
         )
 
-        // Rename temp → target (skip if they're the same file)
+        // Rename temp to target (skip if they're the same file)
         if (config.tempFile != config.targetFile) {
             if (!config.tempFile.renameTo(config.targetFile)) {
                 config.tempFile.delete()

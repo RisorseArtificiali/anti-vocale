@@ -349,7 +349,7 @@ object ModelDownloader {
             maxRetries = MAX_RETRIES,
             backoffBase = 3.0,
             tag = TAG,
-            onProgress = onProgress,
+            onProgress = { _, _, progress -> onProgress(progress) },
             onStateChange = onStateChange
         )
 

@@ -186,7 +186,7 @@ class SherpaOnnxModelDownloader<V>(
                             val downloadResult = downloadWithRetry(
                                 config = downloadConfig,
                                 tag = config.tag,
-                                onProgress = { _ ->
+                                onProgress = { _, _, _ ->
                                     val totalSoFar = perFileBytes.values.sum()
                                     val progress = (totalSoFar.toFloat() / estimatedBytes).coerceIn(0f, 1f)
                                     onProgress(progress)
