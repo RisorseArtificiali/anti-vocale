@@ -1480,7 +1480,21 @@ class ModelViewModel @Inject constructor(
             val progress: Float = 0f,
         ) : ExternalImportState()
 
-        data class Error(val message: String) : ExternalImportState()
+        /**
+         * TASK-969 level 2: [retry] re-dispatches the URL import that died
+         * (the ladder is exhausted at this point) with the SAME params the
+         * dialog passed, captured as a lambda AT DISPATCH TIME: the closure
+         * is compiler-forced complete, so a future param added to
+         * importExternalFromUrl can never be silently dropped from the
+         * retry the way a mirrored params data class was twice caught
+         * doing (options and ctcModelType both fell to defaults in review
+         * of the first draft). A retried import that fails again attaches
+         * a fresh closure of the same params, so the affordance re-arms.
+         * Null when the failure was not a URL import (folder, bundle).
+         * Session-scoped: the state dies with the ViewModel and any later
+         * import overwrites it.
+         */
+        data class Error(val message: String, val retry: (() -> Unit)? = null) : ExternalImportState()
     }
 
     private val _externalImportState = MutableStateFlow<ExternalImportState>(ExternalImportState.Idle)
@@ -1738,12 +1752,25 @@ class ModelViewModel @Inject constructor(
         displayName: String? = null,
         licence: String? = null,
         streaming: Boolean = false,
-    ) = runExternalImport("External URL",
+    ): Unit = runExternalImport("External URL",
+        // The explicit Unit breaks the inference recursion the retry
+        // closure creates (the closure calls this function, whose return
+        // type the closure's own type would depend on).
         onProgress = { index, count, name, bytes, total ->
             _externalImportState.value = ExternalImportState.Importing(
                 fileName = name, fileIndex = index, fileCount = count,
                 bytes = bytes, totalBytes = total,
                 progress = if (total > 0) bytes.toFloat() / total else 0f)
+        },
+        // TASK-969 level 2: a failed URL import leaves no record and no
+        // partial dir (the cleanup), so the Retry affordance re-dispatches
+        // through this closure, captured at the one site that holds the
+        // params (see Error.retry for why a lambda, not a params copy).
+        retry = {
+            importExternalFromUrl(
+                url, family, ctcModelType, options,
+                languages = languages, displayName = displayName,
+                licence = licence, streaming = streaming)
         }) { onProgress ->
         ModelBundleTransfer.Outcome.Imported(externalModelImporter.importFromUrlWithMetadata(
             url,
@@ -1772,11 +1799,14 @@ class ModelViewModel @Inject constructor(
     /** Shared import scaffolding: progress state, IO dispatching, and the failure tail.
      *  [onProgress] is handed to the block so URL imports can stream download telemetry
      *  into the state (TASK-398); null for the folder path (nothing to report).
+     *  [retry] (TASK-969 level 2) rides a URL import's re-dispatch closure
+     *  onto the terminal Error state; null for the non-URL paths.
      *  TASK-924: the success payload is the [ModelBundleTransfer.Outcome] pair:
      *  an external record, or a builtin restore that wrote no record. */
     private fun runExternalImport(
         label: String,
         onProgress: ((Int, Int, String, Long, Long) -> Unit)?,
+        retry: (() -> Unit)? = null,
         block: suspend ((Int, Int, String, Long, Long) -> Unit) -> ModelBundleTransfer.Outcome,
     ) {
         val noop: (Int, Int, String, Long, Long) -> Unit = { _, _, _, _, _ -> }
@@ -1824,7 +1854,7 @@ class ModelViewModel @Inject constructor(
                                 if (e is ModelBundleTransfer.DownloadActiveException)
                                     ctx.getString(R.string.bundle_restore_download_active)
                                 else e.message ?: "unknown error"
-                            _externalImportState.value = ExternalImportState.Error(message)
+                            _externalImportState.value = ExternalImportState.Error(message, retry)
                             _snackbarEvent.tryEmit(SnackbarEvent.Message(
                                 ctx.getString(R.string.external_import_failed, message)))
                         },

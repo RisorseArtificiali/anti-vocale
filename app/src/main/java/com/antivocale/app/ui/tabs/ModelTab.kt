@@ -1196,7 +1196,13 @@ private fun CuratedWhyLine(@StringRes whyResId: Int) {
  * renders nothing.
  */
 @Composable
-private fun ExternalImportStateView(state: ModelViewModel.ExternalImportState) {
+private fun ExternalImportStateView(
+    state: ModelViewModel.ExternalImportState,
+    // TASK-969 level 2: the Retry affordance renders at the ONE canonical
+    // home (the import section) so a shared error state cannot stack N
+    // identical buttons under every community card that also shows it.
+    allowRetry: Boolean = false,
+) {
     when (state) {
         is ModelViewModel.ExternalImportState.Importing -> Column(
             modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
@@ -1225,12 +1231,41 @@ private fun ExternalImportStateView(state: ModelViewModel.ExternalImportState) {
                 )
             }
         }
-        is ModelViewModel.ExternalImportState.Error -> Text(
-            stringResource(R.string.external_import_failed, state.message),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
+        is ModelViewModel.ExternalImportState.Error -> Column(
+            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
+        ) {
+            // Unbounded on purpose: this line is the failure detail a user
+            // debugging the flaky-network scenario needs in full (the
+            // review pass caught a maxLines cap sneaking in with the row
+            // layout; the button goes BELOW instead).
+            Text(
+                stringResource(R.string.external_import_failed, state.message),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            if (allowRetry && state.retry != null) {
+                // The dispatch window between tap and the Importing flip
+                // still reads Error, so a second tap would enqueue a
+                // duplicate multi-GB import; the flag disables until the
+                // state actually moves (review finding).
+                var retryDispatched by androidx.compose.runtime.remember(state) {
+                    androidx.compose.runtime.mutableStateOf(false)
+                }
+                TextButton(
+                    onClick = {
+                        retryDispatched = true
+                        state.retry.invoke()
+                    },
+                    enabled = !retryDispatched,
+                    modifier = Modifier.align(Alignment.End),
+                ) {
+                    // The tab's existing localized Retry label (the same
+                    // word the catalog error row uses); a fifth near-copy
+                    // retry string was a review finding.
+                    Text(stringResource(R.string.external_catalog_retry))
+                }
+            }
+        }
         else -> {}
     }
 }
@@ -2126,7 +2161,7 @@ private fun ExternalModelsSection(
             }
 
 
-        ExternalImportStateView(importState)
+        ExternalImportStateView(importState, allowRetry = true)
 
         // Gap between the import buttons/state and the first card
         if (records.isNotEmpty()) Spacer(modifier = Modifier.height(8.dp))
