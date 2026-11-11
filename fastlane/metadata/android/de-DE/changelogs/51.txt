@@ -1,2 +1,2 @@
-Behoben: Der Download des Standard-Parakeet-Modells scheiterte an der Integritätsprüfung, nachdem der Herausgeber die Dateien ausgetauscht hatte; die App akzeptiert jetzt den geprüften Ersatz
+Behoben: Der Download des Standard-Parakeet-Modells scheiterte an der Integritätsprüfung, nachdem der Herausgeber die Dateien ausgetauscht hatte; Downloads nutzen jetzt unseren geprüften Mirror
 Behoben: seltener Absturz beim Fortsetzen aus einer Benachrichtigung auf einigen Geräten

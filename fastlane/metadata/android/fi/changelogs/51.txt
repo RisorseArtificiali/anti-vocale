@@ -1,2 +1,2 @@
-Korjattu: Parakeet-oletusmallin lataus epäonnistui eheystarkistuksessa sen jälkeen, kun julkaisija korvasi tiedostot; sovellus hyväksyy nyt varmennetun korvauksen
+Korjattu: Parakeet-oletusmallin lataus epäonnistui eheystarkistuksessa sen jälkeen, kun julkaisija korvasi tiedostot; lataukset käyttävät nyt varmennettua mirror-levyämme
 Korjattu: harvinainen kaatuminen ilmoituksesta palattaessa joillakin laitteilla

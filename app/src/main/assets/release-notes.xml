@@ -327,7 +327,7 @@ Novità dalla versione 1.0.3:
 
 <de-DE>
 Neuigkeiten in Version 1.16.1:
-• Behoben: Der Download des Standard-Parakeet-Modells scheiterte an der Integritätsprüfung, nachdem der Herausgeber die Dateien ausgetauscht hatte; die App akzeptiert jetzt den geprüften Ersatz
+• Behoben: Der Download des Standard-Parakeet-Modells scheiterte an der Integritätsprüfung, nachdem der Herausgeber die Dateien ausgetauscht hatte; Downloads nutzen jetzt unseren geprüften Mirror
 • Behoben: seltener Absturz beim Fortsetzen aus einer Benachrichtigung auf einigen Geräten
 Neuigkeiten in Version 1.16.0:
 • Neu: löscht ein Handy-Reiniger heruntergeladene Modelle, merkt die App es und stellt sie mit einem Tipp wieder her
@@ -358,7 +358,7 @@ Neuigkeiten in Version 1.14.0:
 
 <es-ES>
 Novedades de la versión 1.16.1:
-• Corregido: la descarga del modelo Parakeet predeterminado fallaba la comprobación de integridad tras que quien lo publica reemplazara los archivos; la app ahora acepta el reemplazo verificado
+• Corregido: la descarga del modelo Parakeet predeterminado fallaba la comprobación de integridad tras que quien lo publica reemplazara los archivos; las descargas usan ahora nuestro mirror verificado
 • Corregido: un fallo poco frecuente al reanudar desde una notificación en algunos dispositivos
 Novedades de la versión 1.16.0:
 • Nuevo: si un limpiador del teléfono borra los modelos descargados, la app lo nota y los restaura con un toque
@@ -389,7 +389,7 @@ Novedades de la versión 1.14.0:
 
 <fr-FR>
 Nouveautés de la version 1.16.1 :
-• Corrigé : le téléchargement du modèle Parakeet par défaut échouait à la vérification d'intégrité après que l'éditeur a remplacé les fichiers ; l'app accepte désormais le remplacement vérifié
+• Corrigé : le téléchargement du modèle Parakeet par défaut échouait à la vérification d'intégrité après que l'éditeur a remplacé les fichiers ; les téléchargements utilisent désormais notre miroir vérifié
 • Corrigé : un plantage rare à la reprise depuis une notification sur certains appareils
 Nouveautés de la version 1.16.0 :
 • Nouveau : si un nettoyeur supprime les modèles téléchargés, l'appli le remarque et les restaure en un geste
@@ -420,7 +420,7 @@ Nouveautés de la version 1.14.0 :
 
 <pt-BR>
 Novidades da versão 1.16.1:
-• Corrigido: o download do modelo Parakeet padrão falhava na verificação de integridade depois que o publicador substituiu os arquivos; o app agora aceita a substituição verificada
+• Corrigido: o download do modelo Parakeet padrão falhava na verificação de integridade depois que o publicador substituiu os arquivos; os downloads agora usam nosso mirror verificado
 • Corrigido: uma falha rara ao retomar de uma notificação em alguns dispositivos
 Novidades da versão 1.16.0:
 • Novo: se um limpador do telefone apagar os modelos baixados, o app percebe e os restaura com um toque
@@ -451,7 +451,7 @@ Novidades da versão 1.14.0:
 
 <ru-RU>
 Что нового в версии 1.16.1:
-• Исправлено: загрузка модели Parakeet по умолчанию не проходила проверку целостности после того, как издатель заменил файлы; приложение теперь принимает проверенную замену
+• Исправлено: загрузка модели Parakeet по умолчанию не проходила проверку целостности после того, как издатель заменил файлы; загрузки теперь идут с нашего проверенного зеркала
 • Исправлено: редкий сбой при возобновлении из уведомления на некоторых устройствах
 Что нового в версии 1.16.0:
 • Новое: если системный очиститель удалит скачанные модели, приложение заметит и вернёт их одним нажатием
@@ -482,7 +482,7 @@ Novidades da versão 1.14.0:
 
 <tr-TR>
 Sürüm 1.16.1'daki yenilikler:
-• Düzeltildi: yayıncı dosyaları değiştirdikten sonra varsayılan Parakeet modeli indirmesi bütünlük denetiminde başarısız oluyordu; uygulama artık doğrulanmış yerine geçen dosyaları kabul ediyor
+• Düzeltildi: yayıncı dosyaları değiştirdikten sonra varsayılan Parakeet modeli indirmesi bütünlük denetiminde başarısız oluyordu; indirmeler artık doğrulanmış mirror'ımızı kullanıyor
 • Düzeltildi: bazı cihazlarda bildirimden dönerken nadir bir çökme
 Sürüm 1.16.0'daki yenilikler:
 • Yeni: telefon temizleyicisi indirilen modelleri silerse uygulama fark eder ve tek dokunuşla geri getirir
@@ -513,7 +513,7 @@ Sürüm 1.14.0'daki yenilikler:
 
 <pl-PL>
 Nowości w wersji 1.16.1:
-• Naprawiono: pobieranie domyślnego modelu Parakeet nie przechodziło kontroli integralności po wymianie plików przez wydawcę; aplikacja akceptuje teraz zweryfikowaną zastępczą wersję
+• Naprawiono: pobieranie domyślnego modelu Parakeet nie przechodziło kontroli integralności po wymianie plików przez wydawcę; pobierania korzystają teraz z naszego zweryfikowanego mirrora
 • Naprawiono: rzadka awaria przy wznawianiu z powiadomienia na niektórych urządzeniach
 Nowości w wersji 1.16.0:
 • Nowość: jeśli czyścicz telefonu usunie pobrane modele, aplikacja to zauważy i przywróci je jednym dotknięciem
@@ -544,7 +544,7 @@ Nowości w wersji 1.14.0:
 
 <hi-IN>
 संस्करण 1.16.1 में नया क्या है:
-• सुधार: प्रकाशक द्वारा फ़ाइलें बदले जाने के बाद डिफ़ॉल्ट Parakeet मॉडल डाउनलोड अखंडता जाँच में विफल हो रहा था; ऐप अब सत्यापित प्रतिस्थापन स्वीकार करती है
+• सुधार: प्रकाशक द्वारा फ़ाइलें बदले जाने के बाद डिफ़ॉल्ट Parakeet मॉडल डाउनलोड अखंडता जाँच में विफल हो रहा था; डाउनलोड अब हमारे सत्यापित मिरर का उपयोग करते हैं
 • सुधार: कुछ डिवाइस पर सूचना से लौटते समय एक दुर्लभ क्रैश
 संस्करण 1.16.0 में नया क्या है:
 • नया: फ़ोन का क्लीनर डाउनलोड किए मॉडल मिटा दे, तो ऐप इसे पकड़ती है और एक टैप में उन्हें वापस ला देती है
@@ -575,7 +575,7 @@ Nowości w wersji 1.14.0:
 
 <uk>
 Новинки версії 1.16.1:
-• Виправлено: завантаження стандартної моделі Parakeet не проходило перевірку цілісності після того, як видавець замінив файли; застосунок тепер приймає перевірену заміну
+• Виправлено: завантаження стандартної моделі Parakeet не проходило перевірку цілісності після того, як видавець замінив файли; завантаження тепер йдуть з нашого перевіреного дзеркала
 • Виправлено: рідкісний збій при відновленні зі сповіщення на деяких пристроях
 Новинки версії 1.16.0:
 • Нове: якщо системний чистильник видалить завантажені моделі, застосунок помітить і поверне їх одним дотиком
@@ -605,7 +605,7 @@ Nowości w wersji 1.14.0:
 • Покращено: компактний розділ «Додатково», завантаження Gemma на окремій сторінці</uk>
 <he-IL>
 מה חדש בגרסה 1.16.1:
-• תוקן: הורדת ברירת המחדל של דגם Parakeet נכשלה בבדיקת התקינות לאחר שהמפרסם החליף את הקבצים; האפליקציה מקבלת כעת את ההחלפה המאומתת
+• תוקן: הורדת ברירת המחדל של דגם Parakeet נכשלה בבדיקת התקינות לאחר שהמפרסם החליף את הקבצים; ההורדות משתמשות כעת במראה המאומתת שלנו
 • תוקן: קריסה נדירה בחזרה מהתראה בחלק מהמכשירים
 מה חדש בגרסה 1.16.0:
 • חדש: אם מנקה של הטלפון מוחק מודלים שהורדו, האפליקציה מבחינה בזה ומשחזרת אותם בנגיעה אחת
@@ -635,7 +635,7 @@ Nowości w wersji 1.14.0:
 • שופר: מקטע מתקדם קומפקטי, הורדות Gemma בעמוד משלהן</he-IL>
 <fa-IR>
 چه چیز جدید‌های نسخه 1.16.1:
-• رفع اشکال: دانلود مدل پیش‌فرض Parakeet پس از جایگزینی فایل‌ها توسط ناشر در بررسی یکپارچگی شکست می‌خورد؛ برنامه اکنون جایگزین تأییدشده را می‌پذیرد
+• رفع اشکال: دانلود مدل پیش‌فرض Parakeet پس از جایگزینی فایل‌ها توسط ناشر در بررسی یکپارچگی شکست می‌خورد؛ دانلودها اکنون از میرور تأییدشده ما استفاده می‌کنند
 • رفع اشکال: کرش نادر هنگام بازگشت از یک اعلان روی برخی دستگاه‌ها
 چه چیز جدید‌های نسخه 1.16.0:
 • جدید: اگر پاک‌کننده‌ی گوشی مدل‌های دانلودشده را پاک کند، برنامه متوجه می‌شود و با یک لمس آن‌ها را برمی‌گرداند
@@ -665,7 +665,7 @@ Nowości w wersji 1.14.0:
 • بهبود: بخش پیشرفته فشرده، دانلودهای Gemma در صفحه خودشان</fa-IR>
 <zh-CN>
 1.16.1 版本更新：
-• 修复：模型发布者更换文件后，默认 Parakeet 模型下载未能通过完整性校验；应用现已接受经过验证的替换文件
+• 修复：模型发布者更换文件后，默认 Parakeet 模型下载未能通过完整性校验；下载现在使用我们已验证的镜像
 • 修复：部分设备上从通知恢复时的偶发崩溃
 1.16.0 版本更新：
 • 新增：手机清理工具误删已下载的模型时，应用会发现并一键恢复
