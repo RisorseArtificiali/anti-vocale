@@ -57,9 +57,18 @@ class TestSpiReceiver : BroadcastReceiver() {
     @Inject lateinit var logDao: com.antivocale.app.data.local.LogDao
     // TASK-912: the voice_note_simulate op drives the auto-transcriber.
     @Inject lateinit var voiceNoteAutoTranscriber: com.antivocale.app.data.VoiceNoteAutoTranscriber
+    // TASK-984: op=import dispatches on the process-lifetime scope instead of
+    // holding the broadcast window for a multi-minute download (two am_kills
+    // at ~300s were the evidence; see TestSpiOps' asyncImportScope KDoc).
+    @Inject
+    @com.antivocale.app.di.ApplicationScope
+    lateinit var appScope: CoroutineScope
 
     companion object {
-        const val TAG = "TestSpi"
+        /** TASK-984: single-sourced in TestSpiOps (the async import arm in
+         *  main logs on the same channel; a twin literal there could drift
+         *  and split the channel the docs tell scripts to filter on). */
+        val TAG = TestSpiOps.SPI_LOG_TAG
         const val ACTION_TEST_SPI = "com.antivocale.app.TEST_SPI"
 
         // String extras, mirroring the Tasker receiver's extras style.
@@ -103,14 +112,18 @@ class TestSpiReceiver : BroadcastReceiver() {
          * included, answers with one line of JSON on both channels, and a
          * body with quotes/backslashes must not produce malformed JSON.
          * The SPI grant activity shares it (TASK-826 review: three inline
-         * copies were two too many).
+         * copies were two too many). TASK-984: the implementation lives in
+         * TestSpiOps' companion (main source set), because the async import
+         * arm also builds outcome envelopes there and the channel contract
+         * must have ONE owner; these are one-line delegates so the existing
+         * call sites and the grant activity stay untouched.
          */
         internal fun ack(op: String, body: org.json.JSONObject.() -> Unit = {}): String =
-            org.json.JSONObject().put("op", op).apply(body).toString()
+            TestSpiOps.ack(op, body)
 
         /** The always-works channel as a one-liner for the activity too. */
         internal fun logSpi(op: String, result: String) {
-            Log.i(TAG, ack(op) { put("result", result) })
+            TestSpiOps.logSpi(op, result)
         }
     }
 
@@ -294,6 +307,12 @@ class TestSpiReceiver : BroadcastReceiver() {
         if (!BuildConfig.DEBUG) return
 
         val pendingResult = goAsync()
+        // TASK-984: the async import arm's scope (see TestSpiOps). Built only
+        // for op=import so every other broadcast pays nothing; the wrapper
+        // shares the app scope's Job (cancellation still propagates) and only
+        // adds the dispatcher, which the @ApplicationScope contract leaves to
+        // each launch-site owner.
+        val op = intent.getStringExtra(EXTRA_OP)
         val ops = TestSpiOps(
             preferencesManager, externalModelStore, importer, context.applicationContext,
             // TASK-736: the identity-cache dump op needs the live singleton.
@@ -306,8 +325,12 @@ class TestSpiReceiver : BroadcastReceiver() {
             { source -> voiceNoteDetectionCoordinators.forSource(source).armed },
             { source -> voiceNoteDetectionCoordinators.forSource(source).gateState.value },
             logDao,
-            voiceNoteAutoTranscriber)
-        val op = intent.getStringExtra(EXTRA_OP)
+            voiceNoteAutoTranscriber,
+            if (op == TestSpiOps.OP_IMPORT) {
+                CoroutineScope(appScope.coroutineContext + Dispatchers.IO)
+            } else {
+                null
+            })
         val key = intent.getStringExtra(EXTRA_KEY)
         val value = intent.getStringExtra(EXTRA_VALUE)
         val entry = intent.getStringExtra(EXTRA_ENTRY)

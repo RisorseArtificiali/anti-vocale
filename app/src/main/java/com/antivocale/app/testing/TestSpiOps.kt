@@ -25,9 +25,13 @@ import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.SubtitleFormatter
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Engine of the debug-only test SPI (TASK-409): the op handling behind
@@ -75,6 +79,26 @@ internal class TestSpiOps(
     /** TASK-912: the voice_note_simulate op drives the auto-transcriber.
      *  Same null-under-fakes story. */
     private val voiceNoteAutoTranscriber: com.antivocale.app.data.VoiceNoteAutoTranscriber? = null,
+    /** TASK-984: when set, op=import validates synchronously, dispatches the
+     *  import on this process-lifetime scope and acks immediately, because a
+     *  multi-hundred-MB download inside the broadcast receiver exceeds the
+     *  ~5min broadcast window and the system am_kills the process for a slow
+     *  receiver (live evidence: two kills at 299.6s/302.0s importing a 1.39GB
+     *  model, TASK-981). The launch inherits this scope's context, so the
+     *  dispatcher stays the owner's choice (the receiver composes IO in; the
+     *  unit tests pass Unconfined for deterministic completion). The outcome
+     *  lands on the TestSpi logcat channel; completion is polled via
+     *  op=records. Null keeps the synchronous behavior the JVM unit fakes
+     *  exercise (they run under runTest and await the record directly);
+     *  only the debug receiver passes the scope. */
+    private val asyncImportScope: CoroutineScope? = null,
+    /** TASK-984: where the async import's outcome line goes. Default logs
+     *  on the SPI channel; the unit tests capture it so the outcome
+     *  contract (imported/backendId vs failed/error) is asserted, not just
+     *  trusted (android.util.Log is a no-op stub under the JVM fakes). */
+    private val asyncImportOutcome: (String) -> Unit = { line ->
+        android.util.Log.i(SPI_LOG_TAG, line)
+    },
 ) {
     /** TASK-974: the record_delete op runs the shared delete semantics over
      *  the same store+preferences pair every other op uses. */
@@ -616,12 +640,19 @@ internal class TestSpiOps(
     /**
      * TASK-550 device pass: the external-model import, driven without UI. The
      * importer classifies the url (catalog-entry JSON, schema-1 CDN manifest,
-     * or HuggingFace repo), exactly the path the import dialog uses; the
-     * response is the imported record, so a device test can chain set
-     * backend=external:<id> on it. The [displayName]/[licence]/[streaming]
-     * extras are the schema-1 index-metadata transport (TASK-912 parity with
-     * the dialog's catalog pick): a manifest URL like the streaming Fritter's
-     * needs streaming=true here, exactly as its catalog entry authors it.
+     * or HuggingFace repo), exactly the path the import dialog uses. The
+     * [displayName]/[licence]/[streaming] extras are the schema-1
+     * index-metadata transport (TASK-912 parity with the dialog's catalog
+     * pick): a manifest URL like the streaming Fritter's needs streaming=true
+     * here, exactly as its catalog entry authors it.
+     *
+     * TASK-984 CONTRACT: with [asyncImportScope] set (the receiver, i.e.
+     * every real device) this op is FIRE-AND-ACK: validation errors answer
+     * synchronously, the download dispatches on the scope, the ack carries
+     * dispatched=true, and the imported record arrives LATER as an outcome
+     * line on the SPI channel (then via op=records; poll, do not parse
+     * `record` out of the ack). Only the null-scope JVM fakes get the
+     * synchronous record in the ack.
      */
     private suspend fun importModel(
         url: String?,
@@ -681,18 +712,60 @@ internal class TestSpiOps(
                     "streaming extra '$raw' is not a boolean (use true or false)")
             }
         } ?: false
-        val record = importer.importFromUrlWithMetadata(
-            url,
-            displayName = displayName,
-            licence = licence,
-            modelType = modelType,
-            family = parsedFamily,
-            streaming = streamingFlag,
-        )
-        return JSONObject()
-            .put("op", OP_IMPORT)
-            .put("record", record.toJson().put("backendId", record.backendId))
-            .toString()
+        // TASK-984: every check above stays in the SYNCHRONOUS reply so a
+        // bad call still answers its error envelope. Only the download,
+        // which can run for many minutes, moves off the broadcast. Both
+        // arms run the SAME import call through this lambda: a future
+        // importer parameter added to one arm cannot silently diverge the
+        // other.
+        val runImport: suspend () -> ExternalModelRecord = {
+            importer.importFromUrlWithMetadata(
+                url,
+                displayName = displayName,
+                licence = licence,
+                modelType = modelType,
+                family = parsedFamily,
+                streaming = streamingFlag,
+            )
+        }
+        val scope = asyncImportScope
+        if (scope != null) {
+            if (!asyncImportInFlight.compareAndSet(false, true)) {
+                throw IllegalArgumentException(
+                    "an async import is already in flight; poll op=records or the " +
+                        "TestSpi logcat channel for its outcome")
+            }
+            // No dispatcher HERE: the scope's own context decides (the
+            // @ApplicationScope contract puts the dispatcher choice at the
+            // owner site; the receiver passes the app scope composed with
+            // IO, and the unit tests pass Unconfined for determinism).
+            scope.launch {
+                try {
+                    val record = runImport()
+                    asyncImportOutcome(ack(OP_IMPORT) {
+                        put("result", "imported")
+                        put("backendId", record.backendId)
+                    })
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (t: Throwable) {
+                    asyncImportOutcome(ack(OP_IMPORT) {
+                        put("result", "failed")
+                        put("error", t.message ?: t.javaClass.simpleName)
+                    })
+                } finally {
+                    asyncImportInFlight.set(false)
+                }
+            }
+            return ack(OP_IMPORT) {
+                put("dispatched", true)
+                put("url", url)
+            }
+        }
+        val record = runImport()
+        return ack(OP_IMPORT) {
+            put("record", record.toJson().put("backendId", record.backendId))
+        }
     }
 
     /**
@@ -1293,6 +1366,34 @@ internal class TestSpiOps(
         .toString()
 
     companion object {
+        /** TASK-984: single-flight guard for the async import arm. A NEW
+         *  TestSpiOps is built per broadcast, so instance state cannot see a
+         *  previous dispatch; this process-wide flag is the one place both
+         *  instances consult. Set before the ack, cleared in the launched
+         *  coroutine's finally. */
+        private val asyncImportInFlight = AtomicBoolean(false)
+
+        /** TASK-984: the SPI logcat channel's ONE owner. The debug receiver
+         *  aliases this as its TAG (debug sees main; the reverse would not
+         *  compile), so the async import outcome lines and every receiver
+         *  ack share one literal that cannot drift apart. */
+        internal const val SPI_LOG_TAG = "TestSpi"
+
+        /**
+         * The SPI's one JSON envelope builder (TASK-826 in the receiver,
+         * moved here TASK-984 so the async import arm builds its outcome
+         * envelopes with the same owner): one line of JSON, quotes and
+         * backslashes inside a body safe. The debug receiver and the grant
+         * activity call this through one-line delegates.
+         */
+        internal fun ack(op: String, body: JSONObject.() -> Unit = {}): String =
+            JSONObject().put("op", op).apply(body).toString()
+
+        /** The always-works channel as a one-liner: ack + Log on the shared tag. */
+        internal fun logSpi(op: String, result: String) {
+            android.util.Log.i(SPI_LOG_TAG, ack(op) { put("result", result) })
+        }
+
         const val OP_GET = "get"
         const val OP_SET = "set"
         const val OP_RECORDS = "records"

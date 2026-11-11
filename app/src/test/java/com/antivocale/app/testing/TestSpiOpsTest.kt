@@ -11,6 +11,9 @@ import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.optStringList
 import com.antivocale.app.transcription.BuiltInBackendIds
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -33,6 +36,9 @@ class TestSpiOpsTest {
     /** Captures the url and answers with a fixture record; no network in unit tests. */
     private class FakeImporter(
         var lastUrl: String? = null,
+        /** TASK-984: when set, the URL import suspends on it first, so the
+         *  async-dispatch tests can hold one import in flight. */
+        var gate: CompletableDeferred<Unit>? = null,
         var lastFamily: ModelFamily? = null,
         var lastModelType: String? = null,
         var lastDisplayName: String? = null,
@@ -88,6 +94,7 @@ class TestSpiOpsTest {
             streaming: Boolean,
             onProgress: com.antivocale.app.data.ExternalImportProgress,
         ): ExternalModelRecord {
+            gate?.await()
             lastUrl = url
             lastDisplayName = displayName
             lastLicence = licence
@@ -897,5 +904,81 @@ class TestSpiOpsTest {
                 .contains("Context"),
         )
     }
-}
+    @Test
+    fun `import op with an async scope dispatches and acks without awaiting the download`() = runTest {
+        // TASK-984: a scope turns the op into fire-and-ack (the broadcast
+        // window is never held by a multi-minute download). Unconfined runs
+        // the non-suspending fake inline, so the dispatched state is
+        // observable deterministically, no virtual-time games.
+        val outcomes = mutableListOf<String>()
+        val asyncOps = TestSpiOps(
+            fake, ExternalModelStore(fake), fakeImporter,
+            asyncImportScope = CoroutineScope(Dispatchers.Unconfined),
+            asyncImportOutcome = { outcomes.add(it) })
+        val json = JSONObject(asyncOps.handle("import", url = "http://127.0.0.1:8080/fi.json"))
+        assertEquals("import", json.getString("op"))
+        assertTrue(json.getBoolean("dispatched"))
+        assertEquals("http://127.0.0.1:8080/fi.json", json.getString("url"))
+        assertFalse("the record is not in the ack; it arrives on the TestSpi channel",
+            json.has("record"))
+        assertEquals("the import itself ran (Unconfined + non-suspending fake)",
+            "http://127.0.0.1:8080/fi.json", fakeImporter.lastUrl)
+        // The outcome contract: one line, imported, with the backendId.
+        assertEquals(1, outcomes.size)
+        val outcome = JSONObject(outcomes[0])
+        assertEquals("import", outcome.getString("op"))
+        assertEquals("imported", outcome.getString("result"))
+        assertEquals("external:fromurl", outcome.getString("backendId"))
+    }
 
+    @Test
+    fun `async import is single-flight and re-arms after completion`() = runTest {
+        // TASK-984: a second dispatch while one runs must be rejected, not
+        // race the first on the store; the guard re-arms when the import
+        // finishes.
+        val gate = CompletableDeferred<Unit>()
+        fakeImporter.gate = gate
+        val outcomes = mutableListOf<String>()
+        val asyncOps = TestSpiOps(
+            fake, ExternalModelStore(fake), fakeImporter,
+            asyncImportScope = CoroutineScope(Dispatchers.Unconfined),
+            asyncImportOutcome = { outcomes.add(it) })
+        val first = JSONObject(asyncOps.handle("import", url = "http://x/a"))
+        assertTrue(first.getBoolean("dispatched"))
+        assertTrue("no outcome before the download finishes", outcomes.isEmpty())
+        val second = JSONObject(asyncOps.handle("import", url = "http://x/b"))
+        assertTrue("the rejection names the in-flight import",
+            second.getString("error").contains("already in flight"))
+        // Unconfined resumes inline on the completing thread, so the first
+        // import has fully finished (guard cleared) once complete() returns.
+        // finally-block gate release: an assertion failing before this
+        // point must not leave the process-wide guard set (code-review
+        // round), or the OTHER async tests would fail with the wrong
+        // cause.
+        try {
+            gate.complete(Unit)
+            assertEquals("the import outcome arrived with the completion",
+                "imported", JSONObject(outcomes.single()).getString("result"))
+            val third = JSONObject(asyncOps.handle("import", url = "http://x/c"))
+            assertTrue("the guard re-armed after completion", third.getBoolean("dispatched"))
+            assertEquals("http://x/c", fakeImporter.lastUrl)
+        } finally {
+            gate.complete(Unit)
+        }
+    }
+
+    @Test
+    fun `async import validates synchronously before dispatching`() = runTest {
+        // TASK-984: a bad call still answers its error envelope in the ack,
+        // because every pre-download check runs before the dispatch arm.
+        val asyncOps = TestSpiOps(
+            fake, ExternalModelStore(fake), fakeImporter,
+            asyncImportScope = CoroutineScope(Dispatchers.Unconfined))
+        val json = JSONObject(asyncOps.handle("import", url = "http://x/repo", family = "bogus"))
+        assertTrue(json.getString("error").contains("bogus"))
+        assertNull(fakeImporter.lastUrl)
+        // And the guard was NOT left set by the rejected call.
+        val ok = JSONObject(asyncOps.handle("import", url = "http://x/repo"))
+        assertTrue(ok.getBoolean("dispatched"))
+    }
+}
