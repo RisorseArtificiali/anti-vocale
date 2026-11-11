@@ -61,6 +61,32 @@ class TranscriptFuzzySearchTest {
     }
 
     @Test
+    fun `cyrillic vowel REDUCTION matches through the consonant skeleton (TASK-977)`() {
+        // The discriminator the previous test could not pin: привет/превет
+        // passes on edit distance alone (one substitution over six
+        // characters). The classic unstressed о/а reduction carries TWO
+        // vowel substitutions, so the edit arm scores 0.667 (below the
+        // 0.70 bar) and only the skeleton arm can carry it - which the
+        // Latin-only vowel set made impossible for Cyrillic (the vowels
+        // stayed in the "skeleton"). молоко/малако and хорошо/харашо are
+        // the canonical Russian ASR confusions of this class.
+        assertTrue(matches("он выпил малако", "молоко"))
+        assertTrue(matches("всё харашо", "хорошо"))
+    }
+
+    @Test
+    fun `different cyrillic roots still do not match, inflections of one root do (TASK-977)`() {
+        // The GH reporter's pair: раз/один are different LEXICAL roots,
+        // not phonetic confusions; the vowel-set fix must not bridge them.
+        assertFalse(matches("раз подумай", "один"))
+        // Inflections of the SAME root are the acoustic contract the
+        // skeleton arm has always honored for Latin (primo/primi share
+        // the prm frame): первый/первого share прв, so the widened arm
+        // finds word forms - legitimate, and pinned as such.
+        assertTrue(matches("первый раз", "первого раза"))
+    }
+
+    @Test
     fun `cjk degrades gracefully instead of excluding the language`() {
         // CJK has no spaces: the whole query is one term and the whole
         // transcript chunk one word, so edit distance works over the

@@ -40,7 +40,39 @@ object TranscriptFuzzySearch {
      */
     internal const val THRESHOLD = 0.70
 
-    private val VOWELS = charArrayOf('a', 'e', 'i', 'o', 'u')
+    /**
+     * Vowel letters, POST-NORMALIZATION forms only: diacritic vowels
+     * (ö, ü, ą, ó...) fold to their base letters through NFD before this
+     * set is consulted, and ё folds to е the same way, so the set names
+     * base letters. TASK-977: this was Latin-only, which kept every
+     * Cyrillic and Greek vowel IN the "consonant skeleton" and degraded
+     * signal 1 to near-edit-distance for those scripts (the Russian
+     * similar-words report: the classic unstressed о/а reduction scored
+     * below the threshold because the skeleton was never consonant-only).
+     * The set names the vowel letters of the three alphabet blocks the
+     * app's languages spell with plain vowel letters: Latin, Cyrillic,
+     * Greek. Deliberately out: Devanagari independent vowel letters
+     * (most Hindi vowel material is matras, already stripped as
+     * combining marks in normalize; the leftover word-initial letters
+     * ride the edit arm) and hangul (its vowels only surface after
+     * jamo decomposition, machinery not worth building here). Abjads
+     * (Hebrew, Arabic, Persian) write long vowels with consonant
+     * letters by design and stay out: their skeleton is already mostly
+     * consonants and the edit-distance arm carries them, the documented
+     * graceful degradation. The Latin letters are exactly the previous
+     * set (y stays a consonant even though pl/de/nl count it as a
+     * vowel: its confusions ride the edit arm and the Italian pinning
+     * corpus is unaffected); Turkish dotless ı joins because it is a
+     * Latin-script vowel that does not decompose.
+     */
+    // A String, not a Set: `!in` rides String.contains(Char) (a short
+    // indexOf scan) with no per-character boxing; Kotlin sets have no
+    // primitive specialization, and this runs for every character of
+    // every row word on every History query (efficiency round).
+    private val VOWELS = "aeiouı" +          // Latin (+ Turkish ı)
+        "аеиоуыэюя" +                        // Cyrillic (ё folded to е)
+        "єії" +                              // Ukrainian additions
+        "αεηιουω"                            // Greek (tonos folds)
     private val QUERY_SPLIT = Regex("\\s+")
     private val WORD_SPLIT = Regex("[^\\p{L}\\p{N}]+")
 
@@ -77,6 +109,12 @@ object TranscriptFuzzySearch {
             .map { normalize(it) }
             .filter { it.isNotEmpty() }
         if (rowWords.isEmpty()) return null
+        // TASK-977 review: the skeleton is invariant across query terms;
+        // compute it once per row word (the same one-pass discipline as
+        // the normalize above) instead of once per word-TERM pair. One
+        // word-to-skeleton pair per row word (no parallel lists to keep
+        // aligned, simplify round).
+        val rows = rowWords.map { it to skeleton(it) }
         var sum = 0.0
         for (rawTerm in rawTerms) {
             // Widening floor, checked FIRST because maxOf evaluates both
@@ -92,7 +130,10 @@ object TranscriptFuzzySearch {
             // rawTerm is a letters-and-digits token (the split above), so
             // normalize() can never empty it: no empty-term arm exists.
             val term = normalize(rawTerm)
-            val best = rowWords.maxOfOrNull { termScoreNormalized(it, term) } ?: 0.0
+            val termSkel = skeleton(term)
+            val best = rows.maxOfOrNull { (w, wSkel) ->
+                termScoreNormalized(w, wSkel, term, termSkel)
+            } ?: 0.0
             if (best < THRESHOLD) return null
             sum += best
         }
@@ -101,10 +142,11 @@ object TranscriptFuzzySearch {
 
     /**
      * Best combined score of one normalized word against one normalized
-     * term, in [0, 1]. Callers normalize first ([scoreIfMatches]); the raw
-     * public form below is for tests and one-off probes.
+     * term, in [0, 1], taking both PRECOMPUTED skeletons ([scoreIfMatches]
+     * computes them once per row/term; the raw public form below is for
+     * tests and one-off probes).
      */
-    private fun termScoreNormalized(w: String, t: String): Double {
+    private fun termScoreNormalized(w: String, wSkel: String, t: String, tSkel: String): Double {
         if (w.isEmpty() || t.isEmpty()) return 0.0
         if (w == t) return 1.0
         // A term much longer than the word (or vice versa) cannot be an
@@ -113,13 +155,17 @@ object TranscriptFuzzySearch {
         // the bigram), so the length ratio gates both arms.
         val ratio = w.length.toDouble() / t.length
         if (ratio < 0.6 || ratio > 1.67) return 0.0
-        val skeletonScore = diceBigrams(skeleton(w), skeleton(t))
+        val skeletonScore = diceBigrams(wSkel, tSkel)
         val editScore = 1.0 - damerau(w, t).toDouble() / maxOf(w.length, t.length)
         return maxOf(skeletonScore, editScore)
     }
 
     /** Best combined score of one raw word against one raw query term. */
-    fun termScore(word: String, term: String): Double = termScoreNormalized(normalize(word), normalize(term))
+    fun termScore(word: String, term: String): Double {
+        val w = normalize(word)
+        val t = normalize(term)
+        return termScoreNormalized(w, skeleton(w), t, skeleton(t))
+    }
 
     /**
      * Lowercase, diacritics folded to their base letter (é→e, č→c: the

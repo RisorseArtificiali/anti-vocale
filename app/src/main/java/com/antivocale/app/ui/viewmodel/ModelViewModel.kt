@@ -1832,28 +1832,19 @@ class ModelViewModel @Inject constructor(
     ) {
         val noop: (Int, Int, String, Long, Long) -> Unit = { _, _, _, _, _ -> }
         viewModelScope.launch(Dispatchers.IO) {
-            // TASK-979 review: the hash/registration tail after the last
-            // download has no suspension points, so a late cancel can race
-            // a genuinely-completed block; onSuccess must not report
-            // "Imported" for a job the user cancelled.
-            val self = kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]!!
             externalImportMutex.withLock {
                 _externalImportState.value = ExternalImportState.Importing()
                 runCatching { block(onProgress ?: noop) }
                     .fold(
                         onSuccess = { outcome ->
-                            if (self.isCancelled) {
-                                // The same terminal shape as an explicit
-                                // cancel; the block finished, but the user
-                                // had already withdrawn consent.
-                                _externalImportState.value = if (retry != null) {
-                                    ExternalImportState.Cancelled(
-                                        ctx.getString(R.string.external_import_cancelled), retry)
-                                } else {
-                                    ExternalImportState.Idle
-                                }
-                                return@fold
-                            }
+                            // TASK-979 review round 2: a cancel landing in the
+                            // suspension-free tail (the multi-GB sha256 pass)
+                            // races a block that COMPLETED and REGISTERED the
+                            // record. Reporting that as cancelled (an earlier
+                            // draft did) hides an installed model behind a
+                            // Retry that would re-download it whole; success
+                            // is the truthful terminal state, at worst a
+                            // "Imported" snackbar the user did not expect.
                             _externalImportState.value = ExternalImportState.Idle
                             // TASK-979: the job field is deliberately NOT
                             // cleared by the terminal arms: a queued import

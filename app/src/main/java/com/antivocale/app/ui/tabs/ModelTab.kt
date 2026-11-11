@@ -1245,39 +1245,45 @@ private fun ExternalImportStateView(
                 )
             }
         }
-        is ModelViewModel.ExternalImportState.Error -> Column(
-            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
-        ) {
+        is ModelViewModel.ExternalImportState.Error -> TerminalImportLine(
             // Unbounded on purpose: this line is the failure detail a user
             // debugging the flaky-network scenario needs in full (the
             // review pass caught a maxLines cap sneaking in with the row
             // layout; the button goes BELOW instead).
-            Text(
-                stringResource(R.string.external_import_failed, state.message),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
-            if (allowRetry && state.retry != null) {
-                RetryTextButton(state.retry, Modifier.align(Alignment.End))
-            }
-        }
-        is ModelViewModel.ExternalImportState.Cancelled -> Column(
-            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
-        ) {
+            text = stringResource(R.string.external_import_failed, state.message),
+            color = MaterialTheme.colorScheme.error,
+            retry = if (allowRetry) state.retry else null,
+        )
+        is ModelViewModel.ExternalImportState.Cancelled -> TerminalImportLine(
             // TASK-979: the bare cancelled line, NOT the "Import failed:"
             // wrapper or the error color (the review pass caught the
             // failure template swallowing the cancel: the user chose to
             // stop, nothing broke).
-            Text(
-                state.message,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (allowRetry && state.retry != null) {
-                RetryTextButton(state.retry, Modifier.align(Alignment.End))
-            }
-        }
+            text = state.message,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            retry = if (allowRetry) state.retry else null,
+        )
         else -> {}
+    }
+}
+
+/**
+ * TASK-969/979: the ONE terminal shape both import end-states render (the
+ * review pass caught the two near-duplicate Columns drifting): an
+ * unbounded line in the state's color, with the shared retry button
+ * below when the state carries one.
+ */
+@Composable
+private fun TerminalImportLine(text: String, color: Color, retry: (() -> Unit)?) {
+    Column(modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()) {
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = color,
+        )
+        if (retry != null) {
+            RetryTextButton(retry, Modifier.align(Alignment.End))
+        }
     }
 }
 
