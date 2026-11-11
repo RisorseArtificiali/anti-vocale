@@ -229,38 +229,6 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/orukeet.json"
     },
     {
-      "name": "Parakeet TDT Ultra int8 (moondream, best read-speech quality)",
-      "languages": [
-        "en",
-        "de",
-        "fr",
-        "es",
-        "it",
-        "pt",
-        "ru",
-        "uk",
-        "hr",
-        "sl",
-        "lv",
-        "lt",
-        "et",
-        "fi",
-        "sv",
-        "da",
-        "nl",
-        "pl",
-        "cs",
-        "sk",
-        "hu",
-        "ro",
-        "bg",
-        "el",
-        "mt"
-      ],
-      "family": "TRANSDUCER",
-      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/parakeet-ultra.json"
-    },
-    {
       "name": "Parakeet TDT Redux int8 (compact 327MB download, 25 languages)",
       "languages": [
         "en",
@@ -291,6 +259,38 @@
       ],
       "family": "TRANSDUCER",
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/parakeet-redux.json"
+    },
+    {
+      "name": "Parakeet TDT Ultra int8 (moondream, best read-speech quality)",
+      "languages": [
+        "en",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "ru",
+        "uk",
+        "hr",
+        "sl",
+        "lv",
+        "lt",
+        "et",
+        "fi",
+        "sv",
+        "da",
+        "nl",
+        "pl",
+        "cs",
+        "sk",
+        "hu",
+        "ro",
+        "bg",
+        "el",
+        "mt"
+      ],
+      "family": "TRANSDUCER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/parakeet-ultra.json"
     },
     {
       "name": "Parakeet TDT-CTC 110M (English)",
