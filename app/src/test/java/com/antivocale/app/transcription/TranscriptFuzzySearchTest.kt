@@ -66,7 +66,7 @@ class TranscriptFuzzySearchTest {
         // passes on edit distance alone (one substitution over six
         // characters). The classic unstressed о/а reduction carries TWO
         // vowel substitutions, so the edit arm scores 0.667 (below the
-        // 0.70 bar) and only the skeleton arm can carry it - which the
+        // 0.70 bar) and only the skeleton arm can carry it, which the
         // Latin-only vowel set made impossible for Cyrillic (the vowels
         // stayed in the "skeleton"). молоко/малако and хорошо/харашо are
         // the canonical Russian ASR confusions of this class.
@@ -82,7 +82,7 @@ class TranscriptFuzzySearchTest {
         // Inflections of the SAME root are the acoustic contract the
         // skeleton arm has always honored for Latin (primo/primi share
         // the prm frame): первый/первого share прв, so the widened arm
-        // finds word forms - legitimate, and pinned as such.
+        // finds word forms; legitimate, and pinned as such.
         assertTrue(matches("первый раз", "первого раза"))
     }
 

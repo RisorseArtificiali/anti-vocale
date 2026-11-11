@@ -63,14 +63,20 @@ object TranscriptFuzzySearch {
      * set (y stays a consonant even though pl/de/nl count it as a
      * vowel: its confusions ride the edit arm and the Italian pinning
      * corpus is unaffected); Turkish dotless ı joins because it is a
-     * Latin-script vowel that does not decompose.
+     * Latin-script vowel that does not decompose, and the code-review
+     * round (TASK-977) adds Danish/Norwegian æ and ø plus Bulgarian
+     * ъ, the three non-decomposing vowel letters the catalog's own
+     * language declarations (da/no via redux, bg via redux) would
+     * otherwise leave stranded in the skeleton.
      */
     // A String, not a Set: `!in` rides String.contains(Char) (a short
     // indexOf scan) with no per-character boxing; Kotlin sets have no
     // primitive specialization, and this runs for every character of
     // every row word on every History query (efficiency round).
-    private val VOWELS = "aeiouı" +          // Latin (+ Turkish ı)
-        "аеиоуыэюя" +                        // Cyrillic (ё folded to е)
+    private val VOWELS = "aeiouıæø" +      // Latin (+ Turkish ı; Danish/Norwegian
+        //                                     æ and ø, no NFD decomposition)
+        "аеиоуыэюяъ" +                      // Cyrillic (ё folded to е; Bulgarian
+        //                                     ъ, no decomposition)
         "єії" +                              // Ukrainian additions
         "αεηιουω"                            // Greek (tonos folds)
     private val QUERY_SPLIT = Regex("\\s+")

@@ -276,7 +276,7 @@ class InferenceService : Service(), TranscriptionListener {
         // signature dedup could never restore it.
         startForeground(
             NOTIFICATION_ID,
-            buildChunkNavNotification()?.second
+            deriveChunkNavView()?.let { assembleChunkNavNotification(it) }
                 ?: createNotification(getString(R.string.processing_audio)))
 
         if (intent?.action == ACTION_CANCEL) {
@@ -504,6 +504,14 @@ class InferenceService : Service(), TranscriptionListener {
                 currentTaskId = null
                 currentTaskJob = null
                 _isTranscribing.value = false
+                // Code-review round (TASK-978 F6): retire the chunk-nav view
+                // when the BATCH ends, not only when the next task starts.
+                // Between the two, a delivery promoting with the nav shape
+                // would re-post the finished job's chunk view; cleared here,
+                // that promotion falls back to the bare notification for the
+                // brief moment before the idle stop.
+                chunkNavState = null
+                lastNavSignature = null
                 drainEntered.set(false)
                 // The finally (not the post-join path) owns the keepalive
                 // stop: an escaped Error from native code skips everything
@@ -751,29 +759,32 @@ class InferenceService : Service(), TranscriptionListener {
      * while navigating — still reachable by expanding or swiping). Per TASK-242.
      */
     private fun renderChunkNavNotification() {
-        val (signature, notification) = buildChunkNavNotification() ?: return
+        val view = deriveChunkNavView() ?: return
         // Skip the rebuild + notify when nothing visible changed (e.g. successive 200ms progress
         // ticks while pinned and the ETA string is unchanged). chunkText is included so a retried
-        // chunk's improved text refreshes even while pinned on it. The dedup lives HERE, not in
-        // the builder, so the startForeground promotion (altitude round) is never skipped.
-        if (signature == lastNavSignature) return
-        lastNavSignature = signature
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        // chunk's improved text refreshes even while pinned on it. The dedup lives HERE, on the
+        // derived view, so an unchanged tick never builds a Notification (code-review round:
+        // the previous Pair form built and discarded one per tick just to compare) and the
+        // startForeground promotion (altitude round) is never skipped.
+        if (view.signature == lastNavSignature) return
+        lastNavSignature = view.signature
+        notificationManager.notify(NOTIFICATION_ID, assembleChunkNavNotification(view))
     }
 
     /**
-     * TASK-978 altitude round: the nav view's Notification, or null when no
-     * state exists or the live index is not yet set (both guards). The
-     * START-FOREGROUND PROMOTION consumes this directly (a delivery while a
-     * nav job is live promotes WITH the nav shape instead of the bare
-     * "Processing audio" form), which is why the signature dedup lives in
-     * the POSTING wrapper, not here: a caller that hands the notification
-     * to startForeground must never be skipped by dedup.
+     * The nav view's derived, comparable form: the guards (no state, or the
+     * live index not yet set), one atomic snapshot so action visibility,
+     * displayed text, and the progress bar cannot disagree when chunk
+     * completions (IO) and button taps (main) race, plus the visible-state
+     * signature and every field the notification assembly needs. The
+     * START-FOREGROUND PROMOTION and the posting wrapper both consume this
+     * (TASK-978 altitude round: a delivery while a nav job is live promotes
+     * WITH the nav shape instead of the bare "Processing audio" form), and
+     * the signature dedup lives in the POSTING wrapper, so a caller that
+     * hands the notification to startForeground is never skipped by dedup.
      */
-    private fun buildChunkNavNotification(): Pair<String, android.app.Notification>? {
+    private fun deriveChunkNavView(): ChunkNavView? {
         val state = chunkNavState ?: return null
-        // One atomic snapshot so action visibility, displayed text, and progress bar cannot
-        // disagree when chunk completions (IO) and button taps (main) race.
         val snap = state.snapshot()
         if (snap.liveIndex < 0) return null
 
@@ -791,13 +802,16 @@ class InferenceService : Service(), TranscriptionListener {
         }
         val timingText = formatTimingText(latestEtaText, latestDurationSeconds)
         val queueText = if (latestQueuedCount > 0) resources.getQuantityString(R.plurals.queued_count, latestQueuedCount, latestQueuedCount) else ""
-        // The visible-state signature (posting-wrapper dedup consumes it).
+        // chunkText is in the signature so a retried chunk's improved text
+        // refreshes even while pinned on it.
         val signature = "$viewIndex|$pinned|$live|$queueText|$timingText|$chunkText"
-        // Skip the rebuild + notify when nothing visible changed (e.g. successive 200ms progress
-        // ticks while pinned and the ETA string is unchanged). chunkText is included so a retried
-        // chunk's improved text refreshes even while pinned on it.
         val subText = joinSubText(navSub, queueText, timingText) ?: navSub
+        return ChunkNavView(signature, total, live, viewIndex, pinned, chunkText, subText)
+    }
 
+    /** The nav view's Notification, assembled only when something consumes it. */
+    private fun assembleChunkNavNotification(view: ChunkNavView): android.app.Notification {
+        val (_, total, live, viewIndex, pinned, chunkText, subText) = view
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(chunkText)
@@ -838,8 +852,19 @@ class InferenceService : Service(), TranscriptionListener {
         // 'Jump to live' is deliberately not its own button: collapsed notifications cap at 3
         // actions, and pressing Next until the tail already clears the pin (returns to live).
 
-        return signature to builder.build()
+        return builder.build()
     }
+
+    /** The comparable form of the chunk-nav notification (see deriveChunkNavView). */
+    private data class ChunkNavView(
+        val signature: String,
+        val totalChunks: Int,
+        val liveIndex: Int,
+        val viewIndex: Int,
+        val pinned: Boolean,
+        val chunkText: String,
+        val subText: String,
+    )
 
     override fun onSuccess(
         taskId: String,

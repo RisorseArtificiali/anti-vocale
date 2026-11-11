@@ -1853,8 +1853,17 @@ class ModelViewModel @Inject constructor(
                             // gate recomposes), and clearing here would
                             // wipe the live handle; a stale handle is
                             // harmless (cancelling a completed job is a
-                            // no-op). Known corner, documented: with A
-                            // running and B queued, cancel targets B.
+                            // no-op). Known corner, documented (code-review
+                            // round): with A running on the mutex and B
+                            // queued, the handle points at B, so cancel
+                            // stops B and nulls the field; A then runs to
+                            // its natural end with no remaining cancel
+                            // affordance. Reachable only through that
+                            // double-dispatch window (every UI entry is
+                            // disabled while Importing), and the terminal
+                            // states still land correctly; a per-job cancel
+                            // set would close it at the cost of bookkeeping
+                            // the gate already makes unreachable.
                             // Called from a non-suspend fold callback; TASK-738:
                             // the manager's fire-and-forget entry point is
                             // exactly for scope-less callers.
