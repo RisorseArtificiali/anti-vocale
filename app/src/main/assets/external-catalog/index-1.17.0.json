@@ -9,6 +9,14 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/dutch.json"
     },
     {
+      "name": "Canary 1B v2 Finnish int8 (best Finnish, 25 languages)",
+      "languages": [
+        "fi"
+      ],
+      "family": "CANARY",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/finnish-canary-1b.json"
+    },
+    {
       "name": "Canary Flash 180M (English)",
       "languages": [
         "en"
@@ -251,6 +259,38 @@
       ],
       "family": "TRANSDUCER",
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/parakeet-ultra.json"
+    },
+    {
+      "name": "Parakeet TDT Redux int8 (compact 327MB download, 25 languages)",
+      "languages": [
+        "en",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "ru",
+        "uk",
+        "hr",
+        "sl",
+        "lv",
+        "lt",
+        "et",
+        "fi",
+        "sv",
+        "da",
+        "nl",
+        "pl",
+        "cs",
+        "sk",
+        "hu",
+        "ro",
+        "bg",
+        "el",
+        "mt"
+      ],
+      "family": "TRANSDUCER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/parakeet-redux.json"
     },
     {
       "name": "Parakeet TDT-CTC 110M (English)",
