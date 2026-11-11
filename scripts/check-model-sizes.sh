@@ -161,7 +161,7 @@ readme_rows = {
     'Parakeet TDT (stock int8)': ('sherpa-onnx', 'stock-int8'),
     'Parakeet TDT (SmoothQuant)': ('sherpa-onnx', 'smoothquant'),
     'GigaAM v3': ('gigaam', 'v3'),
-    'Qwen3-ASR 0.6B': ('qwen3-asr', '0.6b-int8'),
+    'Qwen3-ASR 0.6B': ('qwen3-asr', '0.6b-int4'),
 }
 readme = (repo / 'README.md').read_text()
 for label, (e, v) in readme_rows.items():

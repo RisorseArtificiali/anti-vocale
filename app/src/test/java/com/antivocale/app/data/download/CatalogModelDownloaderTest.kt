@@ -98,7 +98,7 @@ class CatalogModelDownloaderTest {
         assertEquals("sherpa-onnx-whisper-turbo", whisper.getModelDirName("turbo"))
         assertEquals("sherpa-onnx-whisper-distil-large-v3-it", whisper.getModelDirName("distil-large-v3-it"))
         val qwen3 = SherpaModelDownloader.of("qwen3-asr")
-        assertEquals("sherpa-onnx-qwen3-asr-0.6b-int8", qwen3.getModelDirName("0.6b-int8"))
+        assertEquals("sherpa-onnx-qwen3-asr-0.6b-int4", qwen3.getModelDirName("0.6b-int4"))
     }
 
     @Test
@@ -169,7 +169,7 @@ class CatalogModelDownloaderTest {
     @Test
     fun `qwen3 requires the tokenizer subdirectory`() {
         val downloader = SherpaModelDownloader.of("qwen3-asr")
-        val variantName = "0.6b-int8"
+        val variantName = "0.6b-int4"
         val catalogVariant = BundledCatalog.byId("qwen3-asr")!!
             .variants.first { it.name == variantName }
         val modelDir = File(context.filesDir, "qwen3-asr/${catalogVariant.dirName}")

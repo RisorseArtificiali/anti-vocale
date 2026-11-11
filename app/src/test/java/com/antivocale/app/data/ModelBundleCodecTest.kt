@@ -307,7 +307,7 @@ class ModelBundleCodecTest {
         val out = ByteArrayOutputStream()
         ModelBundleCodec.export(dir, out, metadata().copy(
             family = null, modelType = "qwen3_asr",
-            catalogEntryId = "qwen3-asr", catalogVariantDir = "sherpa-onnx-qwen3-asr-0.6b-int8"))
+            catalogEntryId = "qwen3-asr", catalogVariantDir = "sherpa-onnx-qwen3-asr-0.6b-int4"))
         val target = File(tmp.newFolder(), "imported")
         val manifest = ModelBundleCodec.import(ByteArrayInputStream(out.toByteArray()), target)
 

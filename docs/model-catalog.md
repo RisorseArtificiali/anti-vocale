@@ -35,11 +35,11 @@ Four sizes of the classic. Whisper Turbo is the strong multilingual all-rounder 
 
 ### Qwen3-ASR 0.6B
 
-Encoder-decoder, int8 export. Per the model card its 52 entries are 30 languages plus 22 Chinese dialects, not 52 independent languages.
+Encoder-decoder, int4 export (near-lossless vs int8 on our it/en A/B; 606MB download and a much smaller loaded footprint). Per the model card its 52 entries are 30 languages plus 22 Chinese dialects, not 52 independent languages.
 
-- Size: 938 MB; audio limit 30 s per segment, split automatically
+- Size: 606 MB; audio limit 30 s per segment, split automatically
 - Original model: [Qwen/Qwen3-ASR-0.6B](https://huggingface.co/Qwen/Qwen3-ASR-0.6B)
-- Downloads from: [pantinor/sherpa-onnx-qwen3-asr-0.6b-int8](https://huggingface.co/pantinor/sherpa-onnx-qwen3-asr-0.6b-int8)
+- Downloads from: [goodpixelltd/qwen3-asr-0.6b-int4-sherpa-onnx](https://huggingface.co/goodpixelltd/qwen3-asr-0.6b-int4-sherpa-onnx)
 - On our Italian set it was the weakest of the four we benchmarked (12.2% WER); it is here for language coverage and comparison, and the in-app benchmark can tell you if it earns its slot on your languages
 
 ### Nemotron 3.5 ASR (streaming)

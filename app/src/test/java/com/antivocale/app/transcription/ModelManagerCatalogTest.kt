@@ -90,7 +90,7 @@ class ModelManagerCatalogTest {
         // returned the selected backend itself and the gate locked a
         // two-model setup as degenerate.
         installVariant(BuiltInBackendIds.PARAKEET, "parakeet-tdt-0.6b-v3-int8", "parakeet-tdt")
-        installVariant(BuiltInBackendIds.QWEN3_ASR, "sherpa-onnx-qwen3-asr-0.6b-int8", "qwen3-asr")
+        installVariant(BuiltInBackendIds.QWEN3_ASR, "sherpa-onnx-qwen3-asr-0.6b-int4", "qwen3-asr")
         kotlinx.coroutines.runBlocking {
             assertEquals(
                 BuiltInBackendIds.QWEN3_ASR,
@@ -195,7 +195,7 @@ class ModelManagerCatalogTest {
     @Test
     fun `qwen3 manager requires the tokenizer subdirectory from the catalog`() {
         val manager = SherpaModelManager.of("qwen3-asr")
-        val variantName = "0.6b-int8"
+        val variantName = "0.6b-int4"
         val variant = BundledCatalog.byId("qwen3-asr")!!.variants.first { it.name == variantName }
         installVariant("qwen3-asr", variant.dirName, "qwen3-asr")
         val dir = File(context.filesDir, "qwen3-asr/${variant.dirName}")

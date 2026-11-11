@@ -108,8 +108,8 @@ class BundledModelCatalogTest {
         assertEquals(1024, qwen3.flags.maxTotalLen)
         assertEquals(30, qwen3.flags.chunkDurationSeconds)
         assertEquals(30, qwen3.flags.maxAudioDurationSeconds)
-        assertEquals("sherpa-onnx-qwen3-asr-0.6b-int8", qwen3.defaultVariant.dirName)
-        assertEquals(938L, qwen3.defaultVariant.estimatedSizeMB)
+        assertEquals("sherpa-onnx-qwen3-asr-0.6b-int4", qwen3.defaultVariant.dirName)
+        assertEquals(606L, qwen3.defaultVariant.estimatedSizeMB)
 
         val nemotron = byId.getValue("nemotron-streaming")
         assertTrue(nemotron.isStreaming)

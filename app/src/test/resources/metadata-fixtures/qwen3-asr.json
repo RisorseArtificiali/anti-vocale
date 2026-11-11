@@ -5,12 +5,10 @@
   "modelType": "qwen3_asr",
   "scanWindowBytes": 2097152,
   "variants": {
-    "0.6b-int8": {
-      "encoder": "encoder.int8.onnx",
-      "keys": [
-        "onnx.infer"
-      ],
-      "sha256": "60748d3e6744a57c9c91e1b17424a6c2990567e8adceb0783940c03ed98fa9d9"
+    "0.6b-int4": {
+      "encoder": "encoder.int4.onnx",
+      "keys": [],
+      "sha256": "774e997d23a2f06c3f544666625c93a3b824fdd83d04c6acd88ee25f4e3b6e2e"
     }
   }
 }

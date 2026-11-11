@@ -34,8 +34,8 @@ class Qwen3CatalogCountGuardTest {
             ?: error("bundled catalog is missing qwen3-asr")
 
     private fun sizeOf060b(): Long =
-        BundledCatalog.byId(BuiltInBackendIds.QWEN3_ASR)?.variant("0.6b-int8")?.estimatedSizeMB
-            ?: error("bundled catalog is missing qwen3-asr/0.6b-int8")
+        BundledCatalog.byId(BuiltInBackendIds.QWEN3_ASR)?.variant("0.6b-int4")?.estimatedSizeMB
+            ?: error("bundled catalog is missing qwen3-asr/0.6b-int4")
 
     private fun shippedLocales(): List<String> = ShippedLocales.tags()
 

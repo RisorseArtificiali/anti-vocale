@@ -179,7 +179,7 @@ Long transcripts are split into pages you can read without leaving the notificat
 | **Parakeet TDT (stock int8)** | ~640MB | 25 European | The default: fastest and lightest full multilingual option, close to Whisper Turbo in most languages we measured (inputs over 1 minute are chunked and stitched, sized to free RAM; see [FAQ](FAQ.md)) |
 | **Parakeet TDT (SmoothQuant)** | ~862MB | 25 European | Alternative to the default (the default through 1.13.x) |
 | **GigaAM v3** | ~326MB | Russian | Best Russian accuracy, native punctuation |
-| **Qwen3-ASR 0.6B** | ~938MB | 59 | 59 languages incl. Chinese dialects; poor Italian accuracy |
+| **Qwen3-ASR 0.6B** | ~606MB | 59 | 59 languages incl. Chinese dialects; poor Italian accuracy |
 
 ### Custom Models (ONNX Sherpa)
 
@@ -194,14 +194,14 @@ Import any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice, Canary, Moon
 | **Distil Large V3 IT** | **4.3%** | 0.723x | 939MB |
 | **Parakeet TDT** | 5.4% | **0.041x** | **640MB** |
 | Whisper Turbo | 6.3% | 1.217x | 990MB |
-| Qwen3-ASR 0.6B | 12.2% | 0.278x | 954MB |
+| Qwen3-ASR 0.6B | 12.2% | 0.278x | 606MB |
 
 ### ASR (Streaming)
 
 | Model | Size | Languages | Notes |
 |-------|------|-----------|-------|
 | **Nemotron 3.5** | ~640MB | 40+ | Cache-aware streaming transducer, auto-detect + native punctuation/casing |
-| **Qwen3-ASR 0.6B** | ~938MB | 59 | Streaming-capable; poor Italian accuracy |
+| **Qwen3-ASR 0.6B** | ~606MB | 59 | Streaming-capable; poor Italian accuracy |
 
 ### Build Flavors
 

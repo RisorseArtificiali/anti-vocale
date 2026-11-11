@@ -309,7 +309,7 @@ class ModelUiStateTest {
 
     @Test
     fun `Qwen3 per-variant isolation works the same way`() {
-        val variant = "0.6b-int8"
+        val variant = "0.6b-int4"
 
         val state = ModelViewModel.ModelEntryUiState(
             variantDownloadStates = mapOf(

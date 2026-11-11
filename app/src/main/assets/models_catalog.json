@@ -663,7 +663,7 @@
       ],
       "variants": [
         {
-          "name": "0.6b-int8",
+          "name": "0.6b-int4",
           "title": {
             "resourceKey": "qwen3_asr_0_6b_title"
           },
@@ -672,11 +672,11 @@
             "sizePlaceholder": true,
             "countPlaceholder": true
           },
-          "dirName": "sherpa-onnx-qwen3-asr-0.6b-int8",
-          "estimatedSizeMB": 938,
+          "dirName": "sherpa-onnx-qwen3-asr-0.6b-int4",
+          "estimatedSizeMB": 606,
           "source": {
             "kind": "huggingface",
-            "repo": "pantinor/sherpa-onnx-qwen3-asr-0.6b-int8"
+            "repo": "goodpixelltd/qwen3-asr-0.6b-int4-sherpa-onnx"
           },
           "files": [
             {
@@ -684,12 +684,20 @@
               "sha256": "d22dc4423e0940e49884e903d2ea2f7e5567c14fc1aed97e4e26d6b8f208ef9e"
             },
             {
-              "name": "encoder.int8.onnx",
-              "sha256": "60748d3e6744a57c9c91e1b17424a6c2990567e8adceb0783940c03ed98fa9d9"
+              "name": "encoder.int4.onnx",
+              "sha256": "774e997d23a2f06c3f544666625c93a3b824fdd83d04c6acd88ee25f4e3b6e2e"
             },
             {
-              "name": "decoder.int8.onnx",
-              "sha256": "61e5f8249f9e7c82d5e01e1938c79fb3f5b3135f91664928033029e42451bd18"
+              "name": "encoder.int4.weights",
+              "sha256": "dc66975d9be10fbd31f89c76d33dd0bf4a8059ef14da4abf545bbf9895a5293d"
+            },
+            {
+              "name": "decoder.int4.onnx",
+              "sha256": "c588d2a89460315f51ca8c65dbe85a0619891500fc853e5b673e3c914c25b2d3"
+            },
+            {
+              "name": "decoder.int4.weights",
+              "sha256": "126c8e16074cc87250dacbf07602315e3bc5239c93ea414773b6e3a6fd4bf466"
             },
             {
               "name": "tokenizer/merges.txt",

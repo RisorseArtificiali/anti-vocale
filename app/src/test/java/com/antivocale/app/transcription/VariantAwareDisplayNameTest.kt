@@ -90,7 +90,7 @@ class VariantAwareDisplayNameTest {
         assertEquals(
             "Qwen3-ASR (59 languages)",
             variantAwareDisplayName(context, registry.byBackendId(BuiltInBackendIds.QWEN3_ASR)!!,
-                "/models/sherpa-onnx-qwen3-asr-0.6b-int8"))
+                "/models/sherpa-onnx-qwen3-asr-0.6b-int4"))
         assertEquals(
             "Nemotron 3.5",
             variantAwareDisplayName(context, registry.byBackendId(BuiltInBackendIds.NEMOTRON)!!,

@@ -44,7 +44,7 @@
     },
     {
       "modelId": "qwen3-asr",
-      "variant": "sherpa-onnx-qwen3-asr-0.6b-int8",
+      "variant": "sherpa-onnx-qwen3-asr-0.6b-int4",
       "language": "it",
       "metric": "WER",
       "value": 12.2,

@@ -2740,7 +2740,7 @@ private fun SpeedComparisonDialog(onDismiss: () -> Unit) {
                             ?: error("bundled catalog is missing qwen3-asr")
                         ComparisonRow(
                             name = stringResource(R.string.speed_comparison_qwen3_name),
-                            size = catalogSpeedSize("qwen3-asr", "0.6b-int8"),
+                            size = catalogSpeedSize("qwen3-asr", "0.6b-int4"),
                             speed = stringResource(R.string.speed_comparison_qwen3_speed),
                             quality = stringResource(
                                 R.string.speed_comparison_qwen3_quality, qwen3LanguageCount)

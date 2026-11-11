@@ -196,7 +196,7 @@ class ModelSizePlaceholderGuardTest {
         val rows = listOf(
             "whisper" to "turbo", "whisper" to "medium", "whisper" to "small",
             "whisper" to "distil-large-v3-it", "sherpa-onnx" to "stock-int8",
-            "qwen3-asr" to "0.6b-int8", "gigaam" to "v3",
+            "qwen3-asr" to "0.6b-int4", "gigaam" to "v3",
             "nemotron-streaming" to "1120ms-int8",
         )
         rows.forEach { (entryId, variantName) ->

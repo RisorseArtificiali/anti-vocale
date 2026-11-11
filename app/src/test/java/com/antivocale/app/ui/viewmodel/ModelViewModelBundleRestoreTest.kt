@@ -177,8 +177,10 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
     private fun qwen3SourceDir(): File {
         val dir = newTempDir("qwen3-src")
         File(dir, "conv_frontend.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 1 })
-        File(dir, "encoder.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 2 })
-        File(dir, "decoder.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 3 })
+        File(dir, "encoder.int4.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 2 })
+        File(dir, "encoder.int4.weights").writeBytes(ByteArray(2048) { if (it == 0) 8 else 4 })
+        File(dir, "decoder.int4.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 3 })
+        File(dir, "decoder.int4.weights").writeBytes(ByteArray(2048) { if (it == 0) 8 else 5 })
         File(dir, "tokenizer").mkdirs()
         File(dir, "tokenizer/vocab.json").writeText("""{"t":1}""")
         File(dir, "tokenizer/merges.txt").writeText((0..99).joinToString("\n") { "m$it" })
@@ -243,10 +245,10 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
 
     private fun restoredDir(): File =
         File(SherpaModelManager.of("qwen3-asr").getModelStorageDir(mockContext),
-            "sherpa-onnx-qwen3-asr-0.6b-int8")
+            "sherpa-onnx-qwen3-asr-0.6b-int4")
 
     private fun qwen3Present(): Boolean =
-        viewModel.catalogStates.value["qwen3-asr"]?.downloadedVariants?.contains("0.6b-int8") == true
+        viewModel.catalogStates.value["qwen3-asr"]?.downloadedVariants?.contains("0.6b-int4") == true
 
     // ---- (a) the restore arm ----
 
@@ -254,7 +256,7 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
     fun `a catalog-matching bundle restores onto the built-in dir with no record`() = runTest {
         importBundle(bundleFrom(
             qwen3SourceDir, "qwen3_asr",
-            entryId = "qwen3-asr", variantDir = "sherpa-onnx-qwen3-asr-0.6b-int8"))
+            entryId = "qwen3-asr", variantDir = "sherpa-onnx-qwen3-asr-0.6b-int4"))
         await("restore finished") {
             viewModel.externalImportState.value == ModelViewModel.ExternalImportState.Idle &&
                 restoredDir().isDirectory
@@ -265,7 +267,7 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
 
         // The tree is complete at the downloader path, tokenizer/ included,
         // and passes the manager's validator (the tokenizer/ subdir rule).
-        assertTrue(File(restoredDir(), "encoder.int8.onnx").isFile)
+        assertTrue(File(restoredDir(), "encoder.int4.onnx").isFile)
         assertTrue(File(restoredDir(), "tokenizer/vocab.json").isFile)
         assertTrue(SherpaModelManager.of("qwen3-asr").isValidModelDir(restoredDir()))
 
@@ -274,7 +276,7 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
         await("qwen3 card present via the restored dir") { qwen3Present() }
         assertEquals(
             restoredDir().absolutePath,
-            SherpaModelDownloader.of("qwen3-asr").getModelPath(mockContext, "0.6b-int8"))
+            SherpaModelDownloader.of("qwen3-asr").getModelPath(mockContext, "0.6b-int4"))
 
         // The restore never touches preferences (the TASK-797 alias stays dead).
         assertEquals(null, fakePrefs._sherpaModelPath("qwen3-asr").value)
@@ -317,10 +319,10 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
     fun `an in-flight download refuses the restore through the localized error`() = runTest {
         // Download first: the registration flips isDownloading before any
         // service work, which is the state the restore claim reads.
-        viewModel.startDownload("qwen3-asr", "0.6b-int8")
+        viewModel.startDownload("qwen3-asr", "0.6b-int4")
         importBundle(bundleFrom(
             qwen3SourceDir, "qwen3_asr",
-            entryId = "qwen3-asr", variantDir = "sherpa-onnx-qwen3-asr-0.6b-int8"))
+            entryId = "qwen3-asr", variantDir = "sherpa-onnx-qwen3-asr-0.6b-int4"))
         await("restore refused as download-active") {
             viewModel.externalImportState.value is ModelViewModel.ExternalImportState.Error
         }
@@ -338,7 +340,7 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
         assertEquals(
             true,
             viewModel.catalogStates.value["qwen3-asr"]?.variantDownloadStates
-                ?.get("0.6b-int8")?.isDownloading)
+                ?.get("0.6b-int4")?.isDownloading)
     }
 
     @Test
@@ -347,24 +349,24 @@ class ModelViewModelBundleRestoreTest : ViewModelTeardownTest() {
         // (the real landing is a sub-second rename with no pause point);
         // everything under test here is the download start's behavior
         // against that marker.
-        val claim = viewModel.claimRestoreVariant("qwen3-asr", "0.6b-int8")
+        val claim = viewModel.claimRestoreVariant("qwen3-asr", "0.6b-int4")
         try {
-            viewModel.startDownload("qwen3-asr", "0.6b-int8")
+            viewModel.startDownload("qwen3-asr", "0.6b-int4")
             val state = viewModel.catalogStates.value["qwen3-asr"]
-            assertEquals(false, state?.variantDownloadStates?.get("0.6b-int8")?.isDownloading)
+            assertEquals(false, state?.variantDownloadStates?.get("0.6b-int4")?.isDownloading)
             assertEquals(
                 "str:${com.antivocale.app.R.string.model_download_restore_active}",
-                state?.variantDownloadStates?.get("0.6b-int8")?.errorMessage)
-            assertEquals(setOf("0.6b-int8"), state?.restoringVariants)
+                state?.variantDownloadStates?.get("0.6b-int4")?.errorMessage)
+            assertEquals(setOf("0.6b-int4"), state?.restoringVariants)
         } finally {
             claim.close()
         }
         // Released: the same start now registers the download and clears
         // the refused attempt's error.
-        viewModel.startDownload("qwen3-asr", "0.6b-int8")
+        viewModel.startDownload("qwen3-asr", "0.6b-int4")
         val state = viewModel.catalogStates.value["qwen3-asr"]
-        assertEquals(true, state?.variantDownloadStates?.get("0.6b-int8")?.isDownloading)
-        assertEquals(null, state?.variantDownloadStates?.get("0.6b-int8")?.errorMessage)
+        assertEquals(true, state?.variantDownloadStates?.get("0.6b-int4")?.isDownloading)
+        assertEquals(null, state?.variantDownloadStates?.get("0.6b-int4")?.errorMessage)
         assertEquals(emptySet<String>(), state?.restoringVariants)
     }
 

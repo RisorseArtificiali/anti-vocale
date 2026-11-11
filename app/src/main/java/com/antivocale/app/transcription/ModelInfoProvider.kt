@@ -119,10 +119,10 @@ object ModelInfoProvider {
                 performanceNotes = R.string.model_info_notes_distil_it
             ))
 
-            put("sherpa-onnx-qwen3-asr-0.6b-int8", ModelInfo(
+            put("sherpa-onnx-qwen3-asr-0.6b-int4", ModelInfo(
                 architectureType = ArchitectureType.ENCODER_ONLY_CTC,
                 recommendedThreads = 4..6,
-                quantizationLevel = "INT8",
+                quantizationLevel = "INT4",
                 isArm64Only = true,
                 supportsProgressiveTranscription = false,
                 vadRecommended = true,
