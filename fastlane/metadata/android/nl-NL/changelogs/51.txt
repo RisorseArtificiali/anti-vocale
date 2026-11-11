@@ -1,0 +1,2 @@
+Opgelost: het downloaden van het standaard Parakeet-model faalde de integriteitscontrole nadat de uitgever de bestanden verving; de app accepteert nu de geverifieerde vervanging
+Opgelost: een zeldzame crash bij hervatten vanaf een melding op sommige apparaten

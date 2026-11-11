@@ -16,7 +16,7 @@ Transducer (NVIDIA NeMo, TDT decoding). The app default since 1.14.0: the stock 
 - Languages: 25 European, including Italian, German, French, Spanish, English, Russian, and the Nordics, Baltics, and most of Central Europe
 - Audio limit: 400 s per segment (a hard cap in NVIDIA's checkpoint), split automatically for longer input
 - Original model: [nvidia/parakeet-tdt-0.6b-v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3)
-- Downloads from: [csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8](https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8) (int8), [pantinor/parakeet-tdt-0.6b-v3-smoothquant](https://huggingface.co/pantinor/parakeet-tdt-0.6b-v3-smoothquant) (SmoothQuant)
+- Downloads from: [pantinor/parakeet-tdt-0.6b-v3-int8](https://huggingface.co/pantinor/parakeet-tdt-0.6b-v3-int8) (int8, our verified mirror), [pantinor/parakeet-tdt-0.6b-v3-smoothquant](https://huggingface.co/pantinor/parakeet-tdt-0.6b-v3-smoothquant) (SmoothQuant)
 
 ### Whisper (OpenAI, encoder-decoder)
 

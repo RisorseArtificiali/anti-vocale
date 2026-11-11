@@ -102,7 +102,7 @@
           "estimatedSizeMB": 640,
           "source": {
             "kind": "huggingface",
-            "repo": "csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"
+            "repo": "pantinor/parakeet-tdt-0.6b-v3-int8"
           },
           "files": [
             {

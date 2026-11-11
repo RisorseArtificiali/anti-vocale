@@ -1,0 +1,2 @@
+Corrigido: o download do modelo Parakeet padrão falhava na verificação de integridade depois que o publicador substituiu os arquivos; o app agora aceita a substituição verificada
+Corrigido: uma falha rara ao retomar de uma notificação em alguns dispositivos

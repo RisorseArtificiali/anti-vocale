@@ -1,4 +1,7 @@
 <en-US>
+What's new in 1.16.1:
+• Fixed: the default Parakeet model download failed its integrity check after the publisher replaced the files; downloads now use our verified mirror
+• Fixed: a rare crash when resuming from a notification on some devices
 What's new in 1.16.0:
 • New: if a phone cleaner deletes downloaded models, the app notices and restores them in one tap
 • New models: Parakeet Ultra (about 20% more accurate), Fritter streaming English, Sabich, French and German fine-tunes
@@ -57,6 +60,9 @@ What's new in 1.12.0:
 • Fixed: clearer low-memory and corrupt-model errors</en-US>
 
 <it-IT>
+Novità nella 1.16.1:
+• Corretto: il download del modello Parakeet predefinito falliva il controllo di integrità dopo la sostituzione dei file upstream; i download usano ora il nostro mirror verificato
+• Corretto: un raro crash alla riapertura da notifica su alcuni dispositivi
 Novità della versione 1.16.0:
 • Nuovo: se un pulitore del telefono cancella i modelli scaricati, l'app se ne accorge e li ripristina con un tocco
 • Nuovi modelli: Parakeet Ultra (20% più accurato), Fritter streaming inglese, Sabich, fine-tune francese e tedesco

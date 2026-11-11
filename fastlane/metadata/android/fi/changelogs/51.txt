@@ -1,0 +1,2 @@
+Korjattu: Parakeet-oletusmallin lataus epäonnistui eheystarkistuksessa sen jälkeen, kun julkaisija korvasi tiedostot; sovellus hyväksyy nyt varmennetun korvauksen
+Korjattu: harvinainen kaatuminen ilmoituksesta palattaessa joillakin laitteilla

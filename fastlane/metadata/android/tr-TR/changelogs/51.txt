@@ -1,0 +1,2 @@
+Düzeltildi: yayıncı dosyaları değiştirdikten sonra varsayılan Parakeet modeli indirmesi bütünlük denetiminde başarısız oluyordu; uygulama artık doğrulanmış yerine geçen dosyaları kabul ediyor
+Düzeltildi: bazı cihazlarda bildirimden dönerken nadir bir çökme

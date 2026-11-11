@@ -1,0 +1,2 @@
+Naprawiono: pobieranie domyślnego modelu Parakeet nie przechodziło kontroli integralności po wymianie plików przez wydawcę; aplikacja akceptuje teraz zweryfikowaną zastępczą wersję
+Naprawiono: rzadka awaria przy wznawianiu z powiadomienia na niektórych urządzeniach
