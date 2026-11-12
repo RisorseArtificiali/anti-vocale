@@ -1,0 +1,2 @@
+Corregido: la descarga del modelo Parakeet predeterminado fallaba la comprobación de integridad tras que quien lo publica reemplazara los archivos; las descargas usan ahora nuestro mirror verificado
+Corregido: un fallo poco frecuente al reanudar desde una notificación en algunos dispositivos

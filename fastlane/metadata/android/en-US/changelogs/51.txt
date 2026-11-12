@@ -1,0 +1,2 @@
+Fixed: the default Parakeet model download failed its integrity check after the publisher replaced the files; downloads now use our verified mirror
+Fixed: a rare crash when resuming from a notification on some devices

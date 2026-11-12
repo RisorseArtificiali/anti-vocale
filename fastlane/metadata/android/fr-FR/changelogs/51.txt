@@ -1,0 +1,2 @@
+Corrigé : le téléchargement du modèle Parakeet par défaut échouait à la vérification d'intégrité après que l'éditeur a remplacé les fichiers ; les téléchargements utilisent désormais notre miroir vérifié
+Corrigé : un plantage rare à la reprise depuis une notification sur certains appareils

@@ -1,0 +1,2 @@
+Corretto: il download del modello Parakeet predefinito falliva il controllo di integrità dopo la sostituzione dei file upstream; i download usano ora il nostro mirror verificato
+Corretto: un raro crash alla riapertura da notifica su alcuni dispositivi
