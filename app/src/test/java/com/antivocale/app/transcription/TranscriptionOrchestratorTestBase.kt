@@ -219,6 +219,9 @@ abstract class TranscriptionOrchestratorTestBase {
         // the punctuation pass; the dedicated pass test overrides these.
         every { preferencesManager.punctuationMode } returns flowOf("off")
         every { preferencesManager.punctuationPrompt } returns flowOf("")
+        // TASK-994: the personal dictionary rides the Gemma passes; empty
+        // by default so existing fixtures never see the vocabulary line.
+        every { preferencesManager.keywordBiasing } returns flowOf("")
         every { preferencesManager.sherpaModelPath("whisper") } returns flowOf("/models/whisper")
     }
 

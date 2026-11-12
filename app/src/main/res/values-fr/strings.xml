@@ -1205,8 +1205,9 @@
     <string name="backup_import_history_failed">Réglages importés, mais l\'historique n\'a pas pu être ajouté. Réessayer est sans risque.</string>
     <string name="backup_disclosure_title">Avant d\'exporter</string>
     <string name="backup_disclosure_body">La sauvegarde contient chaque transcription, nom d\'expéditeur et étiquette de locuteur en texte lisible. Ne la partagez qu\'avec des destinataires de confiance.</string>
-    <string name="keyword_biasing_title">Biais de mots-clés (Whistle)</string>
-    <string name="keyword_biasing_description">Noms, lieux ou jargon que le modèle Whistle doit favoriser, un par ligne. Effective à la transcription suivante, sans rechargement.</string>
+    <string name="keyword_biasing_title">Dictionnaire personnel</string>
+    <string name="keyword_biasing_description">Noms, lieux ou jargon que l\'application doit respecter, un par ligne. S\'applique à la reconnaissance Whistle et aux passes de polissage et de résumé de l\'IA ; les autres moteurs de reconnaissance ne prennent pas encore en charge le biais de vocabulaire. (En mode de polissage conservateur, l\'invite fixe est conservée telle quelle.)</string>
+    <string name="personal_dictionary_prompt_line">Ces noms ou termes apparaissent dans ce contenu ; conservez cette orthographe exacte là où ils figurent : %1$s</string>
     <string name="keyword_biasing_placeholder">Un terme par ligne</string>
     <string name="freeze_protection_title">Protection de la transcription en arrière-plan</string>
     <string name="freeze_protection_description">Garde un flux audio silencieux actif pendant la transcription pour que les économiseurs de batterie agressifs ne suspendent pas l\'app. Activez-la si la transcription s\'arrête écran éteint (certains Oppo, Realme, OnePlus et Vivo).</string>

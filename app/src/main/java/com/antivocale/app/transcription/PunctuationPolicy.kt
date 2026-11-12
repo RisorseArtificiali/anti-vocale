@@ -91,7 +91,10 @@ object PunctuationPolicy {
             (!promptIsFenced(mode) || conservativeAcceptable(polished, original))
 
     /** Too-long transcripts cannot fit Gemma's context: skip rather than truncate. */
-    fun withinContextLimit(transcript: String): Boolean = transcript.length <= MAX_TRANSCRIPT_CHARS
+    fun withinContextLimit(transcript: String): Boolean = withinContextLimit(transcript.length)
+
+    /** Length form for callers adding riders to the transcript budget (TASK-994). */
+    fun withinContextLimit(chars: Int): Boolean = chars <= MAX_TRANSCRIPT_CHARS
 
     /**
      * The effective prompt: the user's override, or the localized curated

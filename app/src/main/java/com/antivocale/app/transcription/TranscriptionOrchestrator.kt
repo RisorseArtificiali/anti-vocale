@@ -1011,9 +1011,14 @@ class TranscriptionOrchestrator @Inject constructor(
             val passPrompt = if (fenced) {
                 context.getString(R.string.punctuation_default_prompt_conservative)
             } else {
-                PunctuationPolicy.effectivePrompt(
-                    preferencesManager.punctuationPrompt.first(),
-                    context.getString(R.string.punctuation_default_prompt))
+                // TASK-994: the personal dictionary rides the UNFENCED polish
+                // prompt only - the fenced mode's token validation pins its
+                // prompt, and a suffix could break the fences.
+                withPersonalDictionary(
+                    context,
+                    PunctuationPolicy.effectivePrompt(
+                        preferencesManager.punctuationPrompt.first(),
+                        context.getString(R.string.punctuation_default_prompt)))
             }
             // TASK-666.2: over the context guard the pass runs CHUNKED (the
             // summary pass's map-reduce precedent, TASK-520; ContextChunker
@@ -1208,6 +1213,18 @@ class TranscriptionOrchestrator @Inject constructor(
      * and any failure degrades to no summary: an optional extra may never
      * fail a completed transcription.
      */
+    /**
+     * TASK-994: the personal-dictionary rider, ONE construction for every
+     * Gemma pass (the prompt-line template and the pref read live here, so
+     * a third pass cannot drift the resource or the semantics). Locale is
+     * resolved at the call site per the package's pure-core convention.
+     */
+    private suspend fun withPersonalDictionary(context: android.content.Context, instruction: String): String =
+        PersonalDictionary.withVocabularyLine(
+            instruction,
+            preferencesManager.keywordBiasing.first(),
+        ) { terms -> context.getString(R.string.personal_dictionary_prompt_line, terms) }
+
     /**
      * TASK-520: map-reduce summary for transcripts past the context guard
      * (a 78-minute call is 60-80k chars; the single-shot pass would skip).
@@ -1473,8 +1490,17 @@ class TranscriptionOrchestrator @Inject constructor(
                 builtIn = builtInInstruction,
                 actionItems = context.getString(R.string.summary_preset_action_items_prompt),
                 meetingMinutes = context.getString(R.string.summary_preset_meeting_minutes_prompt),
-            )
-            if (!SummaryPolicy.withinContextLimit(result.text)) {
+                // TASK-994: the personal dictionary rides EVERY ladder
+                // attempt (mapped AFTER the ladder so its custom-vs-built-in
+                // equality stays pure and the dedup keeps working).
+            ).map { withPersonalDictionary(context, it) }
+            // TASK-994 review: the dictionary rider rides the instruction,
+            // so its length joins the context guard (a boundary transcript
+            // plus a fat rider must take the map-reduce path, not fail both
+            // single-shot attempts at the engine).
+            val dictionaryRiderChars = PersonalDictionary.promptTerms(
+                preferencesManager.keywordBiasing.first())?.length ?: 0
+            if (!SummaryPolicy.withinContextLimit(result.text.length + dictionaryRiderChars)) {
                 // TASK-520: too long for ONE generation, not too long to
                 // summarize: map over context-sized chunks, reduce the
                 // partials. Falls back to the recorded skip only when the

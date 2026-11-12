@@ -27,6 +27,10 @@ object SummaryPolicy {
     fun withinContextLimit(transcript: String): Boolean =
         PunctuationPolicy.withinContextLimit(transcript)
 
+    /** Length form (TASK-994): callers that add riders to the budget. */
+    fun withinContextLimit(chars: Int): Boolean =
+        PunctuationPolicy.withinContextLimit(chars)
+
     /**
      * TASK-993: resolves the instruction LADDER for the pass: the primary
      * instruction for the stored preset (the key is the single source of

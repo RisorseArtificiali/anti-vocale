@@ -29,11 +29,9 @@ class SettingsSearchRegistryTest {
         batteryExemptionOffered: Boolean = false,
         refinementOn: Boolean = false,
         speakerIdEnabled: Boolean = false,
-        isWhistleBackend: Boolean = false,
         transcriptionHintRes: Int? = null,
     ) = SettingsSearchState(
         isLlmBackend = isLlmBackend,
-        isWhistleBackend = isWhistleBackend,
         isModelLoaded = isModelLoaded,
         gemmaConfigured = gemmaConfigured,
         punctuationPromptForced = punctuationPromptForced,
@@ -214,6 +212,8 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.REFINEMENT,
                 SettingsSearchId.PUNCTUATION_MODE,
                 SettingsSearchId.SUMMARIZE,
+                // TASK-994: the personal-dictionary card, unconditional.
+                SettingsSearchId.KEYWORD_BIASING,
                 SettingsSearchId.DIARIZATION_HUB,
                 SettingsSearchId.AUTO_COPY,
                 SettingsSearchId.EXPORT_SETTINGS,
@@ -244,6 +244,8 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.FREEZE_PROTECTION,
                 SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
                 SettingsSearchId.REFINEMENT,
+                // TASK-994: the dictionary card stays without Gemma too.
+                SettingsSearchId.KEYWORD_BIASING,
                 SettingsSearchId.DIARIZATION_HUB,
                 SettingsSearchId.AUTO_COPY,
                 SettingsSearchId.EXPORT_SETTINGS,
@@ -273,6 +275,7 @@ class SettingsSearchRegistryTest {
                 // (the identities card lives on the subpage now; its
                 //  vocabulary rides the hub, state-gated.)
                 SettingsSearchId.DEFAULT_PROMPT,
+                SettingsSearchId.KEYWORD_BIASING,
                 SettingsSearchId.DIARIZATION_HUB,
                 SettingsSearchId.AUTO_COPY,
                 SettingsSearchId.EXPORT_SETTINGS,
@@ -307,12 +310,6 @@ class SettingsSearchRegistryTest {
         assertSingleAddition(
             visibleIds(SettingsSearchSection.TRANSCRIPTION, state(summarizeOn = true)),
             SettingsSearchId.SUMMARY_PROMPT, SettingsSearchId.SUMMARIZE,
-        )
-        // TASK-858: the whistle-only keyword card enters search only on the
-        // Whistle backend, right after the default-prompt hub.
-        assertSingleAddition(
-            visibleIds(SettingsSearchSection.TRANSCRIPTION, state(isWhistleBackend = true)),
-            SettingsSearchId.KEYWORD_BIASING, SettingsSearchId.SUMMARIZE,
         )
         // 2026-09-30 regroup: the identities card moved to the diarization
         // subpage; the gate flip changes the hub's res() (the union test),

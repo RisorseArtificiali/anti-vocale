@@ -1348,8 +1348,9 @@
     <string name="backup_import_history_failed">ההגדרות יובאו, אך לא ניתן היה להוסיף את ההיסטוריה. ניתן לנסות שוב בבטחה.</string>
     <string name="backup_disclosure_title">לפני הייצוא</string>
     <string name="backup_disclosure_body">הגיבוי מכיל כל תמליל, שם שולח ותווית דובר בטקסט קריא. שתפו אותו רק עם יעדים מהימנים.</string>
-    <string name="keyword_biasing_title">הטיית מילות מפתח (Whistle)</string>
-    <string name="keyword_biasing_description">שמות, מקומות או מונחים שהמודל Whistle צריך להעדיף, אחד בכל שורה. חל מהתמלול הבא, בלי טעינה מחדש.</string>
+    <string name="keyword_biasing_title">מילון אישי</string>
+    <string name="keyword_biasing_description">שמות, מקומות או סלנג שהאפליקציה צריכה לכבד, אחד בכל שורה. חל על זיהוי Whistle ועל שלבי הליטוש והסיכום של הבינה המלאכותית; מנועי הדיבור האחרים עדיין לא תומכים בהטיית אוצר מילים. (במצב הליטוש השמרני הפרומפט הקבוע נשאר כמו שהוא.)</string>
+    <string name="personal_dictionary_prompt_line">שמות או מונחים אלה מופיעים בחומר הזה; שמרו על האיות המדויק הזה בכל מקום שבו הם מופיעים: %1$s</string>
     <string name="keyword_biasing_placeholder">מונח אחד בכל שורה</string>
     <string name="freeze_protection_title">הגנת תמלול ברקע</string>
     <string name="freeze_protection_description">מחזיק זרימת שמע שקטה פעילה במהלך התמלול כדי שחוסכי סוללה אגרסיביים לא ישהו את האפליקציה. הפעל אם התמלול נעצר כשהמסך כבוי (חלק מטלפוני Oppo‏, Realme‏, OnePlus ו־Vivo).</string>

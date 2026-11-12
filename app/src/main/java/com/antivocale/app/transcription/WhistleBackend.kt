@@ -171,14 +171,9 @@ class WhistleBackend @Inject constructor(
             // TASK-858: keyword biasing is REQUEST-time, not residency
             // identity (an edit applies to the next decode with no reload):
             // the orchestrator's .first() pattern on the cache-seeded flow.
-            // Newline OR comma separators (lenient parse: a pasted
-            // comma-separated list must not reach the engine as one giant
-            // hotword; commas INSIDE a term are meaningless anyway, the
-            // native boundary joins with \n).
-            val keywords = preferences.keywordBiasing.first()
-                .split('\n', ',')
-                .map(String::trim)
-                .filter(String::isNotEmpty)
+            // TASK-994: the parse lives in PersonalDictionary (the ONE home
+            // every consumer shares: newline or comma separators, lenient).
+            val keywords = PersonalDictionary.terms(preferences.keywordBiasing.first())
             val result = withContext(Dispatchers.IO) {
                 WhistleNative.transcribe(samples, language, keywords)
             } ?: run {
