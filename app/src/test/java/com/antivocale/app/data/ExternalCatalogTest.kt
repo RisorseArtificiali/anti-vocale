@@ -217,10 +217,13 @@ class ExternalCatalogTest {
         // as the Dutch entry with fi pinned; our FLEURS fi 9.35 vs Ultra
         // 14.48 vs v3 20.66; device pass done - RSS peak 1.75GB, warm RTF
         // 1.35; it 4.25 and en 5.83 bench legs beside it)
-        // + parakeet tdt redux int8 (TASK-983: csukuangfj's budget distill,
-        // 327MB for 25 EU languages; our FLEURS spot it 5.24 vs stock 3.95
-        // vs Ultra 2.77 - the honest quality-down download-size trade)
-        assertEquals(42, entries.size)
+        // - parakeet tdt redux REMOVED (2026-11-12, review round on the
+        // push: the entry's name claimed a 327MB download but the catalog
+        // dialect fetches loose files totaling 671MB, the same as Ultra,
+        // which beats it on quality in every measured language: strictly
+        // dominated, false advertising as shipped. The 327MB was the
+        // TARBALL size; no tarball path exists in the entry dialect.)
+        assertEquals(41, entries.size)
 
         // The three schema-1 manifest entries: family/languages from the index,
         // entryUrl is the live manifest (no committed asset; see the
@@ -385,9 +388,8 @@ class ExternalCatalogTest {
         // ...and the "de" code surfaces every German-capable entry via
         // languages (TASK-596: orukeet now declares its full 24-language
         // set, so it joins the German results; TASK-855: transcribepsy
-        // EU declares de too; TASK-983: the redux budget tier declares
-        // all 25 EU languages, de included)
-        assertEquals(9, ExternalCatalog.filter(entries, "de").size)
+        // EU declares de too)
+        assertEquals(8, ExternalCatalog.filter(entries, "de").size)
         // TASK-652: the six IndicConformer entries surface via their codes.
         // TASK-663: Dolphin declares the same six codes, so each surfaces
         // exactly the IndicConformer entry plus Dolphin (order: Dolphin first).
@@ -403,12 +405,10 @@ class ExternalCatalogTest {
         val moonshine = ExternalCatalog.filter(entries, "moonshine")
         assertEquals(3, moonshine.size)
         assertEquals(setOf(ModelFamily.MOONSHINE), moonshine.map { it.family }.toSet())
-        // TASK-983: redux declares uk, so it joins the four.
-        assertEquals(5, ExternalCatalog.filter(entries, "uk").size)
+        assertEquals(4, ExternalCatalog.filter(entries, "uk").size)
         assertEquals(3, ExternalCatalog.filter(entries, "vi").size)
-        // TASK-855: transcribepsy EU declares es (and the other 19);
-        // TASK-983: redux declares es too.
-        assertEquals(7, ExternalCatalog.filter(entries, "es").size)
+        // TASK-855: transcribepsy EU declares es (and the other 19).
+        assertEquals(6, ExternalCatalog.filter(entries, "es").size)
     }
 
     /** TASK-652 review: pin the six entry files like the omnilingual

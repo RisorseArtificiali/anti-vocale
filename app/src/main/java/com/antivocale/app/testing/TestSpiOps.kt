@@ -27,6 +27,8 @@ import com.antivocale.app.util.SubtitleFormatter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import org.json.JSONArray
@@ -742,15 +744,21 @@ internal class TestSpiOps(
             // renders in the UI and cancel/retry are live scriptable
             // affordances (op=import_cancel / op=import_retry; observation
             // via op=import_state and op=records). Only reachable with all
-            // optional extras at their defaults - the bridge's dispatch is
+            // optional extras at their defaults: the bridge's dispatch is
             // the dialog's own shape (entry JSONs and manifests carry their
             // own family; a bare repo URL defaults to TRANSDUCER exactly as
             // the dialog's untouched selector does).
             //
             // One busy check covering BOTH lanes (simplify round): the
-            // wired surface's own state AND the headless arm's guard - a
+            // wired surface's own state AND the headless arm's guard: a
             // headless import in flight must also refuse a wired dispatch,
             // or two multi-GB downloads race one importer and one store.
+            // Residual (review round): the check is check-then-act; a wired
+            // and a headless dispatch arriving in the same millisecond can
+            // still both pass it (the wired Importing state only flips once
+            // the ViewModel coroutine enters its mutex). Accepted for a
+            // debug tool: same-lane dispatches serialize on the ViewModel
+            // mutex and the headless CAS.
             val wiredImporting = ExternalImportSpiBridge.importInFlight?.invoke() == true
             if (wiredImporting || asyncImportInFlight.get()) {
                 throw IllegalArgumentException(
@@ -758,7 +766,7 @@ internal class TestSpiOps(
                         "wired one; op=records and the TestSpi channel the headless one)")
             }
             val wiredDispatch = ExternalImportSpiBridge.dispatchUrlImport
-            if (wiredDispatch != null &&
+            if (wiredDispatch != null && displayName == null &&
                 family == null && modelType == null && licence == null && streaming == null
             ) {
                 wiredDispatch(url)
@@ -778,6 +786,7 @@ internal class TestSpiOps(
             // owner site; the receiver passes the app scope composed with
             // IO, and the unit tests pass Unconfined for determinism).
             scope.launch {
+                headlessImportJob = kotlin.coroutines.coroutineContext[Job]
                 try {
                     val record = runImport()
                     asyncImportOutcome(ack(OP_IMPORT) {
@@ -1395,8 +1404,23 @@ internal class TestSpiOps(
     private fun importState(): String = importBridgeOp(
         OP_IMPORT_STATE, ExternalImportSpiBridge.renderState) { put("state", it()) }
 
-    private fun importCancel(): String = importBridgeOp(
-        OP_IMPORT_CANCEL, ExternalImportSpiBridge.cancel) { it(); put("cancelled", true) }
+    private fun importCancel(): String =
+        importBridgeOp(OP_IMPORT_CANCEL, ExternalImportSpiBridge.cancel) { wired ->
+            val cancelled = wired()
+            if (!cancelled) {
+                // The wired surface had nothing in flight; a headless import
+                // the SPI itself started can still be stopped (review round:
+                // the op must not claim success over a running download).
+                val headless = headlessImportJob
+                headless?.cancel()
+                put("cancelled", headless != null)
+                if (headless == null) {
+                    put("note", "nothing was in flight on either lane")
+                }
+            } else {
+                put("cancelled", true)
+            }
+        }
 
     private fun importRetry(): String = importBridgeOp(
         OP_IMPORT_RETRY, ExternalImportSpiBridge.retry) { put("retry_dispatched", it()) }
@@ -1432,6 +1456,10 @@ internal class TestSpiOps(
          *  instances consult. Set before the ack, cleared in the launched
          *  coroutine's finally. */
         private val asyncImportInFlight = AtomicBoolean(false)
+
+        /** The headless arm's live Job, so import_cancel can stop what the
+         *  SPI itself started when no wired surface owns an import. */
+        @Volatile private var headlessImportJob: kotlinx.coroutines.Job? = null
 
         /** TASK-984: the SPI logcat channel's ONE owner. The debug receiver
          *  aliases this as its TAG (debug sees main; the reverse would not

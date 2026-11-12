@@ -18,6 +18,11 @@ package com.antivocale.app.testing
  */
 internal object ExternalImportSpiBridge {
 
+    /** The ViewModel that wired the handles (review round: unwire only
+     *  acts for the owner, so overlapping lifetimes cannot wipe a live
+     *  surface's registration). */
+    private var owner: Any? = null
+
     /** Renders the current import state as one line (the SPI's JSON payload). */
     @Volatile var renderState: (() -> String)? = null
 
@@ -27,8 +32,9 @@ internal object ExternalImportSpiBridge {
      *  simplify round, all three agents). */
     @Volatile var importInFlight: (() -> Boolean)? = null
 
-    /** The Cancel button's own call: aborts the in-flight import job. */
-    @Volatile var cancel: (() -> Unit)? = null
+    /** The Cancel button's own call: aborts the in-flight import job;
+     *  false when no wired import was in flight. */
+    @Volatile var cancel: (() -> Boolean)? = null
 
     /** Fires the Error/Cancelled state's retry closure (re-dispatch);
      *  false when the current state carries no retry closure. */
@@ -41,7 +47,13 @@ internal object ExternalImportSpiBridge {
      */
     @Volatile var dispatchUrlImport: ((url: String) -> Unit)? = null
 
-    fun unwire() {
+    fun wire(owner: Any) {
+        this.owner = owner
+    }
+
+    fun unwire(owner: Any) {
+        if (this.owner !== owner) return
+        this.owner = null
         renderState = null
         importInFlight = null
         cancel = null

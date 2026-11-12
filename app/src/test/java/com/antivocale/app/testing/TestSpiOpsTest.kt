@@ -986,7 +986,11 @@ class TestSpiOpsTest {
         // TASK-989: the bridge is a process singleton; the suite may leave it
         // unwired (a ViewModel never composed), which is exactly the cold
         // background process the op must answer honestly.
-        ExternalImportSpiBridge.unwire()
+        ExternalImportSpiBridge.renderState = null
+        ExternalImportSpiBridge.importInFlight = null
+        ExternalImportSpiBridge.cancel = null
+        ExternalImportSpiBridge.retry = null
+        ExternalImportSpiBridge.dispatchUrlImport = null
         for (op in listOf("import_state", "import_cancel", "import_retry")) {
             val json = JSONObject(ops.handle(op))
             assertEquals(op, json.getString("op"))
@@ -1011,7 +1015,11 @@ class TestSpiOpsTest {
             val retry = JSONObject(ops.handle("import_retry"))
             assertTrue(retry.getBoolean("retry_dispatched"))
         } finally {
-            ExternalImportSpiBridge.unwire()
+            ExternalImportSpiBridge.renderState = null
+            ExternalImportSpiBridge.importInFlight = null
+            ExternalImportSpiBridge.cancel = null
+            ExternalImportSpiBridge.retry = null
+            ExternalImportSpiBridge.dispatchUrlImport = null
         }
     }
 
@@ -1033,7 +1041,11 @@ class TestSpiOpsTest {
             assertEquals(listOf("http://x/entry.json"), dispatched)
             assertNull("the fake importer is NOT touched on the wired path", fakeImporter.lastUrl)
         } finally {
-            ExternalImportSpiBridge.unwire()
+            ExternalImportSpiBridge.renderState = null
+            ExternalImportSpiBridge.importInFlight = null
+            ExternalImportSpiBridge.cancel = null
+            ExternalImportSpiBridge.retry = null
+            ExternalImportSpiBridge.dispatchUrlImport = null
         }
     }
 }

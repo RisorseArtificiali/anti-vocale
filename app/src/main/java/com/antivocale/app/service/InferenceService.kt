@@ -285,7 +285,16 @@ class InferenceService : Service(), TranscriptionListener {
         }
 
         if (intent?.action == ACTION_CANCEL_TASK) {
-            intent.getStringExtra(EXTRA_CANCEL_TASK_ID)?.let { handleCancelTask(it) }
+            val cancelTaskId = intent.getStringExtra(EXTRA_CANCEL_TASK_ID)
+            if (cancelTaskId != null) {
+                handleCancelTask(cancelTaskId)
+            } else {
+                // A malformed per-task cancel (action set, extra absent) fell
+                // straight to the return after the promotion above, stranding
+                // the foreground notification this very block just posted
+                // (review round: the sibling arms all retire).
+                retireIfIdle()
+            }
             return START_NOT_STICKY
         }
 
@@ -383,18 +392,20 @@ class InferenceService : Service(), TranscriptionListener {
                 return@launch
             }
 
-            // TASK-899: the startup sweep's "non-terminal = orphaned by
-            // process death" classification is only safe while no run is
-            // active; a request racing the (now async) sweep would have its
-            // fresh row closed as interrupted underneath it. Await the gate
-            // before this drain touches any row.
-            StartupSweepGate.await()
-
             _isTranscribing.value = true
             val totalInBatch = pendingCount.get()
             var currentIndex = 0
 
             try {
+                // TASK-899: the startup sweep's "non-terminal = orphaned by
+                // process death" classification is only safe while no run is
+                // active; a request racing the (now async) sweep would have
+                // its fresh row closed as interrupted underneath it. Await
+                // the gate before this drain touches any row. INSIDE the try
+                // (review round): a batch cancel while gated used to unwind
+                // before the finally, leaving drainEntered stuck true for the
+                // process lifetime, every later enqueue queueing forever.
+                StartupSweepGate.await()
                 // GH #67 (scoped): opt-in via Settings (DEFAULT OFF); the toggle is
                 // the reliability setting for freezer-ROMs, not a default behavior.
                 // Read here, on the batch-owning coroutine and inside the try, so

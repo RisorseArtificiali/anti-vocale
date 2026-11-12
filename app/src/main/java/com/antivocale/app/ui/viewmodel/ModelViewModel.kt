@@ -317,6 +317,7 @@ class ModelViewModel @Inject constructor(
         ExternalImportSpiBridge.importInFlight =
             { externalImportState.value is ExternalImportState.Importing }
         ExternalImportSpiBridge.cancel = ::cancelExternalImport
+        ExternalImportSpiBridge.wire(this)
         ExternalImportSpiBridge.retry = {
             externalImportState.value.retry?.let { it(); true } ?: false
         }
@@ -1982,9 +1983,13 @@ class ModelViewModel @Inject constructor(
      * import may already hold the field (the double-dispatch race), and a
      * stale completed-job handle is a harmless cancel no-op either way.
      */
-    fun cancelExternalImport() {
-        externalImportJob?.cancel()
+    fun cancelExternalImport(): Boolean {
+        // Boolean (review round): the caller can distinguish a real abort
+        // from a no-op on a null or already-terminal handle.
+        val job = externalImportJob
         externalImportJob = null
+        job?.cancel()
+        return job != null
     }
 
 
@@ -2048,7 +2053,7 @@ class ModelViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        ExternalImportSpiBridge.unwire()
+        ExternalImportSpiBridge.unwire(this)
         llmManager.setOnAutoUnloadCallback(null)
         llmManager.setOnExternalLoadCallback(null)
     }
