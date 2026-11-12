@@ -1788,7 +1788,13 @@ private fun DeviceTierLine() {
     MetaLineRow(
         icon = Icons.Default.Storage,
         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        text = stringResource(R.string.device_tier_line, (totalBytes / (1024L * 1024 * 1024)).toInt(), label),
+        // Rounded, not floored: the bands are totalMem-calibrated, so the
+        // rounded figure matches the nominal class the label names (a
+        // 4GB-marketed phone reporting 3.6GiB reads "4 GB, mid-range", its
+        // own spec-sheet number, not a contradicting "3 GB").
+        text = stringResource(
+            R.string.device_tier_line,
+            Math.round(totalBytes / (1024.0 * 1024 * 1024)).toInt(), label),
     )
 }
 
@@ -2261,18 +2267,22 @@ private fun ExternalModelsSection(
     }
 
     // TASK-995: keyed on the prefill so a deep link arriving while the
-    // dialog is already open re-initializes the link fields with the new
+    // dialog is already open re-initializes the LINK fields with the new
     // URL (remember blocks re-run inside a key change), and a manual open
-    // (prefill set to null first) starts from a blank dialog.
-    if (urlDialogOpen) key(urlDialogPrefill) {
-        val catalogState by viewModel.catalogUiState.collectAsState()
-        LaunchedEffect(urlDialogOpen) {
-            if (urlDialogOpen) viewModel.loadExternalCatalog()
-        }
+    // (prefill set to null first) starts from a blank dialog. The
+    // catalog-pick state stays OUTSIDE the key (review round 3): a second
+    // link re-targets the link fields, it must not silently discard the
+    // user's in-progress catalog selection or override form.
+    if (urlDialogOpen) {
         var catalogLanguage by remember { mutableStateOf("") }
         var selectedEntry by remember { mutableStateOf<ExternalCatalog.CatalogEntry?>(null) }
         var overrideMode by remember { mutableStateOf(false) }
         var overrideUrl by remember { mutableStateOf("") }
+        key(urlDialogPrefill) {
+        val catalogState by viewModel.catalogUiState.collectAsState()
+        LaunchedEffect(urlDialogOpen) {
+            if (urlDialogOpen) viewModel.loadExternalCatalog()
+        }
         // TASK-995: a deep-link URL pre-fills the advanced link field; the
         // key(urlDialogPrefill) above re-runs these initializers per link.
         var linkMode by remember { mutableStateOf(urlDialogPrefill != null) }
@@ -2481,6 +2491,7 @@ private fun ExternalModelsSection(
                 }
             }
         )
+        } // key(urlDialogPrefill)
     }
 }
 

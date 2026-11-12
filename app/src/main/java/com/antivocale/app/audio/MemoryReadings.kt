@@ -36,21 +36,22 @@ internal object MemoryReadings {
      * TASK-996: totalMem cached for the PROCESS lifetime. totalMem is a
      * device constant, and the Models tab's tier line plus every fit chip
      * each used to pay their own getMemoryInfo binder round trip (the
-     * N+1 the review caught); one read per process serves them all. The
-     * cache stores the NULL failure too (fail-open stays fail-open), and
-     * unit tests that need fresh reads keep using [totalRamBytes].
+     * N+1 the review caught); one read per process serves them all. Only
+     * a SUCCESSFUL read is cached (a transient failure retries on the next
+     * call instead of hiding the chips for the session), and unit tests
+     * that need fresh reads keep using [totalRamBytes].
      */
     @Volatile
     private var cachedTotalRamBytes: Long? = null
-    @Volatile
-    private var totalRamCached = false
 
     fun totalRamBytesCached(context: Context): Long? {
-        if (!totalRamCached) {
-            cachedTotalRamBytes = totalRamBytes(context)
-            totalRamCached = true
-        }
-        return cachedTotalRamBytes
+        // Cache SUCCESS only (review F6): a failed binder read at process
+        // start must not hide the tier line and every chip for the whole
+        // session; a null retries the read until one succeeds, and the
+        // steady state is one successful read per process.
+        val cached = cachedTotalRamBytes
+        if (cached != null) return cached
+        return totalRamBytes(context)?.also { cachedTotalRamBytes = it }
     }
 
     /** ActivityManager.getMemoryClass in MB (no largeHeap in the manifest), or null when the service is unavailable. */
