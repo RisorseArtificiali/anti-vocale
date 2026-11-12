@@ -174,6 +174,10 @@ fun MainScreen(
     // TASK-486: the debug-SPI navigation signal (consumed exactly once; the
     // settings-scoped remainder is handed to the Settings tab).
     val testNav by TestNavigation.pending.collectAsState()
+    // TASK-995: the antivocale://import deep link rides the same consume-once
+    // shape (MainActivity captures; this effect routes it to the Models tab
+    // through the NavRequest's importUrl slot).
+    val deepLinkImport by DeepLinkImport.pending.collectAsState()
     var settingsNavRequest by remember { mutableStateOf<AppNavigation.NavRequest?>(null) }
     var modelsNavRequest by remember { mutableStateOf<AppNavigation.NavRequest?>(null) }
 
@@ -226,6 +230,14 @@ fun MainScreen(
             is AppNavigation.Destination.SettingsRow -> openSettings(parsed, scroll)
             null -> Unit
         }
+    }
+    LaunchedEffect(deepLinkImport) {
+        val url = deepLinkImport ?: return@LaunchedEffect
+        DeepLinkImport.pending.value = null
+        navigateToTab(AppNavigation.TAB_INDEX_MODELS)
+        modelsNavRequest = AppNavigation.NavRequest.next(
+            AppNavigation.Destination.ModelTarget(AppNavigation.MODEL_KEY_IMPORT, importUrl = url),
+        )
     }
 
     // Logs tab is first since it is the primary use case (viewing transcription history)

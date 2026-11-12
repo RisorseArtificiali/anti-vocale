@@ -160,7 +160,12 @@ object AppNavigation {
         data class Tab(val index: Int) : Destination
         data class SettingsSubPage(val key: String) : Destination
         data class SettingsSection(val key: String) : Destination
-        data class ModelTarget(val key: String) : Destination
+        /** TASK-995: [importUrl] is the antivocale://import deep-link payload;
+         *  it rides its destination (the TASK-632 vocabulary rule: payload
+         *  travels inside Destination, not on a parallel channel). Null for
+         *  every token-parsed request (the SPI parser mints the plain
+         *  dialog-open form), non-null only for a deep-link handoff. */
+        data class ModelTarget(val key: String, val importUrl: String? = null) : Destination
 
         /** TASK-632: one Settings row, by key (see [ROW_KEYS]). */
         data class SettingsRow(val key: String) : Destination

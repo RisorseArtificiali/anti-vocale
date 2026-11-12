@@ -53,11 +53,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextDecoration
 import com.antivocale.app.R
 import com.antivocale.app.ui.AppNavigation
+import com.antivocale.app.ui.DeepLinkImport
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.ExternalCatalogRepository
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.ExternalCatalog
+import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.data.catalog.BundledCatalog
@@ -2008,6 +2010,11 @@ private fun ExternalModelsSection(
     val demotedBackendIds by viewModel.demotedBackendIds.collectAsState()
     val importState by viewModel.externalImportState.collectAsState()
     var urlDialogOpen by remember { mutableStateOf(false) }
+    // TASK-995: the deep-link prefill riding an open dialog request. The
+    // dialog content is keyed on this value, so a link arriving while the
+    // dialog is open re-initializes it with the new URL, and a manual open
+    // (which sets it to null first) can never resurrect a consumed link.
+    var urlDialogPrefill by remember { mutableStateOf<String?>(null) }
     // TASK-486: op=nav models:import opens the catalog dialog directly.
     // This effect OWNS consumption (the ModelTab-level effect only expands
     // the section and must stay re-fire-free); consuming here means a later
@@ -2017,13 +2024,16 @@ private fun ExternalModelsSection(
         if (request.destination is AppNavigation.Destination.ModelTarget) {
             onNavConsumed()
             if (request.destination.key == AppNavigation.MODEL_KEY_IMPORT) {
+                // TASK-995 review: EVERY deep link opens the dialog with the
+                // URL pre-filled (the dialog is the consent surface; a link
+                // never dispatches an import on its own, so the busy gate and
+                // the mobile-data cost stay under the user's tap). Entry and
+                // repo URLs part ways INSIDE the dialog (family selector).
+                urlDialogPrefill = request.destination.importUrl
                 urlDialogOpen = true
             }
         }
     }
-    var dropdownExpanded by remember { mutableStateOf(false) }
-    var ctcExpanded by remember { mutableStateOf(false) }
-
     // Outer section Card matching the curated sections (GigaAM, Nemotron):
     // surfaceVariant background, shared card-title header, 16dp padding.
     Card(
@@ -2071,7 +2081,11 @@ private fun ExternalModelsSection(
             // featured path (the only filled button, first); folder and
             // the phone-transfer bundle are outlined equals below.
             Button(
-                onClick = { urlDialogOpen = true },
+                onClick = {
+                    // A manual open never inherits a consumed link's prefill.
+                    urlDialogPrefill = null
+                    urlDialogOpen = true
+                },
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -2108,106 +2122,13 @@ private fun ExternalModelsSection(
                 Text(stringResource(R.string.external_family_advanced))
             }
             if (familyAdvanced) {
-                // Family selector visible for BOTH import paths (folder and URL). Each
-                // entry carries a help line listing the expected files, mirroring the
-                // label + description pattern of the advanced-section button.
-                ExposedDropdownMenuBox(
-                    expanded = dropdownExpanded,
-                    onExpandedChange = { dropdownExpanded = it },
-                    modifier = Modifier.padding(bottom = 8.dp)
-                ) {
-                    ReadOnlyDropdownField(
-                        value = familyLabel(selection.family),
-                        label = { Text(stringResource(R.string.external_family)) },
-                        expanded = dropdownExpanded,
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
-                    )
-                    ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
-                        FAMILY_OPTIONS.forEach { (value, labelRes, helpRes) ->
-                            DropdownMenuItem(
-                                text = {
-                                    Column {
-                                        Text(stringResource(labelRes))
-                                        Text(
-                                            stringResource(helpRes),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    onSelectionChange(selection.withFamily(value))
-                                    dropdownExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                // Conditional options panel below the selector.
-                when (selection.family) {
-                    ModelFamily.CANARY -> CanaryLanguageDropdown(
-                        selected = selection.decodeLanguage,
-                        onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    )
-                    ModelFamily.WHISPER -> LanguageEndonymDropdown(
-                        selected = selection.decodeLanguage,
-                        onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
-                        label = stringResource(R.string.external_decode_language),
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                        blankText = stringResource(R.string.external_decode_auto)
-                    )
-                    ModelFamily.SENSE_VOICE -> {
-                        LanguageEndonymDropdown(
-                            selected = selection.decodeLanguage,
-                            onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
-                            label = stringResource(R.string.external_decode_language),
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                            blankText = stringResource(R.string.external_decode_auto)
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                stringResource(R.string.external_option_itn),
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Switch(
-                                checked = selection.sensevoiceItn,
-                                onCheckedChange = { onSelectionChange(selection.copy(sensevoiceItn = it)) }
-                            )
-                        }
-                    }
-                    ModelFamily.CTC -> ExposedDropdownMenuBox(
-                        expanded = ctcExpanded,
-                        onExpandedChange = { ctcExpanded = it },
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    ) {
-                        ReadOnlyDropdownField(
-                            value = stringResource(
-                                CTC_SUBTYPE_LABELS.firstOrNull { it.first == selection.ctcModelType }
-                                    ?.second ?: R.string.external_ctc_subtype_nemo),
-                            label = { Text(stringResource(R.string.external_ctc_subtype)) },
-                            expanded = ctcExpanded,
-                            modifier = Modifier.fillMaxWidth().menuAnchor()
-                        )
-                        ExposedDropdownMenu(expanded = ctcExpanded, onDismissRequest = { ctcExpanded = false }) {
-                            CTC_SUBTYPE_LABELS.forEach { (subtype, labelRes) ->
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(labelRes)) },
-                                    onClick = {
-                                        onSelectionChange(selection.copy(ctcModelType = subtype))
-                                        ctcExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    else -> {}
-                }
+                // TASK-995: the selector body lives in FamilySelectorPanel
+                // (shared with the import dialog, where a deep-linked repo
+                // URL must expose the family choice inside the modal).
+                FamilySelectorPanel(
+                    selection = selection,
+                    onSelectionChange = onSelectionChange,
+                )
             }
 
 
@@ -2264,7 +2185,11 @@ private fun ExternalModelsSection(
         }
     }
 
-    if (urlDialogOpen) {
+    // TASK-995: keyed on the prefill so a deep link arriving while the
+    // dialog is already open re-initializes the link fields with the new
+    // URL (remember blocks re-run inside a key change), and a manual open
+    // (prefill set to null first) starts from a blank dialog.
+    if (urlDialogOpen) key(urlDialogPrefill) {
         val catalogState by viewModel.catalogUiState.collectAsState()
         LaunchedEffect(urlDialogOpen) {
             if (urlDialogOpen) viewModel.loadExternalCatalog()
@@ -2273,8 +2198,10 @@ private fun ExternalModelsSection(
         var selectedEntry by remember { mutableStateOf<ExternalCatalog.CatalogEntry?>(null) }
         var overrideMode by remember { mutableStateOf(false) }
         var overrideUrl by remember { mutableStateOf("") }
-        var linkMode by remember { mutableStateOf(false) }
-        var linkUrl by remember { mutableStateOf("") }
+        // TASK-995: a deep-link URL pre-fills the advanced link field; the
+        // key(urlDialogPrefill) above re-runs these initializers per link.
+        var linkMode by remember { mutableStateOf(urlDialogPrefill != null) }
+        var linkUrl by remember { mutableStateOf(urlDialogPrefill.orEmpty()) }
 
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { urlDialogOpen = false },
@@ -2432,12 +2359,31 @@ private fun ExternalModelsSection(
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
                         )
+                        // TASK-995: a link URL that is not an entry document
+                        // cannot declare its family, and the section's
+                        // selector sits behind this modal, so the choice
+                        // renders HERE, visible where the import is confirmed
+                        // (a hidden default is the GH #93 wrong-family crash
+                        // class). Keyed on the LIVE field, not the prefill:
+                        // editing an entry URL into a repo URL (or typing
+                        // one) must expose the choice; entry/manifest URLs
+                        // hide it (their document drives family, a picker
+                        // would override it).
+                        if (!ExternalModelImporter.isCatalogEntryUrl(linkUrl.trim())) {
+                            FamilySelectorPanel(
+                                selection = selection,
+                                onSelectionChange = onSelectionChange,
+                            )
+                        }
                     }
                 }
             },
             confirmButton = {
                 androidx.compose.material3.TextButton(
-                    enabled = selectedEntry != null || (linkMode && linkUrl.isNotBlank()),
+                    // TASK-995: the busy gate every section button honors; a
+                    // deep link may open this dialog while an import runs.
+                    enabled = (selectedEntry != null || (linkMode && linkUrl.isNotBlank())) &&
+                        importState !is ModelViewModel.ExternalImportState.Importing,
                     onClick = {
                         val entry = selectedEntry
                         val manual = if (linkMode) linkUrl.trim().isNotBlank() else false
@@ -2461,6 +2407,124 @@ private fun ExternalModelsSection(
             }
         )
     }
+}
+
+/**
+ * TASK-995 extraction: the import family selector (dropdown + per-family
+ * option panels), shared by the Advanced disclosure in the models section
+ * and the import dialog's link branch. A deep-linked repo URL cannot
+ * declare its family, so the dialog renders this panel in place: the
+ * choice must be visible where the import is confirmed, never a hidden
+ * default (the GH #93 wrong-family crash class).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FamilySelectorPanel(
+    selection: ExternalImportUiState,
+    onSelectionChange: (ExternalImportUiState) -> Unit,
+) {
+    var dropdownExpanded by remember { mutableStateOf(false) }
+    var ctcExpanded by remember { mutableStateOf(false) }
+
+    // Each entry carries a help line listing the expected files, mirroring
+    // the label + description pattern of the advanced-section button.
+    ExposedDropdownMenuBox(
+                    expanded = dropdownExpanded,
+                    onExpandedChange = { dropdownExpanded = it },
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    ReadOnlyDropdownField(
+                        value = familyLabel(selection.family),
+                        label = { Text(stringResource(R.string.external_family)) },
+                        expanded = dropdownExpanded,
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    )
+                    ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
+                        FAMILY_OPTIONS.forEach { (value, labelRes, helpRes) ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(stringResource(labelRes))
+                                        Text(
+                                            stringResource(helpRes),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    onSelectionChange(selection.withFamily(value))
+                                    dropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Conditional options panel below the selector.
+                when (selection.family) {
+                    ModelFamily.CANARY -> CanaryLanguageDropdown(
+                        selected = selection.decodeLanguage,
+                        onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    )
+                    ModelFamily.WHISPER -> LanguageEndonymDropdown(
+                        selected = selection.decodeLanguage,
+                        onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
+                        label = stringResource(R.string.external_decode_language),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        blankText = stringResource(R.string.external_decode_auto)
+                    )
+                    ModelFamily.SENSE_VOICE -> {
+                        LanguageEndonymDropdown(
+                            selected = selection.decodeLanguage,
+                            onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
+                            label = stringResource(R.string.external_decode_language),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            blankText = stringResource(R.string.external_decode_auto)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                stringResource(R.string.external_option_itn),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(
+                                checked = selection.sensevoiceItn,
+                                onCheckedChange = { onSelectionChange(selection.copy(sensevoiceItn = it)) }
+                            )
+                        }
+                    }
+                    ModelFamily.CTC -> ExposedDropdownMenuBox(
+                        expanded = ctcExpanded,
+                        onExpandedChange = { ctcExpanded = it },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        ReadOnlyDropdownField(
+                            value = stringResource(
+                                CTC_SUBTYPE_LABELS.firstOrNull { it.first == selection.ctcModelType }
+                                    ?.second ?: R.string.external_ctc_subtype_nemo),
+                            label = { Text(stringResource(R.string.external_ctc_subtype)) },
+                            expanded = ctcExpanded,
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(expanded = ctcExpanded, onDismissRequest = { ctcExpanded = false }) {
+                            CTC_SUBTYPE_LABELS.forEach { (subtype, labelRes) ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(labelRes)) },
+                                    onClick = {
+                                        onSelectionChange(selection.copy(ctcModelType = subtype))
+                                        ctcExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    else -> {}
+                }
 }
 
 /** One pickable catalog row: name + declared languages; tapping SELECTS it. */

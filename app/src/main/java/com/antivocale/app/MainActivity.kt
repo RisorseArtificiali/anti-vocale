@@ -27,6 +27,7 @@ import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.AppNavigation
 import com.antivocale.app.util.MemoryKillStartupCheck
+import com.antivocale.app.ui.DeepLinkImport
 import com.antivocale.app.ui.MainScreen
 import com.antivocale.app.ui.TestNavigation
 import com.antivocale.app.ui.theme.AntiVocaleTheme
@@ -120,6 +121,9 @@ class MainActivity : AppCompatActivity() {
             intent.getStringExtra(EXTRA_NAVIGATE_TO_MODEL_TAB) == "true"
         if (startOnModelTab) intent.removeExtra(EXTRA_NAVIGATE_TO_MODEL_TAB)
         captureTestNavigation(intent)
+        // TASK-995: antivocale://import?url=... one-tap imports. capture()
+        // validates and consumes; anything malformed is dropped silently.
+        DeepLinkImport.capture(intent)
 
         // If the previous process died from a native crash (e.g. sherpa-onnx
         // exit(255) from a corrupt model) or a low-memory kill, explain what happened.
@@ -245,6 +249,7 @@ class MainActivity : AppCompatActivity() {
             // replay the deep link on a later configuration-change recreation.
         }
         captureTestNavigation(intent)
+        DeepLinkImport.capture(intent)
     }
 
     /**
