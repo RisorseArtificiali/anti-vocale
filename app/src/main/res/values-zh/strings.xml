@@ -181,6 +181,14 @@
     <string name="catalog_download_confirm_message">将下载约 %1$dMB。</string>
     <string name="model_fit_no_fit">此模型可能无法在此设备上运行：设备内存低于模型所需。</string>
     <string name="model_fit_tight">提醒：此模型对此设备的内存而言偏紧张，内存不足时可能失败。</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">设备内存：%1$d GB，%2$s</string>
+    <string name="device_tier_constrained">入门级</string>
+    <string name="device_tier_standard">中端</string>
+    <string name="device_tier_high">高端</string>
+    <string name="model_fit_chip_tight">偏紧</string>
+    <string name="model_fit_chip_no_fit">可能不适合</string>
+
     <string name="catalog_extract_confirm_title">解压 %1$s？</string>
     <string name="catalog_extract_confirm_message">模型文件已下载完成。此操作会将其解压以供使用。</string>
     <string name="download_status_downloading">正在下载…</string>

@@ -603,31 +603,19 @@ fun ModelTab(
             onLanguageSelected = { viewModel.setModelFilterLanguage(it) }
         )
 
+        // TASK-996: the device RAM-class line, one honest frame for every
+        // fit chip below (curated and full views share this header).
+        DeviceTierLine()
+
         // TASK-786: states the active model once, right under the filter;
         // the dot pairs with the external cards' badge (catalog cards carry
         // the "Active" pill).
         activeModelLabel?.let { name ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(
-                    Icons.Default.RadioButtonChecked,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(14.dp),
-                )
-                Text(
-                    text = stringResource(R.string.models_active_model_line, name),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            MetaLineRow(
+                icon = Icons.Default.RadioButtonChecked,
+                tint = MaterialTheme.colorScheme.primary,
+                text = stringResource(R.string.models_active_model_line, name),
+            )
         }
 
         // GH #70: curated "For your language" elevation. The language comes
@@ -1611,8 +1599,11 @@ private fun CatalogModelSection(
                         }
                     ),
                     downloadButtonTextResId = R.string.download,
-                    extraBadges = variant.badgeKey?.let { badgeKey ->
-                        {
+                    extraBadges = {
+                        // TASK-996: the fit chip rides the same badge row as
+                        // the catalog badge (same verdict the download dialog
+                        // hints with; fits-comfortably renders nothing).
+                        variant.badgeKey?.let { badgeKey ->
                             Surface(
                                 color = MaterialTheme.colorScheme.secondary,
                                 shape = MaterialTheme.shapes.small
@@ -1625,6 +1616,7 @@ private fun CatalogModelSection(
                                 )
                             }
                         }
+                        FitBadge(variant.estimatedSizeMB)
                     },
                     cancelTextExtractor = { downloadState ->
                         if (downloadState is DownloadState.Extracting)
@@ -1774,6 +1766,89 @@ private fun variantFitHint(
     DeviceCompatibility.ModelFit.DoesNotFit ->
         R.string.model_fit_no_fit to MaterialTheme.colorScheme.error
     else -> null to null
+}
+
+/**
+ * TASK-996: the device RAM-class line. One honest frame ("this is the
+ * machine every chip below is judged against"); ONE cached binder read
+ * yields tier and GB together (review E1/E2); fail-open renders nothing
+ * when total RAM is unreadable. Purely informational, like the chips.
+ */
+@Composable
+private fun DeviceTierLine() {
+    val context = LocalContext.current
+    val totalBytes = com.antivocale.app.audio.MemoryReadings.totalRamBytesCached(context) ?: return
+    val tier = DeviceCompatibility.ramTier(context) ?: return
+    val label = stringResource(
+        when (tier) {
+            DeviceCompatibility.RamTier.CONSTRAINED -> R.string.device_tier_constrained
+            DeviceCompatibility.RamTier.STANDARD -> R.string.device_tier_standard
+            DeviceCompatibility.RamTier.HIGH -> R.string.device_tier_high
+        })
+    MetaLineRow(
+        icon = Icons.Default.Storage,
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        text = stringResource(R.string.device_tier_line, (totalBytes / (1024L * 1024 * 1024)).toInt(), label),
+    )
+}
+
+/**
+ * TASK-996 extraction (review R1): the header meta-line recipe the
+ * active-model line and the tier line share (icon + one bodySmall line,
+ * 14dp icon, single line, ellipsized).
+ */
+@Composable
+private fun MetaLineRow(icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, text: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/**
+ * TASK-996: the per-row fit chip, the SAME one-definition verdict the
+ * download dialog hints with. Tight/DoesNotFit only (the dialog's own
+ * convention): a model that fits comfortably needs no warning, and the
+ * chip INFORMS, never hides. The PROCESS-cached RAM read feeds the pure,
+ * already-tested core (one binder round trip per process, never per row);
+ * null (unreadable) renders nothing, fail-open.
+ */
+@Composable
+private fun FitBadge(sizeMB: Long) {
+    // The PROCESS-cached read (MemoryReadings.totalRamBytesCached: totalMem
+    // is a device constant) feeds the pure, already-tested core: one binder
+    // round trip per process for every chip on screen, never per row.
+    // Null (unreadable) renders nothing, fail-open.
+    val deviceRamBytes = com.antivocale.app.audio.MemoryReadings.totalRamBytesCached(LocalContext.current) ?: return
+    when (DeviceCompatibility.modelFitForRam(deviceRamBytes, sizeMB)) {
+        DeviceCompatibility.ModelFit.Tight ->
+            FitChip(R.string.model_fit_chip_tight, MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+        DeviceCompatibility.ModelFit.DoesNotFit ->
+            FitChip(R.string.model_fit_chip_no_fit, MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
+        else -> {}
+    }
+}
+
+@Composable
+private fun FitChip(textRes: Int, container: Color, content: Color) {
+    Surface(color = container, shape = MaterialTheme.shapes.small) {
+        Text(
+            text = stringResource(textRes),
+            style = MaterialTheme.typography.labelSmall,
+            color = content,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
 }
 
 // ==================== External models section (v2a) ====================
@@ -2598,13 +2673,23 @@ private fun ExternalModelCard(
                     // name rides the semantics: TalkBack must not read regional
                     // indicators (the TASK-386 class).
                     Column {
-                        Text(
-                            LanguageFlags.titled(record.displayName, record.languages),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.semantics {
-                                contentDescription = record.displayName
-                            })
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text(
+                                LanguageFlags.titled(record.displayName, record.languages),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.semantics {
+                                    contentDescription = record.displayName
+                                })
+                            // TASK-996: the fit chip rides beside the title
+                            // (the catalog badge-row pattern) and judges the
+                            // REAL on-disk size (better truth than the
+                            // catalog's estimates).
+                            FitBadge(record.sizeBytes / (1024L * 1024))
+                        }
                         // TASK-386: plain comma join instead of the middot chain:
                         // " · " was announced as "middle dot" by TalkBack in some locales.
                         Text(

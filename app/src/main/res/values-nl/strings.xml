@@ -216,6 +216,14 @@
     <string name="catalog_download_confirm_message">Dit downloadt ~%1$dMB.</string>
     <string name="model_fit_no_fit">Dit model draait waarschijnlijk niet op dit apparaat: het RAM ligt onder wat het model nodig heeft.</string>
     <string name="model_fit_tight">Let op: dit model past maar net in het RAM van dit apparaat; bij geheugendruk kan het mislukken.</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">Apparaat-RAM: %1$d GB, %2$s</string>
+    <string name="device_tier_constrained">instapniveau</string>
+    <string name="device_tier_standard">middenklasse</string>
+    <string name="device_tier_high">topklasse</string>
+    <string name="model_fit_chip_tight">Krap past</string>
+    <string name="model_fit_chip_no_fit">Past misschien niet</string>
+
     <string name="catalog_extract_confirm_title">%1$s uitpakken?</string>
     <string name="catalog_extract_confirm_message">Het modelbestand is al gedownload. Dit pakt het uit voor gebruik.</string>
 

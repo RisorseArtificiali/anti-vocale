@@ -191,6 +191,14 @@
     <string name="catalog_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा।</string>
     <string name="model_fit_no_fit">यह मॉडल शायद इस डिवाइस पर नहीं चलेगा: RAM आवश्यकता से कम है।</string>
     <string name="model_fit_tight">चेतावनी: यह मॉडल इस डिवाइस RAM में मुश्किल भर पूरा होता है; मेमरी दबाव में निष्फल हो सकता है।</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">डिवाइस RAM: %1$d GB, %2$s</string>
+    <string name="device_tier_constrained">एंट्री-लेवल</string>
+    <string name="device_tier_standard">मिड-रेंज</string>
+    <string name="device_tier_high">हाई-एंड</string>
+    <string name="model_fit_chip_tight">टाइट फिट</string>
+    <string name="model_fit_chip_no_fit">फिट नहीं हो सकता</string>
+
     <string name="catalog_extract_confirm_title">%1$s निकालें?</string>
     <string name="catalog_extract_confirm_message">मॉडल फ़ाइल पहले से डाउनलोड है। इससे इसे इस्तेमाल के लिए निकाला जाएगा।</string>
 

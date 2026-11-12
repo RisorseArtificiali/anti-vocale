@@ -217,6 +217,13 @@
     <string name="catalog_download_confirm_message">This will download ~%1$dMB.</string>
     <string name="model_fit_no_fit">This model likely will not run on this device: its RAM is below what the model needs.</string>
     <string name="model_fit_tight">Heads-up: this model is a tight fit for this device\'s RAM; it may fail under memory pressure.</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">Device RAM: %1$d GB, %2$s</string>
+    <string name="device_tier_constrained">entry-level</string>
+    <string name="device_tier_standard">mid-range</string>
+    <string name="device_tier_high">high-end</string>
+    <string name="model_fit_chip_tight">Tight fit</string>
+    <string name="model_fit_chip_no_fit">May not fit</string>
     <string name="catalog_extract_confirm_title">Extract %1$s?</string>
     <string name="catalog_extract_confirm_message">The model file is already downloaded. This will extract it for use.</string>
 

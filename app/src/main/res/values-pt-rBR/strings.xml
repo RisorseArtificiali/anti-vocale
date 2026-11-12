@@ -167,6 +167,14 @@
     <string name="catalog_download_confirm_message">Isso baixará ~%1$d MB.</string>
     <string name="model_fit_no_fit">Este modelo provavelmente não rodará neste dispositivo: a RAM está abaixo do necessário.</string>
     <string name="model_fit_tight">Atenção: este modelo está no limite da RAM deste dispositivo; pode falhar sob pressão de memória.</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">RAM do dispositivo: %1$d GB, %2$s</string>
+    <string name="device_tier_constrained">de entrada</string>
+    <string name="device_tier_standard">intermediário</string>
+    <string name="device_tier_high">de ponta</string>
+    <string name="model_fit_chip_tight">No limite</string>
+    <string name="model_fit_chip_no_fit">Pode não caber</string>
+
     <string name="catalog_extract_confirm_title">Extrair %1$s?</string>
     <string name="catalog_extract_confirm_message">O arquivo do modelo já foi baixado. Ele será extraído para uso.</string>
     <string name="download_status_downloading">Baixando…</string>

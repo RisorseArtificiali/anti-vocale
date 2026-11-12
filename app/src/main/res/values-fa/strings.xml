@@ -210,6 +210,14 @@
     <string name="catalog_download_confirm_message">حدود %1$dMB دانلود خواهد شد.</string>
     <string name="model_fit_no_fit">این مدل احتمالاً روی این دستگاه اجرا نمی‌شود: رم آن کمتر از مقدار لازم مدل است.</string>
     <string name="model_fit_tight">هشدار: این مدل درست در محدوده رم این دستگاه جا می‌گیرد؛ زیر فشار حافظه ممکن است از کار بیفتد.</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">رم دستگاه: %1$d گیگابایت، %2$s</string>
+    <string name="device_tier_constrained">ردهٔ اقتصادی</string>
+    <string name="device_tier_standard">ردهٔ میان‌رده</string>
+    <string name="device_tier_high">ردهٔ بالا</string>
+    <string name="model_fit_chip_tight">در حد مرز</string>
+    <string name="model_fit_chip_no_fit">ممکن است جا نشود</string>
+
     <string name="catalog_extract_confirm_title">%1$s استخراج شود؟</string>
     <string name="catalog_extract_confirm_message">فایل مدل قبلاً دانلود شده است. برای استفاده استخراج خواهد شد.</string>
 

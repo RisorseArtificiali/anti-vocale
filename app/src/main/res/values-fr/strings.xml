@@ -167,6 +167,14 @@
     <string name="catalog_download_confirm_message">Cela téléchargera environ %1$d Mo.</string>
     <string name="model_fit_no_fit">Ce modèle ne fonctionnera probablement pas sur cet appareil : sa RAM est insuffisante.</string>
     <string name="model_fit_tight">Attention : ce modèle tient juste dans la RAM de cet appareil ; il peut échouer sous pression mémoire.</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">RAM de l\'appareil : %1$d Go, %2$s</string>
+    <string name="device_tier_constrained">d\'entrée de gamme</string>
+    <string name="device_tier_standard">de milieu de gamme</string>
+    <string name="device_tier_high">haut de gamme</string>
+    <string name="model_fit_chip_tight">Juste</string>
+    <string name="model_fit_chip_no_fit">Peut ne pas convenir</string>
+
     <string name="catalog_extract_confirm_title">Extraire %1$s ?</string>
     <string name="catalog_extract_confirm_message">Le fichier du modèle est déjà téléchargé. Il sera extrait pour utilisation.</string>
     <string name="download_status_downloading">Téléchargement…</string>

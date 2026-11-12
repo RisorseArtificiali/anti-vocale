@@ -199,6 +199,14 @@
     <string name="catalog_download_confirm_message">Будет загружено ~%1$d МБ.</string>
     <string name="model_fit_no_fit">Эта модель, скорее всего, не запустится на этом устройстве: RAM ниже необходимого.</string>
     <string name="model_fit_tight">Внимание: эта модель на грани RAM этого устройства; под нагрузкой возможен сбой.</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">ОЗУ устройства: %1$d ГБ, %2$s</string>
+    <string name="device_tier_constrained">начального уровня</string>
+    <string name="device_tier_standard">среднего уровня</string>
+    <string name="device_tier_high">топового уровня</string>
+    <string name="model_fit_chip_tight">Впритык</string>
+    <string name="model_fit_chip_no_fit">Может не подойти</string>
+
     <string name="catalog_extract_confirm_title">Извлечь %1$s?</string>
     <string name="catalog_extract_confirm_message">Файл модели уже загружен. Сейчас он будет извлечён для использования.</string>
 

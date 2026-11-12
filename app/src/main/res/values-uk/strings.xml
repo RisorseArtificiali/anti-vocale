@@ -217,6 +217,14 @@
     <string name="catalog_download_confirm_message">Буде завантажено ~%1$dМБ.</string>
     <string name="model_fit_no_fit">Ця модель, ймовірно, не запрацює на цьому пристрої: RAM нижче за потрібну.</string>
     <string name="model_fit_tight">Увага: ця модель на грані RAM пристрою; під тиском пам’яті може зазнати збій.</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">ОЗУ пристрою: %1$d ГБ, %2$s</string>
+    <string name="device_tier_constrained">початкового рівня</string>
+    <string name="device_tier_standard">середнього рівня</string>
+    <string name="device_tier_high">топового рівня</string>
+    <string name="model_fit_chip_tight">Впритул</string>
+    <string name="model_fit_chip_no_fit">Може не підійти</string>
+
     <string name="catalog_extract_confirm_title">Розпакувати %1$s?</string>
     <string name="catalog_extract_confirm_message">Файл моделі вже завантажено. Це розпакує його для використання.</string>
 

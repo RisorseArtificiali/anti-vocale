@@ -189,6 +189,14 @@
     <string name="catalog_download_confirm_message">Tämä lataa noin %1$d Mt.</string>
     <string name="model_fit_no_fit">Tämä malli ei todennäköisesti toimi tällä laitteella: laitteen RAM-muisti on pienempi kuin malli vaatii.</string>
     <string name="model_fit_tight">Huomio: tämä malli mahtuu tällä laitteella täpärästi RAM-muistiin; se voi epäonnistua, kun muisti on tiukoilla.</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">Laitteen RAM: %1$d Gt, %2$s</string>
+    <string name="device_tier_constrained">aloitustaso</string>
+    <string name="device_tier_standard">keskitaso</string>
+    <string name="device_tier_high">ylätaso</string>
+    <string name="model_fit_chip_tight">Niukasti</string>
+    <string name="model_fit_chip_no_fit">Ei välttämättä mahdu</string>
+
     <string name="catalog_extract_confirm_title">Puretaanko %1$s?</string>
     <string name="catalog_extract_confirm_message">Mallitiedosto on jo ladattu. Tämä purkaa sen käyttöä varten.</string>
     <string name="download_status_downloading">Ladataan…</string>

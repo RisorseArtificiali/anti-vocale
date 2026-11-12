@@ -55,6 +55,50 @@ object DeviceCompatibility {
     }
 
     /**
+     * TASK-996: the device's RAM class, ONE derivation (vocaphone's tier
+     * vocabulary, honestly reduced to the RAM axis we actually read; the
+     * runtime memory math deliberately stays on the measured basis, GH
+     * #118's own text reserves the runtime scaling for calibration data).
+     * Surfacing only: badges and the tier line, never hiding a model.
+     */
+    enum class RamTier(val minTotalRamBytes: Long) {
+        /**
+         * Below ~4GB nominal (totalMem under 3.5GiB): entry devices; the
+         * smallest models are the comfortable set.
+         */
+        CONSTRAINED(0),
+        /**
+         * ~4-8GB nominal: the mid band most phones ship today;
+         * stock/smoothquant load comfortably.
+         */
+        STANDARD((3.5 * 1024 * 1024 * 1024).toLong()),
+        /**
+         * 8GB nominal and up: large models (Whisper medium, Qwen) load
+         * with real headroom.
+         */
+        HIGH(7L * 1024 * 1024 * 1024),
+    }
+
+    /**
+     * The bands compare REPORTED totalMem against nominal-class thresholds:
+     * a 4GB-marketed phone reports ~3.6GiB and an 8GB-marketed one
+     * ~7.2-7.6GiB (the TASK-395 Moto G10 data point), so the thresholds
+     * sit below the nominal marks by that gap. Band pins in
+     * DeviceCompatibilityFitTest hold the literals.
+     */
+    /** The tier of THIS device; null when total RAM is unreadable (fail-open, no tier line). */
+    fun ramTier(context: Context): RamTier? =
+        ramTierFor(com.antivocale.app.audio.MemoryReadings.totalRamBytesCached(context))
+
+    /** Pure core (JVM-testable): null on unreadable forms. */
+    internal fun ramTierFor(totalRamBytes: Long?): RamTier? {
+        if (totalRamBytes == null || totalRamBytes < 0 || totalRamBytes == Long.MAX_VALUE) return null
+        return if (totalRamBytes >= RamTier.HIGH.minTotalRamBytes) RamTier.HIGH
+        else if (totalRamBytes >= RamTier.STANDARD.minTotalRamBytes) RamTier.STANDARD
+        else RamTier.CONSTRAINED
+    }
+
+    /**
      * TASK-427: the pre-download hint verdict. Same budget as the selection
      * gate (one definition): Fits/Tight/DoesNotFit against the model's
      * estimated size; null when the device RAM is unreadable (fail-open,

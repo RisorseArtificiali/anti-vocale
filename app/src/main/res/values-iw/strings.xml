@@ -211,6 +211,14 @@
     <string name="catalog_download_confirm_message">פעולה זו תוריד כ-%1$dMB.</string>
     <string name="model_fit_no_fit">סביר שהמודל הזה לא ירוץ במכשיר זה: זיכרון ה-RAM שלו נמוך ממה שהמודל דורש.</string>
     <string name="model_fit_tight">שים לב: המודל הזה מתאים בדוחק לזיכרון ה-RAM של המכשיר; הוא עלול להיכשל תחת לחץ זיכרון.</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">RAM של המכשיר: %1$d גיגהבייט, %2$s</string>
+    <string name="device_tier_constrained">ברמת כניסה</string>
+    <string name="device_tier_standard">ברמה בינונית</string>
+    <string name="device_tier_high">ברמה גבוהה</string>
+    <string name="model_fit_chip_tight">בקושי</string>
+    <string name="model_fit_chip_no_fit">עלול לא להתאים</string>
+
     <string name="catalog_extract_confirm_title">לחלץ את %1$s?</string>
     <string name="catalog_extract_confirm_message">קובץ המודל כבר הורד. פעולה זו תחלץ אותו לשימוש.</string>
 

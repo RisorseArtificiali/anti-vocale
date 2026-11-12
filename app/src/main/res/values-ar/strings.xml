@@ -181,6 +181,14 @@
     <string name="catalog_download_confirm_message">سيتم تنزيل نحو %1$d ميغابايت.</string>
     <string name="model_fit_no_fit">من المرجح ألا يعمل هذا النموذج على هذا الجهاز: ذاكرته العشوائية أقل مما يحتاجه النموذج.</string>
     <string name="model_fit_tight">تنبيه: يحتاج هذا النموذج إلى معظم ذاكرة هذا الجهاز العشوائية؛ قد يفشل عند نقص الذاكرة.</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">ذاكرة الجهاز: %1$d غيغابايت، %2$s</string>
+    <string name="device_tier_constrained">من الفئة الاقتصادية</string>
+    <string name="device_tier_standard">من الفئة المتوسطة</string>
+    <string name="device_tier_high">من الفئة الرائدة</string>
+    <string name="model_fit_chip_tight">على الحدّ</string>
+    <string name="model_fit_chip_no_fit">قد لا يتّسع</string>
+
     <string name="catalog_extract_confirm_title">استخراج %1$s؟</string>
     <string name="catalog_extract_confirm_message">تم تنزيل ملف النموذج بالفعل. سيتم استخراجه للاستخدام.</string>
     <string name="download_status_downloading">جارٍ التنزيل…</string>

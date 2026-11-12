@@ -32,6 +32,27 @@ internal object MemoryReadings {
     /** ActivityManager.MemoryInfo.totalMem, or null when the service is unavailable. */
     fun totalRamBytes(context: Context): Long? = memoryInfo(context)?.totalMem
 
+    /**
+     * TASK-996: totalMem cached for the PROCESS lifetime. totalMem is a
+     * device constant, and the Models tab's tier line plus every fit chip
+     * each used to pay their own getMemoryInfo binder round trip (the
+     * N+1 the review caught); one read per process serves them all. The
+     * cache stores the NULL failure too (fail-open stays fail-open), and
+     * unit tests that need fresh reads keep using [totalRamBytes].
+     */
+    @Volatile
+    private var cachedTotalRamBytes: Long? = null
+    @Volatile
+    private var totalRamCached = false
+
+    fun totalRamBytesCached(context: Context): Long? {
+        if (!totalRamCached) {
+            cachedTotalRamBytes = totalRamBytes(context)
+            totalRamCached = true
+        }
+        return cachedTotalRamBytes
+    }
+
     /** ActivityManager.getMemoryClass in MB (no largeHeap in the manifest), or null when the service is unavailable. */
     fun memoryClassMb(context: Context): Int? = activityManager(context)?.memoryClass
 

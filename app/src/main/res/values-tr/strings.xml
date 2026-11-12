@@ -213,6 +213,14 @@
     <string name="catalog_download_confirm_message">Bu, yaklaşık %1$dMB indirir.</string>
     <string name="model_fit_no_fit">Bu model bu cihazda büyük olasılıkla çalışmaz: RAM\'i modelin ihtiyacının altında.</string>
     <string name="model_fit_tight">Not: bu model bu cihazın RAM\'ine ancak sığıyor; bellek baskısı altında başarısız olabilir.</string>
+    <!-- TASK-996: the device RAM-class line and the fit chips' tier labels. -->
+    <string name="device_tier_line">Cihaz RAM: %1$d GB, %2$s</string>
+    <string name="device_tier_constrained">giriş seviyesi</string>
+    <string name="device_tier_standard">orta seviye</string>
+    <string name="device_tier_high">üst seviye</string>
+    <string name="model_fit_chip_tight">Sinirde</string>
+    <string name="model_fit_chip_no_fit">Sığmayabilir</string>
+
     <string name="catalog_extract_confirm_title">%1$s ayıklansın mı?</string>
     <string name="catalog_extract_confirm_message">Model dosyası zaten indirildi. Bu, kullanım için dosyayı ayıklar.</string>
 
