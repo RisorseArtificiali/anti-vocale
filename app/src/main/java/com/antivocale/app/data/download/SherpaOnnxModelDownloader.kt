@@ -183,32 +183,46 @@ class SherpaOnnxModelDownloader<V>(
                                 authHeader = authHeader
                             )
 
-                            val downloadResult = downloadWithRetry(
-                                config = downloadConfig,
-                                tag = config.tag,
-                                onProgress = { _, _, _ ->
-                                    val totalSoFar = perFileBytes.values.sum()
-                                    val progress = (totalSoFar.toFloat() / estimatedBytes).coerceIn(0f, 1f)
-                                    onProgress(progress)
-                                    onStateChange(DownloadState.Downloading(
-                                        bytesDownloaded = totalSoFar,
-                                        totalBytes = estimatedBytes,
-                                        progressPercent = progress * 100f
-                                    ))
-                                },
-                                onStateChange = { state ->
-                                    if (state is DownloadState.Downloading) {
-                                        perFileBytes[fileName] = state.bytesDownloaded
-                                    }
-                                }
-                            )
-
-                            if (downloadResult.isFailure) {
-                                throw downloadResult.exceptionOrNull()
-                                    ?: Exception("Download failed: $fileName")
+                            // TASK-986: primary URL then, when the channel
+                            // carries a fallbackUrl for this file, the mirror
+                            // (the 404 arm: upstream DISAPPEARED the file).
+                            // One shared progress/state pair so the two
+                            // attempts cannot diverge (review round).
+                            PinOverrides.onDemand { PinOverrides.bundled(context) }
+                            val urls = buildList {
+                                add(downloadConfig.url)
+                                PinOverrides.fallbackFor(modelDirName, fileName)
+                                    ?.let { add(it) }
                             }
-
-                            perFileBytes[fileName] = downloadResult.getOrThrow().length()
+                            var lastFailure: Throwable? = null
+                            for (url in urls) {
+                                val result = downloadWithRetry(
+                                    config = downloadConfig.copy(url = url),
+                                    tag = config.tag,
+                                    onProgress = { _, _, _ ->
+                                        val totalSoFar = perFileBytes.values.sum()
+                                        val progress = (totalSoFar.toFloat() / estimatedBytes).coerceIn(0f, 1f)
+                                        onProgress(progress)
+                                        onStateChange(DownloadState.Downloading(
+                                            bytesDownloaded = totalSoFar,
+                                            totalBytes = estimatedBytes,
+                                            progressPercent = progress * 100f
+                                        ))
+                                    },
+                                    onStateChange = { state ->
+                                        if (state is DownloadState.Downloading) {
+                                            perFileBytes[fileName] = state.bytesDownloaded
+                                        }
+                                    }
+                                )
+                                if (result.isSuccess) {
+                                    lastFailure = null
+                                    perFileBytes[fileName] = result.getOrThrow().length()
+                                    break
+                                }
+                                lastFailure = result.exceptionOrNull()
+                            }
+                            lastFailure?.let { throw it }
                             val totalSoFar = perFileBytes.values.sum()
                             onProgress((totalSoFar.toFloat() / estimatedBytes).coerceIn(0f, 1f))
                         }
@@ -226,16 +240,40 @@ class SherpaOnnxModelDownloader<V>(
             }
         }
 
-        // Verify SHA256 integrity if hashes are available
+        // Verify SHA256 integrity if hashes are available. TASK-986: a
+        // mismatch consults the pin-override channel (lazy fetch once) -
+        // if the project has verified and published the CURRENT upstream
+        // bytes, the heal is accepted and persisted locally, so GH #187
+        // class drift no longer breaks fresh downloads until a release.
+        // Anything the channel does not cover fails exactly as before.
         val hashes = config.expectedSha256[variant]
         if (hashes != null && hashes.isNotEmpty()) {
+            PinOverrides.onDemand { PinOverrides.bundled(context) }
+            PinHeals.init(context.filesDir)
             val failed = HashVerifier.verifyDirectory(modelDir, hashes)
             if (failed.isNotEmpty()) {
-                val errorMsg = "SHA256 verification failed for: ${failed.joinToString()}. Files may be corrupted."
-                Log.e(config.tag, errorMsg)
-                onStateChange(DownloadState.Error(errorMsg))
-                modelDir.deleteRecursively()
-                return@withContext Result.failure(Exception(errorMsg))
+                val accepted = mutableListOf<String>()
+                val rejected = mutableListOf<String>()
+                for (fileName in failed) {
+                    val actual = runCatching {
+                        HashVerifier.sha256(File(modelDir, fileName))
+                    }.getOrNull()
+                    if (actual != null && PinOverrides.verdictFor(modelDirName, fileName, actual)) {
+                        PinHeals.recordHeal(modelDirName, fileName, actual)
+                        accepted += fileName
+                        Log.i(config.tag, "PIN-OVERRIDE: $fileName accepted via project override " +
+                            "(sha ${actual.take(12)}...); record a catalog re-pin in the next release")
+                    } else {
+                        rejected += fileName
+                    }
+                }
+                if (rejected.isNotEmpty()) {
+                    val errorMsg = "SHA256 verification failed for: ${rejected.joinToString()}. Files may be corrupted."
+                    Log.e(config.tag, errorMsg)
+                    onStateChange(DownloadState.Error(errorMsg))
+                    modelDir.deleteRecursively()
+                    return@withContext Result.failure(Exception(errorMsg))
+                }
             }
         }
 

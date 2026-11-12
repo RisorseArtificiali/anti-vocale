@@ -7,6 +7,7 @@ import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.data.catalog.CatalogEntry
 import com.antivocale.app.data.catalog.CatalogVariant
 import com.antivocale.app.data.download.CatalogModelValidator
+import com.antivocale.app.data.download.PinHeals
 import com.k2fsa.sherpa.onnx.OfflineModelConfig
 import com.k2fsa.sherpa.onnx.OfflineQwen3AsrModelConfig
 import com.k2fsa.sherpa.onnx.OfflineRecognizer
@@ -581,8 +582,22 @@ class SherpaBackend(
             // TASK-482 review: a READ failure is not a corruption verdict -
             // typing it CorruptModelFiles would let the heal delete a healthy
             // dir over a transient IO error. Only real content failures heal.
+            // TASK-986: pins healed through the pin-override channel REPLACE the
+            // catalog pins here, so a model accepted at download time keeps loading
+            // with no network (the load-time pass re-hashes against the catalog pin
+            // and would otherwise re-open the GH #187 verdict on a healed dir).
+            // PinHeals.init is idempotent.
+            PinHeals.init(context.filesDir)
+            val pinnedFiles =
+                if (variantMatchesDir) {
+                    variant.files.filter { it.sha256 != null }.associate { it.name to it.sha256!! }
+                } else {
+                    emptyMap()
+                }
+            val pins = PinHeals.overlay(variant.dirName, pinnedFiles)
             val gateVerdict = ModelDirIntegrity.split(
-                ModelDirIntegrity.verify(dir, variant, verifyPins = variantMatchesDir))
+                ModelDirIntegrity.verify(dir, pins))
+
             if (gateVerdict.unreadable.isNotEmpty()) {
                 val unreadable = gateVerdict.unreadable
                 Log.e(TAG, "Model files unreadable in $modelDirectory: " +
