@@ -8,9 +8,10 @@ import org.junit.Test
  * TASK-993: the preset ladder resolution. These tests pin the three
  * contracts the summary pass depends on: the preset's primary instruction,
  * the TASK-498 fallback (a failing primary attempt degrades to the
- * built-in recap, never a caption), and the legacy compatibility rule (a
- * non-blank stored prompt means CUSTOM, so pre-preset users keep their
- * saved instruction whatever the preset key says).
+ * built-in recap, never a caption), and KEY TRUTH: the stored preset key
+ * decides, a prompt under a non-custom preset is dormant text (legacy
+ * states are promoted to custom by the one-shot reconcile migration, NOT
+ * by runtime arbitration - do not reintroduce a prompt-over-key rule).
  */
 class SummaryPresetTest {
 

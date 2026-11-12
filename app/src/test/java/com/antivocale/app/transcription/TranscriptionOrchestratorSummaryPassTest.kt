@@ -370,7 +370,10 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `a whitespace-only custom prompt runs a single attempt`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("   ")
-        every { preferencesManager.summaryPreset } returns flowOf("summary")
+        // KEY TRUTH: custom + blank IS the custom path through the
+        // orchestrator's own ladder (review F7); the built-in is its
+        // first attempt by the CUSTOM arm's blank fallback.
+        every { preferencesManager.summaryPreset } returns flowOf("custom")
                 stubSwapToLlm()
         val rewrite = "x".repeat(longTranscript.length * 2)
         coEvery { llmBackend.generateText(any()) } returns Result.success(rewrite)

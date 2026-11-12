@@ -1459,6 +1459,13 @@ class TranscriptionOrchestrator @Inject constructor(
             // attempt degrades to the built-in recap) and applies to the
             // map-reduce path too.
             val builtInInstruction = context.getString(R.string.summary_default_prompt)
+            // TASK-993 review: the legacy promotion runs at startup as a
+            // fire-and-forget coroutine, but a transcription can cold-start
+            // the process straight into THIS pass (Tasker, a share): the
+            // reconcile is idempotent and one cheap DataStore read, so the
+            // pass itself promotes legacy state before reading the keys and
+            // the race is closed at the consumer.
+            preferencesManager.reconcileLegacySummaryPrompt()
             val customInstruction = preferencesManager.summaryPrompt.first()
             val instructions = SummaryPolicy.instructionLadder(
                 presetKey = preferencesManager.summaryPreset.first(),

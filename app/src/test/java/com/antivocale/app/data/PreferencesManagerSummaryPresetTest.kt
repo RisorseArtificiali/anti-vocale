@@ -70,4 +70,29 @@ class PreferencesManagerSummaryPresetTest {
         assertEquals("custom", store.prefs.summaryPreset.first())
         assertEquals("ARCHIVED INSTRUCTION", store.prefs.summaryPrompt.first())
     }
+
+    @Test
+    fun `a legacy archive prompt wins over a local deliberate preset`() = runTest {
+        // Review F3: the archive predates presets, so its non-blank prompt
+        // WAS the active instruction on the source device; a local
+        // action-items choice must not silently park it dormant.
+        store.prefs.saveSummaryPreset("action_items")
+        store.prefs.importPortableSettings(
+            mapOf("summary_prompt" to "ARCHIVED INSTRUCTION"))
+        assertEquals("custom", store.prefs.summaryPreset.first())
+        assertEquals("ARCHIVED INSTRUCTION", store.prefs.summaryPrompt.first())
+    }
+
+    @Test
+    fun `an archive carrying its own preset key imports verbatim`() = runTest {
+        store.prefs.saveSummaryPreset("custom")
+        store.prefs.importPortableSettings(
+            mapOf(
+                "summary_prompt" to "NEW",
+                "summary_preset" to "meeting_minutes"))
+        // The archive's preset wins as-is; its blank prompt is the archive's
+        // own truth too (no promotion: the key is present in the archive).
+        assertEquals("meeting_minutes", store.prefs.summaryPreset.first())
+        assertEquals("NEW", store.prefs.summaryPrompt.first())
+    }
 }

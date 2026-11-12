@@ -1353,11 +1353,19 @@ class PreferencesManagerImpl(
                         else -> prefs[stringPreferencesKey(name)] = v as String
                     }
                 }
+            // TASK-993 review: an archive from a pre-preset version carries
+            // the prompt with NO preset key, and that absence is ARCHIVE
+            // knowledge: the imported instruction was the active one on the
+            // source device. It must win over a LOCAL deliberate non-custom
+            // preset (the plain reconcile only fires when the local key is
+            // unset, which a prior choice defeats), so the promotion rides
+            // the same edit with the archive in hand.
+            val archivedPrompt = (values["summary_prompt"] as? String).orEmpty()
+            val archiveHasPresetKey = values.containsKey("summary_preset")
+            if (!archiveHasPresetKey && archivedPrompt.isNotBlank()) {
+                prefs[SUMMARY_PRESET] = SummaryPreset.CUSTOM.key
+            }
         }
-        // TASK-993: an archive from a pre-preset version carries the prompt
-        // with no preset key; promote it right after the raw write so the
-        // imported instruction keeps driving the pass under key-truth.
-        reconcileLegacySummaryPrompt()
         cache.set(dataStore.data.first().toCached())
     }
 }
