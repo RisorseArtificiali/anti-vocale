@@ -1008,11 +1008,20 @@ class TranscriptionOrchestrator @Inject constructor(
             // TASK-666.2 review: one fence predicate for the prompt pin,
             // the joiner, and the per-chunk acceptance below.
             val fenced = PunctuationPolicy.promptIsFenced(mode)
+            // TASK-994: the dictionary rider's FULL rendered length feeds
+            // the chunk budget below (each chunk plus its prompt must fit
+            // Gemma's context, the same accounting the summary guard
+            // applies); zero in fenced mode, which pins its prompt.
+            val polishRiderChars = if (fenced) 0 else {
+                PersonalDictionary.promptTerms(preferencesManager.keywordBiasing.first())?.let {
+                    context.getString(R.string.personal_dictionary_prompt_line, it).length + it.length
+                } ?: 0
+            }
             val passPrompt = if (fenced) {
                 context.getString(R.string.punctuation_default_prompt_conservative)
             } else {
                 // TASK-994: the personal dictionary rides the UNFENCED polish
-                // prompt only - the fenced mode's token validation pins its
+                // prompt only; the fenced mode's token validation pins its
                 // prompt, and a suffix could break the fences.
                 withPersonalDictionary(
                     context,
@@ -1034,7 +1043,9 @@ class TranscriptionOrchestrator @Inject constructor(
             // ContextChunker's own identity path covers the under-guard
             // case (one chunk, same constant); the log fires only on a
             // real split.
-            val chunks = ContextChunker.split(result.text)
+            val chunks = ContextChunker.split(
+                result.text,
+                maxChars = (PunctuationPolicy.MAX_TRANSCRIPT_CHARS - polishRiderChars).coerceAtLeast(1))
             if (chunks.size > 1) {
                 Log.i(TAG, "Punctuation pass chunked: ${result.text.length} chars -> ${chunks.size} chunks")
             }

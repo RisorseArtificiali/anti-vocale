@@ -56,6 +56,13 @@ class SherpaBackend(
 
     companion object {
         /**
+         * TASK-994: the hotwords head's share of qwen3's maxTotalLen=1024
+         * token budget. ~80 chars is roughly 20 tokens: enough for a handful
+         * of names, small enough that the audio side never pays for the
+         * dictionary (the impl silently shrinks audio on overflow).
+         */
+        const val QWEN3_HOTWORDS_MAX_CHARS = 80
+        /**
          * TASK-874: the streaming decode method. The desktop A/B (TASK-530,
          * 2026-10-24, 11-clip Italian set) showed modified_beam_search beats
          * greedy on this model family: WER 9.3% vs 10.3% at +13-20% wall, the
@@ -846,8 +853,14 @@ class SherpaBackend(
                 // option at decode, overriding the construct-time config).
                 // Same request-time shape as the whistle engine: a dictionary
                 // edit applies to the next decode, no reload.
+                // CAPPED: the prompt head shares qwen3's maxTotalLen=1024
+                // token budget with the audio, and the native impl silently
+                // TRUNCATES AUDIO on overflow (verified in the pinned
+                // source); a fat dictionary would degrade every decode with
+                // no signal. The cap keeps the head a small fraction.
                 if (entry.modelType == "qwen3_asr") {
-                    PersonalDictionary.promptTerms(preferences.keywordBiasing.first())
+                    PersonalDictionary.promptTerms(
+                        preferences.keywordBiasing.first(), maxChars = QWEN3_HOTWORDS_MAX_CHARS)
                         ?.let { stream.setOption("hotwords", it) }
                 }
                 stream.acceptWaveform(samples, sampleRate)

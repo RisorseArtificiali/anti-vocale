@@ -1172,12 +1172,11 @@ fun SettingsTab(
 
                 // TASK-858 -> TASK-994: the whistle terms generalized into
                 // the PERSONAL DICTIONARY, shown for every backend (the
-                // description states honestly where it applies: Whistle
-                // recognition + the Gemma polish/summary passes; the sherpa
-                // families are blocked upstream, no bpe_vocab in the
-                // exports). The EditablePromptCard contract (commit on focus
-                // loss, the cap at the impl layer) fits a term list;
-                // request-time by design (the passes read the flow per run).
+                // description states honestly where it applies: Whistle and
+                // Qwen3 recognition, the Gemma polish/summary passes). The
+                // EditablePromptCard contract (commit on focus loss, the
+                // cap at the impl layer) fits a term list; request-time by
+                // design (the passes read the flow per run).
                 SearchFilterRow(searchQuery, SettingsSearchId.KEYWORD_BIASING, searchState) {
                     KeywordBiasingCard(
                         terms = viewModel.currentKeywordBiasing.collectAsState().value,

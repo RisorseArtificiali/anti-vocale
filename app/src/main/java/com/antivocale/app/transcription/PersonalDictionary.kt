@@ -57,11 +57,11 @@ object PersonalDictionary {
      * wrong thing the dictionary exists to prevent, so the join stops
      * before the first term that would overflow [MAX_CHARS].
      */
-    fun promptTerms(rawTerms: String): String? {
+    fun promptTerms(rawTerms: String, maxChars: Int = MAX_CHARS): String? {
         val joined = buildString {
             for (term in terms(rawTerms).take(MAX_TERMS)) {
                 val piece = if (isEmpty()) term else ", $term"
-                if (length + piece.length > MAX_CHARS) break
+                if (length + piece.length > maxChars) break
                 append(piece)
             }
         }
