@@ -298,6 +298,31 @@ class ModelViewModel @Inject constructor(
     val snackbarEvent: SharedFlow<SnackbarEvent> = _snackbarEvent.asSharedFlow()
 
     init {
+        // TASK-989: the debug SPI's bridge to these affordances. Registered
+        // here and cleared in onCleared; the bridge is a dumb handle bag the
+        // debug receiver reads, so a scripted trial can dispatch, observe,
+        // cancel and retry an import without touching the UI (the test
+        // layer's no-tap requirement). Inert in release: nothing reads it.
+        com.antivocale.app.testing.ExternalImportSpiBridge.renderState = {
+            when (val s = externalImportState.value) {
+                is ExternalImportState.Idle -> "idle"
+                is ExternalImportState.Importing ->
+                    "importing file=${s.fileIndex}/${s.fileCount}" +
+                        " name=${s.fileName} bytes=${s.bytes}/${s.totalBytes}"
+                is ExternalImportState.Error -> "error message=${s.message} retry=${s.retry != null}"
+                is ExternalImportState.Cancelled -> "cancelled retry=${s.retry != null}"
+            }
+        }
+        com.antivocale.app.testing.ExternalImportSpiBridge.cancel = ::cancelExternalImport
+        com.antivocale.app.testing.ExternalImportSpiBridge.retry = {
+            when (val s = externalImportState.value) {
+                is ExternalImportState.Error -> s.retry
+                is ExternalImportState.Cancelled -> s.retry
+                else -> null
+            }?.let { it(); true } ?: false
+        }
+        com.antivocale.app.testing.ExternalImportSpiBridge.dispatchUrlImport =
+            { url -> importExternalFromUrl(url, ModelFamily.TRANSDUCER) }
         // Set up auto-unload callback
         llmManager.setOnAutoUnloadCallback {
             onModelAutoUnloaded()
@@ -2019,6 +2044,7 @@ class ModelViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        com.antivocale.app.testing.ExternalImportSpiBridge.unwire()
         llmManager.setOnAutoUnloadCallback(null)
         llmManager.setOnExternalLoadCallback(null)
     }

@@ -560,7 +560,7 @@ class TestSpiOpsTest {
         // help is a known op: it must NOT carry the unknown-op error (device
         // verification 2026-09-03 caught the dispatch bug this pins).
         assertFalse(json.has("error"))
-        assertEquals(listOf("get", "set", "records", "record_delete", "identity_cache", "import", "notify_memory_error", "clipboard", "notifications", "unload", "voice_note_state", "model_download", "clear_orphaned", "bundle_export", "bundle_import", "model_present", "search", "log", "log_read", "log_delete", "voice_note_watermark_reset", "voice_note_simulate", "notify_text", "help"), json.getJSONArray("ops").optStringList())
+        assertEquals(listOf("get", "set", "records", "record_delete", "identity_cache", "import", "import_state", "import_cancel", "import_retry", "notify_memory_error", "clipboard", "notifications", "unload", "voice_note_state", "model_download", "clear_orphaned", "bundle_export", "bundle_import", "model_present", "search", "log", "log_read", "log_delete", "voice_note_watermark_reset", "voice_note_simulate", "notify_text", "help"), json.getJSONArray("ops").optStringList())
         assertEquals(ops.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))
         assertTrue(json.getString("transcription").contains("com.antivocale.app.PROCESS_REQUEST"))
@@ -980,5 +980,60 @@ class TestSpiOpsTest {
         // And the guard was NOT left set by the rejected call.
         val ok = JSONObject(asyncOps.handle("import", url = "http://x/repo"))
         assertTrue(ok.getBoolean("dispatched"))
+    }
+    @Test
+    fun `import affordance ops answer the not-wired envelope when no Models surface exists`() = runTest {
+        // TASK-989: the bridge is a process singleton; the suite may leave it
+        // unwired (a ViewModel never composed), which is exactly the cold
+        // background process the op must answer honestly.
+        com.antivocale.app.testing.ExternalImportSpiBridge.unwire()
+        for (op in listOf("import_state", "import_cancel", "import_retry")) {
+            val json = JSONObject(ops.handle(op))
+            assertEquals(op, json.getString("op"))
+            assertTrue(json.getString("error").contains("not wired"))
+        }
+    }
+
+    @Test
+    fun `import affordance ops drive a wired surface`() = runTest {
+        // TASK-989: state read, cancel invocation, and the retry's fired
+        // report all go through the bridge the ViewModel wires.
+        try {
+            val cancelled = mutableListOf<Unit>()
+            com.antivocale.app.testing.ExternalImportSpiBridge.renderState = { "importing file=1/2 name=enc bytes=10/100" }
+            com.antivocale.app.testing.ExternalImportSpiBridge.cancel = { cancelled.add(Unit) }
+            com.antivocale.app.testing.ExternalImportSpiBridge.retry = { true }
+            val state = JSONObject(ops.handle("import_state"))
+            assertEquals("importing file=1/2 name=enc bytes=10/100", state.getString("state"))
+            val cancel = JSONObject(ops.handle("import_cancel"))
+            assertTrue(cancel.getBoolean("cancelled"))
+            assertEquals(1, cancelled.size)
+            val retry = JSONObject(ops.handle("import_retry"))
+            assertTrue(retry.getBoolean("retry_dispatched"))
+        } finally {
+            com.antivocale.app.testing.ExternalImportSpiBridge.unwire()
+        }
+    }
+
+    @Test
+    fun `async import prefers the wired viewmodel surface with default extras`() = runTest {
+        // TASK-989: with the bridge dispatch present and no family/model_type
+        // overrides, the import rides the ViewModel path (state renders in
+        // the UI, cancel/retry live) and the ack names the surface.
+        try {
+            val dispatched = mutableListOf<String>()
+            com.antivocale.app.testing.ExternalImportSpiBridge.dispatchUrlImport = { dispatched.add(it) }
+            com.antivocale.app.testing.ExternalImportSpiBridge.renderState = { "idle" }
+            val asyncOps = TestSpiOps(
+                fake, ExternalModelStore(fake), fakeImporter,
+                asyncImportScope = CoroutineScope(Dispatchers.Unconfined))
+            val json = JSONObject(asyncOps.handle("import", url = "http://x/entry.json"))
+            assertTrue(json.getBoolean("dispatched"))
+            assertEquals("viewmodel", json.getString("surface"))
+            assertEquals(listOf("http://x/entry.json"), dispatched)
+            assertNull("the fake importer is NOT touched on the wired path", fakeImporter.lastUrl)
+        } finally {
+            com.antivocale.app.testing.ExternalImportSpiBridge.unwire()
+        }
     }
 }

@@ -123,6 +123,9 @@ internal class TestSpiOps(
             OP_RECORD_DELETE -> recordDelete(value)
             OP_IDENTITY_CACHE -> identityCache()
             OP_IMPORT -> importModel(url, family, modelType, entry, licence, streaming)
+            OP_IMPORT_STATE -> importState()
+            OP_IMPORT_CANCEL -> importCancel()
+            OP_IMPORT_RETRY -> importRetry()
             OP_NOTIFY_MEMORY_ERROR -> notifyMemoryError()
             OP_CLIPBOARD -> clipboard()
             OP_NOTIFICATIONS -> notifications()
@@ -730,6 +733,32 @@ internal class TestSpiOps(
         }
         val scope = asyncImportScope
         if (scope != null) {
+            // TASK-989: with the Models surface wired, prefer ITS dispatch:
+            // the import then rides the ViewModel path, so the state
+            // renders in the UI and cancel/retry are live scriptable
+            // affordances (op=import_cancel / op=import_retry; observation
+            // via op=import_state and op=records). Only reachable with all
+            // optional extras at their defaults - the bridge's dispatch is
+            // the dialog's own shape (an entry/repo URL classifies itself).
+            val wiredImporting =
+                com.antivocale.app.testing.ExternalImportSpiBridge.renderState
+                    ?.invoke()?.startsWith("importing") == true
+            if (wiredImporting) {
+                throw IllegalArgumentException(
+                    "an import is already in flight (op=import_state reports it)")
+            }
+            val wiredDispatch =
+                com.antivocale.app.testing.ExternalImportSpiBridge.dispatchUrlImport
+            if (wiredDispatch != null &&
+                family == null && modelType == null && licence == null && streaming == null
+            ) {
+                wiredDispatch(url)
+                return ack(OP_IMPORT) {
+                    put("dispatched", true)
+                    put("surface", "viewmodel")
+                    put("url", url)
+                }
+            }
             if (!asyncImportInFlight.compareAndSet(false, true)) {
                 throw IllegalArgumentException(
                     "an async import is already in flight; poll op=records or the " +
@@ -1341,7 +1370,53 @@ internal class TestSpiOps(
             .toString()
     }
 
-    private fun help(error: String? = null): String = JSONObject()
+    /**
+     * TASK-989: the external-import affordances over the bridge the Models
+     * ViewModel wires (state rendering, cancel, retry, dispatch). The
+     * bridge is null while the Models tab has never composed in this
+     * process; every op answers the honest envelope then instead of
+     * pretending (the state lives in a ViewModel, which a cold background
+     * process does not have).
+     */
+    private fun importState(): String = JSONObject()
+        .put("op", OP_IMPORT_STATE)
+        .apply {
+            val render = com.antivocale.app.testing.ExternalImportSpiBridge.renderState
+            if (render == null) {
+                put("error", "import surface not wired (open the Models tab once)")
+            } else {
+                put("state", render())
+            }
+        }
+        .toString()
+
+    private fun importCancel(): String = JSONObject()
+        .put("op", OP_IMPORT_CANCEL)
+        .apply {
+            val cancel = com.antivocale.app.testing.ExternalImportSpiBridge.cancel
+            if (cancel == null) {
+                put("error", "import surface not wired (open the Models tab once)")
+            } else {
+                cancel()
+                put("cancelled", true)
+            }
+        }
+        .toString()
+
+    private fun importRetry(): String = JSONObject()
+        .put("op", OP_IMPORT_RETRY)
+        .apply {
+            val retry = com.antivocale.app.testing.ExternalImportSpiBridge.retry
+            if (retry == null) {
+                put("error", "import surface not wired (open the Models tab once)")
+            } else {
+                val fired = retry()
+                put("retry_dispatched", fired)
+            }
+        }
+        .toString()
+
+        private fun help(error: String? = null): String = JSONObject()
         .apply { error?.let { put("error", it) } }
         .put("op", OP_HELP)
         // OPS single-sources the enumeration: the array and the usage line
@@ -1401,6 +1476,12 @@ internal class TestSpiOps(
         const val OP_RECORD_DELETE = "record_delete"
         internal const val OP_IDENTITY_CACHE = "identity_cache"
         const val OP_IMPORT = "import"
+        /** TASK-989: read the import affordances' live state (no UI). */
+        const val OP_IMPORT_STATE = "import_state"
+        /** TASK-989: the Cancel button's own call, without the tap. */
+        const val OP_IMPORT_CANCEL = "import_cancel"
+        /** TASK-989: fire the Error/Cancelled retry closure, without the tap. */
+        const val OP_IMPORT_RETRY = "import_retry"
         const val OP_NOTIFY_MEMORY_ERROR = "notify_memory_error"
         const val OP_CLIPBOARD = "clipboard"
         const val OP_NOTIFICATIONS = "notifications"
@@ -1465,7 +1546,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024
