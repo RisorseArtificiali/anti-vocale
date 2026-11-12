@@ -30,3 +30,19 @@ Artifacts kept (Mac, outside git): `~/data/hotwords-vocab/parakeet-tdt-0.6b-v3.b
 4. The csukuangfj upstream ask becomes OPTIONAL (nice-to-have for everyone else), not a blocker.
 
 Open tuning question for the device leg: the default score 1.5 already flips; whether real-world correct-spelling biasing needs a lower score (to avoid over-biasing) is measurable with the eval harness once wired.
+
+## Family-by-family matrix (added 2026-11-12 after the maintainer's follow-up)
+
+| Family | sherpa impl | Biasing mechanism | Artifact needed | Verdict |
+|---|---|---|---|---|
+| Parakeet TDT (stock + smoothquant) | offline nemo transducer | context graph, beam search | bpe.vocab from the .nemo | PROVEN (flip experiment) |
+| GigaAM v3 | offline nemo transducer (same impl; our catalog modelType nemo_transducer) | same context graph | ai-sage/GigaAM-v3 ships tokenizer.model DIRECTLY (convert proto -> text vocab, one script); our mirror pantinor/gigaam-v3 is already ours | same mechanism as Parakeet; one desktop probe to confirm |
+| Nemotron 3.5 streaming | ONLINE nemo transducer | per-stream createStream(hotwords) context graph (the AAR's createStream(String) IS the hotwords param) | nvidia/nemotron-3.5-asr-streaming-0.6b ships the .nemo (verified) | API present; extract + probe |
+| Qwen3-ASR | offline qwen3-asr (audio-LLM) | hotwords ride the SYSTEM PROMPT of the chat template (comma CSV); Kotlin OfflineQwen3AsrModelConfig.setHotwords AND OfflineStream.setOption("hotwords") both exist in our AAR | NOTHING - no vocab, no beam switch (generation is the decode) | cheapest win; plumbing only |
+| Whisper (all variants) | offline whisper | none (no hotwords, no initial_prompt wiring at this pin) | - | dead |
+| SenseVoice / Canary / Moonshine / Dolphin (external families) | their impls | none | - | dead |
+| External Transducer imports | generic transducer impl | context graph like built-ins | the IMPORT FORMAT would gain an optional bpe.vocab file (schema + copy plan + family docs) | possible follow-up |
+| Gemma (LLM passes) | prompt rider | shipped (TASK-994) | - | shipped; audio-prompt path still unprobed |
+| Whistle | native | shipped (TASK-858) | - | shipped |
+
+Kotlin-side surface (verified by javap on our pinned AAR): OfflineRecognizerConfig.hotwordsFile/hotwordsScore, OnlineRecognizer.createStream(String) (hotwords), OfflineQwen3AsrModelConfig.hotwords, OfflineStream.setOption/getOption. Everything needed is already in the binary; the work is app wiring + vocab hosting + the transducer beam-search gating (dictionary-gated).
