@@ -21,6 +21,12 @@ internal object ExternalImportSpiBridge {
     /** Renders the current import state as one line (the SPI's JSON payload). */
     @Volatile var renderState: (() -> String)? = null
 
+    /** The machine-readable busy check: true while an import runs on the
+     *  ViewModel path. Control flow keys on THIS, never on [renderState]'s
+     *  wording (a display-format edit must not disarm the in-flight guard;
+     *  simplify round, all three agents). */
+    @Volatile var importInFlight: (() -> Boolean)? = null
+
     /** The Cancel button's own call: aborts the in-flight import job. */
     @Volatile var cancel: (() -> Unit)? = null
 
@@ -37,6 +43,7 @@ internal object ExternalImportSpiBridge {
 
     fun unwire() {
         renderState = null
+        importInFlight = null
         cancel = null
         retry = null
         dispatchUrlImport = null

@@ -22,6 +22,7 @@ import com.antivocale.app.data.ExternalModelDeleter
 import com.antivocale.app.data.ExternalModelImportOperations
 import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelRecord
+import com.antivocale.app.testing.ExternalImportSpiBridge
 import com.antivocale.app.data.ExternalCatalog
 import com.antivocale.app.data.ExternalCatalogRepository
 import com.antivocale.app.data.ExternalModelStore
@@ -303,25 +304,23 @@ class ModelViewModel @Inject constructor(
         // debug receiver reads, so a scripted trial can dispatch, observe,
         // cancel and retry an import without touching the UI (the test
         // layer's no-tap requirement). Inert in release: nothing reads it.
-        com.antivocale.app.testing.ExternalImportSpiBridge.renderState = {
+        ExternalImportSpiBridge.renderState = {
             when (val s = externalImportState.value) {
                 is ExternalImportState.Idle -> "idle"
                 is ExternalImportState.Importing ->
                     "importing file=${s.fileIndex}/${s.fileCount}" +
                         " name=${s.fileName} bytes=${s.bytes}/${s.totalBytes}"
                 is ExternalImportState.Error -> "error message=${s.message} retry=${s.retry != null}"
-                is ExternalImportState.Cancelled -> "cancelled retry=${s.retry != null}"
+                is ExternalImportState.Cancelled -> "cancelled message=${s.message} retry=${s.retry != null}"
             }
         }
-        com.antivocale.app.testing.ExternalImportSpiBridge.cancel = ::cancelExternalImport
-        com.antivocale.app.testing.ExternalImportSpiBridge.retry = {
-            when (val s = externalImportState.value) {
-                is ExternalImportState.Error -> s.retry
-                is ExternalImportState.Cancelled -> s.retry
-                else -> null
-            }?.let { it(); true } ?: false
+        ExternalImportSpiBridge.importInFlight =
+            { externalImportState.value is ExternalImportState.Importing }
+        ExternalImportSpiBridge.cancel = ::cancelExternalImport
+        ExternalImportSpiBridge.retry = {
+            externalImportState.value.retry?.let { it(); true } ?: false
         }
-        com.antivocale.app.testing.ExternalImportSpiBridge.dispatchUrlImport =
+        ExternalImportSpiBridge.dispatchUrlImport =
             { url -> importExternalFromUrl(url, ModelFamily.TRANSDUCER) }
         // Set up auto-unload callback
         llmManager.setOnAutoUnloadCallback {
@@ -1492,6 +1491,11 @@ class ModelViewModel @Inject constructor(
 
     /** Import progress for the external-models section (one import at a time). */
     sealed class ExternalImportState {
+        /** The retry closure when THIS state carries one (Error, Cancelled);
+         *  null everywhere else. One accessor instead of two parallel when
+         *  mappings re-extracting the same property (simplify round). */
+        open val retry: (() -> Unit)? get() = null
+
         data object Idle : ExternalImportState()
 
         /** TASK-398: URL imports report per-file download progress; the folder path
@@ -1519,7 +1523,7 @@ class ModelViewModel @Inject constructor(
          * Session-scoped: the state dies with the ViewModel and any later
          * import overwrites it.
          */
-        data class Error(val message: String, val retry: (() -> Unit)? = null) : ExternalImportState()
+        data class Error(val message: String, override val retry: (() -> Unit)? = null) : ExternalImportState()
 
         /**
          * TASK-979: the user-chosen stop. Same retry closure contract as
@@ -1532,7 +1536,7 @@ class ModelViewModel @Inject constructor(
          * resumes within one ladder's attempts). Folder/bundle cancels
          * (no closure) go straight to [Idle] instead of this state.
          */
-        data class Cancelled(val message: String, val retry: (() -> Unit)? = null) : ExternalImportState()
+        data class Cancelled(val message: String, override val retry: (() -> Unit)? = null) : ExternalImportState()
     }
 
     private val _externalImportState = MutableStateFlow<ExternalImportState>(ExternalImportState.Idle)
@@ -2044,7 +2048,7 @@ class ModelViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        com.antivocale.app.testing.ExternalImportSpiBridge.unwire()
+        ExternalImportSpiBridge.unwire()
         llmManager.setOnAutoUnloadCallback(null)
         llmManager.setOnExternalLoadCallback(null)
     }

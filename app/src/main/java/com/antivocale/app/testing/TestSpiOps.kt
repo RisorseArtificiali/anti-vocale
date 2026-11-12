@@ -33,6 +33,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** TASK-989: the not-wired envelope's one wording (the wired-surface ops share it). */
+private const val NOT_WIRED = "import surface not wired (open the Models tab once)"
+
+
 /**
  * Engine of the debug-only test SPI (TASK-409): the op handling behind
  * [com.antivocale.app.receiver.TestSpiReceiver], which lives in the debug
@@ -739,16 +743,21 @@ internal class TestSpiOps(
             // affordances (op=import_cancel / op=import_retry; observation
             // via op=import_state and op=records). Only reachable with all
             // optional extras at their defaults - the bridge's dispatch is
-            // the dialog's own shape (an entry/repo URL classifies itself).
-            val wiredImporting =
-                com.antivocale.app.testing.ExternalImportSpiBridge.renderState
-                    ?.invoke()?.startsWith("importing") == true
-            if (wiredImporting) {
+            // the dialog's own shape (entry JSONs and manifests carry their
+            // own family; a bare repo URL defaults to TRANSDUCER exactly as
+            // the dialog's untouched selector does).
+            //
+            // One busy check covering BOTH lanes (simplify round): the
+            // wired surface's own state AND the headless arm's guard - a
+            // headless import in flight must also refuse a wired dispatch,
+            // or two multi-GB downloads race one importer and one store.
+            val wiredImporting = ExternalImportSpiBridge.importInFlight?.invoke() == true
+            if (wiredImporting || asyncImportInFlight.get()) {
                 throw IllegalArgumentException(
-                    "an import is already in flight (op=import_state reports it)")
+                    "an import is already in flight (op=import_state reports the " +
+                        "wired one; op=records and the TestSpi channel the headless one)")
             }
-            val wiredDispatch =
-                com.antivocale.app.testing.ExternalImportSpiBridge.dispatchUrlImport
+            val wiredDispatch = ExternalImportSpiBridge.dispatchUrlImport
             if (wiredDispatch != null &&
                 family == null && modelType == null && licence == null && streaming == null
             ) {
@@ -1378,43 +1387,19 @@ internal class TestSpiOps(
      * pretending (the state lives in a ViewModel, which a cold background
      * process does not have).
      */
-    private fun importState(): String = JSONObject()
-        .put("op", OP_IMPORT_STATE)
-        .apply {
-            val render = com.antivocale.app.testing.ExternalImportSpiBridge.renderState
-            if (render == null) {
-                put("error", "import surface not wired (open the Models tab once)")
-            } else {
-                put("state", render())
-            }
-        }
-        .toString()
+    /** TASK-989: the wired-surface ops share this shape (the SPI's one
+     *  envelope builder plus the single not-wired wording). */
+    private inline fun <T> importBridgeOp(op: String, handle: T?, crossinline wired: JSONObject.(T) -> Unit): String =
+        ack(op) { if (handle == null) put("error", NOT_WIRED) else wired(handle) }
 
-    private fun importCancel(): String = JSONObject()
-        .put("op", OP_IMPORT_CANCEL)
-        .apply {
-            val cancel = com.antivocale.app.testing.ExternalImportSpiBridge.cancel
-            if (cancel == null) {
-                put("error", "import surface not wired (open the Models tab once)")
-            } else {
-                cancel()
-                put("cancelled", true)
-            }
-        }
-        .toString()
+    private fun importState(): String = importBridgeOp(
+        OP_IMPORT_STATE, ExternalImportSpiBridge.renderState) { put("state", it()) }
 
-    private fun importRetry(): String = JSONObject()
-        .put("op", OP_IMPORT_RETRY)
-        .apply {
-            val retry = com.antivocale.app.testing.ExternalImportSpiBridge.retry
-            if (retry == null) {
-                put("error", "import surface not wired (open the Models tab once)")
-            } else {
-                val fired = retry()
-                put("retry_dispatched", fired)
-            }
-        }
-        .toString()
+    private fun importCancel(): String = importBridgeOp(
+        OP_IMPORT_CANCEL, ExternalImportSpiBridge.cancel) { it(); put("cancelled", true) }
+
+    private fun importRetry(): String = importBridgeOp(
+        OP_IMPORT_RETRY, ExternalImportSpiBridge.retry) { put("retry_dispatched", it()) }
 
         private fun help(error: String? = null): String = JSONObject()
         .apply { error?.let { put("error", it) } }
