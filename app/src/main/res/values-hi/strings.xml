@@ -1337,7 +1337,7 @@
     <string name="backup_disclosure_title">निर्यात से पहले</string>
     <string name="backup_disclosure_body">बैकअप में हर ट्रांसक्रिप्शन, भेजने वाले का नाम और वक्ता लेबल पढ़ने योग्य पाठ में होते हैं। इसे केवल भरोसेमंद जगहों पर साझा करें।</string>
     <string name="keyword_biasing_title">व्यक्तिगत शब्दकोश</string>
-    <string name="keyword_biasing_description">नाम, स्थान या शब्दावली जिन्हें ऐप्प को मानना चाहिए, प्रति पंक्ति एक। Whistle पहचान और AI परिष्कार व सारांश चरणों पर लागू; अन्य स्पीच इंजन अभी शब्दावली पक्षपात का समर्थन नहीं करते। (रूढ़िवादी परिष्कार मोड में निश्चित प्रॉम्पट वैसा ही रहता है।)</string>
+    <string name="keyword_biasing_description">नाम, स्थान या शब्दावली जिन्हें ऐप्प को मानना चाहिए, प्रति पंक्ति एक। Whistle और Qwen3 पहचान तथा AI परिष्कार व सारांश चरणों पर लागू; अन्य स्पीच इंजन अभी शब्दावली पक्षपात का समर्थन नहीं करते। (रूढ़िवादी परिष्कार मोड में निश्चित प्रॉम्पट वैसा ही रहता है।)</string>
     <string name="personal_dictionary_prompt_line">ये नाम या शब्द इस सामग्री में आते हैं; जहाँ आएँ वहीं यह सटीक वर्तनी बनाए रखें: %1$s</string>
     <string name="keyword_biasing_placeholder">प्रति पंक्ति एक शब्द</string>
     <string name="freeze_protection_title">बैकग्राउंड ट्रांस्क्रिप्शन सुरक्षा</string>

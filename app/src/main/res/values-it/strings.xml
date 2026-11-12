@@ -1344,7 +1344,7 @@
     <string name="backup_disclosure_title">Prima di esportare</string>
     <string name="backup_disclosure_body">Il backup contiene ogni trascrizione, nome mittente ed etichetta parlante in testo leggibile. Condividilo solo con destinazioni di cui ti fidi.</string>
     <string name="keyword_biasing_title">Dizionario personale</string>
-    <string name="keyword_biasing_description">Nomi, luoghi o gergo che l\'app deve rispettare, uno per riga. Si applica al riconoscimento Whistle e ai passaggi di rifinitura e riepilogo AI; gli altri motori vocali non supportano ancora il biasing del vocabolario. (In modalità di rifinitura conservativa il prompt fisso resta invariato.)</string>
+    <string name="keyword_biasing_description">Nomi, luoghi o gergo che l\'app deve rispettare, uno per riga. Si applica al riconoscimento Whistle e Qwen3 e ai passaggi di rifinitura e riepilogo AI; gli altri motori vocali non supportano ancora il biasing del vocabolario. (In modalità di rifinitura conservativa il prompt fisso resta invariato.)</string>
     <string name="personal_dictionary_prompt_line">Questi nomi o termini compaiono in questo materiale; mantieni questa esatta grafia dove ricorrono: %1$s</string>
     <string name="keyword_biasing_placeholder">Un termine per riga</string>
     <string name="freeze_protection_title">Protezione trascrizione in background</string>

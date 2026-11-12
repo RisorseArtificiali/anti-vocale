@@ -18,9 +18,9 @@ class TranscriptionBackendContractsTest {
     // The whole sherpa-onnx family shares one generic [SherpaBackend]; the
     // per-model backends are gone, so the contract is pinned per catalog entry.
 
-    private fun parakeet() = SherpaBackend(BuiltInBackendIds.PARAKEET)
-    private fun whisper() = SherpaBackend(BuiltInBackendIds.WHISPER)
-    private fun qwen3() = SherpaBackend(BuiltInBackendIds.QWEN3_ASR)
+    private fun parakeet() = SherpaBackend(BuiltInBackendIds.PARAKEET, mockk(relaxed = true))
+    private fun whisper() = SherpaBackend(BuiltInBackendIds.WHISPER, mockk(relaxed = true))
+    private fun qwen3() = SherpaBackend(BuiltInBackendIds.QWEN3_ASR, mockk(relaxed = true))
 
     // --- SherpaBackend (Parakeet) ---
 

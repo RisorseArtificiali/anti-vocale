@@ -137,7 +137,7 @@ abstract class TranscriptionOrchestratorTestBase {
             if (healthyDir != null && modelDir == healthyDir.absolutePath) {
                 Result.success(Unit)
             } else {
-                SherpaBackend(BuiltInBackendIds.WHISPER)
+                SherpaBackend(BuiltInBackendIds.WHISPER, io.mockk.mockk(relaxed = true))
                     .initialize(context = secondArg(), config = config)
             }
         }

@@ -1206,7 +1206,7 @@
     <string name="backup_disclosure_title">Antes de exportar</string>
     <string name="backup_disclosure_body">La copia contiene cada transcripción, nombre de remitente y etiqueta de hablante en texto legible. Compártela solo con destinatarios de confianza.</string>
     <string name="keyword_biasing_title">Diccionario personal</string>
-    <string name="keyword_biasing_description">Nombres, lugares o jerga que la app debe respetar, uno por línea. Se aplica al reconocimiento Whistle y a los pases de pulido y resumen de la IA; los demás motores de voz aún no admiten sesgo de vocabulario. (En el modo de pulido conservativo se mantiene el aviso fijo.)</string>
+    <string name="keyword_biasing_description">Nombres, lugares o jerga que la app debe respetar, uno por línea. Se aplica al reconocimiento de Whistle y Qwen3 y a los pases de pulido y resumen de la IA; los demás motores de voz aún no admiten sesgo de vocabulario. (En el modo de pulido conservativo se mantiene el aviso fijo.)</string>
     <string name="personal_dictionary_prompt_line">Estos nombres o términos aparecen en este material; conserva esta grafía exacta donde ocurran: %1$s</string>
     <string name="keyword_biasing_placeholder">Un término por línea</string>
     <string name="freeze_protection_title">Protección de transcripción en segundo plano</string>

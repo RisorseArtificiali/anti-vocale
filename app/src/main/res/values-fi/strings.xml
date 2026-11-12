@@ -513,7 +513,7 @@
     <string name="signature_setting_title">Transkription allekirjoitus (tekoälyhuomautus)</string>
     <string name="signature_setting_description">Lisää allekirjoitusrivin jokaiseen sovelluksesta lähtevään transkriptioon: kopioihin, jaettuihin teksteihin ja vietyihin tiedostoihin. Sovelluksen omat näytöt näyttävät pelkän tekstin.</string>
     <string name="keyword_biasing_title">Oma sanasto</string>
-    <string name="keyword_biasing_description">Nimiä, paikkoja tai termejä, jotka sovelluksen pitää huomioida, yksi riviä kohden. Koskee Whistle-tunnistusta sekä tekoälyn viimeistely- ja yhteenvetovaiheita; muut puheentunnistusmoottorit eivät vielä tue sanaston painotusta. (Säilyttävässä viimeistelytilassa kiinteä kehotte säilyy ennallaan.)</string>
+    <string name="keyword_biasing_description">Nimiä, paikkoja tai termejä, jotka sovelluksen pitää huomioida, yksi riviä kohden. Koskee Whistle- ja Qwen3-tunnistusta sekä tekoälyn viimeistely- ja yhteenvetovaiheita; muut puheentunnistusmoottorit eivät vielä tue sanaston painotusta. (Säilyttävässä viimeistelytilassa kiinteä kehotte säilyy ennallaan.)</string>
     <string name="personal_dictionary_prompt_line">Nämä nimet tai termit esiintyvät tässä aineistossa; säilytä tämä tarkka kirjoitusasu kaikkialla, missä ne esiintyvät: %1$s</string>
     <string name="keyword_biasing_placeholder">Yksi termi per rivi</string>
     <string name="signature_text_title">Allekirjoitusteksti</string>

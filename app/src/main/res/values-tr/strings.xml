@@ -1338,7 +1338,7 @@
     <string name="backup_disclosure_title">Dışa aktarmadan önce</string>
     <string name="backup_disclosure_body">Yedek, her transkripsiyonu, gönderen adını ve konuşmacı etiketini okunabilir metin olarak içerir. Yalnızca güvendiğiniz kişilerle paylaşın.</string>
     <string name="keyword_biasing_title">Kişisel sözlük</string>
-    <string name="keyword_biasing_description">Uygulamanın dikkate alması gereken isimler, yerler veya jargon, satır başına bir tane. Whistle tanıma ile yapay zekâ düzeltme ve özet adımlarında geçerlidir; diğer konuşma motorları henüz sözlük desteğini desteklemiyor. (Muhafazakâr düzeltme modunda sabit istem olduğu gibi korunur.)</string>
+    <string name="keyword_biasing_description">Uygulamanın dikkate alması gereken isimler, yerler veya jargon, satır başına bir tane. Whistle ve Qwen3 tanıma ile yapay zekâ düzeltme ve özet adımlarında geçerlidir; diğer konuşma motorları henüz sözlük desteğini desteklemiyor. (Muhafazakâr düzeltme modunda sabit istem olduğu gibi korunur.)</string>
     <string name="personal_dictionary_prompt_line">Bu isimler veya terimler bu içerikte geçiyor; geçtikleri yerlerde bu tam yazımı koru: %1$s</string>
     <string name="keyword_biasing_placeholder">Satır başına bir terim</string>
     <string name="freeze_protection_title">Arka plan transkripsiyon koruması</string>

@@ -1354,7 +1354,7 @@
     <string name="backup_disclosure_title">Voordat je exporteert</string>
     <string name="backup_disclosure_body">De back-up bevat elke transcriptie, afzendernaam en sprekerlabels in leesbare tekst. Deel hem alleen met ontvangers die je vertrouwt.</string>
     <string name="keyword_biasing_title">Persoonlijk woordenboek</string>
-    <string name="keyword_biasing_description">Namen, plaatsen of jargon die de app moet respecteren, één per regel. Geldt voor Whistle-herkenning en de AI-bewerkings- en samenvattingsstappen; andere spraakengines ondersteunen woordenboekbeïnvloeding nog niet. (In de conservatieve polijstmodus blijft de vaste prompt ongewijzigd.)</string>
+    <string name="keyword_biasing_description">Namen, plaatsen of jargon die de app moet respecteren, één per regel. Geldt voor Whistle- en Qwen3-herkenning en de AI-bewerkings- en samenvattingsstappen; andere spraakengines ondersteunen woordenboekbeïnvloeding nog niet. (In de conservatieve polijstmodus blijft de vaste prompt ongewijzigd.)</string>
     <string name="personal_dictionary_prompt_line">Deze namen of termen komen voor in dit materiaal; behoud deze exacte spelling waar ze voorkomen: %1$s</string>
     <string name="keyword_biasing_placeholder">Eén term per regel</string>
     <string name="freeze_protection_title">Bescherming van achtergrondtranscriptie</string>

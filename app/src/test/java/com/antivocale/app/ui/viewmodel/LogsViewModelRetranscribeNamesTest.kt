@@ -57,11 +57,11 @@ class LogsViewModelRetranscribeNamesTest : ViewModelTeardownTest() {
     fun `retranscribe dialog shows localized catalog names not raw backend ids`() = runTest {
         every { manager.activeBackendId } returns MutableStateFlow("sherpa-onnx")
         every { manager.getAvailableBackends() } returns listOf(
-            SherpaBackend("sherpa-onnx"),
-            SherpaBackend("nemotron-streaming"),
-            SherpaBackend("whisper"),
-            SherpaBackend("qwen3-asr"),
-            SherpaBackend("gigaam"),
+            SherpaBackend("sherpa-onnx", mockk(relaxed = true)),
+            SherpaBackend("nemotron-streaming", mockk(relaxed = true)),
+            SherpaBackend("whisper", mockk(relaxed = true)),
+            SherpaBackend("qwen3-asr", mockk(relaxed = true)),
+            SherpaBackend("gigaam", mockk(relaxed = true)),
         )
 
         val options = viewModel.getAvailableAudioBackendsWithModels(context)
@@ -78,7 +78,7 @@ class LogsViewModelRetranscribeNamesTest : ViewModelTeardownTest() {
     @Test
     fun `dialog labels are the localized names not the entry ids`() = runTest {
         every { manager.activeBackendId } returns MutableStateFlow("sherpa-onnx")
-        every { manager.getAvailableBackends() } returns listOf(SherpaBackend("sherpa-onnx"))
+        every { manager.getAvailableBackends() } returns listOf(SherpaBackend("sherpa-onnx", mockk(relaxed = true)))
 
         val options = viewModel.getAvailableAudioBackendsWithModels(context)
 

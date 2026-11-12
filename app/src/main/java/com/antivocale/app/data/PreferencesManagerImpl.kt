@@ -1350,7 +1350,12 @@ class PreferencesManagerImpl(
                     when (val v = typed) {
                         is Boolean -> prefs[booleanPreferencesKey(name)] = v
                         is Int -> prefs[intPreferencesKey(name)] = v
-                        else -> prefs[stringPreferencesKey(name)] = v as String
+                        // A hand-edited archive may carry a Long/Double for a
+                        // string key (JSON has no int/long distinction); drop
+                        // the malformed entry instead of failing the whole
+                        // one-transaction import (review: the CCE killed
+                        // every setting over one bad value).
+                        is String -> prefs[stringPreferencesKey(name)] = v
                     }
                 }
             // TASK-993 review: an archive from a pre-preset version carries

@@ -1364,7 +1364,7 @@
     <string name="backup_disclosure_title">Zanim wyeksportujesz</string>
     <string name="backup_disclosure_body">Kopia zawiera każdą transkrypcję, nazwę nadawcy i etykietę mówcy jako czytelny tekst. Udostępniaj ją tylko zaufanym odbiorcom.</string>
     <string name="keyword_biasing_title">Słownik osobisty</string>
-    <string name="keyword_biasing_description">Imiona, miejsca lub żargon, które aplikacja powinna uwzględniać, po jednym w wierszu. Dotyczy rozpoznawania Whistle i przebiegów wygładzania oraz podsumowania AI; pozostałe silniki mowy nie obsługują jeszcze słownikowego ważenia. (W zachowawczym trybie wygładzania stały prompt pozostaje bez zmian.)</string>
+    <string name="keyword_biasing_description">Imiona, miejsca lub żargon, które aplikacja powinna uwzględniać, po jednym w wierszu. Dotyczy rozpoznawania Whistle i Qwen3 oraz przebiegów wygładzania i podsumowania AI; pozostałe silniki mowy nie obsługują jeszcze słownikowego ważenia. (W zachowawczym trybie wygładzania stały prompt pozostaje bez zmian.)</string>
     <string name="personal_dictionary_prompt_line">Te imiona lub terminy pojawiają się w tym materiale; zachowaj tę dokładną pisownię, gdzie występują: %1$s</string>
     <string name="keyword_biasing_placeholder">Jeden termin na wiersz</string>
     <string name="freeze_protection_title">Ochrona transkrypcji w tle</string>

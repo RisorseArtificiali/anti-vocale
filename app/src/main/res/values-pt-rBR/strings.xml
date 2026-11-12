@@ -1206,7 +1206,7 @@
     <string name="backup_disclosure_title">Antes de exportar</string>
     <string name="backup_disclosure_body">O backup contém cada transcrição, nome de remetente e etiqueta de falante em texto legível. Compartilhe apenas com destinatários de confiança.</string>
     <string name="keyword_biasing_title">Dicionário pessoal</string>
-    <string name="keyword_biasing_description">Nomes, lugares ou jargão que o app deve respeitar, um por linha. Vale para o reconhecimento Whistle e para as etapas de polimento e resumo da IA; os demais motores de fala ainda não suportam viés de vocabulário. (No modo de polimento conservador o prompt fixo é mantido.)</string>
+    <string name="keyword_biasing_description">Nomes, lugares ou jargão que o app deve respeitar, um por linha. Vale para o reconhecimento Whistle e Qwen3 e para as etapas de polimento e resumo da IA; os demais motores de fala ainda não suportam viés de vocabulário. (No modo de polimento conservador o prompt fixo é mantido.)</string>
     <string name="personal_dictionary_prompt_line">Estes nomes ou termos aparecem neste material; mantenha essa grafia exata onde ocorrerem: %1$s</string>
     <string name="keyword_biasing_placeholder">Um termo por linha</string>
     <string name="freeze_protection_title">Proteção da transcrição em segundo plano</string>

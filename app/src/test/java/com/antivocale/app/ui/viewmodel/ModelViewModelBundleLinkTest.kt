@@ -191,6 +191,10 @@ class ModelViewModelBundleLinkTest : ViewModelTeardownTest() {
         File(dir, "gigaam_v3_e2e_rnnt_decoder.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 2 })
         File(dir, "gigaam_v3_e2e_rnnt_joint.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 3 })
         File(dir, "gigaam_v3_e2e_rnnt_tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
+        // TASK-994: the gigaam variant pins the hotwords vocab as its fifth
+        // file; the fixture carries one so the pin-patch and the bundle's
+        // key-set match the catalog's five-file shape.
+        File(dir, "bpe.vocab").writeText((0..9).joinToString("\n") { "piece$it\t-1.0" })
         return dir
     }
 

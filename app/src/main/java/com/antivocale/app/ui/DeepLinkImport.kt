@@ -44,7 +44,15 @@ object DeepLinkImport {
         val data: Uri = intent.data ?: return null
         if (data.scheme?.equals(SCHEME, ignoreCase = true) != true) return null
         if (data.host?.equals(HOST, ignoreCase = true) != true) return null
-        val url = data.getQueryParameter("url")?.trim().orEmpty()
+        // encodedQuery, not getQueryParameter: the parameter's VALUE is a
+        // URL that may itself carry '&' (and '?') query separators, and the
+        // typed parser splits at every '&' - a link whose nested query is
+        // not percent-encoded lost its tail silently. Reading the raw
+        // encodedQuery and stripping the leading "url=" keeps the carried
+        // URL whole whether or not the generator percent-encoded it.
+        val raw = data.encodedQuery ?: return null
+        if (!raw.startsWith("url=")) return null
+        val url = Uri.decode(raw.removePrefix("url=")).trim()
         if (url.length > MAX_URL_LENGTH) return null
         // Uri.parse never throws for a non-null string (failures surface on
         // the accessors); the scheme/host reads below are the validation.

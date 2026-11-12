@@ -1788,13 +1788,16 @@ private fun DeviceTierLine() {
     MetaLineRow(
         icon = Icons.Default.Storage,
         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        // Rounded, not floored: the bands are totalMem-calibrated, so the
-        // rounded figure matches the nominal class the label names (a
-        // 4GB-marketed phone reporting 3.6GiB reads "4 GB, mid-range", its
-        // own spec-sheet number, not a contradicting "3 GB").
+        // DECIMAL GB, rounded: totalMem reports binary bytes but the spec
+        // sheet says decimal, and the bands are calibrated to the marketing
+        // classes - a 4GB-marketed phone reporting 3.6GiB is 3.87 decimal GB
+        // (reads "4 GB, mid-range") and an 8GB-marketed one reporting
+        // 7.2GiB is 7.73 (reads "8 GB, high-end"). Binary GiB flooring
+        // showed "7 GB" beside "high-end", the contradiction the review
+        // caught twice.
         text = stringResource(
             R.string.device_tier_line,
-            Math.round(totalBytes / (1024.0 * 1024 * 1024)).toInt(), label),
+            Math.round(totalBytes / 1e9).toInt(), label),
     )
 }
 

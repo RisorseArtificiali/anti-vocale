@@ -1349,7 +1349,7 @@
     <string name="backup_disclosure_title">לפני הייצוא</string>
     <string name="backup_disclosure_body">הגיבוי מכיל כל תמליל, שם שולח ותווית דובר בטקסט קריא. שתפו אותו רק עם יעדים מהימנים.</string>
     <string name="keyword_biasing_title">מילון אישי</string>
-    <string name="keyword_biasing_description">שמות, מקומות או סלנג שהאפליקציה צריכה לכבד, אחד בכל שורה. חל על זיהוי Whistle ועל שלבי הליטוש והסיכום של הבינה המלאכותית; מנועי הדיבור האחרים עדיין לא תומכים בהטיית אוצר מילים. (במצב הליטוש השמרני הפרומפט הקבוע נשאר כמו שהוא.)</string>
+    <string name="keyword_biasing_description">שמות, מקומות או סלנג שהאפליקציה צריכה לכבד, אחד בכל שורה. חל על זיהוי Whistle ו-Qwen3 ועל שלבי הליטוש והסיכום של הבינה המלאכותית; מנועי הדיבור האחרים עדיין לא תומכים בהטיית אוצר מילים. (במצב הליטוש השמרני הפרומפט הקבוע נשאר כמו שהוא.)</string>
     <string name="personal_dictionary_prompt_line">שמות או מונחים אלה מופיעים בחומר הזה; שמרו על האיות המדויק הזה בכל מקום שבו הם מופיעים: %1$s</string>
     <string name="keyword_biasing_placeholder">מונח אחד בכל שורה</string>
     <string name="freeze_protection_title">הגנת תמלול ברקע</string>

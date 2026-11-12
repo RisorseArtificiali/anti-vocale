@@ -1343,7 +1343,7 @@
     <string name="backup_disclosure_title">پیش از برون‌بری</string>
     <string name="backup_disclosure_body">پشتیبان شامل هر رونوشت، نام فرستنده و برچسب گوینده به صورت متن خوانا است. آن را فقط با مقصدهای مطمئن به اشتراک بگذارید.</string>
     <string name="keyword_biasing_title">واژه‌نامهٔ شخصی</string>
-    <string name="keyword_biasing_description">نام‌ها، مکان‌ها یا اصطلاح‌هایی که برنامه باید رعایت کند، در هر سطر یکی. برای تشخیص Whistle و مراحل پرداخت و خلاصهٔ هوش مصنوعی اعمال می‌شود؛ موتورهای گفتاری دیگر هنوز واژه‌نامه را پشتیبانی نمی‌کنند. (در حالت پرداخت محافظه‌کار، پرامپت ثابت بدون تغییر می‌ماند.)</string>
+    <string name="keyword_biasing_description">نام‌ها، مکان‌ها یا اصطلاح‌هایی که برنامه باید رعایت کند، در هر سطر یکی. برای تشخیص Whistle و Qwen3 و مراحل پرداخت و خلاصهٔ هوش مصنوعی اعمال می‌شود؛ موتورهای گفتاری دیگر هنوز واژه‌نامه را پشتیبانی نمی‌کنند. (در حالت پرداخت محافظه‌کار، پرامپت ثابت بدون تغییر می‌ماند.)</string>
     <string name="personal_dictionary_prompt_line">این نام‌ها یا اصطلاح‌ها در این محتوا می‌آیند؛ هر جا آمدند این نوشتار دقیق را حفظ کن: %1$s</string>
     <string name="keyword_biasing_placeholder">در هر خط یک عبارت</string>
     <string name="freeze_protection_title">محافظت از رونویسی پس‌زمینه</string>

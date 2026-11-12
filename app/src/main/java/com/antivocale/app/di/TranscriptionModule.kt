@@ -54,27 +54,27 @@ class TranscriptionModule {
         @Provides
         @IntoSet
         @Singleton
-        fun provideParakeetBackend(): TranscriptionBackend = SherpaBackend(BuiltInBackendIds.PARAKEET)
+        fun provideParakeetBackend(preferences: PreferencesManager): TranscriptionBackend = SherpaBackend(BuiltInBackendIds.PARAKEET, preferences)
 
         @Provides
         @IntoSet
         @Singleton
-        fun provideWhisperBackend(): TranscriptionBackend = SherpaBackend(BuiltInBackendIds.WHISPER)
+        fun provideWhisperBackend(preferences: PreferencesManager): TranscriptionBackend = SherpaBackend(BuiltInBackendIds.WHISPER, preferences)
 
         @Provides
         @IntoSet
         @Singleton
-        fun provideQwen3AsrBackend(): TranscriptionBackend = SherpaBackend(BuiltInBackendIds.QWEN3_ASR)
+        fun provideQwen3AsrBackend(preferences: PreferencesManager): TranscriptionBackend = SherpaBackend(BuiltInBackendIds.QWEN3_ASR, preferences)
 
         @Provides
         @IntoSet
         @Singleton
-        fun provideNemotronBackend(): TranscriptionBackend = SherpaBackend(BuiltInBackendIds.NEMOTRON)
+        fun provideNemotronBackend(preferences: PreferencesManager): TranscriptionBackend = SherpaBackend(BuiltInBackendIds.NEMOTRON, preferences)
 
         @Provides
         @IntoSet
         @Singleton
-        fun provideGigaAmBackend(): TranscriptionBackend = SherpaBackend(BuiltInBackendIds.GIGAAM)
+        fun provideGigaAmBackend(preferences: PreferencesManager): TranscriptionBackend = SherpaBackend(BuiltInBackendIds.GIGAAM, preferences)
 
         @Provides
         @Singleton

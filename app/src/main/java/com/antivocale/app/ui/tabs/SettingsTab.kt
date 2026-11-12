@@ -3857,8 +3857,7 @@ internal enum class SettingsSearchGroup(val labelRes: Int) {
  */
 internal data class SettingsSearchState(
     val isLlmBackend: Boolean,
-    /** TASK-858: the keyword-biasing card exists only on the whistle backend. */
-    val isModelLoaded: Boolean,
+        val isModelLoaded: Boolean,
     val gemmaConfigured: Boolean,
     /**
      * The prompt OVERRIDE is honored (PREF_ALWAYS only): its card renders.

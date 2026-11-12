@@ -1497,9 +1497,14 @@ class TranscriptionOrchestrator @Inject constructor(
             // TASK-994 review: the dictionary rider rides the instruction,
             // so its length joins the context guard (a boundary transcript
             // plus a fat rider must take the map-reduce path, not fail both
-            // single-shot attempts at the engine).
+            // single-shot attempts at the engine). The guard counts the
+            // FULL rendered line (terms + the localized template + the
+            // separators), not just the terms.
             val dictionaryRiderChars = PersonalDictionary.promptTerms(
-                preferencesManager.keywordBiasing.first())?.length ?: 0
+                preferencesManager.keywordBiasing.first())?.let { terms ->
+                context.getString(R.string.personal_dictionary_prompt_line, terms).length +
+                    terms.length
+            } ?: 0
             if (!SummaryPolicy.withinContextLimit(result.text.length + dictionaryRiderChars)) {
                 // TASK-520: too long for ONE generation, not too long to
                 // summarize: map over context-sized chunks, reduce the

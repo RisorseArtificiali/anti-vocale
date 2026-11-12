@@ -394,7 +394,7 @@ class TranscriptionOrchestratorLanguageTest : TranscriptionOrchestratorTestBase(
     fun `single-language distil variant forces italian regardless of the resolved language`() {
         val entry = BundledCatalog.byId(BuiltInBackendIds.WHISPER)!!
         val distil = entry.variant("distil-large-v3-it")!!
-        val backend = SherpaBackend(BuiltInBackendIds.WHISPER)
+        val backend = SherpaBackend(BuiltInBackendIds.WHISPER, io.mockk.mockk(relaxed = true))
         // Whatever the orchestrator resolved ("" on the system default, a code
         // when pinned): the distil load always forces "it".
         assertEquals("it", backend.forcedLanguage(entry, distil, ""))

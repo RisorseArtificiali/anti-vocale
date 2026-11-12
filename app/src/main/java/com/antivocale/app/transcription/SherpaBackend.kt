@@ -26,6 +26,7 @@ import com.antivocale.app.util.NativeKeepAlive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -47,6 +48,10 @@ import java.io.File
  */
 class SherpaBackend(
     val entryId: String,
+    /** TASK-994: the personal dictionary feeds the per-family biasing
+     *  surfaces (Qwen3's stream hotwords first; request-time reads, the
+     *  whistle TASK-858 pattern). */
+    private val preferences: PreferencesManager,
 ) : TranscriptionBackend {
 
     companion object {
@@ -836,6 +841,15 @@ class SherpaBackend(
                 Log.d(TAG, "Transcribing audio: ${samples.size} samples at ${sampleRate}Hz")
 
                 stream = rec.createStream()
+                // TASK-994: Qwen3 biasing is per-stream (hotwords ride the
+                // chat-template system prompt; the impl reads the stream
+                // option at decode, overriding the construct-time config).
+                // Same request-time shape as the whistle engine: a dictionary
+                // edit applies to the next decode, no reload.
+                if (entry.modelType == "qwen3_asr") {
+                    PersonalDictionary.promptTerms(preferences.keywordBiasing.first())
+                        ?.let { stream.setOption("hotwords", it) }
+                }
                 stream.acceptWaveform(samples, sampleRate)
                 // Append `tailPadSeconds` (catalog flag) of silence. The pad's
                 // WER effect on parakeet is VARIANT-DEPENDENT (TASK-715 + the
