@@ -69,7 +69,6 @@ class InferenceService : Service(), TranscriptionListener {
         private const val RC_LAUNCH_SETTINGS_ROW = 2
         private const val RC_NAV_PREV = 10
         private const val RC_NAV_NEXT = 11
-        private const val RC_NAV_LIVE = 12
 
         // TaskId-hash request codes live above the small-constant band: a raw
         // hash can land on a constant's value, and PendingIntent matching
@@ -267,17 +266,38 @@ class InferenceService : Service(), TranscriptionListener {
         // deobfuscated) was exactly that window expiring. On a live service
         // the call is an idempotent same-id refresh; on a cold start it
         // closes the window at the earliest runnable moment. The control
-        // actions below arrive through getService PendingIntents (no
-        // expectation), so promoting for them too costs only a same-id
+        // actions below arrive from TWO sources (review round): notification
+        // buttons through getService PendingIntents (no expectation), and
+        // in-app callers through direct startService (HistoryTab.cancelTask);
+        // both are safe today because both run with the app foreground, and
+        // the runCatching below absorbs a lapsed-allowlist delivery on the
+        // PendingIntent side. Promoting for them costs only a same-id
         // repost; a control tap that revived a dead service gets a brief
         // honest notification before the idle stop. PROMOTING WITH THE NAV
         // SHAPE when one is live (altitude round): the bare form would
         // overwrite the pinned chunk view, and no-op nav taps plus the
         // signature dedup could never restore it.
-        startForeground(
-            NOTIFICATION_ID,
-            deriveChunkNavView()?.let { assembleChunkNavNotification(it) }
-                ?: createNotification(getString(R.string.processing_audio)))
+        // The guard (F4 of the release review, restored here after the
+        // merge dropped it): on a REQUIRED delivery the allowance existed at
+        // startForegroundService time so this cannot throw; on a getService
+        // control delivery with a lapsed temporary-allowlist window it can
+        // throw ForegroundServiceStartNotAllowedException on API 31+, and
+        // swallowing that one is strictly safe (no fgRequired window exists
+        // for a startService command).
+        runCatching {
+            startForeground(
+                NOTIFICATION_ID,
+                deriveChunkNavView()?.let { assembleChunkNavNotification(it) }
+                    // F3: a single-chunk job's live progress shape (file,
+                    // progress, ETA, chronometer) survives the promotion
+                    // instead of degrading to the bare form.
+                    ?: lastForegroundNotification
+                    ?: createNotification(getString(R.string.processing_audio)))
+        }.onFailure {
+            // Review round: a silent swallow would turn an OEM FGS restriction
+            // into an unattributable ForegroundServiceDidNotStartInTime kill.
+            Log.w(TAG, "startForeground promotion failed", it)
+        }
 
         if (intent?.action == ACTION_CANCEL) {
             handleCancelRequest()
@@ -300,6 +320,10 @@ class InferenceService : Service(), TranscriptionListener {
 
         // Chunk navigation: mutate the live cursor and re-post.
         val navAction = intent?.action
+        // ACTION_NAV_LIVE is LEGACY-ONLY: no shipped notification carries
+        // it (jump-to-live folded into Next, see the builder comment), but a
+        // notification posted by a PREVIOUS install can survive an app
+        // update and still deliver it, so the arm and handler stay.
         if (navAction == ACTION_NAV_PREV || navAction == ACTION_NAV_NEXT || navAction == ACTION_NAV_LIVE) {
             handleChunkNavAction(navAction)
             // TASK-978 review: a nav tap on a dead-process notification
@@ -436,6 +460,9 @@ class InferenceService : Service(), TranscriptionListener {
                         latestDurationSeconds = 0
                         latestQueuedCount = 0
                         lastNavSignature = null
+                        // Review round: without this, the NEXT job's early
+                        // window promotes with the PREVIOUS job's final shape.
+                        lastForegroundNotification = null
                         // Throttle carries no state across jobs: the first progress tick
                         // of each request must post promptly (TASK-266).
                         progressNotifyThrottler.reset()
@@ -523,6 +550,7 @@ class InferenceService : Service(), TranscriptionListener {
                 // brief moment before the idle stop.
                 chunkNavState = null
                 lastNavSignature = null
+                lastForegroundNotification = null
                 drainEntered.set(false)
                 // The finally (not the post-join path) owns the keepalive
                 // stop: an escaped Error from native code skips everything
@@ -779,7 +807,7 @@ class InferenceService : Service(), TranscriptionListener {
         // startForeground promotion (altitude round) is never skipped.
         if (view.signature == lastNavSignature) return
         lastNavSignature = view.signature
-        notificationManager.notify(NOTIFICATION_ID, assembleChunkNavNotification(view))
+        postForeground(assembleChunkNavNotification(view))
     }
 
     /**
@@ -1172,8 +1200,9 @@ class InferenceService : Service(), TranscriptionListener {
         bigText: String? = null,
         subText: String? = null
     ) {
-        notificationManager.notify(
-            NOTIFICATION_ID,
+        // postForeground (review round): the interim-text shape IS the
+        // single-chunk view the promotion must preserve.
+        postForeground(
             createNotification(contentText, durationSeconds = durationSeconds, startTimeMillis = startTimeMillis, bigText = bigText, subText = subText)
         )
     }
@@ -1186,8 +1215,10 @@ class InferenceService : Service(), TranscriptionListener {
         durationSeconds: Int = 0,
         startTimeMillis: Long = 0
     ) {
-        notificationManager.notify(
-            NOTIFICATION_ID,
+        // postForeground (simplify round): this interim shape is exactly the
+        // single-chunk view the promotion must preserve, so it rides the
+        // last-shape cache like every other site on the foreground id.
+        postForeground(
             createNotification(contentText, progress, maxProgress, indeterminate, durationSeconds, startTimeMillis)
         )
     }
@@ -1222,7 +1253,22 @@ class InferenceService : Service(), TranscriptionListener {
         val timingText = formatTimingText(etaText, durationSeconds)
         joinSubText(queueText, timingText)?.let { builder.setSubText(it) }
 
-        notificationManager.notify(NOTIFICATION_ID, builder.build())
+        postForeground(builder.build())
+    }
+
+    /**
+     * F3 (review round): the LAST shape posted on the foreground id, so the
+     * startForeground promotion can re-post it instead of degrading a live
+     * single-chunk progress view to the bare "Processing audio" form (which
+     * also resets setWhen/chronometer). Cleared at batch end beside the
+     * chunk-nav state; a terminal notification replaces the shape anyway.
+     */
+    @Volatile private var lastForegroundNotification: android.app.Notification? = null
+
+    @Synchronized
+    private fun postForeground(notification: android.app.Notification) {
+        lastForegroundNotification = notification
+        notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
     private fun updateNotificationQueueHint(queuedCount: Int) {
@@ -1240,7 +1286,7 @@ class InferenceService : Service(), TranscriptionListener {
                 cancelPendingIntent
             )
 
-        notificationManager.notify(NOTIFICATION_ID, builder.build())
+        postForeground(builder.build())
         Log.i(TAG, "Updated notification with queue hint: $queuedCount queued")
     }
 
@@ -1286,5 +1332,4 @@ class InferenceService : Service(), TranscriptionListener {
 
     private val navPrevPendingIntent by lazy { navPendingIntent(ACTION_NAV_PREV, RC_NAV_PREV) }
     private val navNextPendingIntent by lazy { navPendingIntent(ACTION_NAV_NEXT, RC_NAV_NEXT) }
-    private val navLivePendingIntent by lazy { navPendingIntent(ACTION_NAV_LIVE, RC_NAV_LIVE) }
 }
