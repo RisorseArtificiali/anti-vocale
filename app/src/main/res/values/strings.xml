@@ -595,7 +595,14 @@
     <string name="signature_position_title">Position</string>
     <string name="signature_position_prepend">Before the transcript</string>
     <string name="signature_position_append">After the transcript</string>
-    <string name="summary_prompt_description">Override the AI summary instruction. Blank uses the built-in two-to-three-sentence prompt.</string>
+    <string name="summary_prompt_description">Choose what the AI pass adds to long transcripts. Custom takes a free instruction; blank uses the built-in recap prompt.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">Recap</string>
+    <string name="summary_preset_action_items">Action items</string>
+    <string name="summary_preset_meeting_minutes">Meeting minutes</string>
+    <string name="summary_preset_custom">Custom</string>
+    <string name="summary_preset_action_items_prompt">List the action items from this transcription as a short bullet list, one line per item, in the language of the transcript. Include owners and deadlines when stated. Output only the list.</string>
+    <string name="summary_preset_meeting_minutes_prompt">Write meeting minutes from this transcription: topics discussed, decisions taken, and action items with owners, in the language of the transcript. Keep names and numbers. Output only the minutes.</string>
     <string name="punctuation_default_prompt">Add punctuation and capitalization to this transcript. Keep every word exactly as written; do not fix, translate, add, or remove anything. Output only the corrected transcript.</string>
     <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
     <string name="punctuation_default_prompt_conservative">Add punctuation, capitalization and paragraph breaks to this transcript. Do not translate, do not summarize, and do not add, remove, reorder or correct any word: the word sequence must stay exactly as written. Output only the formatted transcript.</string>

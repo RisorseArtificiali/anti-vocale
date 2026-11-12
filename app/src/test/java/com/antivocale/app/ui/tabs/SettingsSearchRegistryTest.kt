@@ -223,6 +223,15 @@ class SettingsSearchRegistryTest {
             ),
             visibleIds(SettingsSearchSection.TRANSCRIPTION, state()),
         )
+        // TASK-993: the preset names joined the summary-prompt card's
+        // vocabulary (an "action items" query must land on the picker).
+        assertEquals(
+            listOf(
+                R.string.summary_prompt_title, R.string.summary_prompt_description,
+                R.string.summary_preset_summary, R.string.summary_preset_action_items,
+                R.string.summary_preset_meeting_minutes, R.string.summary_preset_custom),
+            res(SettingsSearchId.SUMMARY_PROMPT, state(gemmaConfigured = true, summarizeOn = true)),
+        )
     }
 
     @Test

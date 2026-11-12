@@ -30,7 +30,6 @@ fun EditablePromptCard(
     descriptionRes: Int,
     placeholderRes: Int,
 ) {
-    var text by remember(prompt) { mutableStateOf(prompt) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -44,20 +43,42 @@ fun EditablePromptCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it.take(PreferencesManager.PROMPT_CAP) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusChanged { focused ->
-                        if (!focused.isFocused && text != prompt) onSave(text)
-                    },
-                placeholder = { Text(stringResource(placeholderRes)) },
-                minLines = 2,
-                supportingText = {
-                    Text(stringResource(R.string.default_prompt_chars, text.length))
-                }
+            EditablePromptField(
+                prompt = prompt,
+                onSave = onSave,
+                placeholderRes = placeholderRes,
             )
         }
     }
+}
+
+/**
+ * TASK-993 extraction: the editable instruction field alone (commit on
+ * focus loss so DataStore is not written per keystroke, the PROMPT_CAP
+ * cap, the char counter). The card keeps its callers; the summary preset
+ * card composes the field inside its own SectionCard without nesting a
+ * Card in a Card. One home for the field contract either way.
+ */
+@Composable
+fun EditablePromptField(
+    prompt: String,
+    onSave: (String) -> Unit,
+    placeholderRes: Int,
+    modifier: Modifier = Modifier,
+) {
+    var text by remember(prompt) { mutableStateOf(prompt) }
+    OutlinedTextField(
+        value = text,
+        onValueChange = { text = it.take(PreferencesManager.PROMPT_CAP) },
+        modifier = modifier
+            .fillMaxWidth()
+            .onFocusChanged { focused ->
+                if (!focused.isFocused && text != prompt) onSave(text)
+            },
+        placeholder = { Text(stringResource(placeholderRes)) },
+        minLines = 2,
+        supportingText = {
+            Text(stringResource(R.string.default_prompt_chars, text.length))
+        }
+    )
 }

@@ -28,13 +28,33 @@ object SummaryPolicy {
         PunctuationPolicy.withinContextLimit(transcript)
 
     /**
-     * The pass's effective instruction: the user's saved override, or the
-     * built-in default when the override is blank or whitespace. Mirrors
-     * [PunctuationPolicy.effectivePrompt] as the single named home of the
-     * blank-fallback contract (TASK-483).
+     * TASK-993: resolves the instruction LADDER for the pass: the primary
+     * instruction for the stored preset (the key is the single source of
+     * truth; a non-blank prompt under a non-custom preset is dormant
+     * text), then the built-in recap as the fallback attempt when the
+     * primary differs from it (the TASK-498 retry contract: a failed
+     * custom or preset generation degrades to a real recap instead of a
+     * caption). A blank custom field is the "use the built-in" state (the
+     * contract effectivePrompt used to own, folded here). Pure over
+     * strings: [builtIn], [actionItems], [meetingMinutes] are the caller's
+     * locale-resolved instruction texts.
      */
-    fun effectivePrompt(userPrompt: String, builtInDefault: String): String =
-        userPrompt.trim().ifBlank { builtInDefault }
+    fun instructionLadder(
+        presetKey: String?,
+        customPrompt: String,
+        builtIn: String,
+        actionItems: String,
+        meetingMinutes: String,
+    ): List<String> {
+        val custom = customPrompt.trim()
+        val primary = when (SummaryPreset.fromKey(presetKey)) {
+            SummaryPreset.SUMMARY -> builtIn
+            SummaryPreset.ACTION_ITEMS -> actionItems
+            SummaryPreset.MEETING_MINUTES -> meetingMinutes
+            SummaryPreset.CUSTOM -> custom.ifEmpty { builtIn }
+        }
+        return if (primary != builtIn) listOf(primary, builtIn) else listOf(builtIn)
+    }
 
     /**
      * Degenerate-output guard: a summary is SHORTER than its input. Anything

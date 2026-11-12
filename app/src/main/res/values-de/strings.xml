@@ -540,7 +540,15 @@
     <string name="signature_position_title">Position</string>
     <string name="signature_position_prepend">Vor dem Transkript</string>
     <string name="signature_position_append">Nach dem Transkript</string>
-    <string name="summary_prompt_description">Eigene Anweisung für die KI-Zusammenfassung. Leer verwendet den integrierten Standard (zwei bis drei Sätze).</string>
+    <string name="summary_prompt_description">Wähle, was der KI-Pass zu langen Transkripten hinzufügt. Eigenes nimmt eine freie Anweisung; leer verwendet den integrierten Standard-Prompt.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">Kurzfassung</string>
+    <string name="summary_preset_action_items">Aktionspunkte</string>
+    <string name="summary_preset_meeting_minutes">Protokoll</string>
+    <string name="summary_preset_custom">Eigenes</string>
+    <string name="summary_preset_action_items_prompt">Liste die Aktionspunkte aus dieser Transkription als kurze Liste auf, eine Zeile pro Punkt, in der Sprache der Transkription. Nenne Verantwortliche und Fristen, wenn genannt. Gib nur die Liste aus.</string>
+    <string name="summary_preset_meeting_minutes_prompt">Schreibe ein Protokoll aus dieser Transkription: besprochene Themen, getroffene Entscheidungen und Aktionspunkte mit Verantwortlichen, in der Sprache der Transkription. Behalte Namen und Zahlen. Gib nur das Protokoll aus.</string>
+
     <string name="punctuation_default_prompt">Füge dieser Transkription Zeichensetzung und Großschreibung hinzu. Behalte jedes Wort genau wie geschrieben; korrigiere, übersetze, ergänze oder entferne nichts. Gib nur die korrigierte Transkription aus.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Lange Transkriptionen zusammenfassen</string>

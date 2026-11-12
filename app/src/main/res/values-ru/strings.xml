@@ -561,7 +561,15 @@
     <string name="signature_position_title">Положение</string>
     <string name="signature_position_prepend">Перед транскрипцией</string>
     <string name="signature_position_append">После транскрипции</string>
-    <string name="summary_prompt_description">Своя инструкция для ИИ-резюме. Пусто означает встроенный промпт (два-три предложения).</string>
+    <string name="summary_prompt_description">Выберите, что ИИ-проход добавляет к длинным транскрипциям. Своя принимает произвольную инструкцию; пусто использует встроенный промпт.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">Резюме</string>
+    <string name="summary_preset_action_items">Поручения</string>
+    <string name="summary_preset_meeting_minutes">Протокол встречи</string>
+    <string name="summary_preset_custom">Своя</string>
+    <string name="summary_preset_action_items_prompt">Перечисли поручения из этой транскрипции коротким списком, по одной строке на пункт, на языке транскрипции. Укажи ответственных и сроки, если они названы. Выведи только список.</string>
+    <string name="summary_preset_meeting_minutes_prompt">Составь протокол встречи по этой транскрипции: обсуждённые темы, принятые решения и поручения с ответственными, на языке транскрипции. Сохрани имена и числа. Выведи только протокол.</string>
+
     <string name="punctuation_default_prompt">Добавь пунктуацию и заглавные буквы в эту расшифровку. Сохрани каждое слово точно как написано; ничего не исправляй, не переводи, не добавляй и не удаляй. Выведи только исправленную расшифровку.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Резюмировать длинные расшифровки</string>

@@ -492,7 +492,15 @@
     <string name="signature_position_title">位置</string>
     <string name="signature_position_prepend">转写文本之前</string>
     <string name="signature_position_append">转写文本之后</string>
-    <string name="summary_prompt_description">覆盖 AI 摘要指令。留空则使用内置的两到三句提示词。</string>
+    <string name="summary_prompt_description">选择 AI 处理为长转写添加什么。自定义接受自由指令；留空使用内置提示词。</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">摘要</string>
+    <string name="summary_preset_action_items">行动项</string>
+    <string name="summary_preset_meeting_minutes">会议纪要</string>
+    <string name="summary_preset_custom">自定义</string>
+    <string name="summary_preset_action_items_prompt">用简短列表列出这段转写中的行动项，每行一项，使用转写的语言。提及责任人或期限时一并写明。只输出列表。</string>
+    <string name="summary_preset_meeting_minutes_prompt">根据这段转写撰写会议纪要：讨论的主题、作出的决定以及带责任人的行动项，使用转写的语言。保留姓名和数字。只输出纪要。</string>
+
     <string name="punctuation_default_prompt">为这段转写文本添加标点和大小写。保持每个词与原文完全一致；不要修正、翻译、添加或删除任何内容。仅输出修正后的转写文本。</string>
     <string name="punctuation_default_prompt_conservative">为这段转写文本添加标点、大小写和分段。不要翻译，不要总结，也不要添加、删除、重排或修正任何词：词序必须与原文完全一致。仅输出格式化后的转写文本。</string>
     <string name="summarize_title">长转写摘要</string>

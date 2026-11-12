@@ -66,6 +66,7 @@ internal class FakePreferencesManager : PreferencesManager {
     val _keywordBiasing = MutableStateFlow("")
     val _summarizeEnabled = MutableStateFlow(PreferencesManager.DEFAULT_SUMMARIZE_ENABLED)
     val _summaryPrompt = MutableStateFlow("")
+    val _summaryPreset = MutableStateFlow(PreferencesManager.DEFAULT_SUMMARY_PRESET)
     val _defaultPrompt = MutableStateFlow("")
     val _threadCount = MutableStateFlow(PreferencesManager.DEFAULT_THREAD_COUNT)
     val _inferenceProvider = MutableStateFlow("auto")
@@ -154,6 +155,11 @@ internal class FakePreferencesManager : PreferencesManager {
     override val summarizeEnabled: Flow<Boolean> get() = _summarizeEnabled
     override val summaryPrompt: Flow<String> get() = _summaryPrompt
     override suspend fun saveSummaryPrompt(prompt: String) { _summaryPrompt.value = prompt.take(PreferencesManager.PROMPT_CAP) }
+    override val summaryPreset: Flow<String> get() = _summaryPreset
+    override suspend fun saveSummaryPreset(preset: String) {
+        _summaryPreset.value = com.antivocale.app.transcription.SummaryPreset.fromKey(preset).key
+    }
+    override suspend fun reconcileLegacySummaryPrompt() = Unit
     override val defaultPrompt: Flow<String> get() = _defaultPrompt
     override val threadCount: Flow<Int> get() = _threadCount
     override val inferenceProvider: Flow<String> get() = _inferenceProvider

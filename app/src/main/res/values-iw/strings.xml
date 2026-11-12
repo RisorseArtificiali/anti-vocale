@@ -572,7 +572,15 @@
     <string name="signature_position_title">מקום</string>
     <string name="signature_position_prepend">לפני התמליל</string>
     <string name="signature_position_append">אחרי התמליל</string>
-    <string name="summary_prompt_description">מחליף את הוראת הסיכום של ה-AI. ריק משתמש בפרומפט המובנה של שניים עד שלושה משפטים.</string>
+    <string name="summary_prompt_description">בחרו מה שלב הבינה המלאכותית מוסיף לתמלילים ארוכים. מותאם אישית מקבל הוראה חופשית; ריק משתמש בפרומפט המובנה.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">תקציר</string>
+    <string name="summary_preset_action_items">סעיפי פעולה</string>
+    <string name="summary_preset_meeting_minutes">פרוטוקול ישיבה</string>
+    <string name="summary_preset_custom">מותאם אישית</string>
+    <string name="summary_preset_action_items_prompt">רשום את סעיפי הפעולה מהתמליל הזה כרשימה קצרה, סעיף אחד בכל שורה, בשפת התמליל. כלול אחראים ומועדים כשמוזכרים. החזר רק את הרשימה.</string>
+    <string name="summary_preset_meeting_minutes_prompt">כתוב פרוטוקול ישיבה מהתמליל הזה: נושאים שנדונו, החלטות שהתקבלו וסעיפי פעולה עם אחראים, בשפת התמליל. שמור שמות ומספרים. החזר רק את הפרוטוקול.</string>
+
     <string name="punctuation_default_prompt">הוסף פיסוק ואותיות רישיות לתמליל הזה. שמור על כל מילה בדיוק כפי שנכתבה; אל תתקן, תתרגם, תוסיף או תסיר דבר. החזר רק את התמליל המתוקן.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">סיכום תמלולים ארוכים</string>

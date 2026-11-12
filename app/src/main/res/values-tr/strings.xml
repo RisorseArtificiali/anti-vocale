@@ -571,7 +571,15 @@
     <string name="signature_position_title">Konum</string>
     <string name="signature_position_prepend">Transkriptten önce</string>
     <string name="signature_position_append">Transkriptten sonra</string>
-    <string name="summary_prompt_description">Yapay zekâ özeti talimatını değiştirin. Boş bırakılırsa yerleşik istem (iki-üç cümle) kullanılır.</string>
+    <string name="summary_prompt_description">Yapay zekâ adımının uzun transkripsiyonlara ne ekleyeceğini seçin. Özel serbest bir talimat alır; boş bırakılırsa yerleşik istem kullanılır.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">Özet</string>
+    <string name="summary_preset_action_items">Yapılacaklar</string>
+    <string name="summary_preset_meeting_minutes">Toplantı tutanağı</string>
+    <string name="summary_preset_custom">Özel</string>
+    <string name="summary_preset_action_items_prompt">Bu transkripsiyondaki yapılacakları her satıra bir madde düşecek şekilde kısa bir liste olarak yaz, transkripsiyonun dilinde. Belirtildiyse sorumluları ve süreleri dahil et. Sadece listeyi yaz.</string>
+    <string name="summary_preset_meeting_minutes_prompt">Bu transkripsiyondan toplantı tutanağı yaz: konuşulan konular, alınan kararlar ve sorumlularıyla yapılacaklar, transkripsiyonun dilinde. İsimleri ve sayıları koru. Sadece tutanağı yaz.</string>
+
     <string name="punctuation_default_prompt">Bu transkripte noktalama ve büyük harfler ekle. Her kelimeyi tam yazıldığı gibi koru; hiçbir şeyi düzeltme, çevirme, ekleme veya çıkarma. Yalnızca düzeltilmiş transkripti yaz.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Uzun transkriptleri özetle</string>

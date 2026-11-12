@@ -124,7 +124,8 @@ Set keys and value formats:
 | `model_path` | `saveModelPath` | path (llm backend's model file) |
 | `sherpa_path` | `saveSherpaModelPath(entry, path)` | path, with `entry=<catalog id>` naming which backend's keyed preference is written |
 | `summarize` | `saveSummarizeEnabled` | `true` or `false` (strict); the opt-in summary pass over long transcripts (added after the 2026-09-08 memory-measurement session found the SPI could not reach it) |
-| `summary_prompt` | `saveSummaryPrompt` | free text, 500-char cap; blank = the built-in two-to-three-sentence prompt |
+| `summary_prompt` | `saveSummaryPrompt` | free text, 500-char cap; blank = the built-in two-to-three-sentence prompt (reads back in the dump as `summaryPrompt`; meaningful for the Custom preset) |
+| `summary_preset` | `saveSummaryPreset` | `summary` or `action_items` or `meeting_minutes` or `custom` (SummaryPreset keys, validated: a typo errors); the key is the single source of truth; the stored prompt stays dormant under a non-custom preset (TASK-993) |
 | `swipe_action` | `saveSwipeActionMode` | `REVEAL` or `IMMEDIATE_DELETE` (the Logs settings dropdown's exact set) |
 | `default_prompt` | `saveDefaultPrompt` | free text, 500-char cap (like `punctuation_prompt`); the Tasker default prompt |
 | `external_catalog_url` | `saveExternalCatalogUrl` | URL of the community-catalog JSON source | (TASK-649: a dropped/empty value CLEARS the key; the shell drops empty --es extras)

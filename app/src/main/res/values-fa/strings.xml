@@ -559,7 +559,15 @@
     <string name="signature_position_title">موقعیت</string>
     <string name="signature_position_prepend">قبل از رونویسی</string>
     <string name="signature_position_append">بعد از رونویسی</string>
-    <string name="summary_prompt_description">دستور خلاصه‌سازی هوش مصنوعی را جایگزین کنید. خالی یعنی دستور داخلی (دو سه جمله).</string>
+    <string name="summary_prompt_description">انتخاب کنید مرحلهٔ هوش مصنوعی به تفریغ‌های بلند چه چیزی اضافه کند. سفارشی یک دستور آزاد می‌پذیرد؛ خالی یعنی استفاده از دستور داخلی.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">خلاصه</string>
+    <string name="summary_preset_action_items">اقدام‌ها</string>
+    <string name="summary_preset_meeting_minutes">صورت‌جلسه</string>
+    <string name="summary_preset_custom">سفارشی</string>
+    <string name="summary_preset_action_items_prompt">اقدام‌های این تفریغ را به صورت فهرست کوتاه، هر مورد در یک سطر، به زبان تفریغ فهرست کن. در صورت ذکر، مسئول و مهلت را بیاور. فقط فهرست را بنویس.</string>
+    <string name="summary_preset_meeting_minutes_prompt">از این تفریغ صورت‌جلسه بنویس: موضوع‌های بحث، تصمیم‌های گرفته‌شده و اقدام‌ها با مسئولشان، به زبان تفریغ. نام‌ها و عددها را نگه دار. فقط صورت‌جلسه را بنویس.</string>
+
     <string name="punctuation_default_prompt">به این رونویسی نشانه‌گذاری و بزرگ‌نویسی حروف اضافه کنید. هر کلمه را دقیقاً همان‌طور که نوشته شده نگه دارید؛ چیزی را تصحیح، ترجمه، اضافه یا حذف نکنید. فقط رونویسی اصلاح‌شده را برگردانید.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">خلاصه‌کردن رونویسی‌های طولانی</string>

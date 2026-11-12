@@ -579,7 +579,15 @@
     <string name="signature_position_title">Położenie</string>
     <string name="signature_position_prepend">Przed transkrypcją</string>
     <string name="signature_position_append">Po transkrypcji</string>
-    <string name="summary_prompt_description">Własna instrukcja podsumowania AI. Puste używa wbudowanej (dwa-trzy zdania).</string>
+    <string name="summary_prompt_description">Wybierz, co przejście AI dodaje do długich transkrypcji. Własne przyjmuje dowolną instrukcję; puste używa wbudowanego promptu.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">Streszczenie</string>
+    <string name="summary_preset_action_items">Punkty działania</string>
+    <string name="summary_preset_meeting_minutes">Notatka ze spotkania</string>
+    <string name="summary_preset_custom">Własne</string>
+    <string name="summary_preset_action_items_prompt">Wymień punkty działania z tej transkrypcji jako krótką listę, po jednej linii na punkt, w języku transkrypcji. Uwzględnij wykonawców i terminy, gdy są podane. Zwróć tylko listę.</string>
+    <string name="summary_preset_meeting_minutes_prompt">Sporządź notatkę ze spotkania na podstawie tej transkrypcji: omówione tematy, podjęte decyzje i punkty działania z wykonawcami, w języku transkrypcji. Zachowaj imiona i liczby. Zwróć tylko notatkę.</string>
+
     <string name="punctuation_default_prompt">Dodaj interpunkcję i wielkie litery do tej transkrypcji. Zachowaj każde słowo dokładnie jak napisane; niczego nie poprawiaj, nie tłumacz, nie dodawaj ani nie usuwaj. Zwróć tylko poprawioną transkrypcję.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Podsumuj długie transkrypcje</string>

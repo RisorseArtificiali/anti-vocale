@@ -492,7 +492,15 @@
     <string name="signature_position_title">الموضع</string>
     <string name="signature_position_prepend">قبل النص</string>
     <string name="signature_position_append">بعد النص</string>
-    <string name="summary_prompt_description">تجاوز تعليمات ملخص الذكاء الاصطناعي. تركه فارغًا يعني استخدام الموجّه المدمج المكوّن من جملتين إلى ثلاث جمل.</string>
+    <string name="summary_prompt_description">اختر ما تضيفه خطوة الذكاء الاصطناعي إلى التفريغات الطويلة. مخصص يقبل تعليمة حرة؛ تركه فارغًا يستخدم الموجّه المدمج.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">ملخص</string>
+    <string name="summary_preset_action_items">بنود المهام</string>
+    <string name="summary_preset_meeting_minutes">محضر الاجتماع</string>
+    <string name="summary_preset_custom">مخصص</string>
+    <string name="summary_preset_action_items_prompt">اسرد بنود المهام من هذا التفريغ في قائمة قصيرة، بند واحد في كل سطر، بلغة التفريغ. اذكر المسؤولين والمواعيد النهائية عند ذكرها. أخرج القائمة فقط.</string>
+    <string name="summary_preset_meeting_minutes_prompt">اكتب محضر اجتماع من هذا التفريغ: المواضيع المطروحة والقرارات المتخذة وبنود المهام مع مسؤوليها، بلغة التفريغ. حافظ على الأسماء والأرقام. أخرج المحضر فقط.</string>
+
     <string name="punctuation_default_prompt">أضف علامات الترقيم والأحرف الكبيرة إلى هذا النص المنسوخ. احتفظ بكل كلمة كما كُتبت تمامًا؛ ولا تصلح أو تترجم أو تضيف أو تحذف أي شيء. أخرِج النص المصحّح فقط.</string>
     <string name="punctuation_default_prompt_conservative">أضف علامات الترقيم والأحرف الكبيرة وفواصل الفقرات إلى هذا النص المنسوخ. لا تترجم ولا تلخّص، ولا تضف أو تحذف أو تعيد ترتيب أو تصحّح أي كلمة: يجب أن يبقى تسلسل الكلمات كما كُتب تمامًا. أخرِج النص المنسّق فقط.</string>
     <string name="summarize_title">تلخيص النسخ الطويلة</string>

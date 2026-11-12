@@ -46,6 +46,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import kotlinx.coroutines.CoroutineScope
@@ -77,6 +78,7 @@ import com.antivocale.app.data.ReleaseNotes
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.RemoteOmnivoiceBackend
+import com.antivocale.app.transcription.SummaryPreset
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.transcription.diarization.SpeakerEnrollError
 import com.antivocale.app.data.HuggingFaceTokenManager
@@ -115,6 +117,7 @@ import com.antivocale.app.util.ToastCompat
 import java.io.File
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.components.EditablePromptCard
+import com.antivocale.app.ui.components.EditablePromptField
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1136,13 +1139,17 @@ fun SettingsTab(
 
                 // TASK-121.4: the summary prompt override; the summary
                 // TOGGLE lives in the basic block (TASK-588.2). Same
-                // gemmaConfigured gate as its toggle.
+                // gemmaConfigured gate as its toggle. TASK-993: the preset
+                // picker is the primary control; the free field rides Custom.
                 if (gemmaConfigured) {
                     SearchFilterRow(searchQuery, SettingsSearchId.SUMMARY_PROMPT, searchState) {
                         if (summarizeOn) {
-                            SummaryPromptCard(
+                            SummaryPresetCard(
+                                presetKey = viewModel.currentSummaryPreset.collectAsState().value,
                                 prompt = viewModel.currentSummaryPrompt.collectAsState().value,
-                                onSave = { viewModel.saveSummaryPrompt(it) }
+                                enabled = !uiState.isSaving,
+                                onPresetSelected = { viewModel.saveSummaryPreset(it) },
+                                onSavePrompt = { viewModel.saveSummaryPrompt(it) },
                             )
                         }
                     }
@@ -3712,23 +3719,59 @@ private fun signaturePositionLabel(value: String): String = when (value) {
     else -> stringResource(R.string.signature_position_append)
 }
 
-
 /**
- * TASK-483: editable override of the summary-pass prompt. Same contract as
- * the punctuation prompt card: blank means the built-in two-to-three-sentence
- * default, commits on focus loss, 500-char cap.
+ * TASK-993: the summary-pass style picker. The preset dropdown is the
+ * primary control (the PUNCTUATION_MODE row pattern: SectionCard +
+ * SettingsDropdown) and mirrors the stored key, the single source of
+ * truth; the free instruction field appears only for Custom, with the
+ * EditablePromptCard contract (commit on focus loss, the PROMPT_CAP cap).
+ * The stored prompt stays dormant under a non-custom preset (switching
+ * back restores it; no destructive clear).
  */
+/** Strong-skipping does the memoizing; the hoist just avoids the per-recomposition list. */
+private val SUMMARY_PRESET_OPTIONS = SummaryPreset.entries.toList()
+
 @Composable
-private fun SummaryPromptCard(
+private fun SummaryPresetCard(
+    presetKey: String,
     prompt: String,
-    onSave: (String) -> Unit,
-) = EditablePromptCard(
-    prompt = prompt,
-    onSave = onSave,
-    titleRes = R.string.summary_prompt_title,
-    descriptionRes = R.string.summary_prompt_description,
-    placeholderRes = R.string.summary_default_prompt,
-)
+    enabled: Boolean,
+    onPresetSelected: (String) -> Unit,
+    onSavePrompt: (String) -> Unit,
+) {
+    val preset = SummaryPreset.fromKey(presetKey)
+    val title = stringResource(R.string.summary_prompt_title)
+    SectionCard(
+        icon = Icons.Default.Notes,
+        title = title,
+        description = stringResource(R.string.summary_prompt_description),
+    ) {
+        SettingsDropdown(
+            currentValue = preset,
+            options = SUMMARY_PRESET_OPTIONS,
+            currentValueDisplay = summaryPresetLabel(preset),
+            optionDisplay = { summaryPresetLabel(it) },
+            onOptionSelected = { onPresetSelected(it.key) },
+            label = title,
+            enabled = enabled,
+        )
+        if (preset == SummaryPreset.CUSTOM) {
+            EditablePromptField(
+                prompt = prompt,
+                onSave = onSavePrompt,
+                placeholderRes = R.string.summary_default_prompt,
+            )
+        }
+    }
+}
+
+@Composable
+private fun summaryPresetLabel(preset: SummaryPreset): String = when (preset) {
+    SummaryPreset.SUMMARY -> stringResource(R.string.summary_preset_summary)
+    SummaryPreset.ACTION_ITEMS -> stringResource(R.string.summary_preset_action_items)
+    SummaryPreset.MEETING_MINUTES -> stringResource(R.string.summary_preset_meeting_minutes)
+    SummaryPreset.CUSTOM -> stringResource(R.string.summary_preset_custom)
+}
 
 /**
  * TASK-276: editable override of the punctuation-pass prompt. Blank means the
@@ -3999,7 +4042,13 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     ),
     SettingsSearchCard(
         SettingsSearchId.SUMMARY_PROMPT, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.summary_prompt_title, R.string.summary_prompt_description),
+        // TASK-993: the preset names join the union so a query like
+        // "action items" lands on the picker card (the vocabulary is the
+        // static union of the card's strings).
+        listOf(
+            R.string.summary_prompt_title, R.string.summary_prompt_description,
+            R.string.summary_preset_summary, R.string.summary_preset_action_items,
+            R.string.summary_preset_meeting_minutes, R.string.summary_preset_custom),
         visible = { s -> s.gemmaConfigured && s.summarizeOn },
         group = SettingsSearchGroup.GEMMA_TEXT,
         advanced = true,

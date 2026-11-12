@@ -1239,7 +1239,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     Log.i(TAG, "Summary pass clock spent by the previous attempt; not retrying")
                     break
                 }
-                Log.i(TAG, "Custom summary prompt did not produce an acceptable map-reduce summary; retrying with the built-in prompt")
+                Log.i(TAG, "Primary summary instruction (preset or custom) did not produce an acceptable map-reduce summary; retrying with the built-in prompt")
             }
             val generation = summarizeWithMapReduce(llm, instruction, result.text, MAX_SUMMARY_LEVELS, clock)
             // TASK-607 F7: the LATEST attempt's outcome wins, matching the
@@ -1453,24 +1453,20 @@ class TranscriptionOrchestrator @Inject constructor(
             // model to answer in the transcript's language (the app locale
             // is deliberately not resolved into the prompt). TASK-483: a
             // saved prompt overrides the built-in, same contract as the
-            // punctuation pass (blank = built-in).
+            // punctuation pass (blank = built-in). TASK-993: the preset key
+            // selects a named instruction (action items, minutes); the
+            // ladder keeps the TASK-498 retry contract (a failed primary
+            // attempt degrades to the built-in recap) and applies to the
+            // map-reduce path too.
             val builtInInstruction = context.getString(R.string.summary_default_prompt)
-            val customInstruction = preferencesManager.summaryPrompt.first().trim()
-            // TASK-498: a custom-prompt attempt that fails (guard rejection
-            // or a thrown generation error) retries ONCE with the built-in
-            // instruction on the same loaded backend: the user still gets a
-            // real recap instead of a caption. With no custom prompt the
-            // built-in IS the first attempt and a failure stays one-shot.
-            // TASK-520: the ladder applies to the map-reduce path too
-            // (summarizeLongTranscript): long transcripts keep the retry.
-            val instructions = buildList {
-                add(SummaryPolicy.effectivePrompt(customInstruction, builtInInstruction))
-                // A saved prompt identical to the built-in text must not run
-                // the same generation twice.
-                if (customInstruction.isNotEmpty() && customInstruction != builtInInstruction) {
-                    add(builtInInstruction)
-                }
-            }
+            val customInstruction = preferencesManager.summaryPrompt.first()
+            val instructions = SummaryPolicy.instructionLadder(
+                presetKey = preferencesManager.summaryPreset.first(),
+                customPrompt = customInstruction,
+                builtIn = builtInInstruction,
+                actionItems = context.getString(R.string.summary_preset_action_items_prompt),
+                meetingMinutes = context.getString(R.string.summary_preset_meeting_minutes_prompt),
+            )
             if (!SummaryPolicy.withinContextLimit(result.text)) {
                 // TASK-520: too long for ONE generation, not too long to
                 // summarize: map over context-sized chunks, reduce the
@@ -1492,7 +1488,7 @@ class TranscriptionOrchestrator @Inject constructor(
                         Log.i(TAG, "Summary pass clock spent by the previous attempt; not retrying")
                         break
                     }
-                    Log.i(TAG, "Custom summary prompt did not produce an acceptable summary; retrying with the built-in prompt")
+                    Log.i(TAG, "Primary summary instruction (preset or custom) did not produce an acceptable summary; retrying with the built-in prompt")
                 }
                 val generated = clock.generate(
                     llm, ChunkPromptPolicy.finalPrompt(instruction, result.text)

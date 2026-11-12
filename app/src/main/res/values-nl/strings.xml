@@ -591,7 +591,15 @@
     <string name="signature_position_title">Positie</string>
     <string name="signature_position_prepend">Vóór de transcriptie</string>
     <string name="signature_position_append">Na de transcriptie</string>
-    <string name="summary_prompt_description">Vervang de AI-samenvattingsinstructie. Leeg gebruikt de ingebouwde prompt van twee tot drie zinnen.</string>
+    <string name="summary_prompt_description">Kies wat de AI-stap toevoegt aan lange transcripties. Aangepast gebruikt een vrije instructie; leeg gebruikt de ingebouwde prompt.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">Samenvatting</string>
+    <string name="summary_preset_action_items">Actiepunten</string>
+    <string name="summary_preset_meeting_minutes">Notulen</string>
+    <string name="summary_preset_custom">Aangepast</string>
+    <string name="summary_preset_action_items_prompt">Som de actiepunten uit deze transcriptie op als een korte lijst, één regel per punt, in de taal van de transcriptie. Noem verantwoordelijken en deadlines waar genoemd. Geef alleen de lijst terug.</string>
+    <string name="summary_preset_meeting_minutes_prompt">Schrijf de notulen van deze transcriptie: besproken onderwerpen, genomen besluiten en actiepunten met verantwoordelijken, in de taal van de transcriptie. Behoud namen en getallen. Geef alleen de notulen terug.</string>
+
     <string name="punctuation_default_prompt">Voeg interpunctie en hoofdletters toe aan deze transcriptie. Houd elk woord precies zoals geschreven; corrigeer niets, vertaal niet, voeg niets toe en verwijder niets. Geef alleen de gecorrigeerde transcriptie als uitvoer.</string>
     <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
     <string name="punctuation_default_prompt_conservative">Voeg interpunctie, hoofdletters en alinea-indeling toe aan deze transcriptie. Vertaal niet, vat niet samen en voeg geen woorden toe, verwijder of herorder ze niet en corrigeer ze niet: de woordvolgorde moet exact zo blijven als geschreven. Geef alleen de opgemaakte transcriptie als uitvoer.</string>

@@ -487,7 +487,15 @@
     <string name="signature_position_title">Posición</string>
     <string name="signature_position_prepend">Antes de la transcripción</string>
     <string name="signature_position_append">Después de la transcripción</string>
-    <string name="summary_prompt_description">Instrucción personalizada para el resumen IA. Vacío usa el integrado (dos o tres frases).</string>
+    <string name="summary_prompt_description">Elige qué añade el pase de IA a las transcripciones largas. Personalizada admite una instrucción libre; vacío usa el aviso integrado.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">Resumen</string>
+    <string name="summary_preset_action_items">Puntos de acción</string>
+    <string name="summary_preset_meeting_minutes">Acta de reunión</string>
+    <string name="summary_preset_custom">Personalizada</string>
+    <string name="summary_preset_action_items_prompt">Enumera los puntos de acción de esta transcripción como una lista breve, una línea por punto, en el idioma de la transcripción. Incluye responsables y plazos cuando se mencionen. Devuelve solo la lista.</string>
+    <string name="summary_preset_meeting_minutes_prompt">Redacta el acta de esta transcripción: temas tratados, decisiones tomadas y puntos de acción con responsables, en el idioma de la transcripción. Mantén nombres y números. Devuelve solo el acta.</string>
+
     <string name="punctuation_default_prompt">Añade puntuación y mayúsculas a esta transcripción. Mantén cada palabra exactamente como está escrita; no corrijas, traduzcas, añadas ni quites nada. Devuelve solo la transcripción corregida.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Resumir transcripciones largas</string>

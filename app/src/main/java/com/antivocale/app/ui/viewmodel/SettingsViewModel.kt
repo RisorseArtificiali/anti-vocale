@@ -148,6 +148,7 @@ class SettingsViewModel @Inject constructor(
                 punctuationPrompt = preferencesManager.punctuationPrompt.first(),
                 keywordBiasing = preferencesManager.keywordBiasing.first(),
                 summaryPrompt = preferencesManager.summaryPrompt.first(),
+                summaryPreset = preferencesManager.summaryPreset.first(),
                 transcriptionAdvancedExpanded =
                     preferencesManager.settingsTranscriptionAdvancedExpanded.first(),
         )
@@ -158,6 +159,8 @@ class SettingsViewModel @Inject constructor(
         val punctuationPrompt: String,
         val keywordBiasing: String = "",
         val summaryPrompt: String,
+        /** TASK-993: seeds the preset picker (no first-frame flash). */
+        val summaryPreset: String,
         /** TASK-588.1: seeds the advanced-reveal state (no first-frame flash). */
         val transcriptionAdvancedExpanded: Boolean,
     )
@@ -379,6 +382,14 @@ class SettingsViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = warmedPrefs.summaryPrompt
+        )
+
+    /** TASK-993: the summary-pass preset key (SummaryPreset). */
+    val currentSummaryPreset: StateFlow<String> = preferencesManager.summaryPreset
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = warmedPrefs.summaryPreset
         )
 
     /** TASK-858: whistle keyword-biasing terms; blank = off. */
@@ -1323,6 +1334,12 @@ class SettingsViewModel @Inject constructor(
     fun saveSummaryPrompt(prompt: String) {
         viewModelScope.launch {
             preferencesManager.saveSummaryPrompt(prompt)
+        }
+    }
+
+    fun saveSummaryPreset(preset: String) {
+        viewModelScope.launch {
+            preferencesManager.saveSummaryPreset(preset)
         }
     }
 

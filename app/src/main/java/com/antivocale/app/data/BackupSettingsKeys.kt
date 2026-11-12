@@ -76,6 +76,8 @@ object BackupSettingsKeys {
         "signature_position",
         "signature_text",
         "summary_prompt",
+        // TASK-993: rides with its prompt (both shape the summary pass).
+        "summary_preset",
         "swipe_action_mode",
         "theme_mode",
         "theme_preference",

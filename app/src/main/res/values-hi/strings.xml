@@ -539,7 +539,15 @@
     <string name="signature_position_title">स्थिति</string>
     <string name="signature_position_prepend">ट्रांसक्रिप्ट से पहले</string>
     <string name="signature_position_append">ट्रांसक्रिप्ट के बाद</string>
-    <string name="summary_prompt_description">AI सारांश के निर्देश बदलें। खाली छोड़ने पर अंतर्निहित (दो-तीन वाक्य) प्रॉम्प्ट चलेगा।</string>
+    <string name="summary_prompt_description">चुनें कि AI चरण लंबी प्रतिलिपियों में क्या जोड़े। कस्टम मुफ़्त निर्देश लेता है; खाली छोड़ने पर अंतर्निहित प्रॉम्प्ट चलेगा।</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">सार</string>
+    <string name="summary_preset_action_items">कार्य बिंदु</string>
+    <string name="summary_preset_meeting_minutes">बैठक कार्यवाही</string>
+    <string name="summary_preset_custom">कस्टम</string>
+    <string name="summary_preset_action_items_prompt">इस प्रतिलिपि के कार्य बिंदुओं को छोटी सूची के रूप में लिखें, प्रत्येक पंक्ति में एक मद, प्रतिलिपि की भाषा में। बताए गए हों तो ज़िम्मेदार और समय-सीमा शामिल करें। केवल सूची ही लिखें।</string>
+    <string name="summary_preset_meeting_minutes_prompt">इस प्रतिलिपि से बैठक कार्यवाही लिखें: चर्चित विषय, लिए गए निर्णय और ज़िम्मेदारों सहित कार्य बिंदु, प्रतिलिपि की भाषा में। नाम और संख्याएँ बनाए रखें। केवल कार्यवाही लिखें।</string>
+
     <string name="punctuation_default_prompt">इस ट्रांसक्रिप्शन में विराम चिह्न और बड़े अक्षर जोड़ें। हर शब्द बिल्कुल वैसा ही रखें जैसा लिखा है; कुछ भी ठीक न करें, अनुवाद न करें, जोड़ें नहीं या हटाएँ नहीं। केवल सुधारी हुई ट्रांसक्रिप्शन ही लिखें।</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">लंबी ट्रांसक्रिप्शन का सारांश बनाएं</string>

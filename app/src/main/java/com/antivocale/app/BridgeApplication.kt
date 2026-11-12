@@ -116,6 +116,13 @@ class BridgeApplication : Application(), Configuration.Provider {
                 runCatching { preferencesManager.saveExternalMigrationDone(false) }
             }
         }.also { com.antivocale.app.service.StartupSweepGate.arm(it) }
+        // TASK-993: one-shot legacy promotion (a saved summary prompt with
+        // no preset key -> preset=custom); idempotent, re-checked at every
+        // start because a settings import can recreate the legacy state.
+        applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { preferencesManager.reconcileLegacySummaryPrompt() }
+                .onFailure { android.util.Log.w("BridgeApplication", "summary preset reconcile failed", it) }
+        }
         // Road test 2026-10-08: backfill of name-derived languages for
         // records imported before the derivation existed (paraformer-zh and
         // friends). Runs at EVERY app start, idempotently (writes only when

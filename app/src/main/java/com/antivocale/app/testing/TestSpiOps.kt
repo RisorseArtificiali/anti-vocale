@@ -262,6 +262,7 @@ internal class TestSpiOps(
             .put("themeMode", preferences.themeMode.first())
             .put("defaultPrompt", preferences.defaultPrompt.first())
             .put("summaryPrompt", preferences.summaryPrompt.first())
+            .put("summaryPreset", preferences.summaryPreset.first())
             .put("outputFolderUri", preferences.outputFolderUri.first() ?: JSONObject.NULL)
             .put("transcriptExportFormat", preferences.transcriptExportFormat.first())
             .put("externalCatalogUrl", preferences.externalCatalogUrl.first())
@@ -343,6 +344,11 @@ internal class TestSpiOps(
         "punctuation" to Pair(PUNCTUATION_MODES, preferences::savePunctuationMode),
         "provider" to Pair(InferenceProvider.options, preferences::saveInferenceProvider),
         "swipe_action" to Pair(PreferencesManager.SWIPE_ACTION_MODES, preferences::saveSwipeActionMode),
+        // TASK-993: validated against SummaryPreset's keys (a typo'd preset
+        // must fail loudly, not silently normalize and run the wrong pass).
+        "summary_preset" to Pair(
+            com.antivocale.app.transcription.SummaryPreset.entries.map { it.key },
+            preferences::saveSummaryPreset),
         "theme" to Pair(THEME_TYPES, preferences::saveThemePreference),
         "theme_mode" to Pair(THEME_MODES, preferences::saveThemeMode),
         "text_scale" to Pair(TEXT_SCALES, preferences::saveTextScale),

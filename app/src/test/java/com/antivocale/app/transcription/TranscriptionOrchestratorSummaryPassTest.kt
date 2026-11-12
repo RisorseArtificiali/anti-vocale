@@ -121,7 +121,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `enabled toggle summarizes a long transcript and keeps the delivered text`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("summary")
+                stubSwapToLlm()
         coEvery { llmBackend.generateText(any()) } returns Result.success(summary)
         stubWholeFileRequest()
 
@@ -169,7 +170,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `a short transcript is never summarized`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("summary")
+                stubSwapToLlm()
         val short = "ciao, ti chiamo dopo due minuti"
         stubPreprocessing(listOf(FloatArray(3) { it.toFloat() }), totalDurationSeconds = 5.0)
         coEvery { whisperBackend.transcribeAudio(any(), any(), any()) } returns
@@ -188,7 +190,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `no gemma model configured skips silently`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("")
-        // Override the base's "/models/gemma": no Gemma path configured.
+        every { preferencesManager.summaryPreset } returns flowOf("summary")
+                // Override the base's "/models/gemma": no Gemma path configured.
         every { preferencesManager.modelPath } returns flowOf(null)
         stubSwapToLlm()
         stubWholeFileRequest()
@@ -207,7 +210,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `generation failure degrades to no summary`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("summary")
+                stubSwapToLlm()
         coEvery { llmBackend.generateText(any()) } returns
             Result.failure(IllegalStateException("liteRT exploded"))
         stubWholeFileRequest()
@@ -229,7 +233,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `a summary that outgrew the transcript is dropped with the guard reason`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("summary")
+                stubSwapToLlm()
         // Longer than transcript * 1.2: a rewrite, not a summary.
         val rewrite = "x".repeat(longTranscript.length * 2)
         coEvery { llmBackend.generateText(any()) } returns Result.success(rewrite)
@@ -252,7 +257,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `a stutter-short summary is dropped with the guard reason`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("summary")
+                stubSwapToLlm()
         // Under the 20-char floor: the classic one-word-title prompt output.
         coEvery { llmBackend.generateText(any()) } returns Result.success("Riassunto.")
         stubWholeFileRequest()
@@ -275,7 +281,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
         // 2-3 sentence default only when the override is blank.
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("Give a one-line TL;DR in Italian.")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("custom")
+                stubSwapToLlm()
         coEvery { llmBackend.generateText(any()) } returns Result.success(summary)
         stubWholeFileRequest()
 
@@ -295,7 +302,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `custom prompt rejected by guards retries with built-in and delivers`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("Reply with the single word: done.")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("custom")
+                stubSwapToLlm()
         // First call (custom prompt) stutters; retry (built-in) delivers.
         coEvery { llmBackend.generateText(any()) } returnsMany listOf(
             Result.success("done"),
@@ -319,7 +327,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `custom prompt generation failure also earns the built-in retry`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("Summarize as a haiku.")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("custom")
+                stubSwapToLlm()
         coEvery { llmBackend.generateText(any()) } returnsMany listOf(
             Result.failure(IllegalStateException("first attempt exploded")),
             Result.success(summary),
@@ -339,7 +348,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `both attempts rejected by guards records the guards reason`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("Rewrite everything verbatim.")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("custom")
+                stubSwapToLlm()
         val rewrite = "x".repeat(longTranscript.length * 2)
         coEvery { llmBackend.generateText(any()) } returns Result.success(rewrite)
         stubWholeFileRequest()
@@ -360,7 +370,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `a whitespace-only custom prompt runs a single attempt`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("   ")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("summary")
+                stubSwapToLlm()
         val rewrite = "x".repeat(longTranscript.length * 2)
         coEvery { llmBackend.generateText(any()) } returns Result.success(rewrite)
         stubWholeFileRequest()
@@ -383,7 +394,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
         // must answer a real string (the relaxed default is "").
         val builtIn = "Summarize the transcript in three sentences."
         every { preferencesManager.summaryPrompt } returns flowOf(builtIn)
-        val promptContext = mockk<Context>(relaxed = true) {
+        every { preferencesManager.summaryPreset } returns flowOf("custom")
+                val promptContext = mockk<Context>(relaxed = true) {
             every { getString(R.string.summary_default_prompt) } returns builtIn
         }
         stubSwapToLlm()
@@ -405,7 +417,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     fun `retry generation failure after a rejected custom attempt degrades with failed reason`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("One word: summary.")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("custom")
+                stubSwapToLlm()
         // First attempt stutters (rejected), the built-in retry THROWS: the
         // last attempt's nature decides the reason (generation = failed).
         coEvery { llmBackend.generateText(any()) } returnsMany listOf(
@@ -448,7 +461,8 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     private fun stubMapReducePass(): Int {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("")
-        stubSwapToLlm()
+        every { preferencesManager.summaryPreset } returns flowOf("summary")
+                stubSwapToLlm()
         stubHugeTranscriptRequest()
         return ContextChunker.split(hugeTranscript).size
     }

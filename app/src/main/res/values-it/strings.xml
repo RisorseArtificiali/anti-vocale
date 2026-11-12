@@ -560,7 +560,15 @@
     <string name="signature_position_title">Posizione</string>
     <string name="signature_position_prepend">Prima della trascrizione</string>
     <string name="signature_position_append">Dopo la trascrizione</string>
-    <string name="summary_prompt_description">Sostituisci l\'istruzione per il riepilogo AI. Vuoto usa il prompt integrato (due o tre frasi).</string>
+    <string name="summary_prompt_description">Scegli cosa aggiunge il passaggio AI alle trascrizioni lunghe. Personalizzato accetta un\'istruzione libera; vuoto usa il prompt integrato.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">Riepilogo</string>
+    <string name="summary_preset_action_items">Punti azione</string>
+    <string name="summary_preset_meeting_minutes">Verbale della riunione</string>
+    <string name="summary_preset_custom">Personalizzato</string>
+    <string name="summary_preset_action_items_prompt">Elenca i punti azione di questa trascrizione in un elenco breve, una riga per punto, nella lingua della trascrizione. Includi responsabili e scadenze quando indicati. Restituisci solo l\'elenco.</string>
+    <string name="summary_preset_meeting_minutes_prompt">Redigi il verbale di questa trascrizione: argomenti trattati, decisioni prese e punti azione con i responsabili, nella lingua della trascrizione. Mantieni nomi e numeri. Restituisci solo il verbale.</string>
+
     <string name="punctuation_default_prompt">Aggiungi punteggiatura e maiuscole a questa trascrizione. Mantieni ogni parola esattamente come scritta; non correggere, tradurre, aggiungere o rimuovere nulla. Restituisci solo la trascrizione corretta.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Riassumi le trascrizioni lunghe</string>

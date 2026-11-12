@@ -512,7 +512,15 @@
     <string name="signature_position_title">Sijainti</string>
     <string name="signature_position_prepend">Ennen transkriptiota</string>
     <string name="signature_position_append">Transkription jälkeen</string>
-    <string name="summary_prompt_description">Korvaa tekoälyn yhteenveto-ohje. Tyhjä käyttää sisäänrakennettua kahden tai kolmen lauseen kehotetta.</string>
+    <string name="summary_prompt_description">Valitse, mitä tekoälyvaihe lisää pitkiin teksteihin. Mukautettu hyväksyy vapaan ohjeen; tyhjä käyttää sisäänrakennettua kehotetta.</string>
+    <!-- TASK-993: named presets over the summary pass; the Custom entry keeps the free prompt field. -->
+    <string name="summary_preset_summary">Tiivistelmä</string>
+    <string name="summary_preset_action_items">Toimenpiteet</string>
+    <string name="summary_preset_meeting_minutes">Kokouksen muistio</string>
+    <string name="summary_preset_custom">Mukautettu</string>
+    <string name="summary_preset_action_items_prompt">Listaa tämän tekstin toimenpiteet lyhyenä luettelona, yksi rivi per kohta, tekstin kielellä. Sisällytä vastuuhenkilöt ja määräajat, kun ne mainitaan. Palauta vain luettelo.</string>
+    <string name="summary_preset_meeting_minutes_prompt">Kirjoita tästä tekstistä kokouksen muistio: käsitellyt aiheet, tehdyt päätökset ja toimenpiteet vastuuhenkilöineen, tekstin kielellä. Säilytä nimet ja numerot. Palauta vain muistio.</string>
+
     <string name="punctuation_default_prompt">Lisää tähän transkriptioon välimerkit ja suuraakkostuksen. Säilytä jokainen sana täsmälleen sellaisenaan; älä korjaa, käännä, lisää tai poista mitään. Tulosta vain korjattu transkriptio.</string>
     <string name="punctuation_default_prompt_conservative">Lisää tähän transkriptioon välimerkit, suuraakkostuksen ja kappalejaot. Älä käännä, älä tee yhteenvetoa äläkä lisää, poista, järjestele uudelleen tai korjaa yhtään sanaa: sanajärjestyksen on pysyttävä täsmälleen kirjoitetussa muodossa. Tulosta vain muotoiltu transkriptio.</string>
     <string name="summarize_title">Tee yhteenveto pitkistä transkriptioista</string>

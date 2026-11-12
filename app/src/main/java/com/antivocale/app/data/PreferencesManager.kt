@@ -149,6 +149,14 @@ interface PreferencesManager {
 
     /** TASK-483: editable override of the summary-pass prompt. Blank = the built-in 2-3 sentence default. */
     val summaryPrompt: Flow<String>
+
+    /**
+     * TASK-993: the summary-pass preset key ([com.antivocale.app.transcription.SummaryPreset]),
+     * the single source of truth for which instruction runs. The stored
+     * custom prompt stays DORMANT under a non-custom preset (switching back
+     * to Custom restores it; choosing a preset never deletes user text).
+     */
+    val summaryPreset: Flow<String>
     val threadCount: Flow<Int>
     val inferenceProvider: Flow<String>
     val transcriptionLanguage: Flow<String>
@@ -351,6 +359,22 @@ interface PreferencesManager {
     suspend fun savePunctuationMode(mode: String)
     suspend fun savePunctuationPrompt(prompt: String)
 
+    /**
+     * TASK-993: persists the preset key. Never touches the custom prompt:
+     * user text stays dormant under a non-custom preset.
+     */
+    suspend fun saveSummaryPreset(preset: String)
+
+    /**
+     * TASK-993 one-shot migration (idempotent): promotes a legacy state
+     * (a non-blank custom prompt with NO stored preset key) to
+     * preset=custom, so the key becomes the single source of truth instead
+     * of a runtime arbitration rule. Runs at startup and after a settings
+     * import; a deliberate non-custom choice stores the key, which makes
+     * this a no-op from then on.
+     */
+    suspend fun reconcileLegacySummaryPrompt()
+
     /** TASK-858: persists the whistle keyword-biasing terms (capped). */
     suspend fun saveKeywordBiasing(terms: String)
     suspend fun saveSummarizeEnabled(enabled: Boolean)
@@ -525,6 +549,9 @@ interface PreferencesManager {
         const val DEFAULT_PUNCTUATION_MODE = "auto"
         /** TASK-121.4: opt-in; a second inference per long transcript must be a choice. */
         const val DEFAULT_SUMMARIZE_ENABLED = false
+
+        /** TASK-993: the untouched preset key (the built-in recap). */
+        const val DEFAULT_SUMMARY_PRESET = "summary"
         const val DEFAULT_THEME = "DEFAULT"
         const val DEFAULT_THEME_MODE = "SYSTEM"
         const val DEFAULT_TEXT_SCALE = "SYSTEM"

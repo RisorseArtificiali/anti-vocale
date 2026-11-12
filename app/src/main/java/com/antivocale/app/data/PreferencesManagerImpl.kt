@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.antivocale.app.transcription.SummaryPreset
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -96,6 +97,7 @@ class PreferencesManagerImpl(
         private val KEYWORD_BIASING = stringPreferencesKey("keyword_biasing")
         private val SUMMARIZE_ENABLED = booleanPreferencesKey("summarize_enabled")
         private val SUMMARY_PROMPT = stringPreferencesKey("summary_prompt")
+        private val SUMMARY_PRESET = stringPreferencesKey("summary_preset")
         private val THREAD_COUNT = intPreferencesKey("thread_count")
         private val INFERENCE_PROVIDER = stringPreferencesKey("inference_provider")
         private val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
@@ -190,6 +192,7 @@ class PreferencesManagerImpl(
         val punctuationPrompt: String = "",
         val keywordBiasing: String = "",
         val summaryPrompt: String = "",
+        val summaryPreset: String = PreferencesManager.DEFAULT_SUMMARY_PRESET,
         val summarizeEnabled: Boolean = PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
         val threadCount: Int = PreferencesManager.DEFAULT_THREAD_COUNT,
         val inferenceProvider: String = PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
@@ -270,6 +273,7 @@ class PreferencesManagerImpl(
         punctuationPrompt = this[PUNCTUATION_PROMPT] ?: "",
         keywordBiasing = this[KEYWORD_BIASING] ?: "",
         summaryPrompt = this[SUMMARY_PROMPT] ?: "",
+        summaryPreset = this[SUMMARY_PRESET] ?: PreferencesManager.DEFAULT_SUMMARY_PRESET,
         summarizeEnabled = this[SUMMARIZE_ENABLED] ?: PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
         threadCount = this[THREAD_COUNT] ?: PreferencesManager.DEFAULT_THREAD_COUNT,
         inferenceProvider = this[INFERENCE_PROVIDER] ?: PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
@@ -742,6 +746,10 @@ class PreferencesManagerImpl(
     override val summaryPrompt: Flow<String> = dataStore.data.map { it[SUMMARY_PROMPT] ?: "" }
         .onStart { emit(cache.get().summaryPrompt) }
 
+    override val summaryPreset: Flow<String> = dataStore.data.map {
+        it[SUMMARY_PRESET] ?: PreferencesManager.DEFAULT_SUMMARY_PRESET
+    }.onStart { emit(cache.get().summaryPreset) }
+
     override suspend fun savePunctuationPrompt(prompt: String) {
         // Same 500-char cap as the default transcription prompt: one
         // instruction paragraph, not an essay (TASK-276).
@@ -772,6 +780,24 @@ class PreferencesManagerImpl(
             preferences[SUMMARY_PROMPT] = truncated
         }
         cache.updateAndGet { it.copy(summaryPrompt = truncated) }
+    }
+
+    override suspend fun saveSummaryPreset(preset: String) {
+        val normalized = SummaryPreset.fromKey(preset)
+        dataStore.edit { preferences ->
+            preferences[SUMMARY_PRESET] = normalized.key
+        }
+        cache.updateAndGet { it.copy(summaryPreset = normalized.key) }
+    }
+
+    override suspend fun reconcileLegacySummaryPrompt() {
+        // One-shot, idempotent: only a NEVER-SET preset key plus a saved
+        // prompt counts as legacy (a deliberate non-custom choice stores
+        // the key and permanently opts out). See the interface KDoc.
+        val legacy = dataStore.data.first().let { it[SUMMARY_PRESET] == null && !(it[SUMMARY_PROMPT] ?: "").isBlank() }
+        if (!legacy) return
+        dataStore.edit { it[SUMMARY_PRESET] = SummaryPreset.CUSTOM.key }
+        cache.updateAndGet { it.copy(summaryPreset = SummaryPreset.CUSTOM.key) }
     }
 
     override suspend fun saveSummarizeEnabled(enabled: Boolean) {
@@ -1328,6 +1354,10 @@ class PreferencesManagerImpl(
                     }
                 }
         }
+        // TASK-993: an archive from a pre-preset version carries the prompt
+        // with no preset key; promote it right after the raw write so the
+        // imported instruction keeps driving the pass under key-truth.
+        reconcileLegacySummaryPrompt()
         cache.set(dataStore.data.first().toCached())
     }
 }
