@@ -69,6 +69,13 @@ class SherpaBackend(
          * 6.0 corrupts it. Start at the default; device tuning can adjust.
          */
         const val TRANSDUCER_HOTWORDS_SCORE = 1.5f
+
+        /**
+         * TASK-994 phase 3: the streaming Nemotron vocab file name (its
+         * tokenizer differs from the offline NeMo exports; extracted from
+         * the streaming .nemo on the nvidia repo, sha 0139960759...).
+         */
+        const val STREAMING_VOCAB_FILE = "bpe.vocab"
         /**
          * TASK-874: the streaming decode method. The desktop A/B (TASK-530,
          * 2026-10-24, 11-clip Italian set) showed modified_beam_search beats
@@ -824,6 +831,15 @@ class SherpaBackend(
         variant: CatalogVariant,
         roles: Roles,
     ) {
+        // TASK-994 phase 3: the streaming vocab file gates biasing (same
+        // shape as the offline transducer's bpe.vocab check; the streaming
+        // tokenizer differs from the offline NeMo exports).
+        val streamingVocab = File(dir, STREAMING_VOCAB_FILE)
+        val streamingBiasing = streamingVocab.isFile
+        if (streamingBiasing) {
+            Log.i(TAG, "Streaming biasing armed (${entry.id}): vocab=${streamingVocab.name}")
+        }
+
         val transducerConfig = OnlineTransducerModelConfig(
             encoder = File(dir, roles.encoder).absolutePath,
             decoder = File(dir, roles.decoder).absolutePath,
@@ -832,6 +848,8 @@ class SherpaBackend(
         val modelConfig = OnlineModelConfig(
             transducer = transducerConfig,
             tokens = File(dir, requireNotNull(roles.tokens)).absolutePath,
+            bpeVocab = if (streamingBiasing) streamingVocab.absolutePath else "",
+            modelingUnit = if (streamingBiasing) "bpe" else "",
             numThreads = sherpaConfig.numThreads,
             debug = false,
             provider = sherpaConfig.provider,
@@ -1002,9 +1020,17 @@ class SherpaBackend(
             try {
                 Log.d(TAG, "Transcribing audio: ${samples.size} samples at ${sampleRate}Hz")
 
-                // createStream(String) arg is HOTWORDS/contextual biasing, NOT language — passing a
-                // non-empty value triggers contextual biasing, which sherpa aborts on (exit 255).
-                stream = rec.createStream("")
+                // createStream(String) arg is HOTWORDS/contextual biasing, NOT
+                // language. TASK-994 phase 3: the personal dictionary rides
+                // the streaming context graph per request (the AAR's
+                // createStream(String) IS the hotwords param; desktop flip
+                // probe: "Boncompagni" flipped to "Boncompani" with the
+                // extracted vocab). The vocab file must be on disk; without
+                // it the terms would not encode.
+                val streamingHotwords = if (modelDir?.let { File(it, STREAMING_VOCAB_FILE) }?.isFile == true) {
+                    PersonalDictionary.promptTerms(preferences.keywordBiasing.first())
+                } else null
+                stream = rec.createStream(streamingHotwords ?: "")
                 // AC #3: condition the multilingual model on the user's language ("auto" = auto-detect).
                 stream.setOption("language", lang)
                 // Tail padding: a second acceptWaveform of one shared zero buffer so the
