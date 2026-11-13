@@ -1401,4 +1401,11 @@
     <string name="wiped_imports_removed_text">Removed %1$d broken model entries from the Models tab.</string>
     <string name="wiped_imports_progress_title">Model recovery in progress</string>
     <string name="wiped_imports_progress_text">Downloading the deleted model files again. This can take a few minutes.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">Ask AI</string>
+    <string name="ask_transcripts_title">Ask your transcripts</string>
+    <string name="ask_transcripts_no_matches">No matching transcripts found for this question.</string>
+    <string name="ask_transcripts_sources">Based on %1$d transcript(s)</string>
+    <string name="ask_transcripts_error">Error: %1$s</string>
+<string name="ask_transcripts_working">Asking the on-device model…</string>
 </resources>

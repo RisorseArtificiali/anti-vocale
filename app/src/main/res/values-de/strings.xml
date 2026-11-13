@@ -1375,4 +1375,11 @@
     <string name="wiped_imports_removed_text">%1$d defekte Modell-Einträge aus dem Modelle-Tab entfernt.</string>
     <string name="wiped_imports_progress_title">Modellwiederherstellung läuft</string>
     <string name="wiped_imports_progress_text">Die gelöschten Modelldateien werden erneut heruntergeladen. Dies kann einige Minuten dauern.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">KI fragen</string>
+    <string name="ask_transcripts_title">Frag deine Transkripte</string>
+    <string name="ask_transcripts_no_matches">Keine passenden Transkripte gefunden.</string>
+    <string name="ask_transcripts_sources">Basierend auf %1$d Transkript(en)</string>
+    <string name="ask_transcripts_error">Fehler: %1$s</string>
+<string name="ask_transcripts_working">Frage das Modell auf dem Gerät…</string>
 </resources>

@@ -1243,4 +1243,11 @@
     <string name="wiped_imports_removed_text">Se eliminaron %1$d entradas rotas del modelo de la pestaña Modelos.</string>
     <string name="wiped_imports_progress_title">Recuperación del modelo en curso</string>
     <string name="wiped_imports_progress_text">Se están descargando de nuevo los archivos del modelo eliminado. Puede tardar unos minutos.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">Preguntar a la IA</string>
+    <string name="ask_transcripts_title">Pregunta a tus transcripciones</string>
+    <string name="ask_transcripts_no_matches">No se encontraron transcripciones para esta pregunta.</string>
+    <string name="ask_transcripts_sources">Basado en %1$d transcripción(es)</string>
+    <string name="ask_transcripts_error">Error: %1$s</string>
+<string name="ask_transcripts_working">Preguntando al modelo en el dispositivo…</string>
 </resources>

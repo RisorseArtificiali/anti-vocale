@@ -1202,4 +1202,11 @@
     <string name="wiped_imports_removed_text">已从模型页移除 %1$d 个失效的模型条目。</string>
     <string name="wiped_imports_progress_title">模型恢复进行中</string>
     <string name="wiped_imports_progress_text">正在重新下载已删除的模型文件，可能需要几分钟。</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">问 AI</string>
+    <string name="ask_transcripts_title">问你的转写</string>
+    <string name="ask_transcripts_no_matches">未找到与此问题匹配的转写。</string>
+    <string name="ask_transcripts_sources">基于 %1$d 条转写</string>
+    <string name="ask_transcripts_error">错误：%1$s</string>
+<string name="ask_transcripts_working">正在询问设备端模型…</string>
 </resources>

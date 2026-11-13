@@ -1243,4 +1243,11 @@
     <string name="wiped_imports_removed_text">%1$d entradas quebradas do modelo removidas da aba Modelos.</string>
     <string name="wiped_imports_progress_title">Recuperação do modelo em andamento</string>
     <string name="wiped_imports_progress_text">Baixando novamente os arquivos do modelo excluído. Isso pode levar alguns minutos.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">Perguntar à IA</string>
+    <string name="ask_transcripts_title">Pergunte às suas transcrições</string>
+    <string name="ask_transcripts_no_matches">Nenhuma transcrição encontrada para esta pergunta.</string>
+    <string name="ask_transcripts_sources">Baseado em %1$d transcrição(ções)</string>
+    <string name="ask_transcripts_error">Erro: %1$s</string>
+<string name="ask_transcripts_working">Perguntando ao modelo no dispositivo…</string>
 </resources>

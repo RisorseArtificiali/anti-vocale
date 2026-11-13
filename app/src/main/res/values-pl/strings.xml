@@ -1403,4 +1403,11 @@
     <string name="wiped_imports_removed_text">Usunięto %1$d uszkodzonych wpisów modelu z karty Modele.</string>
     <string name="wiped_imports_progress_title">Trwa przywracanie modelu</string>
     <string name="wiped_imports_progress_text">Ponowne pobieranie usuniętych plików modelu. Może to potrwać kilka minut.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">Zapytaj AI</string>
+    <string name="ask_transcripts_title">Zapytaj swoje transkrypcje</string>
+    <string name="ask_transcripts_no_matches">Nie znaleziono transkrypcji dla tego pytania.</string>
+    <string name="ask_transcripts_sources">Na podstawie %1$d transkrypcji</string>
+    <string name="ask_transcripts_error">Błąd: %1$s</string>
+<string name="ask_transcripts_working">Pytam model na urządzeniu…</string>
 </resources>

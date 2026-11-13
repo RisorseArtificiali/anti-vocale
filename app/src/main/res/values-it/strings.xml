@@ -1381,4 +1381,11 @@
     <string name="wiped_imports_removed_text">Rimosse %1$d voci rotte del modello dalla scheda Modelli.</string>
     <string name="wiped_imports_progress_title">Ripristino del modello in corso</string>
     <string name="wiped_imports_progress_text">Download dei file del modello eliminato in corso. Può richiedere qualche minuto.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">Chiedi all\'AI</string>
+    <string name="ask_transcripts_title">Chiedi ai tuoi trascritti</string>
+    <string name="ask_transcripts_no_matches">Nessun trascritto trovato per questa domanda.</string>
+    <string name="ask_transcripts_sources">Basato su %1$d trascritto/i</string>
+    <string name="ask_transcripts_error">Errore: %1$s</string>
+<string name="ask_transcripts_working">Chiedo al modello sul dispositivo…</string>
 </resources>

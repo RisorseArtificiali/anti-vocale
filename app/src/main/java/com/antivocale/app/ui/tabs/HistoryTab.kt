@@ -8,7 +8,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -748,6 +750,8 @@ fun HistoryTab(
      *  the auto-save hint's export page: one callback cannot serve both. */
     onOpenLanguageSetting: (() -> Unit)? = null,
     viewModel: LogsViewModel = hiltViewModel(),
+    /** TASK-992: on-device Q&A over history (Gemma-gated). */
+    askViewModel: com.antivocale.app.ui.viewmodel.AskTranscriptsViewModel = hiltViewModel(),
     highlightTaskId: String? = null,
     tourRevealState: com.svenjacobs.reveal.RevealState,
 ) {
@@ -774,6 +778,85 @@ fun HistoryTab(
     var revealedLogId by remember { mutableStateOf<String?>(null) }
 
     var showClearDialog by remember { mutableStateOf(false) }
+    // TASK-992: the Ask answer dialog state. Searching/Generating render a
+    // progress dialog too: the first Ask loads Gemma (10-30s) and silence
+    // for that long reads as a dead feature.
+    val askState by askViewModel.state.collectAsState()
+    if (askState !is com.antivocale.app.ui.viewmodel.AskTranscriptsViewModel.AskState.Idle) {
+        val askQuestion by askViewModel.lastQuestion.collectAsState()
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = askViewModel::reset,
+            title = { Text(stringResource(R.string.ask_transcripts_title)) },
+            text = {
+                androidx.compose.foundation.layout.Column(
+                    Modifier.verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        askQuestion,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                    )
+                    androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
+                    when (askState) {
+                        is com.antivocale.app.ui.viewmodel.AskTranscriptsViewModel.AskState.Searching,
+                        is com.antivocale.app.ui.viewmodel.AskTranscriptsViewModel.AskState.Generating,
+                        -> androidx.compose.foundation.layout.Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                            )
+                            androidx.compose.foundation.layout.Spacer(
+                                Modifier.width(8.dp))
+                            Text(
+                                stringResource(R.string.ask_transcripts_working),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                        is com.antivocale.app.ui.viewmodel.AskTranscriptsViewModel.AskState.Answer -> {
+                            val st = askState as com.antivocale.app.ui.viewmodel.AskTranscriptsViewModel.AskState.Answer
+                            if (st.sourceCount == 0) {
+                                Text(
+                                    stringResource(R.string.ask_transcripts_no_matches),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            } else {
+                                // Model-generated text of unbounded length: the
+                                // capped render surface (TASK-506 class), same
+                                // as the summary/original rows.
+                                CappedTranscriptText(
+                                    text = st.text,
+                                    searchQuery = "",
+                                )
+                                Text(
+                                    stringResource(R.string.ask_transcripts_sources, st.sourceCount),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+                            }
+                        }
+                        is com.antivocale.app.ui.viewmodel.AskTranscriptsViewModel.AskState.Error -> {
+                            val st = askState as com.antivocale.app.ui.viewmodel.AskTranscriptsViewModel.AskState.Error
+                            Text(
+                                stringResource(R.string.ask_transcripts_error, st.message),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                        else -> {}
+                    }
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = askViewModel::reset) {
+                    Text(stringResource(android.R.string.ok))
+                }
+            },
+        )
+    }
     var recentlyDeletedEntry by remember { mutableStateOf<LogEntry?>(null) }
     var retranscribeTarget by remember { mutableStateOf<LogEntry?>(null) }
     val pendingLongAudioWarning by viewModel.pendingLongAudioWarning.collectAsState()
@@ -1113,6 +1196,26 @@ fun HistoryTab(
                         modifier = Modifier.padding(start = 16.dp, top = 4.dp),
                         label = { Text(stringResource(R.string.logs_search_mode_similar)) },
                     )
+                    // TASK-992: the Ask chip appears only when a query is
+                    // active AND Gemma is configured (the feature is not
+                    // assumed for every user; without the model the chip
+                    // never renders and the feature is invisible).
+                    val gemmaReady by askViewModel.gemmaAvailable.collectAsState()
+                    if (gemmaReady) {
+                        FilterChip(
+                            selected = false,
+                            onClick = { askViewModel.ask(searchQuery) },
+                            modifier = Modifier.padding(start = 8.dp, top = 4.dp),
+                            label = { Text(stringResource(R.string.ask_transcripts_chip)) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.QuestionAnswer,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            },
+                        )
+                    }
                 }
                 if (filteredLogs.isEmpty()) {
                 // Search yielded no results

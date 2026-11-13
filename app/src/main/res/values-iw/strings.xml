@@ -1387,4 +1387,11 @@
     <string name="wiped_imports_removed_text">%1$d רשומות מודל תקולות הוסרו מלשונית המודלים.</string>
     <string name="wiped_imports_progress_title">שחזור המודל מתבצע</string>
     <string name="wiped_imports_progress_text">קבצי המודל שנמחקו מורדים שוב. התהליך עשוי להימשך מספר דקות.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">שאל את ה-AI</string>
+    <string name="ask_transcripts_title">שאל את התמלילים שלך</string>
+    <string name="ask_transcripts_no_matches">לא נמצאו תמלילים לשאלה זו.</string>
+    <string name="ask_transcripts_sources">על בסיס %1$d תמליל(ים)</string>
+    <string name="ask_transcripts_error">שגיאה: %1$s</string>
+<string name="ask_transcripts_working">שואל את המודל במכשיר…</string>
 </resources>

@@ -1243,4 +1243,11 @@
     <string name="wiped_imports_removed_text">%1$d entrées de modèle cassées supprimées de l\'onglet Modèles.</string>
     <string name="wiped_imports_progress_title">Restauration du modèle en cours</string>
     <string name="wiped_imports_progress_text">Les fichiers du modèle supprimé sont en cours de téléchargement. Cela peut prendre quelques minutes.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">Demander à l\'IA</string>
+    <string name="ask_transcripts_title">Demandez à vos transcriptions</string>
+    <string name="ask_transcripts_no_matches">Aucune transcription trouvée pour cette question.</string>
+    <string name="ask_transcripts_sources">Basé sur %1$d transcription(s)</string>
+    <string name="ask_transcripts_error">Erreur : %1$s</string>
+<string name="ask_transcripts_working">Interrogation du modèle sur l’appareil…</string>
 </resources>

@@ -1404,4 +1404,11 @@
     <string name="wiped_imports_removed_text">Из вкладки «Модели» удалено битых записей: %1$d.</string>
     <string name="wiped_imports_progress_title">Идёт восстановление модели</string>
     <string name="wiped_imports_progress_text">Файлы удалённой модели загружаются заново. Это может занять несколько минут.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">Спросить ИИ</string>
+    <string name="ask_transcripts_title">Спросите свои транскрипции</string>
+    <string name="ask_transcripts_no_matches">Транскрипции по этому вопросу не найдены.</string>
+    <string name="ask_transcripts_sources">На основе %1$d транскрипции(й)</string>
+    <string name="ask_transcripts_error">Ошибка: %1$s</string>
+<string name="ask_transcripts_working">Спрашиваем модель на устройстве…</string>
 </resources>

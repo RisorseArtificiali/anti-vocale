@@ -1374,4 +1374,11 @@
     <string name="wiped_imports_removed_text">मॉडल्स टैब से %1$d टूटी मॉडल प्रविष्टियाँ हटाई गईं।</string>
     <string name="wiped_imports_progress_title">मॉडल पुनर्प्राप्ति जारी है</string>
     <string name="wiped_imports_progress_text">हटाई गई मॉडल फ़ाइलें फिर से डाउनलोड हो रही हैं। इसमें कुछ मिनट लग सकते हैं।</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">AI से पूछें</string>
+    <string name="ask_transcripts_title">अपनी प्रतिलिपियों से पूछें</string>
+    <string name="ask_transcripts_no_matches">इस प्रश्न के लिए कोई प्रतिलिपि नहीं मिली।</string>
+    <string name="ask_transcripts_sources">%1$d प्रतिलिपि(यों) पर आधारित</string>
+    <string name="ask_transcripts_error">त्रुटि: %1$s</string>
+<string name="ask_transcripts_working">ऑन-डिवाइस मॉडल से पूछ रहे हैं…</string>
 </resources>

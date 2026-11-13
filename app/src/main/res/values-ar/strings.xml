@@ -1272,4 +1272,11 @@
     <string name="wiped_imports_removed_text">تمت إزالة %1$d إدخال نموذج معطل من تبويب النماذج.</string>
     <string name="wiped_imports_progress_title">جارٍ استعادة النموذج</string>
     <string name="wiped_imports_progress_text">يتم تنزيل ملفات النموذج المحذوف مرة أخرى. قد يستغرق ذلك بضع دقائق.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">اسأل الذكاء الاصطناعي</string>
+    <string name="ask_transcripts_title">اسأل تفريغاتك</string>
+    <string name="ask_transcripts_no_matches">لا توجد تفريغات مطابقة لهذا السؤال.</string>
+    <string name="ask_transcripts_sources">بناءً على %1$d تفريغ/تفريغات</string>
+    <string name="ask_transcripts_error">خطأ: %1$s</string>
+<string name="ask_transcripts_working">جارٍ سؤال النموذج على الجهاز…</string>
 </resources>

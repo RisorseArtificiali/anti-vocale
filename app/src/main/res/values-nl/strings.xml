@@ -1391,4 +1391,11 @@
     <string name="wiped_imports_removed_text">%1$d kapotte modelitems verwijderd uit het tabblad Modellen.</string>
     <string name="wiped_imports_progress_title">Modelherstel wordt uitgevoerd</string>
     <string name="wiped_imports_progress_text">De verwijderde modelbestanden worden opnieuw gedownload. Dit kan enkele minuten duren.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">AI vragen</string>
+    <string name="ask_transcripts_title">Vraag je transcripties</string>
+    <string name="ask_transcripts_no_matches">Geen transcripties gevonden voor deze vraag.</string>
+    <string name="ask_transcripts_sources">Gebaseerd op %1$d transcriptie(s)</string>
+    <string name="ask_transcripts_error">Fout: %1$s</string>
+<string name="ask_transcripts_working">Bezig met vragen aan het model op het apparaat…</string>
 </resources>

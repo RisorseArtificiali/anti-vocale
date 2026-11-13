@@ -1380,4 +1380,11 @@
     <string name="wiped_imports_removed_text">%1$d ورودی مدل خراب از تب مدل‌ها حذف شد.</string>
     <string name="wiped_imports_progress_title">بازیابی مدل در جریان است</string>
     <string name="wiped_imports_progress_text">فایل‌های مدل حذف‌شده دوباره دانلود می‌شوند. این کار ممکن است چند دقیقه طول بکشد.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">پرسیدن از هوش مصنوعی</string>
+    <string name="ask_transcripts_title">از تفریغ‌هایت بپرس</string>
+    <string name="ask_transcripts_no_matches">تفریغی برای این سؤال پیدا نشد.</string>
+    <string name="ask_transcripts_sources">بر اساس %1$d تفریغ</string>
+    <string name="ask_transcripts_error">خطا: %1$s</string>
+<string name="ask_transcripts_working">در حال پرسیدن از مدل روی دستگاه…</string>
 </resources>

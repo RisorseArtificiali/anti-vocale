@@ -1215,4 +1215,11 @@
     <string name="wiped_imports_removed_text">Poistettiin %1$d rikkinäistä mallimerkintää Mallit-välilehdeltä.</string>
     <string name="wiped_imports_progress_title">Mallin palautus käynnissä</string>
     <string name="wiped_imports_progress_text">Poistettujen mallitiedostojen lataaminen käynnissä uudelleen. Tämä voi kestää muutaman minuutin.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">Kysy tekoälyltä</string>
+    <string name="ask_transcripts_title">Kysy transkripteiltasi</string>
+    <string name="ask_transcripts_no_matches">Tähän kysymykseen ei löytynyt transkriptejä.</string>
+    <string name="ask_transcripts_sources">Perustuu %1$d transkriptiin</string>
+    <string name="ask_transcripts_error">Virhe: %1$s</string>
+<string name="ask_transcripts_working">Kysytään mallilta laitteella…</string>
 </resources>

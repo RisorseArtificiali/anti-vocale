@@ -1375,4 +1375,11 @@
     <string name="wiped_imports_removed_text">Modeller sekmesinden %1$d bozuk model kaydı kaldırıldı.</string>
     <string name="wiped_imports_progress_title">Model kurtarma işlemi sürüyor</string>
     <string name="wiped_imports_progress_text">Silinen model dosyaları yeniden indiriliyor. Bu işlem birkaç dakika sürebilir.</string>
+    <!-- TASK-992: on-device Q&A over history (Gemma-gated). -->
+    <string name="ask_transcripts_chip">YZ\'ye sor</string>
+    <string name="ask_transcripts_title">Transkriplerine sor</string>
+    <string name="ask_transcripts_no_matches">Bu soru için transkript bulunamadı.</string>
+    <string name="ask_transcripts_sources">%1$d transkripte dayalı</string>
+    <string name="ask_transcripts_error">Hata: %1$s</string>
+<string name="ask_transcripts_working">Cihazdaki modele soruluyor…</string>
 </resources>
