@@ -596,7 +596,7 @@
     <string name="signature_setting_description">Adds a signature line to every transcript that leaves the app: copies, shares and exported files. The app\'s own screens keep the plain text.</string>
     <!-- TASK-994: the whistle terms generalized into the personal dictionary. -->
     <string name="keyword_biasing_title">Personal dictionary</string>
-    <string name="keyword_biasing_description">Names, places or jargon the app should honour, one per line. Applies to Whistle and Qwen3 recognition and the AI polish and summary passes; the other speech engines do not support vocabulary biasing yet. (In conservative polish mode the fixed prompt is kept as-is.)</string>
+    <string name="keyword_biasing_description">Names, places or jargon the app should honour, one per line. Applies to Whistle, Qwen3, Parakeet, GigaAM and the streaming Nemotron recognition, plus the AI polish and summary passes; the other speech engines do not support vocabulary biasing yet. Setting the dictionary downloads a small engine file once for Parakeet, GigaAM and the streaming Nemotron. (In conservative polish mode the fixed prompt is kept as-is.)</string>
     <string name="keyword_biasing_placeholder">One term per line</string>
     <string name="personal_dictionary_prompt_line">These names or terms appear in this material; keep this exact spelling where they occur: %1$s</string>
     <string name="signature_text_title">Signature text</string>

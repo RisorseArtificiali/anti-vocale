@@ -1338,7 +1338,7 @@
     <string name="backup_disclosure_title">Vor dem Export</string>
     <string name="backup_disclosure_body">Das Backup enthält jedes Transkript, jeden Absendernamen und jede Sprecherkennzeichnung als lesbaren Text. Teile es nur mit Stellen, denen du vertraust.</string>
     <string name="keyword_biasing_title">Persönliches Wörterbuch</string>
-    <string name="keyword_biasing_description">Namen, Orte oder Fachbegriffe, die die App berücksichtigen soll, einer pro Zeile. Gilt für die Whistle- und Qwen3-Erkennung und die KI-Politur und Zusammenfassung; die anderen Sprach-Engines unterstützen Wörterbuch-Beeinflussung noch nicht. (Im konservativen Poliermodus bleibt der feste Prompt unverändert.)</string>
+    <string name="keyword_biasing_description">Namen, Orte oder Fachbegriffe, die die App berücksichtigen soll, einer pro Zeile. Gilt für die Whistle-, Qwen3-, Parakeet-, GigaAM- und Streaming-Nemotron-Erkennung und die KI-Politur und Zusammenfassung; die anderen Sprach-Engines unterstützen Wörterbuch-Beeinflussung noch nicht. Beim Festlegen des Wörterbuchs wird einmalig eine kleine Engine-Datei für Parakeet, GigaAM und Streaming-Nemotron heruntergeladen. (Im konservativen Poliermodus bleibt der feste Prompt unverändert.)</string>
     <string name="personal_dictionary_prompt_line">Diese Namen oder Begriffe kommen in diesem Material vor; behalte diese genaue Schreibweise, wo sie auftreten: %1$s</string>
     <string name="keyword_biasing_placeholder">Ein Begriff pro Zeile</string>
     <string name="freeze_protection_title">Schutz für Hintergrund-Transkription</string>

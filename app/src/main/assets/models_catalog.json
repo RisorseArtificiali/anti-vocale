@@ -86,6 +86,9 @@
               "name": "tokens.txt",
               "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d"
             }
+          ],
+          "supplements": [
+            {"name": "bpe.vocab", "sha256": "41130ff456706304a1adec782ccc9e003c4d417e8e324353d281be958cac4e17"}
           ]
         },
         {
@@ -121,6 +124,9 @@
               "name": "tokens.txt",
               "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d"
             }
+          ],
+          "supplements": [
+            {"name": "bpe.vocab", "sha256": "41130ff456706304a1adec782ccc9e003c4d417e8e324353d281be958cac4e17"}
           ]
         }
       ]
@@ -812,6 +818,9 @@
               "name": "tokens.txt",
               "sha256": "729cc103155bafa785f9cd45746cd41cabe97eab7182fc04d594129587958f8a"
             }
+          ],
+          "supplements": [
+            {"name": "bpe.vocab", "sha256": "013996075936cc418b707afa244d5426f71746373c620529ac15b7cdffaf1447", "repo": "pantinor/nemotron-3.5-asr-streaming-vocab"}
           ]
         }
       ]
@@ -873,6 +882,9 @@
               "name": "gigaam_v3_e2e_rnnt_tokens.txt",
               "sha256": "7ddf22514c42c531358182c81446a8159771e9921019f09ae743ea622d40221d"
             }
+          ],
+          "supplements": [
+            {"name": "bpe.vocab", "sha256": "af72e53d851552fca7510fd1aa8ca7db340407ee1c57bd34c4bafaec1a79529c"}
           ]
         }
       ]

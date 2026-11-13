@@ -493,7 +493,7 @@
     <string name="signature_setting_title">توقيع النسخ (إخلاء مسؤولية الذكاء الاصطناعي)</string>
     <string name="signature_setting_description">يضيف سطر توقيع إلى كل نص يغادر التطبيق: النسخ والمشاركة والملفات المصدّرة. أما شاشات التطبيق نفسها فتعرض النص العادي.</string>
     <string name="keyword_biasing_title">القاموس الشخصي</string>
-    <string name="keyword_biasing_description">أسماء أو أماكن أو مصطلحات يجب أن تراعيها التطبيق، واحدة في كل سطر. تنطبق على تعرّف Whistle وQwen3 ومراحل التلميع والتلخيص بالذكاء الاصطناعي؛ محركات الكلام الأخرى لا تدعم مراعاة القاموس بعد. (في وضع التلميع المحافظ يبقى الموجّه الثابت كما هو.)</string>
+    <string name="keyword_biasing_description">أسماء أو أماكن أو مصطلحات يجب أن تراعيها التطبيق، واحدة في كل سطر. تنطبق على تعرّف Whistle وQwen3 وParakeet وGigaAM وNemotron المتدفق ومراحل التلميع والتلخيص بالذكاء الاصطناعي؛ محركات الكلام الأخرى لا تدعم مراعاة القاموس بعد. عند تعيين القاموس يُنزَّل ملف محرك صغير مرة واحدة لكل من Parakeet وGigaAM وNemotron المتدفق. (في وضع التلميع المحافظ يبقى الموجّه الثابت كما هو.)</string>
     <string name="personal_dictionary_prompt_line">تظهر هذه الأسماء أو المصطلحات في هذا المحتوى؛ حافظ على هذا التهجئة الدقيقة حيثما ترد: %1$s</string>
     <string name="keyword_biasing_placeholder">مصطلح واحد في كل سطر</string>
     <string name="signature_text_title">نص التوقيع</string>

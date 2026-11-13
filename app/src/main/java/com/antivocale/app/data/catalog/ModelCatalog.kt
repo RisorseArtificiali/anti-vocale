@@ -178,11 +178,11 @@ object ModelCatalogJson {
         val filesArr = o.optJSONArray("files")
             ?: throw IllegalArgumentException("entry $entryId variant $name has no files")
         require(filesArr.length() > 0) { "entry $entryId variant $name has no files" }
-        val files = buildList {
-            for (i in 0 until filesArr.length()) {
-                add(parseBuiltInFile(filesArr.get(i), entryId, name))
-            }
-        }
+        val files = parseFileArray(filesArr, entryId, name, allowRepo = false)
+        val supplementsArr = o.optJSONArray("supplements")
+        val supplements =
+            if (supplementsArr == null) emptyList()
+            else parseFileArray(supplementsArr, entryId, name, allowRepo = true)
         return CatalogVariant(
             name = name,
             title = o.opt("title")?.let(::parseDisplay),
@@ -193,21 +193,52 @@ object ModelCatalogJson {
             languages = optStringList(o, "languages"),
             source = parseSource(o.getJSONObject("source"), entryId, name),
             files = files,
+            supplements = supplements,
             requiresAuth = o.optBoolean("requiresAuth", false),
         )
     }
 
-    /** Built-in files: plain name shorthand or an object that may pin sha256. */
-    private fun parseBuiltInFile(raw: Any, entryId: String, variantName: String): CatalogFile =
-        when (raw) {
-            is String -> CatalogFile(name = raw)
-            is JSONObject -> CatalogFile(
+    /** One files/supplements JSON array -> [CatalogFile] list. */
+    private fun parseFileArray(
+        arr: JSONArray,
+        entryId: String,
+        variantName: String,
+        allowRepo: Boolean,
+    ): List<CatalogFile> = buildList {
+        for (i in 0 until arr.length()) {
+            add(parseBuiltInFile(arr.get(i), entryId, variantName, allowRepo))
+        }
+    }
+
+    /**
+     * Built-in files: plain name shorthand or an object that may pin sha256.
+     * The per-file repo override is SUPPLEMENT-only ([allowRepo]): the
+     * downloader routes every required file through the variant's source
+     * repo, so a repo key on a files[] entry would promise routing the
+     * machinery does not deliver (wrong-repo fetch, pin mismatch, heal
+     * loop) - reject it at the parse boundary instead.
+     */
+    private fun parseBuiltInFile(
+        raw: Any,
+        entryId: String,
+        variantName: String,
+        allowRepo: Boolean,
+    ): CatalogFile = when (raw) {
+        is String -> CatalogFile(name = raw)
+        is JSONObject -> {
+            val repo = raw.optString("repo", "").ifBlank { null }
+            require(allowRepo || repo == null) {
+                "entry $entryId variant $variantName: per-file repo is supplements-only"
+            }
+            CatalogFile(
                 name = raw.getString("name"),
                 sha256 = raw.optString("sha256", "").ifBlank { null },
+                repo = repo,
             )
-            else -> throw IllegalArgumentException(
-                "entry $entryId variant $variantName: files must be strings or objects")
         }
+        else -> throw IllegalArgumentException(
+            "entry $entryId variant $variantName: files must be strings or objects")
+    }
 
     /** External files: url + sha256 (64 hex) + size are all mandatory. */
     private fun parseExternalFile(o: JSONObject, entryName: String): CatalogFile {
@@ -388,6 +419,11 @@ data class CatalogFile(
     val url: String? = null,
     val sha256: String? = null,
     val size: Long? = null,
+    /** Supplement-only: HuggingFace repo override when the supplement lives
+     *  in a different repo than the variant's source (the streaming
+     *  Nemotron's bpe.vocab sits on our mirror while the model stays on
+     *  csukuangfj2's repo). */
+    val repo: String? = null,
 )
 
 /** One downloadable variant of an entry (e.g. Parakeet SmoothQuant vs Stock int8). */
@@ -402,6 +438,16 @@ data class CatalogVariant(
     val languages: List<String> = emptyList(),
     val source: CatalogSource,
     val files: List<CatalogFile>,
+    /**
+     * TASK-994.1: supplementary pinned files fetched into the model dir
+     * OUTSIDE the completeness contract ([files] alone decides validity, so
+     * a dir without its supplements stays loadable forever and pre-supplement
+     * installs never trip a heal). The startup supplement pass fetches the
+     * missing ones for installed variants, gated on the personal dictionary
+     * being non-empty; this is what delivers the transducer biasing vocab
+     * (bpe.vocab) to existing installs without any full-model re-download.
+     */
+    val supplements: List<CatalogFile> = emptyList(),
     /**
      * The repo is HuggingFace-gated: the download needs the user's token
      * (HuggingFaceTokenManager) and the UI shows the add-token warning.

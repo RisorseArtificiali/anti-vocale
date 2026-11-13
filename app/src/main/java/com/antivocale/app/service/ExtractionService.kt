@@ -52,6 +52,8 @@ import javax.inject.Inject
 class ExtractionService : Service() {
 
     @Inject lateinit var huggingFaceTokenManager: HuggingFaceTokenManager
+    @Inject lateinit var biasingVocabSupplement: com.antivocale.app.data.download.BiasingVocabSupplement
+    @Inject @com.antivocale.app.di.ApplicationScope lateinit var applicationScope: kotlinx.coroutines.CoroutineScope
 
     companion object {
         const val TAG = "ExtractionService"
@@ -223,6 +225,13 @@ class ExtractionService : Service() {
                     onStateChange = onStateChange,
                     tokenManager = huggingFaceTokenManager
                 )
+                // TASK-994.1: a fresh download carries no supplements (the
+                // downloader fetches variant.files only); deliver them now
+                // so biasing can arm in THIS session, not the next start.
+                // Dictionary-gated and mutex-guarded inside the pass.
+                applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    runCatching { biasingVocabSupplement.run(applicationContext) }
+                }
             } else {
                 _progressState.tryEmit(ExtractionProgress(
                     modelKey, variant,

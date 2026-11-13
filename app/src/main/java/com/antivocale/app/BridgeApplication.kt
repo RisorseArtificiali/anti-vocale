@@ -15,7 +15,10 @@ import androidx.hilt.work.HiltWorkerFactory
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
@@ -34,6 +37,7 @@ class BridgeApplication : Application(), Configuration.Provider {
     @Inject lateinit var logDao: com.antivocale.app.data.local.LogDao
     @Inject lateinit var scheduledFolderStore: com.antivocale.app.data.ScheduledFolderStore
     @Inject lateinit var voiceNoteDetectionCoordinators: com.antivocale.app.data.VoiceNoteDetectionCoordinators
+    @Inject lateinit var biasingVocabSupplement: com.antivocale.app.data.download.BiasingVocabSupplement
 
     /**
      * Shared process-lifetime scope for startup work that must not block the
@@ -133,6 +137,29 @@ class BridgeApplication : Application(), Configuration.Provider {
         applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             runCatching { externalModelStore.backfillDerivedLanguages() }
                 .onFailure { android.util.Log.w("BridgeApplication", "language backfill failed", it) }
+        }
+        // TASK-994.1: fetch missing variant supplements (the transducer
+        // biasing vocab, ~100-320KB) into INSTALLED model dirs, only when
+        // the personal dictionary is set; silent, deferred to the next
+        // start on failure. A dir without its supplement stays valid, so
+        // this can never trigger a heal or a re-download.
+        applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { biasingVocabSupplement.run(this@BridgeApplication) }
+                .onFailure { android.util.Log.w("BridgeApplication", "supplement pass failed", it) }
+        }
+        // TASK-994.1: the pass also runs when the dictionary CHANGES
+        // (drop(1) skips the value the startup pass above already served;
+        // the delay coalesces save-time typing bursts, collectLatest
+        // cancels the superseded run): a first-term edit arms biasing
+        // within seconds instead of at the next app start.
+        applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            preferencesManager.keywordBiasing
+                .drop(1)
+                .collectLatest {
+                    delay(2_000)
+                    runCatching { biasingVocabSupplement.run(this@BridgeApplication) }
+                        .onFailure { android.util.Log.w("BridgeApplication", "supplement pass failed", it) }
+                }
         }
         // TASK-736 hardening: the identity listener's COMPONENT follows the
         // preference (ships disabled; the toggle, TEST_SPI, or any other
