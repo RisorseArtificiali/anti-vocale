@@ -18,10 +18,12 @@ package com.antivocale.app.transcription
  *   break the fences the token validation enforces); the Gemma AUDIO
  *   prompt (the LLM transcription backend) is unprobed and not wired.
  * - Transducer sherpa families (Parakeet TDT, GigaAM v3): hotword biasing
- *   is wired in the sherpa decoders and the missing bpe_vocab artifact is
- *   now SELF-HOSTED (pinned as the variants' fifth catalog file; probe and
- *   extraction chain in docs/research/2026-11-12_parakeet-hotwords-vocab-
- *   self-export.md). SherpaBackend wiring pending (beam-gated).
+ *   is WIRED in SherpaBackend.initOffline (construction-time, beam-gated;
+ *   the dictionary applies at the next model load). The bpe_vocab artifact
+ *   is self-hosted on the pantinor mirror and the CATALOG PIN is HELD
+ *   until a migration exists for existing installs (the pin alone would
+ *   fail their load gate with a full re-download heal; see the research
+ *   note for the extraction chain).
  * - Whisper/CTC/SenseVoice/Canary: no hotwords wiring in the sherpa impls
  *   at this pin; do not promise them in UI copy.
  */

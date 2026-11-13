@@ -62,6 +62,13 @@ class SherpaBackend(
          * dictionary (the impl silently shrinks audio on overflow).
          */
         const val QWEN3_HOTWORDS_MAX_CHARS = 80
+
+        /**
+         * TASK-994: the transducer hotwords score. The desktop flip probe
+         * showed 1.5 (sherpa's default) already moves a correct decode;
+         * 6.0 corrupts it. Start at the default; device tuning can adjust.
+         */
+        const val TRANSDUCER_HOTWORDS_SCORE = 1.5f
         /**
          * TASK-874: the streaming decode method. The desktop A/B (TASK-530,
          * 2026-10-24, 11-clip Italian set) showed modified_beam_search beats
@@ -683,7 +690,10 @@ class SherpaBackend(
                 if (entry.isStreaming) {
                     initOnline(dir, sherpaConfig, entry, variant, roles)
                 } else {
-                    initOffline(dir, sherpaConfig, entry, variant, roles)
+                    initOffline(dir, sherpaConfig, entry, variant, roles,
+                        hotwordsCsv = PersonalDictionary.promptTerms(
+                            preferences.keywordBiasing.first()),
+                        hotwordsTarget = File(context.cacheDir, "hotwords-${entry.id}.txt"))
                 }
                 modelDir = modelDirectory
                 language = sherpaConfig.language.ifBlank { "auto" }
@@ -709,7 +719,31 @@ class SherpaBackend(
         entry: CatalogEntry,
         variant: CatalogVariant,
         roles: Roles,
+        /** TASK-994: the dictionary terms joined for the hotwords file, or null
+         *  when the dictionary is empty (no biasing, greedy as today). */
+        hotwordsCsv: String?,
+        /** Writes the hotwords file OUTSIDE the model dir (the integrity
+         *  validator flags short .txt files inside it as corruption). */
+        hotwordsTarget: File,
     ) {
+        // TASK-994: ONE biasing predicate for the whole function. A desync
+        // between the model config's bpeVocab/modelingUnit and the
+        // recognizer config's decodingMethod/hotwords would arm one without
+        // the other and hotwords would be silently ignored.
+        val transducerBiasing = entry.modelType == "nemo_transducer" &&
+            hotwordsCsv != null && File(dir, "bpe.vocab").isFile
+        if (transducerBiasing) {
+            // OUTSIDE the model dir: the integrity validator flags short
+            // .txt files inside it as corruption and the heal wipes the
+            // whole directory. Written at construction (the recognizer is
+            // resident), re-written on the next model load when the
+            // dictionary changes.
+            hotwordsTarget.parentFile?.mkdirs()
+            hotwordsTarget.writeText(
+                hotwordsCsv!!.split(", ").joinToString("\n") { it.trim() })
+            Log.i(TAG, "Transducer biasing ON (${entry.id}): " +
+                "${hotwordsCsv.split(", ").size} terms, beam search")
+        }
         val modelConfig = when (entry.modelType) {
             "nemo_transducer" -> OfflineModelConfig(
                 transducer = OfflineTransducerModelConfig(
@@ -718,12 +752,13 @@ class SherpaBackend(
                     joiner = File(dir, requireNotNull(roles.joiner)).absolutePath,
                 ),
                 tokens = File(dir, requireNotNull(roles.tokens)).absolutePath,
+                bpeVocab = if (transducerBiasing) File(dir, "bpe.vocab").absolutePath else "",
+                modelingUnit = if (transducerBiasing) "bpe" else "",
                 modelType = entry.modelType,
                 numThreads = sherpaConfig.numThreads,
                 debug = false,
                 provider = sherpaConfig.provider,
             )
-
             "whisper" -> OfflineModelConfig(
                 whisper = OfflineWhisperModelConfig(
                     encoder = File(dir, roles.encoder).absolutePath,
@@ -772,7 +807,10 @@ class SherpaBackend(
                 sampleRate = 16000,
                 featureDim = 80,
             ),
-            decodingMethod = "greedy_search",
+            decodingMethod = if (transducerBiasing) "modified_beam_search" else "greedy_search",
+            maxActivePaths = if (transducerBiasing) 4 else 1,
+            hotwordsFile = if (transducerBiasing) hotwordsTarget.absolutePath else "",
+            hotwordsScore = if (transducerBiasing) TRANSDUCER_HOTWORDS_SCORE else 0f,
             blankPenalty = entry.flags.blankPenalty.toFloat(),
         )
         offlineRecognizer = OfflineRecognizer(config = recognizerConfig)

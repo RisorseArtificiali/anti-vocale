@@ -1334,8 +1334,14 @@ class TranscriptionOrchestrator @Inject constructor(
             Log.i(TAG, "Summary stage: single-shot overflowed a fresh session's state entries; chunking")
         }
         if (levelsLeft <= 0) return SummaryGeneration(null)
-        val chunks = ContextChunker.split(text)
-        Log.i(TAG, "Summary map stage: ${chunks.size} chunks (${text.length} chars)")
+        // TASK-994: the instructions (with the dictionary rider) prepend
+        // every chunk via ChunkPromptPolicy.finalPrompt; the chunk budget
+        // must leave room for the longest instruction.
+        val instructionBudget = instruction.length
+        val chunks = ContextChunker.split(
+            text,
+            maxChars = (PunctuationPolicy.MAX_TRANSCRIPT_CHARS - instructionBudget).coerceAtLeast(1))
+        Log.i(TAG, "Summary map stage: ${chunks.size} chunks (${text.length} chars, budget ${PunctuationPolicy.MAX_TRANSCRIPT_CHARS - instructionBudget})")
         val partials = mutableListOf<String>()
         var lastFailure: Throwable? = null
         var droppedChunks = 0
