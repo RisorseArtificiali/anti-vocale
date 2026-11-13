@@ -33,6 +33,9 @@ import org.json.JSONObject
 object ExternalManifestV1 {
 
     /** The four files a transducer manifest must carry, in canonical role order. */
+    /** TASK-994: the hotwords vocab (optional; downloaded when the manifest declares it). */
+    private const val VOCAB_FILE = "bpe.vocab"
+
     private val REQUIRED_FILES = listOf(
         "encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt")
 
@@ -126,6 +129,16 @@ object ExternalManifestV1 {
                     "manifest file $sidecar must declare both a sha256 pin and a size, like every other file")
             }
             files.add(ExternalModelEntryJson.EntryFile(sidecar, baseUrl + sidecar, sha, f.getLong("size")))
+        }
+        // TASK-994: the hotwords vocab rides as an OPTIONAL file when the
+        // publisher ships one (Daniel's Fritter CDN already does); without
+        // it the import stays exactly as today. Same pin+size contract.
+        if (filesJson.has(VOCAB_FILE)) {
+            val f = filesJson.getJSONObject(VOCAB_FILE)
+            val sha = f.optString("sha256", "")
+            if (SHA256_RE.matches(sha) && f.optLong("size", -1L) > 0L) {
+                files.add(ExternalModelEntryJson.EntryFile(VOCAB_FILE, baseUrl + VOCAB_FILE, sha, f.getLong("size")))
+            }
         }
 
         val name = overrideName?.takeIf { it.isNotBlank() }

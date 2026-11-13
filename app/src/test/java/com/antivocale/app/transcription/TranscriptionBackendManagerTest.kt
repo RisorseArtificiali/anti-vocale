@@ -47,7 +47,7 @@ class TranscriptionBackendManagerTest {
         val provider = object : ExternalModelRecordsProvider {
             override val records = MutableStateFlow(emptyList<com.antivocale.app.data.ExternalModelRecord>())
         }
-        return TranscriptionBackendManager(llmManager, backends.toSet(), provider, ExternalSherpaBackend())
+        return TranscriptionBackendManager(llmManager, backends.toSet(), provider, ExternalSherpaBackend(mockk(relaxed = true)))
     }
 
     // --- Initialization ---

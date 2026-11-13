@@ -30,7 +30,7 @@ class GateInputsForSelectionTest {
         val provider = object : ExternalModelRecordsProvider {
             override val records = MutableStateFlow(records)
         }
-        return TranscriptionBackendManager(mockk(relaxed = true), backends.toSet(), provider)
+        return TranscriptionBackendManager(mockk(relaxed = true), backends.toSet(), provider, mockk(relaxed = true))
     }
 
     /** The real llm backend whose LOADED engine path is [loadedPath]. */

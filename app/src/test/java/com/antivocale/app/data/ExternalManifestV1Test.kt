@@ -223,7 +223,8 @@ class ExternalManifestV1Test {
         assertEquals("", entry.modelType)
         assertEquals(ModelFamily.TRANSDUCER, entry.family)
         assertEquals("CC-BY-NC-4.0", entry.licence)
-        // The extra NOTICE / license PDF files are ignored like bpe.vocab.
+        // The extra NOTICE / license PDF files are ignored. TASK-994: the
+        // STREAMING fixture declares no bpe.vocab, so the count stays 4.
         assertEquals(4, entry.files.size)
         assertEquals("https://models.carrotcakeai.com/asr/fritter-streaming/latest/encoder.int8.onnx",
             entry.files.first { it.name == "encoder.int8.onnx" }.url)
@@ -282,13 +283,14 @@ class ExternalManifestV1Test {
             "  \"bpe.vocab\": {",
             "  \"encoder.int8.onnx.data\": {\n   \"size\": 4096,\n   \"sha256\": \"$encoderData\"\n  },\n  \"bpe.vocab\": {")
         val entry = ExternalManifestV1.synthesize(withSidecar, "u")
-        assertEquals(5, entry.files.size)
+        // TASK-994: bpe.vocab rides alongside the sidecar
+        assertEquals(6, entry.files.size)
         val sidecar = entry.files.first { it.name == "encoder.int8.onnx.data" }
         assertEquals("https://models.carrotcakeai.com/asr/fritter/latest/encoder.int8.onnx.data", sidecar.url)
         assertEquals(4096L, sidecar.size)
         // The four required names are all still there.
         assertEquals(setOf("encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt",
-            "encoder.int8.onnx.data"), entry.files.map { it.name }.toSet())
+            "encoder.int8.onnx.data", "bpe.vocab"), entry.files.map { it.name }.toSet())
         // An unpinned sidecar rejects like any other file.
         val unpinned = withSidecar.replace("\"sha256\": \"$encoderData\"", "\"sha256\": \"\"")
         try {
@@ -313,6 +315,7 @@ class ExternalManifestV1Test {
 
     @Test
     fun `synthesis joins the four required files onto base_url with the manifest pins`() {
+        // TASK-994: bpe.vocab rides as the fifth file when the manifest declares it.
         val entry = ExternalManifestV1.synthesize(
             FRITTER, "https://models.carrotcakeai.com/asr/fritter/latest/manifest.json")
         assertEquals("fritter", entry.name)
@@ -320,7 +323,7 @@ class ExternalManifestV1Test {
         assertEquals("nemo_transducer", entry.modelType)
         assertFalse(entry.streaming)
         val byName = entry.files.associateBy { it.name }
-        assertEquals(setOf("encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt"),
+        assertEquals(setOf("encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt", "bpe.vocab"),
             byName.keys)
         assertEquals("https://models.carrotcakeai.com/asr/fritter/latest/encoder.int8.onnx",
             byName.getValue("encoder.int8.onnx").url)
@@ -335,9 +338,10 @@ class ExternalManifestV1Test {
     fun `extra filenames and the gguf section are ignored`() {
         val entry = ExternalManifestV1.synthesize(
             FRITTER, "https://models.carrotcakeai.com/asr/fritter/latest/manifest.json")
-        // bpe.vocab stays out of the download set; the gguf section too.
-        assertEquals(4, entry.files.size)
-        assertTrue(entry.files.none { it.name.endsWith(".gguf") || it.name == "bpe.vocab" })
+        // TASK-994: bpe.vocab RIDES when declared; the gguf section stays ignored.
+        assertEquals(5, entry.files.size)
+        // TASK-994: bpe.vocab RIDES when declared; the gguf section stays ignored.
+        assertTrue(entry.files.none { it.name.endsWith(".gguf") })
     }
 
     @Test

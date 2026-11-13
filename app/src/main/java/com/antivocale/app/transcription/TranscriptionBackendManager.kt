@@ -36,7 +36,7 @@ class TranscriptionBackendManager @Inject constructor(
     // Not multibound into the backend set; Hilt satisfies this parameter via the engine's
     // own @Singleton @Inject constructor (Kotlin defaults are invisible to Dagger, so the
     // @Inject must stay). The default exists for direct test construction with a mock.
-    private val externalEngine: ExternalSherpaBackend = ExternalSherpaBackend()
+    private val externalEngine: ExternalSherpaBackend
 ) {
 
     private val backends: Map<String, TranscriptionBackend> = injectedBackends.associateBy { it.id }

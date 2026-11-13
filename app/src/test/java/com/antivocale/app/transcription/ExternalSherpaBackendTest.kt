@@ -25,7 +25,7 @@ class ExternalSherpaBackendTest {
     @get:Rule
     val tmp = TemporaryFolder()
 
-    private val backend = ExternalSherpaBackend()
+    private val backend = ExternalSherpaBackend(mockk(relaxed = true))
 
     @Test
     fun `transducer dir missing decoder names the decoder role`() = runTest {

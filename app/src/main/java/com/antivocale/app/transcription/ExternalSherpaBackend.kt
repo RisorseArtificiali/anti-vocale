@@ -18,6 +18,7 @@ import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.NativeKeepAlive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -37,7 +38,11 @@ import javax.inject.Singleton
  * so no consumer can address a half-configured engine.
  */
 @Singleton
-class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
+class ExternalSherpaBackend @Inject constructor(
+    /** TASK-994: the personal dictionary, for transducer-family biasing
+     *  when the imported model ships a bpe.vocab (Daniel's Fritter does). */
+    private val preferences: PreferencesManager,
+) : TranscriptionBackend {
 
     companion object {
         private const val TAG = "ExternalSherpaBackend"
@@ -341,13 +346,36 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                         ?: modelConfig.canary?.srcLang
                         ?: "").ifBlank { "auto" }
 
+                // TASK-994: transducer-family externals bias when the model
+                // ships a bpe.vocab (CDN publishers like Daniel's Fritter
+                // already do) AND the dictionary is non-empty. Same shape as
+                // the built-in SherpaBackend: construction-time snapshot,
+                // greedy without either condition.
+                val externalBiasing = record.family == ModelFamily.TRANSDUCER &&
+                    !record.streaming &&
+                    File(record.dir, "bpe.vocab").isFile &&
+                    PersonalDictionary.promptTerms(preferences.keywordBiasing.first()) != null
+                if (externalBiasing) {
+                    val vocab = File(record.dir, "bpe.vocab")
+                    val hotwordsFile = File(context.cacheDir, "hotwords-${record.backendId}.txt")
+                    PersonalDictionary.promptTerms(preferences.keywordBiasing.first())?.let { csv ->
+                        hotwordsFile.parentFile?.mkdirs()
+                        hotwordsFile.writeText(csv.split(", ").joinToString("\n") { it.trim() })
+                    }
+                    modelConfig.bpeVocab = File(record.dir, "bpe.vocab").absolutePath
+                    modelConfig.modelingUnit = "bpe"
+                    Log.i(TAG, "External transducer biasing ON (${record.backendId})")
+                }
                 val recognizerConfig = OfflineRecognizerConfig(
                     modelConfig = modelConfig,
                     // Family-defined mel bands: canary needs 128, every other
                     // family 80 (TASK-408; a wrong dim fails the native load or
                     // decodes garbage).
                     featConfig = FeatureConfig(sampleRate = 16000, featureDim = support.featureDim),
-                    decodingMethod = "greedy_search"
+                    decodingMethod = if (externalBiasing) "modified_beam_search" else "greedy_search",
+                    maxActivePaths = if (externalBiasing) 4 else 1,
+                    hotwordsFile = if (externalBiasing) File(context.cacheDir, "hotwords-${record.backendId}.txt").absolutePath else "",
+                    hotwordsScore = if (externalBiasing) SherpaBackend.TRANSDUCER_HOTWORDS_SCORE else 0f,
                 )
 
                 recognizer = OfflineRecognizer(config = recognizerConfig)

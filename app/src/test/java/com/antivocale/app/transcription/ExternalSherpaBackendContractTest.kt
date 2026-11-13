@@ -17,7 +17,7 @@ import org.junit.Test
  * The recognizer path itself needs real ONNX artifacts and is covered by device tests.
  */
 class ExternalSherpaBackendContractTest {
-    private val backend = ExternalSherpaBackend()
+    private val backend = ExternalSherpaBackend(mockk(relaxed = true))
 
     @Test
     fun `placeholder id before init and after unload`() {
