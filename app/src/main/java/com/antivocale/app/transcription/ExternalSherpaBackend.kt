@@ -349,20 +349,23 @@ class ExternalSherpaBackend @Inject constructor(
                 // TASK-994: transducer-family externals bias when the model
                 // ships a bpe.vocab (CDN publishers like Daniel's Fritter
                 // already do) AND the dictionary is non-empty. Same shape as
-                // the built-in SherpaBackend: construction-time snapshot,
-                // greedy without either condition.
+                // the built-in SherpaBackend: ONE construction-time snapshot
+                // of the dictionary (the predicate and the file write must
+                // never read the pref twice: a concurrent save between them
+                // would arm beam search against a hotwordsFile that was
+                // never written and fail the native load), greedy without
+                // either condition.
+                val biasingCsv = PersonalDictionary.promptTerms(preferences.keywordBiasing.first())
+                val vocabFile = File(record.dir, "bpe.vocab")
                 val externalBiasing = record.family == ModelFamily.TRANSDUCER &&
                     !record.streaming &&
-                    File(record.dir, "bpe.vocab").isFile &&
-                    PersonalDictionary.promptTerms(preferences.keywordBiasing.first()) != null
-                if (externalBiasing) {
-                    val vocab = File(record.dir, "bpe.vocab")
+                    vocabFile.isFile &&
+                    biasingCsv != null
+                if (biasingCsv != null && externalBiasing) {
                     val hotwordsFile = File(context.cacheDir, "hotwords-${record.backendId}.txt")
-                    PersonalDictionary.promptTerms(preferences.keywordBiasing.first())?.let { csv ->
-                        hotwordsFile.parentFile?.mkdirs()
-                        hotwordsFile.writeText(csv.split(", ").joinToString("\n") { it.trim() })
-                    }
-                    modelConfig.bpeVocab = File(record.dir, "bpe.vocab").absolutePath
+                    hotwordsFile.parentFile?.mkdirs()
+                    hotwordsFile.writeText(biasingCsv.split(", ").joinToString("\n") { it.trim() })
+                    modelConfig.bpeVocab = vocabFile.absolutePath
                     modelConfig.modelingUnit = "bpe"
                     Log.i(TAG, "External transducer biasing ON (${record.backendId})")
                 }

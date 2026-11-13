@@ -1012,11 +1012,8 @@ class TranscriptionOrchestrator @Inject constructor(
             // the chunk budget below (each chunk plus its prompt must fit
             // Gemma's context, the same accounting the summary guard
             // applies); zero in fenced mode, which pins its prompt.
-            val polishRiderChars = if (fenced) 0 else {
-                PersonalDictionary.promptTerms(preferencesManager.keywordBiasing.first())?.let {
-                    context.getString(R.string.personal_dictionary_prompt_line, it).length + it.length
-                } ?: 0
-            }
+            val polishRiderChars = if (fenced) 0 else dictionaryRiderChars(
+                context, PersonalDictionary.promptTerms(preferencesManager.keywordBiasing.first()))
             val passPrompt = if (fenced) {
                 context.getString(R.string.punctuation_default_prompt_conservative)
             } else {
@@ -1235,6 +1232,16 @@ class TranscriptionOrchestrator @Inject constructor(
             instruction,
             preferencesManager.keywordBiasing.first(),
         ) { terms -> context.getString(R.string.personal_dictionary_prompt_line, terms) }
+
+    /**
+     * TASK-994 review: the rider's EXACT rendered length (the '\n\n'
+     * separator plus the localized line, whose format argument already
+     * carries the terms; the two call sites used to add the terms a
+     * second time). One arithmetic beside its construction home so a
+     * template change cannot desynchronize the chunk budgets.
+     */
+    private fun dictionaryRiderChars(context: android.content.Context, terms: String?): Int =
+        terms?.let { context.getString(R.string.personal_dictionary_prompt_line, it).length + 2 } ?: 0
 
     /**
      * TASK-520: map-reduce summary for transcripts past the context guard
@@ -1517,11 +1524,8 @@ class TranscriptionOrchestrator @Inject constructor(
             // single-shot attempts at the engine). The guard counts the
             // FULL rendered line (terms + the localized template + the
             // separators), not just the terms.
-            val dictionaryRiderChars = PersonalDictionary.promptTerms(
-                preferencesManager.keywordBiasing.first())?.let { terms ->
-                context.getString(R.string.personal_dictionary_prompt_line, terms).length +
-                    terms.length
-            } ?: 0
+            val dictionaryRiderChars = dictionaryRiderChars(
+                context, PersonalDictionary.promptTerms(preferencesManager.keywordBiasing.first()))
             if (!SummaryPolicy.withinContextLimit(result.text.length + dictionaryRiderChars)) {
                 // TASK-520: too long for ONE generation, not too long to
                 // summarize: map over context-sized chunks, reduce the
