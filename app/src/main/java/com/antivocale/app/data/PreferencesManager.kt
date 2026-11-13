@@ -583,9 +583,10 @@ interface PreferencesManager {
         /** TASK-939: the word-tap seek surface ships off; users opt in. */
         const val DEFAULT_WORD_TAP_SEEK = false
         /** TASK-800 (GH #128 pt 3): the advanced Share… format picker on
-         *  the result row; default OFF (the plain one-tap share is the
-         *  reasonable default, the maintainer's UX direction). */
-        const val DEFAULT_ADVANCED_SHARE_FORMATS = false
+         *  the result row. TASK-990: ON by default (a Play reviewer could
+         *  not find .srt; the toggle was a discoverability wall). Existing
+         *  users who explicitly turned it OFF keep their choice (DataStore). */
+        const val DEFAULT_ADVANCED_SHARE_FORMATS = true
         /** TASK-631: protection is opt-in; by default the app never refuses a load on its own. */
         const val DEFAULT_MEMORY_PROTECTION = false
         /** TASK-274: the automation receivers are opt-in; off, they answer with the error
