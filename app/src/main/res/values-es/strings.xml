@@ -1212,6 +1212,7 @@
     <string name="keyword_biasing_where_recognition">Reconocimiento: Whistle, Qwen3, Parakeet, GigaAM y el Nemotron de streaming.</string>
     <string name="keyword_biasing_where_passes">Los pases de pulido y resumen de la IA; el pulido conservativo mantiene su aviso fijo.</string>
     <string name="keyword_biasing_where_download">Al configurar el diccionario se descarga una vez un pequeño archivo de motor para Parakeet, GigaAM y el Nemotron de streaming.</string>
+    <string name="keyword_biasing_where_qwen3">En Qwen3 solo se aplican los primeros términos de la lista.</string>
     <string name="keyword_biasing_score_title">Corrección más agresiva</string>
     <string name="keyword_biasing_score_note">Los valores altos también pueden influir en el resto de la transcripción. El cambio se aplica la próxima vez que se cargue el modelo.</string>
     <string name="personal_dictionary_prompt_line">Estos nombres o términos aparecen en este material; conserva esta grafía exacta donde ocurran: %1$s</string>

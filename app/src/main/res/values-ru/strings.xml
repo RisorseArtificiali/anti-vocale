@@ -1371,6 +1371,7 @@
     <string name="keyword_biasing_where_recognition">Распознавание: Whistle, Qwen3, Parakeet, GigaAM и потоковый Nemotron.</string>
     <string name="keyword_biasing_where_passes">Этапы вычитки и резюме ИИ; консервативная вычитка сохраняет свой фиксированный промпт.</string>
     <string name="keyword_biasing_where_download">При установке словаря для Parakeet, GigaAM и потокового Nemotron один раз загружается небольшой файл движка.</string>
+    <string name="keyword_biasing_where_qwen3">На Qwen3 применяются только первые термины списка.</string>
     <string name="keyword_biasing_score_title">Более агрессивное исправление</string>
     <string name="keyword_biasing_score_note">Более высокие значения могут влиять и на остальную часть расшифровки. Изменение вступает в силу при следующей загрузке модели.</string>
     <string name="personal_dictionary_prompt_line">Эти имена или термины встречаются в этом материале; сохраняйте это точное написание там, где они появляются: %1$s</string>

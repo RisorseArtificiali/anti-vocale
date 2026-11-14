@@ -1355,6 +1355,7 @@
     <string name="keyword_biasing_where_recognition">זיהוי: Whistle, Qwen3, Parakeet, GigaAM ו-Nemotron הזורם.</string>
     <string name="keyword_biasing_where_passes">שלבי הליטוש והסיכום של הבינה המלאכותית; הליטוש השמרני שומר על הפרומפט הקבוע שלו.</string>
     <string name="keyword_biasing_where_download">הגדרת המילון מורידה פעם אחת קובץ מנוע קטן עבור Parakeet, GigaAM ו-Nemotron הזורם.</string>
+    <string name="keyword_biasing_where_qwen3">ב-Qwen3 חלים רק המונחים הראשונים ברשימה.</string>
     <string name="keyword_biasing_score_title">תיקון אגרסיבי יותר</string>
     <string name="keyword_biasing_score_note">ערכים גבוהים עלולים להשפיע גם על שאר התמליל. השינוי ייכנס לתוקף בטעינה הבאה של המודל.</string>
     <string name="personal_dictionary_prompt_line">שמות או מונחים אלה מופיעים בחומר הזה; שמרו על האיות המדויק הזה בכל מקום שבו הם מופיעים: %1$s</string>

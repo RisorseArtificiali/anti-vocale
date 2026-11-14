@@ -602,6 +602,7 @@
     <string name="keyword_biasing_where_recognition">Recognition: Whistle, Qwen3, Parakeet, GigaAM and the streaming Nemotron.</string>
     <string name="keyword_biasing_where_passes">The AI polish and summary passes; conservative polish keeps its fixed prompt.</string>
     <string name="keyword_biasing_where_download">Setting the dictionary downloads a small engine file once for Parakeet, GigaAM and the streaming Nemotron.</string>
+    <string name="keyword_biasing_where_qwen3">On Qwen3 only the first terms of the list apply.</string>
     <string name="keyword_biasing_score_title">More aggressive correction</string>
     <string name="keyword_biasing_score_note">Higher values can also influence the rest of the transcript. Changes apply when the model next loads.</string>
     <string name="keyword_biasing_placeholder">One term per line</string>

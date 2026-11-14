@@ -1344,6 +1344,7 @@
     <string name="keyword_biasing_where_recognition">Erkennung: Whistle, Qwen3, Parakeet, GigaAM und Streaming-Nemotron.</string>
     <string name="keyword_biasing_where_passes">Die KI-Politur und Zusammenfassung; die konservative Politur behält ihren festen Prompt.</string>
     <string name="keyword_biasing_where_download">Beim Festlegen des Wörterbuchs wird einmalig eine kleine Engine-Datei für Parakeet, GigaAM und Streaming-Nemotron heruntergeladen.</string>
+    <string name="keyword_biasing_where_qwen3">Auf Qwen3 gelten nur die ersten Begriffe der Liste.</string>
     <string name="keyword_biasing_score_title">Stärkere Korrektur</string>
     <string name="keyword_biasing_score_note">Höhere Werte können auch den Rest der Transkription beeinflussen. Die Änderung wirkt beim nächsten Laden des Modells.</string>
     <string name="personal_dictionary_prompt_line">Diese Namen oder Begriffe kommen in diesem Material vor; behalte diese genaue Schreibweise, wo sie auftreten: %1$s</string>

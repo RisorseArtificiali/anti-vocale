@@ -1360,6 +1360,7 @@
     <string name="keyword_biasing_where_recognition">Herkenning: Whistle, Qwen3, Parakeet, GigaAM en streaming-Nemotron.</string>
     <string name="keyword_biasing_where_passes">De AI-bewerkings- en samenvattingsstappen; conservatieve bewerking houdt zijn vaste prompt.</string>
     <string name="keyword_biasing_where_download">Het instellen van het woordenboek downloadt eenmalig een klein enginebestand voor Parakeet, GigaAM en streaming-Nemotron.</string>
+    <string name="keyword_biasing_where_qwen3">Op Qwen3 gelden alleen de eerste termen van de lijst.</string>
     <string name="keyword_biasing_score_title">Agressievere correctie</string>
     <string name="keyword_biasing_score_note">Hogere waarden kunnen ook de rest van de transcriptie beïnvloeden. De wijziging geldt bij de volgende keer dat het model laadt.</string>
     <string name="personal_dictionary_prompt_line">Deze namen of termen komen voor in dit materiaal; behoud deze exacte spelling waar ze voorkomen: %1$s</string>

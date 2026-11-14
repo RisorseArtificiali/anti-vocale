@@ -2353,6 +2353,11 @@ internal fun DictionarySettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Text(
+                    stringResource(R.string.keyword_biasing_where_qwen3),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -4159,7 +4164,8 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.keyword_biasing_description, R.string.keyword_biasing_placeholder,
             R.string.keyword_biasing_where_title, R.string.keyword_biasing_where_recognition,
             R.string.keyword_biasing_where_passes, R.string.keyword_biasing_where_download,
-            R.string.keyword_biasing_score_title, R.string.keyword_biasing_score_note),
+            R.string.keyword_biasing_score_title, R.string.keyword_biasing_score_note,
+            R.string.keyword_biasing_where_qwen3),
         // TASK-994: unconditional (the dictionary applies to every
         // backend's Gemma passes and Whistle; the copy states the rest).
         visible = { true },

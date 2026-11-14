@@ -1343,6 +1343,7 @@
     <string name="keyword_biasing_where_recognition">पहचान: Whistle, Qwen3, Parakeet, GigaAM और स्ट्रीमिंग Nemotron।</string>
     <string name="keyword_biasing_where_passes">AI परिष्कार और सारांश चरण; रूढ़िवादी परिष्कार अपना निश्चित प्रॉम्पट बनाए रखता है।</string>
     <string name="keyword_biasing_where_download">शब्दकोश सेट करने पर Parakeet, GigaAM और स्ट्रीमिंग Nemotron के लिए एक बार एक छोटी इंजन फ़ाइल डाउनलोड होती है।</string>
+    <string name="keyword_biasing_where_qwen3">Qwen3 पर सूची के केवल पहले शब्द लागू होते हैं।</string>
     <string name="keyword_biasing_score_title">ज़्यादा सख़्त सुधार</string>
     <string name="keyword_biasing_score_note">उच्च मान ट्रांसक्रिप्ट के बाकी हिस्से को भी प्रभावित कर सकते हैं। बदलाव मॉडल के अगले लोड होने पर लागू होता है।</string>
     <string name="personal_dictionary_prompt_line">ये नाम या शब्द इस सामग्री में आते हैं; जहाँ आएँ वहीं यह सटीक वर्तनी बनाए रखें: %1$s</string>

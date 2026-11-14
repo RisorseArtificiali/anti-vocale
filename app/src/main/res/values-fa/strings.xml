@@ -1349,6 +1349,7 @@
     <string name="keyword_biasing_where_recognition">تشخیص: Whistle و Qwen3 و Parakeet و GigaAM و Nemotron جریانی.</string>
     <string name="keyword_biasing_where_passes">مراحل پرداخت و خلاصهٔ هوش مصنوعی؛ پرداخت محافظه‌کار پرامپت ثابت خود را نگه می‌دارد.</string>
     <string name="keyword_biasing_where_download">با تنظیم واژه‌نامه، یک فایل موتور کوچک یک‌بار برای Parakeet وGigaAM وNemotron جریانی دانلود می‌شود.</string>
+    <string name="keyword_biasing_where_qwen3">در Qwen3 فقط نخستین اصطلاح‌های فهرست اعمال می‌شوند.</string>
     <string name="keyword_biasing_score_title">اصلاح بیشتر و قوی‌تر</string>
     <string name="keyword_biasing_score_note">مقادیر بالاتر می‌توانند روی بقیهٔ تفریغ هم اثر بگذارند. تغییر در بارگذاری بعدی مدل اعمال می‌شود.</string>
     <string name="personal_dictionary_prompt_line">این نام‌ها یا اصطلاح‌ها در این محتوا می‌آیند؛ هر جا آمدند این نوشتار دقیق را حفظ کن: %1$s</string>

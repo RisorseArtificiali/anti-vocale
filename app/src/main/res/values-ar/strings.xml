@@ -499,6 +499,7 @@
     <string name="keyword_biasing_where_recognition">التعرّف: Whistle وQwen3 وParakeet وGigaAM وNemotron المتدفق.</string>
     <string name="keyword_biasing_where_passes">مراحل التلميع والتلخيص بالذكاء الاصطناعي؛ التلميع المحافظ يبقي على موجّهه الثابت.</string>
     <string name="keyword_biasing_where_download">عند تعيين القاموس يُنزَّل ملف محرك صغير مرة واحدة لكل من Parakeet وGigaAM وNemotron المتدفق.</string>
+    <string name="keyword_biasing_where_qwen3">على Qwen3 تُطبَّق فقط المصطلحات الأولى من القائمة.</string>
     <string name="keyword_biasing_score_title">تصحيح أكثر إجبارًا</string>
     <string name="keyword_biasing_score_note">القيم الأعلى قد تؤثر أيضًا على بقية التفريغ. يسري التغيير عند تحميل النموذج في المرة القادمة.</string>
     <string name="personal_dictionary_prompt_line">تظهر هذه الأسماء أو المصطلحات في هذا المحتوى؛ حافظ على هذا التهجئة الدقيقة حيثما ترد: %1$s</string>
