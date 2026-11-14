@@ -1365,7 +1365,12 @@
     <string name="backup_disclosure_title">Перед экспортом</string>
     <string name="backup_disclosure_body">Копия содержит каждую расшифровку, имя отправителя и метку говорящего в читаемом виде. Передавайте её только тем, кому доверяете.</string>
     <string name="keyword_biasing_title">Личный словарь</string>
-    <string name="keyword_biasing_description">Имена, места или жаргон, которые приложение должно учитывать, по одному в строке. Действует для распознавания Whistle, Qwen3, Parakeet, GigaAM и потокового Nemotron и для этапов вычитки и резюме ИИ; остальные речевые движки пока не поддерживают словаревые подсказки. При установке словаря для Parakeet, GigaAM и потокового Nemotron один раз загружается небольшой файл движка. (В консервативном режиме вычитки фиксированный промпт остаётся без изменений.)</string>
+    <string name="keyword_biasing_description">Имена, места или жаргон, которые приложение должно учитывать, по одному в строке.</string>
+    <string name="keyword_biasing_summary">Имена и термины, которые распознавание должно писать по-вашему.</string>
+    <string name="keyword_biasing_where_title">Где это применяется</string>
+    <string name="keyword_biasing_where_recognition">Распознавание: Whistle, Qwen3, Parakeet, GigaAM и потоковый Nemotron.</string>
+    <string name="keyword_biasing_where_passes">Этапы вычитки и резюме ИИ; консервативная вычитка сохраняет свой фиксированный промпт.</string>
+    <string name="keyword_biasing_where_download">При установке словаря для Parakeet, GigaAM и потокового Nemotron один раз загружается небольшой файл движка.</string>
     <string name="personal_dictionary_prompt_line">Эти имена или термины встречаются в этом материале; сохраняйте это точное написание там, где они появляются: %1$s</string>
     <string name="keyword_biasing_placeholder">Один термин на строку</string>
     <string name="freeze_protection_title">Защита фоновой расшифровки</string>

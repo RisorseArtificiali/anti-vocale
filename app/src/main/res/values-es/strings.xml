@@ -1206,7 +1206,12 @@
     <string name="backup_disclosure_title">Antes de exportar</string>
     <string name="backup_disclosure_body">La copia contiene cada transcripción, nombre de remitente y etiqueta de hablante en texto legible. Compártela solo con destinatarios de confianza.</string>
     <string name="keyword_biasing_title">Diccionario personal</string>
-    <string name="keyword_biasing_description">Nombres, lugares o jerga que la app debe respetar, uno por línea. Se aplica al reconocimiento de Whistle, Qwen3, Parakeet, GigaAM y el Nemotron de streaming y a los pases de pulido y resumen de la IA; los demás motores de voz aún no admiten sesgo de vocabulario. Al configurar el diccionario se descarga una vez un pequeño archivo de motor para Parakeet, GigaAM y el Nemotron de streaming. (En el modo de pulido conservativo se mantiene el aviso fijo.)</string>
+    <string name="keyword_biasing_description">Nombres, lugares o jerga que la app debe respetar, uno por línea.</string>
+    <string name="keyword_biasing_summary">Nombres y términos que el reconocimiento debe escribir como tú.</string>
+    <string name="keyword_biasing_where_title">Dónde se aplica</string>
+    <string name="keyword_biasing_where_recognition">Reconocimiento: Whistle, Qwen3, Parakeet, GigaAM y el Nemotron de streaming.</string>
+    <string name="keyword_biasing_where_passes">Los pases de pulido y resumen de la IA; el pulido conservativo mantiene su aviso fijo.</string>
+    <string name="keyword_biasing_where_download">Al configurar el diccionario se descarga una vez un pequeño archivo de motor para Parakeet, GigaAM y el Nemotron de streaming.</string>
     <string name="personal_dictionary_prompt_line">Estos nombres o términos aparecen en este material; conserva esta grafía exacta donde ocurran: %1$s</string>
     <string name="keyword_biasing_placeholder">Un término por línea</string>
     <string name="freeze_protection_title">Protección de transcripción en segundo plano</string>

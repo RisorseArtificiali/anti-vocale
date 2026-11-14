@@ -357,12 +357,12 @@ class ExternalSherpaBackend @Inject constructor(
                 // either condition.
                 val biasingCsv = PersonalDictionary.promptTerms(preferences.keywordBiasing.first())
                 val vocabFile = File(record.dir, "bpe.vocab")
+                val hotwordsFile = File(context.cacheDir, "hotwords-${record.backendId}.txt")
                 val externalBiasing = record.family == ModelFamily.TRANSDUCER &&
                     !record.streaming &&
                     vocabFile.isFile &&
                     biasingCsv != null
-                if (biasingCsv != null && externalBiasing) {
-                    val hotwordsFile = File(context.cacheDir, "hotwords-${record.backendId}.txt")
+                if (externalBiasing && biasingCsv != null) {
                     hotwordsFile.parentFile?.mkdirs()
                     hotwordsFile.writeText(biasingCsv.split(", ").joinToString("\n") { it.trim() })
                     modelConfig.bpeVocab = vocabFile.absolutePath
@@ -377,7 +377,7 @@ class ExternalSherpaBackend @Inject constructor(
                     featConfig = FeatureConfig(sampleRate = 16000, featureDim = support.featureDim),
                     decodingMethod = if (externalBiasing) "modified_beam_search" else "greedy_search",
                     maxActivePaths = if (externalBiasing) 4 else 1,
-                    hotwordsFile = if (externalBiasing) File(context.cacheDir, "hotwords-${record.backendId}.txt").absolutePath else "",
+                    hotwordsFile = if (externalBiasing) hotwordsFile.absolutePath else "",
                     hotwordsScore = if (externalBiasing) SherpaBackend.TRANSDUCER_HOTWORDS_SCORE else 0f,
                 )
 

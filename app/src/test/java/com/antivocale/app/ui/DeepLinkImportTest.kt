@@ -42,6 +42,19 @@ class DeepLinkImportTest {
     }
 
     @Test
+    fun `a literal plus in an unencoded carried url survives the decode`() {
+        DeepLinkImport.pending.value = null
+        // The unencoded case the encodedQuery comment supports: '+' is legal
+        // in paths (cdn.example.org/files/pkg+v2.vibe) and must NOT become a
+        // space (Uri.decode's form-encoding semantics) while real %XX still
+        // decodes.
+        val url = DeepLinkImport.capture(Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse("antivocale://import?url=https://cdn.example.org/files/pkg+v2%2Ejson")))
+        assertEquals("https://cdn.example.org/files/pkg+v2.json", url)
+    }
+
+    @Test
     fun `wrong scheme host or missing url are dropped`() {
         DeepLinkImport.pending.value = null
         for (data in listOf(

@@ -29,6 +29,7 @@ class BiasingVocabSupplementTest {
 
     private val prefs = FakePreferencesManager()
     private val context = mockk<android.content.Context>()
+    private val backendManager = mockk<com.antivocale.app.transcription.TranscriptionBackendManager>(relaxed = true)
     private lateinit var filesRoot: File
     private lateinit var modelDir: File
 
@@ -39,6 +40,8 @@ class BiasingVocabSupplementTest {
 
     @Before
     fun setUp() {
+        every { backendManager.activeBackendId } returns
+            kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
         filesRoot = tmp.newFolder("files")
         every { context.filesDir } returns filesRoot
         every { context.cacheDir } returns tmp.newFolder("cache")
@@ -72,14 +75,15 @@ class BiasingVocabSupplementTest {
         BundledCatalog.seed(ModelCatalogJson.parseCatalog(json))
     }
 
-    private fun newPass(bytes: ByteArray = vocabBytes) = BiasingVocabSupplement(prefs).apply {
+    private fun newPass(bytes: ByteArray = vocabBytes) =
+        BiasingVocabSupplement(prefs, backendManager).apply {
         fetcher = { url, temp, target ->
             fetched.add(Triple(url, temp, target))
             runCatching { target.writeBytes(bytes); target }
         }
     }
 
-    private fun newFailingPass() = BiasingVocabSupplement(prefs).apply {
+    private fun newFailingPass() = BiasingVocabSupplement(prefs, backendManager).apply {
         fetcher = { _, _, _ -> Result.failure(IllegalStateException("offline")) }
     }
 
@@ -192,6 +196,27 @@ class BiasingVocabSupplementTest {
         File(modelDir, "bpe.vocab").writeBytes(vocabBytes)
         newPass().run(context)
         assertTrue(fetched.isEmpty())
+    }
+
+    @Test
+    fun `a landing for the ACTIVE backend unloads it so the next request re-arms`() = runTest {
+        seedCatalog()
+        prefs._keywordBiasing.value = "Boncompagni"
+        every { backendManager.activeBackendId } returns
+            kotlinx.coroutines.flow.MutableStateFlow<String?>("supp-test")
+        newPass().run(context)
+        io.mockk.verify(exactly = 1) { backendManager.unloadActiveBackend() }
+        assertTrue(File(modelDir, "bpe.vocab").isFile)
+    }
+
+    @Test
+    fun `a landing for an INACTIVE backend never unloads`() = runTest {
+        seedCatalog()
+        prefs._keywordBiasing.value = "Boncompagni"
+        every { backendManager.activeBackendId } returns
+            kotlinx.coroutines.flow.MutableStateFlow<String?>("some-other-backend")
+        newPass().run(context)
+        io.mockk.verify(exactly = 0) { backendManager.unloadActiveBackend() }
     }
 
     @Test

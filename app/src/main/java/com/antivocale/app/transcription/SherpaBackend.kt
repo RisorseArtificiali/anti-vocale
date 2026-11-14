@@ -475,6 +475,11 @@ class SherpaBackend(
     @Volatile private var offlineRecognizer: OfflineRecognizer? = null
     @Volatile private var onlineRecognizer: OnlineRecognizer? = null
     private var modelDir: String? = null
+    /** TASK-994 review: the construction-time streaming-biasing arming. The
+     *  per-request hotwords gate reads THIS, never a fresh file stat: the
+     *  supplement pass can land the vocab mid-session onto a recognizer
+     *  built without it, and hotwords there is a native exit-255 abort. */
+    @Volatile private var streamingBiasingArmed = false
     private var isInitialized = false
     private var language: String = "auto"
 
@@ -836,6 +841,7 @@ class SherpaBackend(
         // tokenizer differs from the offline NeMo exports).
         val streamingVocab = File(dir, STREAMING_VOCAB_FILE)
         val streamingBiasing = streamingVocab.isFile
+        streamingBiasingArmed = streamingBiasing
         if (streamingBiasing) {
             Log.i(TAG, "Streaming biasing armed (${entry.id}): vocab=${streamingVocab.name}")
         }
@@ -1025,9 +1031,12 @@ class SherpaBackend(
                 // the streaming context graph per request (the AAR's
                 // createStream(String) IS the hotwords param; desktop flip
                 // probe: "Boncompagni" flipped to "Boncompani" with the
-                // extracted vocab). The vocab file must be on disk; without
-                // it the terms would not encode.
-                val streamingHotwords = if (modelDir?.let { File(it, STREAMING_VOCAB_FILE) }?.isFile == true) {
+                // extracted vocab). GATED ON THE CONSTRUCTION-TIME arming
+                // flag, NOT a fresh file stat: the supplement pass can land
+                // bpe.vocab mid-session (the dictionary collector), and
+                // hotwords on a recognizer built WITHOUT bpeVocab is the
+                // native exit-255 abort this file documents elsewhere.
+                val streamingHotwords = if (streamingBiasingArmed) {
                     PersonalDictionary.promptTerms(preferences.keywordBiasing.first())
                 } else null
                 stream = rec.createStream(streamingHotwords ?: "")

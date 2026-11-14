@@ -1206,7 +1206,12 @@
     <string name="backup_disclosure_title">Avant d\'exporter</string>
     <string name="backup_disclosure_body">La sauvegarde contient chaque transcription, nom d\'expéditeur et étiquette de locuteur en texte lisible. Ne la partagez qu\'avec des destinataires de confiance.</string>
     <string name="keyword_biasing_title">Dictionnaire personnel</string>
-    <string name="keyword_biasing_description">Noms, lieux ou jargon que l\'application doit respecter, un par ligne. S\'applique à la reconnaissance Whistle, Qwen3, Parakeet, GigaAM et Nemotron en flux, et aux passes de polissage et de résumé de l\'IA ; les autres moteurs ne prennent pas encore en charge le biais de vocabulaire. La définition du dictionnaire télécharge une fois un petit fichier moteur pour Parakeet, GigaAM et Nemotron en flux. (En mode de polissage conservateur, l\'invite fixe est conservée telle quelle.)</string>
+    <string name="keyword_biasing_description">Noms, lieux ou jargon que l\'application doit respecter, un par ligne.</string>
+    <string name="keyword_biasing_summary">Noms et termes que la reconnaissance doit écrire à votre façon.</string>
+    <string name="keyword_biasing_where_title">Où cela s\'applique</string>
+    <string name="keyword_biasing_where_recognition">Reconnaissance : Whistle, Qwen3, Parakeet, GigaAM et Nemotron en flux.</string>
+    <string name="keyword_biasing_where_passes">Les passes de polissage et de résumé de l\'IA ; le polissage conservateur garde son invite fixe.</string>
+    <string name="keyword_biasing_where_download">La définition du dictionnaire télécharge une fois un petit fichier moteur pour Parakeet, GigaAM et Nemotron en flux.</string>
     <string name="personal_dictionary_prompt_line">Ces noms ou termes apparaissent dans ce contenu ; conservez cette orthographe exacte là où ils figurent : %1$s</string>
     <string name="keyword_biasing_placeholder">Un terme par ligne</string>
     <string name="freeze_protection_title">Protection de la transcription en arrière-plan</string>

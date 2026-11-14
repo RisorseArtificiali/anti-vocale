@@ -9,6 +9,7 @@ import com.antivocale.app.data.catalog.CatalogSource
 import com.antivocale.app.data.catalog.CatalogVariant
 import com.antivocale.app.transcription.PersonalDictionary
 import com.antivocale.app.transcription.SherpaModelManager
+import com.antivocale.app.transcription.TranscriptionBackendManager
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,6 +37,7 @@ import kotlinx.coroutines.sync.withLock
 @Singleton
 class BiasingVocabSupplement @Inject constructor(
     private val preferencesManager: PreferencesManager,
+    private val backendManager: TranscriptionBackendManager,
 ) {
 
     /**
@@ -95,19 +97,32 @@ class BiasingVocabSupplement @Inject constructor(
                         Log.w(TAG, "supplement ${supplement.name}: pin mismatch on disk, refetching")
                         target.delete()
                     }
-                    fetch(context, entry.id, variant, supplement, target)
+                    if (fetch(context, entry.id, variant, supplement, target) &&
+                        backendManager.activeBackendId.value == entry.id) {
+                        // TASK-994 review: a mid-session landing must reach
+                        // the RESIDENT recognizer. Transducer/streaming
+                        // biasing arms at construction, so an initialized
+                        // backend would stay greedy (the copy names these
+                        // engines as honored); unloading makes the next
+                        // transcription re-construct with the vocab in
+                        // place. Built-in backend ids are the catalog entry
+                        // ids, so the comparison is direct.
+                        backendManager.unloadActiveBackend()
+                        Log.i(TAG, "active backend ${entry.id} unloaded; next request re-arms biasing")
+                    }
                 }
             }
         }
     }
 
+    /** Fetches one supplement; true when it landed pin-verified. */
     private suspend fun fetch(
         context: Context,
         entryId: String,
         variant: CatalogVariant,
         supplement: CatalogFile,
         target: File,
-    ) {
+    ): Boolean {
         // The repo override serves supplements hosted on a different repo
         // than the variant's source (the streaming Nemotron's vocab on our
         // mirror while the model stays upstream). Supplement pins ride OUR
@@ -127,6 +142,7 @@ class BiasingVocabSupplement @Inject constructor(
             "supplement-$entryId-${variant.dirName}-${supplement.name}$PART_SUFFIX")
         target.parentFile?.mkdirs()
         val result = fetcher(url, temp, target)
+        var landed = false
         result.fold(
             onSuccess = { file ->
                 val pin = supplement.sha256
@@ -135,6 +151,7 @@ class BiasingVocabSupplement @Inject constructor(
                     file.delete()
                 } else {
                     Log.i(TAG, "supplement ${supplement.name} landed (${file.length()} bytes)")
+                    landed = true
                 }
                 // The helper's resume sidecar outlives the rename; a model
                 // dir must not accumulate it (the importers' cleanup rule).
@@ -145,6 +162,7 @@ class BiasingVocabSupplement @Inject constructor(
                 // The temp partial STAYS: the next attempt resumes from it.
             },
         )
+        return landed
     }
 
     private companion object {

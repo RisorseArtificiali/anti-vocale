@@ -130,9 +130,13 @@ class AskTranscriptsViewModel @Inject constructor(
      *  question into terms, rank rows by how many distinct terms they
      *  contain (common words inflate every row equally, so the
      *  discriminative terms still separate), newest first. Falls back
-     *  to the whole phrase when no term hits (verbatim quotes). */
+     *  to the whole phrase when no term hits (verbatim quotes). Terms
+     *  keep their typed case: SQLite's LIKE folds case for ASCII only,
+     *  so lowercasing would silently miss capitalized non-ASCII content
+     *  (Cyrillic names, accented words) that the user typed exactly as
+     *  it appears in the transcript. */
     private suspend fun retrieve(question: String): List<LogEntity> {
-        val terms = question.lowercase()
+        val terms = question
             .split(Regex("[^\\p{L}\\p{N}]+"))
             .filter { it.length >= 3 }
             .distinct()

@@ -184,6 +184,9 @@ fun SettingsTab(
     var showAutomationSettings by rememberSaveable("showAutomationSettings") { mutableStateOf(false) }
     var showVoiceNoteSettings by rememberSaveable("showVoiceNoteSettings") { mutableStateOf(false) }
     var showBackupTransfer by rememberSaveable("showBackupTransfer") { mutableStateOf(false) }
+    // TASK-994.2: the personal-dictionary page (maintainer trial 2026-11-14:
+    // the card-in-tree was obscure; the surface is a subpage now).
+    var showDictionarySettings by rememberSaveable("showDictionarySettings") { mutableStateOf(false) }
     // TASK-929: the What's-New notes hold a List<String>, which is not
     // saveable; the dialog is transient view state and drops on rotation
     // like every other content dialog.
@@ -202,6 +205,7 @@ fun SettingsTab(
         showAutomationSettings = false
         showVoiceNoteSettings = false
         showBackupTransfer = false
+        showDictionarySettings = false
     }
 
     // 2026-09-30 regroup: system back on ANY subpage must return to the
@@ -210,7 +214,7 @@ fun SettingsTab(
     androidx.activity.compose.BackHandler(enabled = showIconSettings || showExportSettings ||
         showPromptSettings || showPerAppSettings || showSpeakerSettings ||
         showPerformanceSettings || showAutomationSettings || showVoiceNoteSettings ||
-        showBackupTransfer) {
+        showBackupTransfer || showDictionarySettings) {
         closeSubPages()
     }
     // TASK-625 deep-link carrier: the memory-failure notification action
@@ -256,6 +260,7 @@ fun SettingsTab(
                     "automation" -> showAutomationSettings = true
                     "voice_notes" -> showVoiceNoteSettings = true
                     "backup" -> showBackupTransfer = true
+                    "dictionary" -> showDictionarySettings = true
                 }
             }
             is AppNavigation.Destination.SettingsRow -> {
@@ -402,6 +407,15 @@ fun SettingsTab(
             initialScroll = pendingSubPageScroll,
             onScrollConsumed = { pendingSubPageScroll = null },
             onBack = { showVoiceNoteSettings = false }
+        )
+    } else if (showDictionarySettings) {
+        // TASK-994.2 (maintainer trial 2026-11-14): the personal dictionary
+        // gets the subpage treatment; the main tree keeps one hub row.
+        DictionarySettingsScreen(
+            viewModel = viewModel,
+            initialScroll = pendingSubPageScroll,
+            onScrollConsumed = { pendingSubPageScroll = null },
+            onBack = { showDictionarySettings = false }
         )
     } else if (showPromptSettings) {
         PromptSettingsScreen(
@@ -1169,18 +1183,18 @@ fun SettingsTab(
                 }
                 }
 
-                // TASK-858 -> TASK-994: the whistle terms generalized into
-                // the PERSONAL DICTIONARY, shown for every backend (the
-                // description states honestly where it applies: Whistle and
-                // Qwen3 recognition, the Gemma polish/summary passes). The
-                // EditablePromptCard contract (commit on focus loss, the
-                // cap at the impl layer) fits a term list; request-time by
-                // design (the passes read the flow per run).
+                // TASK-858 -> TASK-994.2: the whistle terms generalized
+                // into the PERSONAL DICTIONARY; since the 2026-11-14 trial
+                // the surface is a hub row + subpage (the card-in-tree was
+                // obscure: engine detail now lives on the page's "Where it
+                // applies" section, not in the tree). Search vocabulary is
+                // the hub-union (this row's strings + the page's), the
+                // DIARIZATION_HUB precedent.
                 SearchFilterRow(searchQuery, SettingsSearchId.KEYWORD_BIASING, searchState) {
-                    KeywordBiasingCard(
-                        terms = viewModel.currentKeywordBiasing.collectAsState().value,
-                        onSave = { viewModel.saveKeywordBiasing(it) },
-                    )
+                    SettingsHubCard(
+                        titleRes = R.string.keyword_biasing_title,
+                        summaryRes = R.string.keyword_biasing_summary,
+                    ) { showDictionarySettings = true }
                 }
 
                 // Maintainer decision 2026-09-30: diarization settings moved
@@ -2256,6 +2270,57 @@ internal fun VoiceNoteSettingsScreen(
                 }
             }
 
+    }
+}
+
+/**
+ * TASK-994.2 (maintainer trial 2026-11-14: "obscure" + the subpage rule):
+ * the personal-dictionary page. The main tree keeps one hub row; the
+ * engine detail that used to be crammed into the card description lives
+ * here as a "Where it applies" section, and the editor's own helper is
+ * back to the one-line "one per line" sentence.
+ */
+@Composable
+internal fun DictionarySettingsScreen(
+    viewModel: SettingsViewModel,
+    initialScroll: AppNavigation.ScrollRequest? = null,
+    onScrollConsumed: () -> Unit = {},
+    onBack: () -> Unit,
+) {
+    SubPageScrollScaffold(
+        titleRes = R.string.keyword_biasing_title,
+        onBack = onBack,
+        scrollRequest = initialScroll,
+        onScrollConsumed = onScrollConsumed,
+        bodySpacing = Arrangement.spacedBy(12.dp),
+    ) { _ ->
+        // The terms editor: the EditablePromptCard contract (commit on
+        // focus loss, the cap at the impl layer); request-time by design
+        // (the passes read the flow per run).
+        KeywordBiasingCard(
+            terms = viewModel.currentKeywordBiasing.collectAsState().value,
+            onSave = { viewModel.saveKeywordBiasing(it) },
+        )
+        SectionCard(
+            icon = Icons.Default.Info,
+            title = stringResource(R.string.keyword_biasing_where_title),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    stringResource(R.string.keyword_biasing_where_recognition),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    stringResource(R.string.keyword_biasing_where_passes),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    stringResource(R.string.keyword_biasing_where_download),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 
@@ -4056,8 +4121,10 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     ),
     SettingsSearchCard(
         SettingsSearchId.KEYWORD_BIASING, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.keyword_biasing_title, R.string.keyword_biasing_description,
-            R.string.keyword_biasing_placeholder),
+        listOf(R.string.keyword_biasing_title, R.string.keyword_biasing_summary,
+            R.string.keyword_biasing_description, R.string.keyword_biasing_placeholder,
+            R.string.keyword_biasing_where_title, R.string.keyword_biasing_where_recognition,
+            R.string.keyword_biasing_where_passes, R.string.keyword_biasing_where_download),
         // TASK-994: unconditional (the dictionary applies to every
         // backend's Gemma passes and Whistle; the copy states the rest).
         visible = { true },

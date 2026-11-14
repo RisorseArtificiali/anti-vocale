@@ -50,9 +50,14 @@ object DeepLinkImport {
         // not percent-encoded lost its tail silently. Reading the raw
         // encodedQuery and stripping the leading "url=" keeps the carried
         // URL whole whether or not the generator percent-encoded it.
+        // Review: decode with '+' PROTECTED. Uri.decode applies
+        // form-encoding semantics (a literal '+' becomes a space), but an
+        // unencoded URL is exactly the supported case and '+' is legal in
+        // paths (cdn.example.org/files/pkg+v2.vibe); shielding it before
+        // decoding keeps both the literal '+' and real %XX escapes intact.
         val raw = data.encodedQuery ?: return null
         if (!raw.startsWith("url=")) return null
-        val url = Uri.decode(raw.removePrefix("url=")).trim()
+        val url = Uri.decode(raw.removePrefix("url=").replace("+", "%2B")).trim()
         if (url.length > MAX_URL_LENGTH) return null
         // Uri.parse never throws for a non-null string (failures surface on
         // the accessors); the scheme/host reads below are the validation.

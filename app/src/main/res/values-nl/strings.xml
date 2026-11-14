@@ -1354,7 +1354,12 @@
     <string name="backup_disclosure_title">Voordat je exporteert</string>
     <string name="backup_disclosure_body">De back-up bevat elke transcriptie, afzendernaam en sprekerlabels in leesbare tekst. Deel hem alleen met ontvangers die je vertrouwt.</string>
     <string name="keyword_biasing_title">Persoonlijk woordenboek</string>
-    <string name="keyword_biasing_description">Namen, plaatsen of jargon die de app moet respecteren, één per regel. Geldt voor Whistle-, Qwen3-, Parakeet-, GigaAM- en streaming-Nemotron-herkenning en de AI-bewerkings- en samenvattingsstappen; andere spraakengines ondersteunen woordenboekbeïnvloeding nog niet. Het instellen van het woordenboek downloadt eenmalig een klein enginebestand voor Parakeet, GigaAM en streaming-Nemotron. (In de conservatieve polijstmodus blijft de vaste prompt ongewijzigd.)</string>
+    <string name="keyword_biasing_description">Namen, plaatsen of jargon die de app moet respecteren, één per regel.</string>
+    <string name="keyword_biasing_summary">Namen en termen die de herkenning op jouw manier schrijft.</string>
+    <string name="keyword_biasing_where_title">Waar het geldt</string>
+    <string name="keyword_biasing_where_recognition">Herkenning: Whistle, Qwen3, Parakeet, GigaAM en streaming-Nemotron.</string>
+    <string name="keyword_biasing_where_passes">De AI-bewerkings- en samenvattingsstappen; conservatieve bewerking houdt zijn vaste prompt.</string>
+    <string name="keyword_biasing_where_download">Het instellen van het woordenboek downloadt eenmalig een klein enginebestand voor Parakeet, GigaAM en streaming-Nemotron.</string>
     <string name="personal_dictionary_prompt_line">Deze namen of termen komen voor in dit materiaal; behoud deze exacte spelling waar ze voorkomen: %1$s</string>
     <string name="keyword_biasing_placeholder">Eén term per regel</string>
     <string name="freeze_protection_title">Bescherming van achtergrondtranscriptie</string>
