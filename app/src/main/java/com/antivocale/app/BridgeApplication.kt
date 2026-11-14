@@ -157,6 +157,9 @@ class BridgeApplication : Application(), Configuration.Provider {
                 .drop(1)
                 .collectLatest {
                     delay(2_000)
+                    // The stale-resident fix first (any edit or clear must
+                    // reach the armed recognizer), then the fetch pass.
+                    biasingVocabSupplement.onDictionaryChanged()
                     runCatching { biasingVocabSupplement.run(this@BridgeApplication) }
                         .onFailure { android.util.Log.w("BridgeApplication", "supplement pass failed", it) }
                 }

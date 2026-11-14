@@ -55,6 +55,17 @@ class DeepLinkImportTest {
     }
 
     @Test
+    fun `an encoded value with extra parameters keeps them out of the url`() {
+        DeepLinkImport.pending.value = null
+        // Properly encoded url= plus a second parameter: the typed parse
+        // must own this shape so &src=hf does not ride the carried URL.
+        val url = DeepLinkImport.capture(Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse("antivocale://import?url=https%3A%2F%2Fexample.com%2Fmodel&src=hf")))
+        assertEquals("https://example.com/model", url)
+    }
+
+    @Test
     fun `wrong scheme host or missing url are dropped`() {
         DeepLinkImport.pending.value = null
         for (data in listOf(

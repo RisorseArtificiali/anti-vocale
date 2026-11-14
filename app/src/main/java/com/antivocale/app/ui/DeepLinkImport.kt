@@ -57,7 +57,23 @@ object DeepLinkImport {
         // decoding keeps both the literal '+' and real %XX escapes intact.
         val raw = data.encodedQuery ?: return null
         if (!raw.startsWith("url=")) return null
-        val url = Uri.decode(raw.removePrefix("url=").replace("+", "%2B")).trim()
+        val body = raw.removePrefix("url=")
+        // Two sender shapes, two parsers. A PERCENT-ENCODED value (it
+        // contains %XX escapes; the colon and slashes of a URL are the
+        // first things a generator encodes) is parsed typed, so additional
+        // query parameters after the next '&' are honored as parameters
+        // and NOT swallowed into the carried URL. A raw value with no
+        // escapes is the unencoded case the lenient strip exists for: its
+        // '&' belongs to the URL itself.
+        val url = if (body.contains('%')) {
+            // Typed semantics on the ENCODED segment (up to the first '&'):
+            // Uri.getQueryParameter cannot be used here, it already decoded
+            // '+' to a space before any shielding could run.
+            Uri.decode(body.substringBefore('&').replace("+", "%2B"))
+        } else {
+            Uri.decode(body.replace("+", "%2B"))
+        }
+        url.trim().also { if (it.isEmpty()) return null }
         if (url.length > MAX_URL_LENGTH) return null
         // Uri.parse never throws for a non-null string (failures surface on
         // the accessors); the scheme/host reads below are the validation.

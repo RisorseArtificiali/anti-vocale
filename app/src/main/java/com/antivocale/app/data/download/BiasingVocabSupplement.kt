@@ -64,6 +64,25 @@ class BiasingVocabSupplement @Inject constructor(
         }
 
     /**
+     * The dictionary-CHANGE hook (the collector's entry): terms apply at
+     * model construction, so a resident armed recognizer is stale after ANY
+     * edit or clear; without this it would keep beam-biasing toward the OLD
+     * (possibly deleted) names until a keep-alive unload. Unloading makes
+     * the next transcription rebuild with the current dictionary. Cheap and
+     * idempotent; no-op when the active backend is not a supplement-bearing
+     * built-in entry.
+     */
+    fun onDictionaryChanged() {
+        val active = backendManager.activeBackendId.value
+        val isSupplementEntry = BundledCatalog.byId(active ?: return)
+            ?.variants?.any { it.supplements.isNotEmpty() } == true
+        if (isSupplementEntry) {
+            backendManager.unloadActiveBackend()
+            Log.i(TAG, "dictionary changed: active backend $active unloaded; next request re-arms")
+        }
+    }
+
+    /**
      * One pass over the INSTALLED built-in variants; idempotent, cheap to
      * re-run. IO contract: callers launch on [Dispatchers.IO] (the
      * application-scope startup lane and the dictionary-change collector).

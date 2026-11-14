@@ -69,7 +69,7 @@ class SherpaBackend(
          * tokenizer differs from the offline NeMo exports; extracted from
          * the streaming .nemo on the nvidia repo, sha 0139960759...).
          */
-        const val STREAMING_VOCAB_FILE = "bpe.vocab"
+        const val STREAMING_VOCAB_FILE = com.antivocale.app.data.BIASING_VOCAB_FILE
         /**
          * TASK-874: the streaming decode method. The desktop A/B (TASK-530,
          * 2026-10-24, 11-clip Italian set) showed modified_beam_search beats
@@ -740,7 +740,7 @@ class SherpaBackend(
         // recognizer config's decodingMethod/hotwords would arm one without
         // the other and hotwords would be silently ignored.
         val transducerBiasing = entry.modelType == "nemo_transducer" &&
-            hotwordsCsv != null && File(dir, "bpe.vocab").isFile
+            hotwordsCsv != null && File(dir, com.antivocale.app.data.BIASING_VOCAB_FILE).isFile
         if (transducerBiasing) {
             // OUTSIDE the model dir: the integrity validator flags short
             // .txt files inside it as corruption and the heal wipes the
@@ -761,7 +761,7 @@ class SherpaBackend(
                     joiner = File(dir, requireNotNull(roles.joiner)).absolutePath,
                 ),
                 tokens = File(dir, requireNotNull(roles.tokens)).absolutePath,
-                bpeVocab = if (transducerBiasing) File(dir, "bpe.vocab").absolutePath else "",
+                bpeVocab = if (transducerBiasing) File(dir, com.antivocale.app.data.BIASING_VOCAB_FILE).absolutePath else "",
                 modelingUnit = if (transducerBiasing) "bpe" else "",
                 modelType = entry.modelType,
                 numThreads = sherpaConfig.numThreads,

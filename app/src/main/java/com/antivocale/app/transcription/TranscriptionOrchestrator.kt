@@ -1210,16 +1210,7 @@ class TranscriptionOrchestrator @Inject constructor(
         )
     }
 
-    /**
-     * TASK-121.4: the summary pass. Chains Gemma after a long transcription
-     * (the punctuation pass, when it ran, has already left the LLM active)
-     * and attaches a short summary as METADATA: the delivered transcript is
-     * never replaced (content preservation is the app's prime directive).
-     * Opt-in and skipped for short transcripts; every skip path (toggle,
-     * length, context limit, no Gemma configured) avoids the swap entirely,
-     * and any failure degrades to no summary: an optional extra may never
-     * fail a completed transcription.
-     */
+
     /**
      * TASK-994: the personal-dictionary rider, ONE construction for every
      * Gemma pass (the prompt-line template and the pref read live here, so
@@ -1448,6 +1439,16 @@ class TranscriptionOrchestrator @Inject constructor(
      * any failure degrades to no summary: an optional extra may never
      * fail a completed transcription. Transcripts past the context guard
      * take the TASK-520 map-reduce branch below instead of skipping.
+     */
+    /**
+     * TASK-121.4: the summary pass. Chains Gemma after a long transcription
+     * (the punctuation pass, when it ran, has already left the LLM active)
+     * and attaches a short summary as METADATA: the delivered transcript is
+     * never replaced (content preservation is the app's prime directive).
+     * Opt-in and skipped for short transcripts; every skip path (toggle,
+     * length, context limit, no Gemma configured) avoids the swap entirely,
+     * and any failure degrades to no summary: an optional extra may never
+     * fail a completed transcription.
      */
     private suspend fun applySummaryPass(
         context: Context,

@@ -105,6 +105,21 @@ interface LogDao {
     /** TASK-613: raw-text History search; LIKE wildcards match literally. */
     fun searchAll(query: String): Flow<List<LogEntity>> = searchAllRaw(likeLiteral(query))
 
+    /** TASK-992 review: ONE scan for the Ask retrieval: rows matching ANY
+     *  of the terms (OR of literal LIKEs, wildcards escaped per term); the
+     *  caller counts per-term hits in memory over this union instead of
+     *  re-scanning the table once per term. */
+    @androidx.room.RawQuery(observedEntities = [LogEntity::class])
+    abstract suspend fun searchAnyRaw(query: androidx.sqlite.db.SupportSQLiteQuery): List<LogEntity>
+
+    /** The OR-of-LIKEs SQL for [searchAnyRaw]; one literal-escaped LIKE per term. */
+    fun searchAnySql(terms: List<String>): androidx.sqlite.db.SupportSQLiteQuery {
+        val clauses = terms.joinToString(" OR ") { "result LIKE ? ESCAPE '\\'" }
+        val args = terms.map { "%" + likeLiteral(it) + "%" }.toTypedArray()
+        return androidx.sqlite.db.SimpleSQLiteQuery(
+            "SELECT * FROM logs WHERE $clauses ORDER BY timestamp DESC", args)
+    }
+
     /** TASK-613: escapes SQL LIKE wildcards for [searchAllRaw]'s ESCAPE clause. */
     private fun likeLiteral(query: String): String =
         query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")

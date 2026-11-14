@@ -364,7 +364,7 @@ class ExternalSherpaBackend @Inject constructor(
                     biasingCsv != null
                 if (externalBiasing && biasingCsv != null) {
                     hotwordsFile.parentFile?.mkdirs()
-                    hotwordsFile.writeText(biasingCsv.split(", ").joinToString("\n") { it.trim() })
+                    hotwordsFile.writeText(PersonalDictionary.toHotwordsFileLines(biasingCsv))
                     modelConfig.bpeVocab = vocabFile.absolutePath
                     modelConfig.modelingUnit = "bpe"
                     Log.i(TAG, "External transducer biasing ON (${record.backendId})")

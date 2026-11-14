@@ -224,26 +224,20 @@ class ExternalModelImporter(
      * family support table ([ModelFamilySupport.forFamily], single definition shared
      * with the engine); this delegate keeps the import call sites unchanged.
      */
-    /**
- * TASK-994 review: the optional hotwords vocab rides the plan when the
- * source declares it (TRANSDUCER only). Without this the manifest's
- * bpe.vocab pin is accepted at parse and then silently never lands in the
- * record dir, so external biasing can never arm (the review's finding:
- * the declared file was dropped by every import path).
+/**
+ * The role plan PLUS the optional hotwords vocab when the source declares
+ * it (TRANSDUCER only). The vocab rides the BUILDER, not a per-site
+ * augmentation: a future import path forgetting a call was exactly the
+ * dropped-file bug this folds shut (the manifest's bpe.vocab pin was
+ * accepted at parse and silently never landed in the record dir).
  */
-internal fun withBiasingVocab(
-    plan: Map<String, String>,
-    sourceNames: List<String>,
-    family: ModelFamily,
-): Map<String, String> {
+internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamily.TRANSDUCER): Map<String, String>? {
+    val plan = ModelFamilySupport.forFamily(family).buildCopyPlan(files) ?: return null
     if (family != ModelFamily.TRANSDUCER) return plan
-    return if (sourceNames.any { it.equals(BIASING_VOCAB_FILE, ignoreCase = true) })
-        plan + (BIASING_VOCAB_FILE to sourceNames.first { it.equals(BIASING_VOCAB_FILE, ignoreCase = true) })
-    else plan
+    return files.firstOrNull { it.equals(BIASING_VOCAB_FILE, ignoreCase = true) }
+        ?.let { plan + (BIASING_VOCAB_FILE to it) }
+        ?: plan
 }
-
-internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamily.TRANSDUCER): Map<String, String>? =
-        ModelFamilySupport.forFamily(family).buildCopyPlan(files)
 
     /** Human spelling of a family for diagnostic messages ("SenseVoice" and
      *  "CTC", not the raw "SENSE_VOICE" enum name; the UI layer's
@@ -413,11 +407,9 @@ internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamil
             ?: throw IllegalArgumentException("not a HuggingFace repository URL: $repoUrl")
         val files = repoListing.listFiles(repoId)
         val names = files.map { it.name }
-        val plan = withBiasingVocab(
-            withSidecars(
-                buildCopyPlan(names, family) ?: throw missingRolesError(family, names),
-                names),
-            names, family)
+        val plan = withSidecars(
+            buildCopyPlan(names, family) ?: throw missingRolesError(family, names),
+            names)
         val triples = plan.map { (canonical, sourceName) ->
             val source = files.first { it.name == sourceName }
             val url = repoListing.resolveUrl(repoId, source.repoPath)
@@ -496,9 +488,7 @@ internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamil
         val plan = buildCopyPlan(entry.files.map { it.name }, entry.family)
             ?: throw missingRolesError(entry.family, entry.files.map { it.name })
         val byName = entry.files.associateBy { it.name }
-        val triples = withBiasingVocab(
-            withSidecars(plan, entry.files.map { it.name }),
-            entry.files.map { it.name }, entry.family)
+        val triples = withSidecars(plan, entry.files.map { it.name })
             .map { (canonical, sourceName) ->
             val f = byName[sourceName]
                 // The map cannot contain a name absent from the entry's file list
@@ -587,11 +577,9 @@ internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamil
         val resolvedModelType = resolveModelType(modelType, family)
         // 1. Copy plan by role, plus any ONNX split-file sidecars.
         val names = children.map { it.name }
-        val plan = withBiasingVocab(
-            withSidecars(
-                buildCopyPlan(names, family) ?: throw missingRolesError(family, names),
-                names),
-            names, family)
+        val plan = withSidecars(
+            buildCopyPlan(names, family) ?: throw missingRolesError(family, names),
+            names)
 
         // 2. Unconditional disk pre-flight (spec binding): the import doubles disk usage.
         val root = filesRoot()

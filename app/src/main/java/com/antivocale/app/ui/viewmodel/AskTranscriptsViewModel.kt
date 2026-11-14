@@ -149,17 +149,17 @@ class AskTranscriptsViewModel @Inject constructor(
             .filter { it.length >= 3 }
             .distinct()
             .take(MAX_QUERY_TERMS)
-        val hits = mutableMapOf<String, MutableSet<String>>()
-        val rows = mutableMapOf<String, LogEntity>()
-        for (term in terms) {
-            logDao.searchAll(term).first().forEach { row ->
-                hits.getOrPut(row.id) { mutableSetOf() }.add(term)
-                rows[row.id] = row
-            }
-        }
-        val ranked = rows.values.sortedWith(
-            compareByDescending<LogEntity> { hits[it.id]?.size ?: 0 }
-                .thenByDescending { it.timestamp })
+        // ONE table scan: the OR-of-LIKEs union of all terms; per-term hit
+        // counts (the ranking signal) are computed in memory over the union
+        // rows, so one Ask tap costs one scan plus an in-memory pass, not
+        // one full scan per term.
+        val union = logDao.searchAnyRaw(logDao.searchAnySql(terms))
+        val ranked = union
+            .map { row -> row to terms.count { row.result.contains(it, ignoreCase = true) } }
+            .filter { it.second > 0 }
+            .sortedWith(compareByDescending<Pair<LogEntity, Int>> { it.second }
+                .thenByDescending { it.first.timestamp })
+            .map { it.first }
         if (ranked.isNotEmpty()) return ranked.take(MAX_SOURCES)
         return logDao.searchAll(question).first()
             .sortedByDescending { it.timestamp }

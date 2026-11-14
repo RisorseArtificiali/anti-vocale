@@ -60,4 +60,16 @@ class PersonalDictionaryTest {
             "INSTR\n\nVOCAB: A, B",
             PersonalDictionary.withVocabularyLine("INSTR", "A\nB") { "VOCAB: $it" })
     }
+    @org.junit.Test
+    fun `a max-cap dictionary never loses terms to the join`() {
+        // 125 three-char terms store as 499 chars (under the 500 save cap);
+        // the ", "-join is 623 chars, so MAX_CHARS must cover it or the
+        // rider consumers would silently see fewer terms than Whistle.
+        val terms = (1..125).joinToString("\n") { "abc" }
+        val stored = terms.replace("\n", ",")
+        org.junit.Assert.assertTrue(stored.length <= 500)
+        val parsed = com.antivocale.app.transcription.PersonalDictionary.terms(stored)
+        val joined = com.antivocale.app.transcription.PersonalDictionary.promptTerms(stored)
+        org.junit.Assert.assertEquals(parsed.size, joined?.split(", ")?.size)
+    }
 }

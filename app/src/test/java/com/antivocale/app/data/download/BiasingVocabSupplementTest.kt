@@ -220,6 +220,30 @@ class BiasingVocabSupplementTest {
     }
 
     @Test
+    fun `a dictionary change unloads an ACTIVE supplement-bearing backend`() {
+        every { backendManager.activeBackendId } returns
+            kotlinx.coroutines.flow.MutableStateFlow<String?>("supp-test")
+        newPass().onDictionaryChanged()
+        io.mockk.verify(exactly = 1) { backendManager.unloadActiveBackend() }
+    }
+
+    @Test
+    fun `a dictionary change is a no-op for non-supplement backends`() {
+        every { backendManager.activeBackendId } returns
+            kotlinx.coroutines.flow.MutableStateFlow<String?>("whisper")
+        newPass().onDictionaryChanged()
+        io.mockk.verify(exactly = 0) { backendManager.unloadActiveBackend() }
+    }
+
+    @Test
+    fun `a dictionary change with no active backend is a no-op`() {
+        every { backendManager.activeBackendId } returns
+            kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+        newPass().onDictionaryChanged()
+        io.mockk.verify(exactly = 0) { backendManager.unloadActiveBackend() }
+    }
+
+    @Test
     fun `a failed fetch defers to the next start without crashing`() = runTest {
         seedCatalog()
         prefs._keywordBiasing.value = "Boncompagni"

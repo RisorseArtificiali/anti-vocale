@@ -32,13 +32,14 @@ object PersonalDictionary {
     /**
      * Safety nets ABOVE the pref's 500-char save cap ([PreferencesManager.PROMPT_CAP]
      * bounds keywordBiasing at save time): a VALIDLY STORED dictionary can
-     * never be truncated (worst case ~167 two-char terms join under 600
-     * chars), so Whistle and the Gemma rider always see the SAME term set.
-     * The caps only catch writes that bypass the save cap (the SPI writing
-     * a longer raw value) and future pref-cap changes.
+     * never be truncated. MAX_CHARS covers the JOIN worst case: 250 one-char
+     * terms store as 499 chars and join as 748 (term + ", " per gap), so 750
+     * keeps Whistle ([terms]) and every rider consumer ([promptTerms]) on
+     * the SAME term set. The caps only catch writes that bypass the save
+     * cap (the SPI writing a longer raw value) and future pref-cap changes.
      */
     const val MAX_TERMS = 200
-    const val MAX_CHARS = 600
+    const val MAX_CHARS = 750
 
     /**
      * The lenient term parse every consumer shares (Whistle's TASK-858
@@ -71,18 +72,19 @@ object PersonalDictionary {
     }
 
     /**
+     * TASK-994 review: the hotwords-file encoding (one term per line), the
+     * inverse of [promptTerms]'s ", " join; ONE home beside it so the two
+     * backends' file formats cannot drift.
+     */
+    fun toHotwordsFileLines(csv: String): String =
+        csv.split(", ").joinToString("\n") { it.trim() }
+
+    /**
      * Appends the localized vocabulary line to an instruction when the
      * dictionary has terms. The [lineFor] lambda receives the joined terms
      * and returns the caller's locale-resolved template (this object stays
      * Android-free and JVM-testable).
      */
-    /**
-     * TASK-994 review: the hotwords-file encoding (one term per line), the
-     * inverse of [promptTerms]'s ", " join - ONE home beside it so the two
-     * backends' file formats cannot drift.
-     */
-    fun toHotwordsFileLines(csv: String): String =
-        csv.split(", ").joinToString("\n") { it.trim() }
 
     fun withVocabularyLine(
         instruction: String,
