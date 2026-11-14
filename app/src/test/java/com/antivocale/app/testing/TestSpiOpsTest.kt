@@ -469,6 +469,7 @@ class TestSpiOpsTest {
             "model_filter_language" to "it",
             "sherpa_path" to "/m", "transcript_export_format" to "SRT",
             "signature_position" to "append", "signature_text" to "sig",
+            "biasing_score" to "2.5",
         )
         for (key in ops.SET_KEYS) {
             val sample = samples[key] ?: "true"

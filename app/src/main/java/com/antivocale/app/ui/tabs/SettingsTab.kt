@@ -2301,6 +2301,40 @@ internal fun DictionarySettingsScreen(
             terms = viewModel.currentKeywordBiasing.collectAsState().value,
             onSave = { viewModel.saveKeywordBiasing(it) },
         )
+        // TASK-994 knob (maintainer decision 2026-11-14, after the
+        // on-device score ladder: the aggressive score fixes common-word
+        // collisions but may shorten some listed names; the trade is the
+        // user's). Local drag state, persisted on release only.
+        val biasingScore by viewModel.currentBiasingScore.collectAsState()
+        var scoreDraft by remember(biasingScore) { mutableStateOf(biasingScore) }
+        SectionCard(
+            icon = Icons.Default.Edit,
+            title = stringResource(R.string.keyword_biasing_score_title),
+        ) {
+            Column {
+                Text(
+                    stringResource(R.string.keyword_biasing_score_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Slider(
+                        value = scoreDraft,
+                        onValueChange = { scoreDraft = it },
+                        onValueChangeFinished = { viewModel.saveBiasingScore(scoreDraft) },
+                        valueRange = PreferencesManager.MIN_BIASING_SCORE..
+                            PreferencesManager.MAX_BIASING_SCORE,
+                        steps = 6,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        scoreDraft.toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
+        }
         SectionCard(
             icon = Icons.Default.Info,
             title = stringResource(R.string.keyword_biasing_where_title),
@@ -4124,7 +4158,8 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         listOf(R.string.keyword_biasing_title, R.string.keyword_biasing_summary,
             R.string.keyword_biasing_description, R.string.keyword_biasing_placeholder,
             R.string.keyword_biasing_where_title, R.string.keyword_biasing_where_recognition,
-            R.string.keyword_biasing_where_passes, R.string.keyword_biasing_where_download),
+            R.string.keyword_biasing_where_passes, R.string.keyword_biasing_where_download,
+            R.string.keyword_biasing_score_title, R.string.keyword_biasing_score_note),
         // TASK-994: unconditional (the dictionary applies to every
         // backend's Gemma passes and Whistle; the copy states the rest).
         visible = { true },

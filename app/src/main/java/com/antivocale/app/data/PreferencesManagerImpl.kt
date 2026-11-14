@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -95,6 +96,7 @@ class PreferencesManagerImpl(
         private val PUNCTUATION_MODE = stringPreferencesKey("punctuation_mode")
         private val PUNCTUATION_PROMPT = stringPreferencesKey("punctuation_prompt")
         private val KEYWORD_BIASING = stringPreferencesKey("keyword_biasing")
+        private val BIASING_SCORE = floatPreferencesKey("biasing_score")
         private val SUMMARIZE_ENABLED = booleanPreferencesKey("summarize_enabled")
         private val SUMMARY_PROMPT = stringPreferencesKey("summary_prompt")
         private val SUMMARY_PRESET = stringPreferencesKey("summary_preset")
@@ -191,6 +193,7 @@ class PreferencesManagerImpl(
         val punctuationMode: String = PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         val punctuationPrompt: String = "",
         val keywordBiasing: String = "",
+        val biasingScore: Float = PreferencesManager.DEFAULT_BIASING_SCORE,
         val summaryPrompt: String = "",
         val summaryPreset: String = PreferencesManager.DEFAULT_SUMMARY_PRESET,
         val summarizeEnabled: Boolean = PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
@@ -272,6 +275,7 @@ class PreferencesManagerImpl(
         punctuationMode = this[PUNCTUATION_MODE] ?: PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         punctuationPrompt = this[PUNCTUATION_PROMPT] ?: "",
         keywordBiasing = this[KEYWORD_BIASING] ?: "",
+        biasingScore = this[BIASING_SCORE] ?: PreferencesManager.DEFAULT_BIASING_SCORE,
         summaryPrompt = this[SUMMARY_PROMPT] ?: "",
         summaryPreset = this[SUMMARY_PRESET] ?: PreferencesManager.DEFAULT_SUMMARY_PRESET,
         summarizeEnabled = this[SUMMARIZE_ENABLED] ?: PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
@@ -762,6 +766,18 @@ class PreferencesManagerImpl(
 
     override val keywordBiasing: Flow<String> = dataStore.data.map { it[KEYWORD_BIASING] ?: "" }
         .onStart { emit(cache.get().keywordBiasing) }
+
+    override val biasingScore: Flow<Float> =
+        dataStore.data.map { it[BIASING_SCORE] ?: PreferencesManager.DEFAULT_BIASING_SCORE }
+            .onStart { emit(cache.get().biasingScore) }
+
+    override suspend fun saveBiasingScore(value: Float) {
+        val clamped = value.coerceIn(PreferencesManager.MIN_BIASING_SCORE, PreferencesManager.MAX_BIASING_SCORE)
+        dataStore.edit { preferences ->
+            preferences[BIASING_SCORE] = clamped
+        }
+        cache.updateAndGet { it.copy(biasingScore = clamped) }
+    }
 
     override suspend fun saveKeywordBiasing(terms: String) {
         val truncated = terms.take(PreferencesManager.PROMPT_CAP)

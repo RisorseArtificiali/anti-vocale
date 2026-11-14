@@ -3,6 +3,7 @@ package com.antivocale.app.ui.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.antivocale.app.R
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.LogEntity
@@ -57,6 +58,10 @@ class AskTranscriptsViewModel @Inject constructor(
         data class Error(val message: String) : AskState()
     }
 
+    /** The in-flight ask (cancelled by [reset]: a dismissed dialog must
+     *  not resurrect when the abandoned generation completes). */
+    private var askJob: kotlinx.coroutines.Job? = null
+
     private val _state = MutableStateFlow<AskState>(AskState.Idle)
     val state: StateFlow<AskState> = _state.asStateFlow()
 
@@ -71,7 +76,7 @@ class AskTranscriptsViewModel @Inject constructor(
         _lastQuestion.value = q
         _state.value = AskState.Searching
 
-        viewModelScope.launch {
+        askJob = viewModelScope.launch {
             try {
                 // 1. RETRIEVAL: term-based (see retrieve); the History search
                 //    is literal-substring, so the whole question would match
@@ -87,7 +92,8 @@ class AskTranscriptsViewModel @Inject constructor(
 
                 // 2. Build the grounded prompt (transcripts capped to Gemma's
                 //    practical context, numbered, sender/date stamped).
-                val prompt = buildPrompt(q, results)
+                val prompt = buildPrompt(
+                    appContext.getString(R.string.ask_transcripts_instruction), q, results)
 
                 // 3. Ensure the LLM is loaded (the same Gemma the summary
                 //    pass uses; the LlmManager handles the lifecycle).
@@ -121,6 +127,8 @@ class AskTranscriptsViewModel @Inject constructor(
     }
 
     fun reset() {
+        askJob?.cancel()
+        askJob = null
         _state.value = AskState.Idle
     }
 
@@ -166,14 +174,14 @@ class AskTranscriptsViewModel @Inject constructor(
         const val MAX_QUERY_TERMS = 8
 
         /** Builds the grounded prompt: context transcripts + question.
-         *  Pure and testable (no ViewModel instance needed). If it ever gains
-         *  a second consumer, lift it into a transcription/ object taking
+         *  Pure and testable (no ViewModel instance needed). The grounding
+         *  instruction arrives LOCALIZED from the caller (the string
+         *  resource every other Gemma prompt uses). If this ever gains a
+         *  second consumer, lift it into a transcription/ object taking
          *  deconstructed strings (the SummaryPolicy pattern). */
-        fun buildPrompt(question: String, sources: List<LogEntity>): String {
+        fun buildPrompt(instruction: String, question: String, sources: List<LogEntity>): String {
             val sb = StringBuilder()
-            sb.append("Answer the question below based ONLY on these transcripts. ")
-            sb.append("If the transcripts do not contain the answer, say so. ")
-            sb.append("Answer in the language of the question.\n\n")
+            sb.append(instruction).append("\n\n")
 
             var budget = CONTEXT_BUDGET_CHARS
             var label = 0

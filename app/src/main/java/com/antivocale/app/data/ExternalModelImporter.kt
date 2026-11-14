@@ -224,7 +224,25 @@ class ExternalModelImporter(
      * family support table ([ModelFamilySupport.forFamily], single definition shared
      * with the engine); this delegate keeps the import call sites unchanged.
      */
-    internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamily.TRANSDUCER): Map<String, String>? =
+    /**
+ * TASK-994 review: the optional hotwords vocab rides the plan when the
+ * source declares it (TRANSDUCER only). Without this the manifest's
+ * bpe.vocab pin is accepted at parse and then silently never lands in the
+ * record dir, so external biasing can never arm (the review's finding:
+ * the declared file was dropped by every import path).
+ */
+internal fun withBiasingVocab(
+    plan: Map<String, String>,
+    sourceNames: List<String>,
+    family: ModelFamily,
+): Map<String, String> {
+    if (family != ModelFamily.TRANSDUCER) return plan
+    return if (sourceNames.any { it.equals(BIASING_VOCAB_FILE, ignoreCase = true) })
+        plan + (BIASING_VOCAB_FILE to sourceNames.first { it.equals(BIASING_VOCAB_FILE, ignoreCase = true) })
+    else plan
+}
+
+internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamily.TRANSDUCER): Map<String, String>? =
         ModelFamilySupport.forFamily(family).buildCopyPlan(files)
 
     /** Human spelling of a family for diagnostic messages ("SenseVoice" and
@@ -395,9 +413,11 @@ class ExternalModelImporter(
             ?: throw IllegalArgumentException("not a HuggingFace repository URL: $repoUrl")
         val files = repoListing.listFiles(repoId)
         val names = files.map { it.name }
-        val plan = withSidecars(
-            buildCopyPlan(names, family) ?: throw missingRolesError(family, names),
-            names)
+        val plan = withBiasingVocab(
+            withSidecars(
+                buildCopyPlan(names, family) ?: throw missingRolesError(family, names),
+                names),
+            names, family)
         val triples = plan.map { (canonical, sourceName) ->
             val source = files.first { it.name == sourceName }
             val url = repoListing.resolveUrl(repoId, source.repoPath)
@@ -476,7 +496,10 @@ class ExternalModelImporter(
         val plan = buildCopyPlan(entry.files.map { it.name }, entry.family)
             ?: throw missingRolesError(entry.family, entry.files.map { it.name })
         val byName = entry.files.associateBy { it.name }
-        val triples = withSidecars(plan, entry.files.map { it.name }).map { (canonical, sourceName) ->
+        val triples = withBiasingVocab(
+            withSidecars(plan, entry.files.map { it.name }),
+            entry.files.map { it.name }, entry.family)
+            .map { (canonical, sourceName) ->
             val f = byName[sourceName]
                 // The map cannot contain a name absent from the entry's file list
                 // (withSidecars only plans declared names), but a silent drop here
@@ -564,9 +587,11 @@ class ExternalModelImporter(
         val resolvedModelType = resolveModelType(modelType, family)
         // 1. Copy plan by role, plus any ONNX split-file sidecars.
         val names = children.map { it.name }
-        val plan = withSidecars(
-            buildCopyPlan(names, family) ?: throw missingRolesError(family, names),
-            names)
+        val plan = withBiasingVocab(
+            withSidecars(
+                buildCopyPlan(names, family) ?: throw missingRolesError(family, names),
+                names),
+            names, family)
 
         // 2. Unconditional disk pre-flight (spec binding): the import doubles disk usage.
         val root = filesRoot()

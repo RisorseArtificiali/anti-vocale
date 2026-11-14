@@ -6,6 +6,11 @@ import org.json.JSONObject
 
 enum class ModelFamily { TRANSDUCER, WHISPER, CTC, SENSE_VOICE, CANARY, MOONSHINE, DOLPHIN }
 
+/** TASK-994: the optional hotwords-vocab file name (transducer-family
+ *  biasing); ONE constant for the manifest parser, the importer plans, and
+ *  both backends' arming checks. */
+const val BIASING_VOCAB_FILE = "bpe.vocab"
+
 enum class ExternalModelSource { LOCAL, URL, CATALOG }
 
 /**

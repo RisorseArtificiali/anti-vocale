@@ -356,7 +356,7 @@ class ExternalSherpaBackend @Inject constructor(
                 // never written and fail the native load), greedy without
                 // either condition.
                 val biasingCsv = PersonalDictionary.promptTerms(preferences.keywordBiasing.first())
-                val vocabFile = File(record.dir, "bpe.vocab")
+                val vocabFile = File(record.dir, com.antivocale.app.data.BIASING_VOCAB_FILE)
                 val hotwordsFile = File(context.cacheDir, "hotwords-${record.backendId}.txt")
                 val externalBiasing = record.family == ModelFamily.TRANSDUCER &&
                     !record.streaming &&
@@ -378,7 +378,7 @@ class ExternalSherpaBackend @Inject constructor(
                     decodingMethod = if (externalBiasing) "modified_beam_search" else "greedy_search",
                     maxActivePaths = if (externalBiasing) 4 else 1,
                     hotwordsFile = if (externalBiasing) hotwordsFile.absolutePath else "",
-                    hotwordsScore = if (externalBiasing) SherpaBackend.TRANSDUCER_HOTWORDS_SCORE else 0f,
+                    hotwordsScore = if (externalBiasing) preferences.biasingScore.first() else 0f,
                 )
 
                 recognizer = OfflineRecognizer(config = recognizerConfig)

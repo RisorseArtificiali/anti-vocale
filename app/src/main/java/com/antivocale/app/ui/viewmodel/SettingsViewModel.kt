@@ -147,6 +147,7 @@ class SettingsViewModel @Inject constructor(
                 modelConfigured = !preferencesManager.modelPath.first().isNullOrBlank(),
                 punctuationPrompt = preferencesManager.punctuationPrompt.first(),
                 keywordBiasing = preferencesManager.keywordBiasing.first(),
+                biasingScore = preferencesManager.biasingScore.first(),
                 summaryPrompt = preferencesManager.summaryPrompt.first(),
                 summaryPreset = preferencesManager.summaryPreset.first(),
                 transcriptionAdvancedExpanded =
@@ -158,6 +159,7 @@ class SettingsViewModel @Inject constructor(
         val modelConfigured: Boolean,
         val punctuationPrompt: String,
         val keywordBiasing: String = "",
+        val biasingScore: Float = com.antivocale.app.data.PreferencesManager.DEFAULT_BIASING_SCORE,
         val summaryPrompt: String,
         /** TASK-993: seeds the preset picker (no first-frame flash). */
         val summaryPreset: String,
@@ -1461,6 +1463,18 @@ class SettingsViewModel @Inject constructor(
 
     fun saveKeywordBiasing(terms: String) {
         viewModelScope.launch { preferencesManager.saveKeywordBiasing(terms) }
+    }
+
+    /** TASK-994 knob: the biasing strength (1.5 default .. 5.0 max). */
+    val currentBiasingScore: StateFlow<Float> = preferencesManager.biasingScore
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = warmedPrefs.biasingScore
+    )
+
+    fun saveBiasingScore(value: Float) {
+        viewModelScope.launch { preferencesManager.saveBiasingScore(value) }
     }
 
     fun saveSignatureText(text: String) {

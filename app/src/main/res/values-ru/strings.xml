@@ -1371,6 +1371,8 @@
     <string name="keyword_biasing_where_recognition">Распознавание: Whistle, Qwen3, Parakeet, GigaAM и потоковый Nemotron.</string>
     <string name="keyword_biasing_where_passes">Этапы вычитки и резюме ИИ; консервативная вычитка сохраняет свой фиксированный промпт.</string>
     <string name="keyword_biasing_where_download">При установке словаря для Parakeet, GigaAM и потокового Nemotron один раз загружается небольшой файл движка.</string>
+    <string name="keyword_biasing_score_title">Более агрессивное исправление</string>
+    <string name="keyword_biasing_score_note">Более высокие значения могут влиять и на остальную часть расшифровки. Изменение вступает в силу при следующей загрузке модели.</string>
     <string name="personal_dictionary_prompt_line">Эти имена или термины встречаются в этом материале; сохраняйте это точное написание там, где они появляются: %1$s</string>
     <string name="keyword_biasing_placeholder">Один термин на строку</string>
     <string name="freeze_protection_title">Защита фоновой расшифровки</string>
@@ -1415,5 +1417,6 @@
     <string name="ask_transcripts_no_matches">Транскрипции по этому вопросу не найдены.</string>
     <string name="ask_transcripts_sources">На основе %1$d транскрипции(й)</string>
     <string name="ask_transcripts_error">Ошибка: %1$s</string>
+    <string name="ask_transcripts_instruction">Отвечай на вопрос ниже, опираясь ТОЛЬКО на эти транскрипции. Если ответа в них нет, так и скажи. Отвечай на языке вопроса.</string>
 <string name="ask_transcripts_working">Спрашиваем модель на устройстве…</string>
 </resources>

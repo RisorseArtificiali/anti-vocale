@@ -1349,6 +1349,8 @@
     <string name="keyword_biasing_where_recognition">تشخیص: Whistle و Qwen3 و Parakeet و GigaAM و Nemotron جریانی.</string>
     <string name="keyword_biasing_where_passes">مراحل پرداخت و خلاصهٔ هوش مصنوعی؛ پرداخت محافظه‌کار پرامپت ثابت خود را نگه می‌دارد.</string>
     <string name="keyword_biasing_where_download">با تنظیم واژه‌نامه، یک فایل موتور کوچک یک‌بار برای Parakeet وGigaAM وNemotron جریانی دانلود می‌شود.</string>
+    <string name="keyword_biasing_score_title">اصلاح بیشتر و قوی‌تر</string>
+    <string name="keyword_biasing_score_note">مقادیر بالاتر می‌توانند روی بقیهٔ تفریغ هم اثر بگذارند. تغییر در بارگذاری بعدی مدل اعمال می‌شود.</string>
     <string name="personal_dictionary_prompt_line">این نام‌ها یا اصطلاح‌ها در این محتوا می‌آیند؛ هر جا آمدند این نوشتار دقیق را حفظ کن: %1$s</string>
     <string name="keyword_biasing_placeholder">در هر خط یک عبارت</string>
     <string name="freeze_protection_title">محافظت از رونویسی پس‌زمینه</string>
@@ -1391,5 +1393,6 @@
     <string name="ask_transcripts_no_matches">تفریغی برای این سؤال پیدا نشد.</string>
     <string name="ask_transcripts_sources">بر اساس %1$d تفریغ</string>
     <string name="ask_transcripts_error">خطا: %1$s</string>
+    <string name="ask_transcripts_instruction">به پرسش زیر فقط بر اساس این تفریغ‌ها پاسخ بده. اگر تفریغ‌ها پاسخ را در بر ندارند، همین را بگو. به زبان پرسش پاسخ بده.</string>
 <string name="ask_transcripts_working">در حال پرسیدن از مدل روی دستگاه…</string>
 </resources>

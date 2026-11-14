@@ -1212,6 +1212,8 @@
     <string name="keyword_biasing_where_recognition">Reconnaissance : Whistle, Qwen3, Parakeet, GigaAM et Nemotron en flux.</string>
     <string name="keyword_biasing_where_passes">Les passes de polissage et de résumé de l\'IA ; le polissage conservateur garde son invite fixe.</string>
     <string name="keyword_biasing_where_download">La définition du dictionnaire télécharge une fois un petit fichier moteur pour Parakeet, GigaAM et Nemotron en flux.</string>
+    <string name="keyword_biasing_score_title">Correction plus agressive</string>
+    <string name="keyword_biasing_score_note">Des valeurs élevées peuvent aussi influencer le reste de la transcription. Le changement s\'applique au prochain chargement du modèle.</string>
     <string name="personal_dictionary_prompt_line">Ces noms ou termes apparaissent dans ce contenu ; conservez cette orthographe exacte là où ils figurent : %1$s</string>
     <string name="keyword_biasing_placeholder">Un terme par ligne</string>
     <string name="freeze_protection_title">Protection de la transcription en arrière-plan</string>
@@ -1254,5 +1256,6 @@
     <string name="ask_transcripts_no_matches">Aucune transcription trouvée pour cette question.</string>
     <string name="ask_transcripts_sources">Basé sur %1$d transcription(s)</string>
     <string name="ask_transcripts_error">Erreur : %1$s</string>
+    <string name="ask_transcripts_instruction">Réponds à la question ci-dessous en te basant UNIQUEMENT sur ces transcriptions. Si les transcriptions ne contiennent pas la réponse, dis-le. Réponds dans la langue de la question.</string>
 <string name="ask_transcripts_working">Interrogation du modèle sur l’appareil…</string>
 </resources>

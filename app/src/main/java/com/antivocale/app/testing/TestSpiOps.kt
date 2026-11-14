@@ -191,6 +191,7 @@ internal class TestSpiOps(
             .put("paths", paths)
             .put("summarizeEnabled", preferences.summarizeEnabled.first())
             .put("keywordBiasing", preferences.keywordBiasing.first())
+            .put("biasingScore", preferences.biasingScore.first())
             .put("autoCopyEnabled", preferences.autoCopyEnabled.first())
             .put("signatureEnabled", preferences.signatureEnabled.first())
             .put("signatureText", preferences.signatureText.first())
@@ -294,6 +295,7 @@ internal class TestSpiOps(
         // TASK-186: the early-preview gate (device trials flip it per clip).
         "early_preview" to preferences::saveEarlyPreviewEnabled,
         "interrupted_run_notifications" to preferences::saveInterruptedRunNotifications,
+        // TASK-994 knob (spot-filled below in floatKeys).
         "summarize" to preferences::saveSummarizeEnabled,
         "refinement_enabled" to preferences::saveRefinementEnabled,
         // TASK-939: the word-tap seek gate (device trials flip it per row).
@@ -360,6 +362,11 @@ internal class TestSpiOps(
         ),
     )
 
+    /** TASK-994: float preferences (the biasing-strength knob). */
+    private val floatKeys: Map<String, suspend (Float) -> Unit> = mapOf(
+        "biasing_score" to preferences::saveBiasingScore,
+    )
+
     /** Free-text preferences: written as given, no parse. */
     private val textKeys: Map<String, suspend (String) -> Unit> = mapOf(
         "punctuation_prompt" to preferences::savePunctuationPrompt,
@@ -413,6 +420,14 @@ internal class TestSpiOps(
                     val enabled = value.toBooleanStrictOrNull()
                         ?: return@putUnique "$key expects true or false, got '$value'"
                     save(enabled)
+                    null
+                }
+            }
+            floatKeys.forEach { (key, save) ->
+                putUnique(key) { value, _ ->
+                    val parsed = value.toFloatOrNull()
+                        ?: return@putUnique "$key expects a number, got '$value'"
+                    save(parsed)
                     null
                 }
             }

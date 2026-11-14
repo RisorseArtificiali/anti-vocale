@@ -1233,16 +1233,6 @@ class TranscriptionOrchestrator @Inject constructor(
         ) { terms -> context.getString(R.string.personal_dictionary_prompt_line, terms) }
 
     /**
-     * TASK-994 review: the rider's EXACT rendered length (the '\n\n'
-     * separator plus the localized line, whose format argument already
-     * carries the terms; the two call sites used to add the terms a
-     * second time). One arithmetic beside its construction home so a
-     * template change cannot desynchronize the chunk budgets.
-     */
-    private fun dictionaryRiderChars(context: android.content.Context, terms: String?): Int =
-        terms?.let { context.getString(R.string.personal_dictionary_prompt_line, it).length + 2 } ?: 0
-
-    /**
      * TASK-520: map-reduce summary for transcripts past the context guard
      * (a 78-minute call is 60-80k chars; the single-shot pass would skip).
      * Runs AFTER the common gates and swap in [applySummaryPass], on the
@@ -1517,15 +1507,12 @@ class TranscriptionOrchestrator @Inject constructor(
                 // attempt (mapped AFTER the ladder so its custom-vs-built-in
                 // equality stays pure and the dedup keeps working).
             ).map { withPersonalDictionary(context, it) }
-            // TASK-994 review: the dictionary rider rides the instruction,
-            // so its length joins the context guard (a boundary transcript
-            // plus a fat rider must take the map-reduce path, not fail both
-            // single-shot attempts at the engine). The guard counts the
-            // FULL rendered line (terms + the localized template + the
-            // separators), not just the terms.
-            val dictionaryRiderChars = dictionaryRiderChars(
-                context, PersonalDictionary.promptTerms(preferencesManager.keywordBiasing.first()))
-            if (!SummaryPolicy.withinContextLimit(result.text.length + dictionaryRiderChars)) {
+            // TASK-994 review: the guard counts the LONGEST rendered
+            // instruction exactly (the rider is already inside it via
+            // withPersonalDictionary): no duplicated render, no separator
+            // arithmetic to keep in lockstep with withVocabularyLine.
+            val maxInstructionChars = instructions.maxOf { it.length }
+            if (!SummaryPolicy.withinContextLimit(result.text.length + maxInstructionChars)) {
                 // TASK-520: too long for ONE generation, not too long to
                 // summarize: map over context-sized chunks, reduce the
                 // partials. Falls back to the recorded skip only when the

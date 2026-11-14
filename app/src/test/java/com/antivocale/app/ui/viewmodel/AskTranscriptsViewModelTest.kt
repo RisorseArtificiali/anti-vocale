@@ -22,8 +22,13 @@ class AskTranscriptsViewModelTest {
         result = result, senderName = senderName,
     )
 
+    private val instruction =
+        "Answer the question below based ONLY on these transcripts. " +
+            "If the transcripts do not contain the answer, say so. " +
+            "Answer in the language of the question."
+
     private fun buildPrompt(question: String, sources: List<LogEntity>): String =
-        AskTranscriptsViewModel.buildPrompt(question, sources)
+        AskTranscriptsViewModel.buildPrompt(instruction, question, sources)
 
     @Test
     fun `the prompt carries the grounded system instruction first`() {

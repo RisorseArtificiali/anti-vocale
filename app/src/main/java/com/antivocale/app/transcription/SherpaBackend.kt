@@ -63,12 +63,6 @@ class SherpaBackend(
          */
         const val QWEN3_HOTWORDS_MAX_CHARS = 80
 
-        /**
-         * TASK-994: the transducer hotwords score. The desktop flip probe
-         * showed 1.5 (sherpa's default) already moves a correct decode;
-         * 6.0 corrupts it. Start at the default; device tuning can adjust.
-         */
-        const val TRANSDUCER_HOTWORDS_SCORE = 1.5f
 
         /**
          * TASK-994 phase 3: the streaming Nemotron vocab file name (its
@@ -705,6 +699,7 @@ class SherpaBackend(
                     initOffline(dir, sherpaConfig, entry, variant, roles,
                         hotwordsCsv = PersonalDictionary.promptTerms(
                             preferences.keywordBiasing.first()),
+                        biasingScore = preferences.biasingScore.first(),
                         hotwordsTarget = File(context.cacheDir, "hotwords-${entry.id}.txt"))
                 }
                 modelDir = modelDirectory
@@ -734,6 +729,8 @@ class SherpaBackend(
         /** TASK-994: the dictionary terms joined for the hotwords file, or null
          *  when the dictionary is empty (no biasing, greedy as today). */
         hotwordsCsv: String?,
+        /** TASK-994 knob: the user's biasing strength (1.5 default). */
+        biasingScore: Float,
         /** Writes the hotwords file OUTSIDE the model dir (the integrity
          *  validator flags short .txt files inside it as corruption). */
         hotwordsTarget: File,
@@ -752,7 +749,7 @@ class SherpaBackend(
             // dictionary changes.
             hotwordsTarget.parentFile?.mkdirs()
             hotwordsTarget.writeText(
-                hotwordsCsv!!.split(", ").joinToString("\n") { it.trim() })
+                PersonalDictionary.toHotwordsFileLines(hotwordsCsv!!))
             Log.i(TAG, "Transducer biasing ON (${entry.id}): " +
                 "${hotwordsCsv.split(", ").size} terms, beam search")
         }
@@ -822,7 +819,7 @@ class SherpaBackend(
             decodingMethod = if (transducerBiasing) "modified_beam_search" else "greedy_search",
             maxActivePaths = if (transducerBiasing) 4 else 1,
             hotwordsFile = if (transducerBiasing) hotwordsTarget.absolutePath else "",
-            hotwordsScore = if (transducerBiasing) TRANSDUCER_HOTWORDS_SCORE else 0f,
+            hotwordsScore = if (transducerBiasing) biasingScore else 0f,
             blankPenalty = entry.flags.blankPenalty.toFloat(),
         )
         offlineRecognizer = OfflineRecognizer(config = recognizerConfig)

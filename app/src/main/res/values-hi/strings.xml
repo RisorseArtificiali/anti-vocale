@@ -1343,6 +1343,8 @@
     <string name="keyword_biasing_where_recognition">पहचान: Whistle, Qwen3, Parakeet, GigaAM और स्ट्रीमिंग Nemotron।</string>
     <string name="keyword_biasing_where_passes">AI परिष्कार और सारांश चरण; रूढ़िवादी परिष्कार अपना निश्चित प्रॉम्पट बनाए रखता है।</string>
     <string name="keyword_biasing_where_download">शब्दकोश सेट करने पर Parakeet, GigaAM और स्ट्रीमिंग Nemotron के लिए एक बार एक छोटी इंजन फ़ाइल डाउनलोड होती है।</string>
+    <string name="keyword_biasing_score_title">ज़्यादा सख़्त सुधार</string>
+    <string name="keyword_biasing_score_note">उच्च मान ट्रांसक्रिप्ट के बाकी हिस्से को भी प्रभावित कर सकते हैं। बदलाव मॉडल के अगले लोड होने पर लागू होता है।</string>
     <string name="personal_dictionary_prompt_line">ये नाम या शब्द इस सामग्री में आते हैं; जहाँ आएँ वहीं यह सटीक वर्तनी बनाए रखें: %1$s</string>
     <string name="keyword_biasing_placeholder">प्रति पंक्ति एक शब्द</string>
     <string name="freeze_protection_title">बैकग्राउंड ट्रांस्क्रिप्शन सुरक्षा</string>
@@ -1385,5 +1387,6 @@
     <string name="ask_transcripts_no_matches">इस प्रश्न के लिए कोई प्रतिलिपि नहीं मिली।</string>
     <string name="ask_transcripts_sources">%1$d प्रतिलिपि(यों) पर आधारित</string>
     <string name="ask_transcripts_error">त्रुटि: %1$s</string>
+    <string name="ask_transcripts_instruction">नीचे दिए गए प्रश्न का उत्तर केवल इन प्रतिलिपियों के आधार पर दें। यदि प्रतिलिपियों में उत्तर नहीं है, तो ऐसा कहें। प्रश्न की भाषा में उत्तर दें।</string>
 <string name="ask_transcripts_working">ऑन-डिवाइस मॉडल से पूछ रहे हैं…</string>
 </resources>

@@ -499,6 +499,8 @@
     <string name="keyword_biasing_where_recognition">识别：Whistle、Qwen3、Parakeet、GigaAM 和流式 Nemotron。</string>
     <string name="keyword_biasing_where_passes">AI 润色与摘要步骤；保守润色保留其固定提示词。</string>
     <string name="keyword_biasing_where_download">设置词典后会为 Parakeet、GigaAM 和流式 Nemotron 一次性下载一个小的引擎文件。</string>
+    <string name="keyword_biasing_score_title">更积极的纠正</string>
+    <string name="keyword_biasing_score_note">较高的数值也可能影响转写的其余部分。 更改在模型下次加载时生效。</string>
     <string name="personal_dictionary_prompt_line">以下名称或术语出现在此内容中；在出现处保持此确切拼写：%1$s</string>
     <string name="keyword_biasing_placeholder">每行一个词条</string>
     <string name="signature_text_title">签名文字</string>
@@ -1213,5 +1215,6 @@
     <string name="ask_transcripts_no_matches">未找到与此问题匹配的转写。</string>
     <string name="ask_transcripts_sources">基于 %1$d 条转写</string>
     <string name="ask_transcripts_error">错误：%1$s</string>
+    <string name="ask_transcripts_instruction">仅根据这些转写回答下面的问题。如果转写中不包含答案，请说明。用提问的语言回答。</string>
 <string name="ask_transcripts_working">正在询问设备端模型…</string>
 </resources>

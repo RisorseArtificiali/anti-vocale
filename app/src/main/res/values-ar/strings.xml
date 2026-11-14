@@ -499,6 +499,8 @@
     <string name="keyword_biasing_where_recognition">التعرّف: Whistle وQwen3 وParakeet وGigaAM وNemotron المتدفق.</string>
     <string name="keyword_biasing_where_passes">مراحل التلميع والتلخيص بالذكاء الاصطناعي؛ التلميع المحافظ يبقي على موجّهه الثابت.</string>
     <string name="keyword_biasing_where_download">عند تعيين القاموس يُنزَّل ملف محرك صغير مرة واحدة لكل من Parakeet وGigaAM وNemotron المتدفق.</string>
+    <string name="keyword_biasing_score_title">تصحيح أكثر إجبارًا</string>
+    <string name="keyword_biasing_score_note">القيم الأعلى قد تؤثر أيضًا على بقية التفريغ. يسري التغيير عند تحميل النموذج في المرة القادمة.</string>
     <string name="personal_dictionary_prompt_line">تظهر هذه الأسماء أو المصطلحات في هذا المحتوى؛ حافظ على هذا التهجئة الدقيقة حيثما ترد: %1$s</string>
     <string name="keyword_biasing_placeholder">مصطلح واحد في كل سطر</string>
     <string name="signature_text_title">نص التوقيع</string>
@@ -1283,5 +1285,6 @@
     <string name="ask_transcripts_no_matches">لا توجد تفريغات مطابقة لهذا السؤال.</string>
     <string name="ask_transcripts_sources">بناءً على %1$d تفريغ/تفريغات</string>
     <string name="ask_transcripts_error">خطأ: %1$s</string>
+    <string name="ask_transcripts_instruction">أجب عن السؤال أدناه بالاعتماد على هذه التفريغات فقط. إذا لم تكن التفريغات تحتوي على الإجابة، فقل ذلك. أجب بلغة السؤال.</string>
 <string name="ask_transcripts_working">جارٍ سؤال النموذج على الجهاز…</string>
 </resources>

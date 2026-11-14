@@ -1370,6 +1370,8 @@
     <string name="keyword_biasing_where_recognition">Rozpoznawanie: Whistle, Qwen3, Parakeet, GigaAM i streamingowy Nemotron.</string>
     <string name="keyword_biasing_where_passes">Przebiegi wygładzania i podsumowania AI; zachowawcze wygładzanie zachowuje swój stały prompt.</string>
     <string name="keyword_biasing_where_download">Ustawienie słownika pobiera jednorazowo mały plik silnika dla Parakeet, GigaAM i streamingowego Nemotrona.</string>
+    <string name="keyword_biasing_score_title">Bardziej agresywna korekta</string>
+    <string name="keyword_biasing_score_note">Wyższe wartości mogą wpływać także na resztę transkrypcji. Zmiana zadziała przy następnym załadowaniu modelu.</string>
     <string name="personal_dictionary_prompt_line">Te imiona lub terminy pojawiają się w tym materiale; zachowaj tę dokładną pisownię, gdzie występują: %1$s</string>
     <string name="keyword_biasing_placeholder">Jeden termin na wiersz</string>
     <string name="freeze_protection_title">Ochrona transkrypcji w tle</string>
@@ -1414,5 +1416,6 @@
     <string name="ask_transcripts_no_matches">Nie znaleziono transkrypcji dla tego pytania.</string>
     <string name="ask_transcripts_sources">Na podstawie %1$d transkrypcji</string>
     <string name="ask_transcripts_error">Błąd: %1$s</string>
+    <string name="ask_transcripts_instruction">Odpowiedz na poniższe pytanie, opierając się WYŁĄCZNIE na tych transkrypcjach. Jeśli transkrypcje nie zawierają odpowiedzi, tak napisz. Odpowiedz w języku pytania.</string>
 <string name="ask_transcripts_working">Pytam model na urządzeniu…</string>
 </resources>

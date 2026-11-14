@@ -32,10 +32,10 @@ import org.json.JSONObject
  */
 object ExternalManifestV1 {
 
-    /** The four files a transducer manifest must carry, in canonical role order. */
-    /** TASK-994: the hotwords vocab (optional; downloaded when the manifest declares it). */
-    private const val VOCAB_FILE = "bpe.vocab"
+    /** TASK-994: the hotwords vocab (optional; consumed when the manifest declares it). */
+    private const val VOCAB_FILE = com.antivocale.app.data.BIASING_VOCAB_FILE
 
+    /** The four files a transducer manifest must carry, in canonical role order. */
     private val REQUIRED_FILES = listOf(
         "encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt")
 

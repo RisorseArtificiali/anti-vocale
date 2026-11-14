@@ -87,6 +87,7 @@ Set keys and value formats:
 | `punctuation_prompt` | `savePunctuationPrompt` | free text, 500-char cap; blank = the localized built-in prompt |
 | `keep_alive` | `saveKeepAliveTimeout` | positive integer (minutes); 0/negative rejected (would silently fall back to the default) |
 | `keyword_biasing` | `saveKeywordBiasing` | free text, newline-separated whistle terms; blank clears (off); capped at PROMPT_CAP (TASK-858) |
+| `biasing_score` | `saveBiasingScore` | a number, 1.5 (default) to 5.0; the hotwords biasing strength slider (TASK-994 knob) |
 | `subtitle_timeout` | `saveSubtitleChoiceTimeoutMinutes` | positive integer (minutes); TASK-515: the subtitles-or-transcribe choice timeout |
 | `progressive` | `saveProgressiveTranscription` | `true` or `false` (strict); gates the interim chunk notifications and the chunk nav (added after the 2026-09-04 session burned six UI taps on this toggle) |
 | `early_preview` | `saveEarlyPreviewEnabled` | `true` or `false` (strict); TASK-186 early preview of the first pipeline chunk's head (default off) |

@@ -76,6 +76,14 @@ object PersonalDictionary {
      * and returns the caller's locale-resolved template (this object stays
      * Android-free and JVM-testable).
      */
+    /**
+     * TASK-994 review: the hotwords-file encoding (one term per line), the
+     * inverse of [promptTerms]'s ", " join - ONE home beside it so the two
+     * backends' file formats cannot drift.
+     */
+    fun toHotwordsFileLines(csv: String): String =
+        csv.split(", ").joinToString("\n") { it.trim() }
+
     fun withVocabularyLine(
         instruction: String,
         rawTerms: String,

@@ -1344,6 +1344,8 @@
     <string name="keyword_biasing_where_recognition">Tanıma: Whistle, Qwen3, Parakeet, GigaAM ve akış Nemotron.</string>
     <string name="keyword_biasing_where_passes">Yapay zekâ düzeltme ve özet adımları; muhafazakâr düzeltme sabit istemini korur.</string>
     <string name="keyword_biasing_where_download">Sözlüğü ayarlamak, Parakeet, GigaAM ve akış Nemotron için bir kez küçük bir motor dosyası indirir.</string>
+    <string name="keyword_biasing_score_title">Daha agresif düzeltme</string>
+    <string name="keyword_biasing_score_note">Yüksek değerler transkriptin geri kalanını da etkileyebilir. Değişiklik, modelin bir sonraki yüklenişinde etkili olur.</string>
     <string name="personal_dictionary_prompt_line">Bu isimler veya terimler bu içerikte geçiyor; geçtikleri yerlerde bu tam yazımı koru: %1$s</string>
     <string name="keyword_biasing_placeholder">Satır başına bir terim</string>
     <string name="freeze_protection_title">Arka plan transkripsiyon koruması</string>
@@ -1386,5 +1388,6 @@
     <string name="ask_transcripts_no_matches">Bu soru için transkript bulunamadı.</string>
     <string name="ask_transcripts_sources">%1$d transkripte dayalı</string>
     <string name="ask_transcripts_error">Hata: %1$s</string>
+    <string name="ask_transcripts_instruction">Aşağıdaki soruyu SADECE bu transkriptlere dayanarak yanıtla. Transkriptlerde yanıt yoksa bunu söyle. Sorunun dilinde yanıtla.</string>
 <string name="ask_transcripts_working">Cihazdaki modele soruluyor…</string>
 </resources>

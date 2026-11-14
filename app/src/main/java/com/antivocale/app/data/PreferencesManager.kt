@@ -144,6 +144,9 @@ interface PreferencesManager {
     val punctuationPrompt: Flow<String>
     /** TASK-858: whistle keyword biasing (newline-separated terms; "" = off). */
     val keywordBiasing: Flow<String>
+    /** TASK-994 knob: the hotwords biasing strength (1.5 default; higher =
+     *  more aggressive correction, may affect the rest of the transcript). */
+    val biasingScore: Flow<Float>
     /** TASK-121.4 smart-summary pass toggle: attach a Gemma summary to long transcripts. Default off. */
     val summarizeEnabled: Flow<Boolean>
 
@@ -377,6 +380,7 @@ interface PreferencesManager {
 
     /** TASK-858: persists the whistle keyword-biasing terms (capped). */
     suspend fun saveKeywordBiasing(terms: String)
+    suspend fun saveBiasingScore(value: Float)
     suspend fun saveSummarizeEnabled(enabled: Boolean)
     suspend fun saveSummaryPrompt(prompt: String)
     suspend fun saveThreadCount(threads: Int)
@@ -544,6 +548,9 @@ interface PreferencesManager {
          * Character cap shared by every prompt editor and saver (TASK-485:
          * the 500 literal had drifted across 7 unlinked take() sites).
          */
+        const val DEFAULT_BIASING_SCORE = 1.5f
+        const val MIN_BIASING_SCORE = 1.5f
+        const val MAX_BIASING_SCORE = 5.0f
         const val PROMPT_CAP = 500
         /** TASK-276: the AUTO mode trusts the per-model punctuatesOutput flag. */
         const val DEFAULT_PUNCTUATION_MODE = "auto"

@@ -602,6 +602,8 @@
     <string name="keyword_biasing_where_recognition">Recognition: Whistle, Qwen3, Parakeet, GigaAM and the streaming Nemotron.</string>
     <string name="keyword_biasing_where_passes">The AI polish and summary passes; conservative polish keeps its fixed prompt.</string>
     <string name="keyword_biasing_where_download">Setting the dictionary downloads a small engine file once for Parakeet, GigaAM and the streaming Nemotron.</string>
+    <string name="keyword_biasing_score_title">More aggressive correction</string>
+    <string name="keyword_biasing_score_note">Higher values can also influence the rest of the transcript. Changes apply when the model next loads.</string>
     <string name="keyword_biasing_placeholder">One term per line</string>
     <string name="personal_dictionary_prompt_line">These names or terms appear in this material; keep this exact spelling where they occur: %1$s</string>
     <string name="signature_text_title">Signature text</string>
@@ -1412,5 +1414,6 @@
     <string name="ask_transcripts_no_matches">No matching transcripts found for this question.</string>
     <string name="ask_transcripts_sources">Based on %1$d transcript(s)</string>
     <string name="ask_transcripts_error">Error: %1$s</string>
+    <string name="ask_transcripts_instruction">Answer the question below based ONLY on these transcripts. If the transcripts do not contain the answer, say so. Answer in the language of the question.</string>
 <string name="ask_transcripts_working">Asking the on-device model…</string>
 </resources>
