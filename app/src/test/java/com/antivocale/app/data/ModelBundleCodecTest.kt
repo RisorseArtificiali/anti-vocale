@@ -153,6 +153,28 @@ class ModelBundleCodecTest {
     }
 
     @Test
+    fun `streaming round-trips through the manifest`() {
+        // TASK-997: the maintainer's import/export compatibility gate. A
+        // streaming model (Farsi Nemotron) exported as a bundle must read
+        // back with streaming=true (the OnlineRecognizer routing depends
+        // on it); a non-streaming model must read back false.
+        val dir = modelDir("encoder.int8.onnx" to "e", "decoder.int8.onnx" to "d",
+            "joiner.int8.onnx" to "j", "tokens.txt" to "t")
+        val out = ByteArrayOutputStream()
+        ModelBundleCodec.export(dir, out, metadata(name = "Farsi Streaming").copy(streaming = true))
+        val manifest = ModelBundleCodec.import(
+            ByteArrayInputStream(out.toByteArray()), File(tmp.newFolder(), "imported"))
+        assertTrue("streaming must survive the bundle round-trip",
+            ModelBundleCodec.recordParams(manifest).streaming)
+        // The default (non-streaming) reads false.
+        val plain = ByteArrayOutputStream()
+        ModelBundleCodec.export(dir, plain, metadata(name = "Plain"))
+        val reimported = ModelBundleCodec.import(
+            ByteArrayInputStream(plain.toByteArray()), File(tmp.newFolder(), "imported2"))
+        assertFalse(ModelBundleCodec.recordParams(reimported).streaming)
+    }
+
+    @Test
     fun `catalog identity round-trips through the manifest`() {
         // TASK-801: a built-in export stamps entry id AND variant dir; the
         // receiver parses both (the optional-field catalogEntryId precedent:
