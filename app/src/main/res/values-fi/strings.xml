@@ -1229,6 +1229,7 @@
     <string name="ask_transcripts_no_matches">Tähän kysymykseen ei löytynyt transkriptejä.</string>
     <string name="ask_transcripts_sources">Perustuu %1$d transkriptiin</string>
     <string name="ask_transcripts_error">Virhe: %1$s</string>
+    <string name="audio_swept_explanation">Alkuperäinen ääni poistettiin järjestelmän väliaikaisen tallennustilan siivouksessa (noin 24 tunnin kuluttua). Teksti on säilytetty.</string>
     <string name="ask_transcripts_instruction">Vastaa alla olevaan kysymykseen VUOROVAAN näiden litterointien perusteella. Jos litteroinnit eivät sisällä vastausta, sano se. Vastaa kysymyksen kielellä.</string>
 <string name="ask_transcripts_working">Kysytään mallilta laitteella…</string>
 </resources>

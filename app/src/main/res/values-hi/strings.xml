@@ -1388,6 +1388,7 @@
     <string name="ask_transcripts_no_matches">इस प्रश्न के लिए कोई प्रतिलिपि नहीं मिली।</string>
     <string name="ask_transcripts_sources">%1$d प्रतिलिपि(यों) पर आधारित</string>
     <string name="ask_transcripts_error">त्रुटि: %1$s</string>
+    <string name="audio_swept_explanation">मूल ऑडियो सिस्टम की अस्थायी स्टोरेज सफाई से हटा दिया गया था (लगभग 24 घंटे)। प्रतिलिपि सुरक्षित है।</string>
     <string name="ask_transcripts_instruction">नीचे दिए गए प्रश्न का उत्तर केवल इन प्रतिलिपियों के आधार पर दें। यदि प्रतिलिपियों में उत्तर नहीं है, तो ऐसा कहें। प्रश्न की भाषा में उत्तर दें।</string>
 <string name="ask_transcripts_working">ऑन-डिवाइस मॉडल से पूछ रहे हैं…</string>
 </resources>

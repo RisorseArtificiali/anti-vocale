@@ -1216,6 +1216,7 @@
     <string name="ask_transcripts_no_matches">未找到与此问题匹配的转写。</string>
     <string name="ask_transcripts_sources">基于 %1$d 条转写</string>
     <string name="ask_transcripts_error">错误：%1$s</string>
+    <string name="audio_swept_explanation">原始音频已被系统临时存储清理删除（约24小时后）。转写已保留。</string>
     <string name="ask_transcripts_instruction">仅根据这些转写回答下面的问题。如果转写中不包含答案，请说明。用提问的语言回答。</string>
 <string name="ask_transcripts_working">正在询问设备端模型…</string>
 </resources>

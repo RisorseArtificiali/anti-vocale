@@ -1160,6 +1160,7 @@ ask_transcripts_title,Ask your transcripts,plain,
 ask_transcripts_no_matches,No matching transcripts found for this question.,plain,
 ask_transcripts_sources,Based on %1$d transcript(s),formatted,keep verbatim: ['%1$d']
 ask_transcripts_error,Error: %1$s,formatted,keep verbatim: ['%1$s']
+audio_swept_explanation,The original audio was cleaned up by the system\'s temporary storage sweep (about 24 hours). The transcript is preserved.,plain,
 ask_transcripts_instruction,"Answer the question below based ONLY on these transcripts. If the transcripts do not contain the answer, say so. Answer in the language of the question.",plain,
 ask_transcripts_working,Asking the on-device model…,plain,
 logs_entries_deleted [one],%d entry deleted,plural,supply only the quantities the locale table lists

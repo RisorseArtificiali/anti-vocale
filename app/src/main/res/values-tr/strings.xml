@@ -1389,6 +1389,7 @@
     <string name="ask_transcripts_no_matches">Bu soru için transkript bulunamadı.</string>
     <string name="ask_transcripts_sources">%1$d transkripte dayalı</string>
     <string name="ask_transcripts_error">Hata: %1$s</string>
+    <string name="audio_swept_explanation">Orijinal ses, sistemin geçici depolama temizliği tarafından silindi (yaklaşık 24 saat sonra). Transkript korunuyor.</string>
     <string name="ask_transcripts_instruction">Aşağıdaki soruyu SADECE bu transkriptlere dayanarak yanıtla. Transkriptlerde yanıt yoksa bunu söyle. Sorunun dilinde yanıtla.</string>
 <string name="ask_transcripts_working">Cihazdaki modele soruluyor…</string>
 </resources>

@@ -1415,6 +1415,7 @@
     <string name="ask_transcripts_no_matches">No matching transcripts found for this question.</string>
     <string name="ask_transcripts_sources">Based on %1$d transcript(s)</string>
     <string name="ask_transcripts_error">Error: %1$s</string>
+    <string name="audio_swept_explanation">The original audio was cleaned up by the system\'s temporary storage sweep (about 24 hours). The transcript is preserved.</string>
     <string name="ask_transcripts_instruction">Answer the question below based ONLY on these transcripts. If the transcripts do not contain the answer, say so. Answer in the language of the question.</string>
 <string name="ask_transcripts_working">Asking the on-device model…</string>
 </resources>

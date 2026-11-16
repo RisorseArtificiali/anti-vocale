@@ -1257,6 +1257,7 @@
     <string name="ask_transcripts_no_matches">No se encontraron transcripciones para esta pregunta.</string>
     <string name="ask_transcripts_sources">Basado en %1$d transcripción(es)</string>
     <string name="ask_transcripts_error">Error: %1$s</string>
+    <string name="audio_swept_explanation">El audio original fue eliminado por la limpieza de almacenamiento temporal del sistema (aproximadamente 24 horas). La transcripción se conserva.</string>
     <string name="ask_transcripts_instruction">Responde a la pregunta siguiente basándote SOLO en estas transcripciones. Si las transcripciones no contienen la respuesta, dilo. Responde en el idioma de la pregunta.</string>
 <string name="ask_transcripts_working">Preguntando al modelo en el dispositivo…</string>
 </resources>

@@ -523,12 +523,31 @@ private fun RowScope.PlaybackControls(
     LaunchedEffect(mine, cues) {
         if (mine) playback.attachCues(taskId, cues)
     }
+    // TASK-980: the play button stays PRESSABLE when the audio is gone;
+    // tapping it shows the explanation overlay (the ~24h sweep) instead of
+    // doing nothing. The muted tint (ResultActionButton's disabled styling
+    // is gone; we pass the tint ourselves below) signals unavailability.
+    val audioContext = androidx.compose.ui.platform.LocalContext.current
+    var showAudioGone by remember { mutableStateOf(false) }
+    if (showAudioGone) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showAudioGone = false },
+            title = { Text(stringResource(R.string.result_play_audio)) },
+            text = { Text(stringResource(R.string.audio_swept_explanation)) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { showAudioGone = false }) {
+                    Text(stringResource(android.R.string.ok))
+                }
+            },
+        )
+    }
     ResultActionButton(
         compact = compact,
-        // A missing file disables (the honest ~24h-sweep limit) but keeps
-        // the row's affordance visible, the retranscribe-not-found class.
-        enabled = filePresent,
-        onClick = { playback.toggle(taskId, filePath, cues) },
+        enabled = true,
+        onClick = {
+            if (filePresent) playback.toggle(taskId, filePath, cues)
+            else showAudioGone = true
+        },
         icon = if (mine && now?.playing == true) Icons.Default.Pause else Icons.Default.PlayArrow,
         labelRes = if (mine && now?.playing == true) R.string.result_pause_audio
         else R.string.result_play_audio,

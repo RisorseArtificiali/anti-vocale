@@ -1401,6 +1401,7 @@
     <string name="ask_transcripts_no_matches">לא נמצאו תמלילים לשאלה זו.</string>
     <string name="ask_transcripts_sources">על בסיס %1$d תמליל(ים)</string>
     <string name="ask_transcripts_error">שגיאה: %1$s</string>
+    <string name="audio_swept_explanation">האודיו המקורי נמחק על ידי ניקוי האחסון הזמני של המערכת (כ-24 שעות). התמליל נשמר.</string>
     <string name="ask_transcripts_instruction">ענה על השאלה שלהלן רק על סמך התמלילים האלה. אם התמלילים לא מכילים את התשובה, כתוב זאת. ענה בשפת השאלה.</string>
 <string name="ask_transcripts_working">שואל את המודל במכשיר…</string>
 </resources>

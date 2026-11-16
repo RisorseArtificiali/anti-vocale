@@ -1418,6 +1418,7 @@
     <string name="ask_transcripts_no_matches">Транскрипции по этому вопросу не найдены.</string>
     <string name="ask_transcripts_sources">На основе %1$d транскрипции(й)</string>
     <string name="ask_transcripts_error">Ошибка: %1$s</string>
+    <string name="audio_swept_explanation">Исходный аудиофайл был удалён очисткой временного хранилища системы (примерно через 24 часа). Транскрипция сохранена.</string>
     <string name="ask_transcripts_instruction">Отвечай на вопрос ниже, опираясь ТОЛЬКО на эти транскрипции. Если ответа в них нет, так и скажи. Отвечай на языке вопроса.</string>
 <string name="ask_transcripts_working">Спрашиваем модель на устройстве…</string>
 </resources>

@@ -1,6 +1,6 @@
 # Plural rules for values-fi
 
-Extracted from values/strings.xml (1163 strings, 14 plural keys).
+Extracted from values/strings.xml (1164 strings, 14 plural keys).
 
 CLDR cardinal categories for fi: **one, other**
 

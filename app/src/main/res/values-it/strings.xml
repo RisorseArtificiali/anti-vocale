@@ -1395,6 +1395,7 @@
     <string name="ask_transcripts_no_matches">Nessun trascritto trovato per questa domanda.</string>
     <string name="ask_transcripts_sources">Basato su %1$d trascritto/i</string>
     <string name="ask_transcripts_error">Errore: %1$s</string>
+    <string name="audio_swept_explanation">L\'audio originale è stato rimosso dalla pulizia dell\'archiviazione temporanea del sistema (dopo circa 24 ore). La trascrizione è conservata.</string>
     <string name="ask_transcripts_instruction">Rispondi alla domanda seguente basandoti SOLO su queste trascrizioni. Se le trascrizioni non contengono la risposta, dillo. Rispondi nella lingua della domanda.</string>
 <string name="ask_transcripts_working">Chiedo al modello sul dispositivo…</string>
 </resources>

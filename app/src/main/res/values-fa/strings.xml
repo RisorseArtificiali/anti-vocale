@@ -1394,6 +1394,7 @@
     <string name="ask_transcripts_no_matches">تفریغی برای این سؤال پیدا نشد.</string>
     <string name="ask_transcripts_sources">بر اساس %1$d تفریغ</string>
     <string name="ask_transcripts_error">خطا: %1$s</string>
+    <string name="audio_swept_explanation">صدای اصلی توسط پاکسازی ذخیره‌سازی موقت سیستم حذف شده است (حدود ۲۴ ساعت). تفریغ حفظ شده است.</string>
     <string name="ask_transcripts_instruction">به پرسش زیر فقط بر اساس این تفریغ‌ها پاسخ بده. اگر تفریغ‌ها پاسخ را در بر ندارند، همین را بگو. به زبان پرسش پاسخ بده.</string>
 <string name="ask_transcripts_working">در حال پرسیدن از مدل روی دستگاه…</string>
 </resources>

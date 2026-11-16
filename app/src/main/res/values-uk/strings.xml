@@ -1419,6 +1419,7 @@
     <string name="ask_transcripts_no_matches">Транскрипції за цим питанням не знайдено.</string>
     <string name="ask_transcripts_sources">На основі %1$d транскрипції(й)</string>
     <string name="ask_transcripts_error">Помилка: %1$s</string>
+    <string name="audio_swept_explanation">Оригінальний звук було видалено очищенням тимчасового сховища системи (приблизно через 24 години). Транскрипція збережена.</string>
     <string name="ask_transcripts_instruction">Відповідай на запитання нижче, спираючись ЛИШЕ на ці транскрипції. Якщо відповіді в них немає, так і скажи. Відповідай мовою запитання.</string>
 <string name="ask_transcripts_working">Запитуємо модель на пристрої…</string>
 </resources>

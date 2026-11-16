@@ -1286,6 +1286,7 @@
     <string name="ask_transcripts_no_matches">لا توجد تفريغات مطابقة لهذا السؤال.</string>
     <string name="ask_transcripts_sources">بناءً على %1$d تفريغ/تفريغات</string>
     <string name="ask_transcripts_error">خطأ: %1$s</string>
+    <string name="audio_swept_explanation">تم حذف الملف الصوتي الأصلي بواسطة تنظيف التخزين المؤقت للنظام (خلال 24 ساعة تقريبًا). تم الحفاظ على التفريغ.</string>
     <string name="ask_transcripts_instruction">أجب عن السؤال أدناه بالاعتماد على هذه التفريغات فقط. إذا لم تكن التفريغات تحتوي على الإجابة، فقل ذلك. أجب بلغة السؤال.</string>
 <string name="ask_transcripts_working">جارٍ سؤال النموذج على الجهاز…</string>
 </resources>

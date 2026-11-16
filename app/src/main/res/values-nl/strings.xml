@@ -1405,6 +1405,7 @@
     <string name="ask_transcripts_no_matches">Geen transcripties gevonden voor deze vraag.</string>
     <string name="ask_transcripts_sources">Gebaseerd op %1$d transcriptie(s)</string>
     <string name="ask_transcripts_error">Fout: %1$s</string>
+    <string name="audio_swept_explanation">De originele audio is verwijderd door de tijdelijke opslagruimte-schoonmaak van het systeem (na ongeveer 24 uur). De transcriptie is bewaard.</string>
     <string name="ask_transcripts_instruction">Beantwoord de onderstaande vraag ALLEEN op basis van deze transcripties. Zijn de antwoorden er niet in te vinden, zeg dat dan. Antwoord in de taal van de vraag.</string>
 <string name="ask_transcripts_working">Bezig met vragen aan het model op het apparaat…</string>
 </resources>

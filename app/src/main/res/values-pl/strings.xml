@@ -1417,6 +1417,7 @@
     <string name="ask_transcripts_no_matches">Nie znaleziono transkrypcji dla tego pytania.</string>
     <string name="ask_transcripts_sources">Na podstawie %1$d transkrypcji</string>
     <string name="ask_transcripts_error">Błąd: %1$s</string>
+    <string name="audio_swept_explanation">Oryginalny dźwięk został usunięty przez czyszczenie pamięci tymczasowej systemu (po około 24 godzinach). Transkrypcja została zachowana.</string>
     <string name="ask_transcripts_instruction">Odpowiedz na poniższe pytanie, opierając się WYŁĄCZNIE na tych transkrypcjach. Jeśli transkrypcje nie zawierają odpowiedzi, tak napisz. Odpowiedz w języku pytania.</string>
 <string name="ask_transcripts_working">Pytam model na urządzeniu…</string>
 </resources>

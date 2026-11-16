@@ -1389,6 +1389,7 @@
     <string name="ask_transcripts_no_matches">Keine passenden Transkripte gefunden.</string>
     <string name="ask_transcripts_sources">Basierend auf %1$d Transkript(en)</string>
     <string name="ask_transcripts_error">Fehler: %1$s</string>
+    <string name="audio_swept_explanation">Die ursprüngliche Audiodatei wurde durch die temporäre Speicherbereinigung des Systems entfernt (nach etwa 24 Stunden). Das Transkript bleibt erhalten.</string>
     <string name="ask_transcripts_instruction">Beantworte die folgende Frage NUR auf Grundlage dieser Transkripte. Wenn die Transkripte die Antwort nicht enthalten, sage das. Antworte in der Sprache der Frage.</string>
 <string name="ask_transcripts_working">Frage das Modell auf dem Gerät…</string>
 </resources>
