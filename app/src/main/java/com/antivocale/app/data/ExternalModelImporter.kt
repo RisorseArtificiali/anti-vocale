@@ -280,7 +280,13 @@ internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamil
      * first load with no import-time defense. The debug SPI carries its own
      * copy of the check only because its tests stub this importer with a fake.
      */
-    private fun resolveModelType(modelType: String?, family: ModelFamily): String {
+    private fun resolveModelType(modelType: String?, family: ModelFamily, streaming: Boolean = false): String {
+        // TASK-1000: a streaming transducer with no explicit modelType gets ''
+        // (the OnlineRecognizer convention), NOT the offline 'nemo_transducer'
+        // default. The backend routes on record.streaming, but the RECORD's
+        // modelType must stay consistent with that routing or metadata
+        // validation sees an offline label on a streaming model.
+        if (streaming && modelType == null && family == ModelFamily.TRANSDUCER) return ""
         val resolved = modelType ?: ModelFamilySupport.defaultModelType(family)
             ?: throw IllegalArgumentException(ModelFamilySupport.CTC_MODEL_TYPE_REQUIRED)
         if (modelType != null && !ModelFamilySupport.isValidModelType(family, resolved)) {
@@ -419,7 +425,7 @@ internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamil
             }
         }
         return downloadCore(
-            triples, resolveModelType(modelType, family), repoId.substringAfter('/'),
+            triples, resolveModelType(modelType, family, streaming), repoId.substringAfter('/'),
             ExternalModelSource.URL, repoUrl, family, options, languages, streaming,
             licence = null, onProgress = onProgress)
     }
@@ -574,7 +580,7 @@ internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamil
         linkedCatalog: LinkedCatalogRef? = null,
         licence: String? = null,
     ): ExternalModelRecord {
-        val resolvedModelType = resolveModelType(modelType, family)
+        val resolvedModelType = resolveModelType(modelType, family, streaming)
         // 1. Copy plan by role, plus any ONNX split-file sidecars.
         val names = children.map { it.name }
         val plan = withSidecars(
