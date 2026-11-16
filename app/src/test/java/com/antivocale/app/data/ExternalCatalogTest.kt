@@ -223,7 +223,7 @@ class ExternalCatalogTest {
         // which beats it on quality in every measured language: strictly
         // dominated, false advertising as shipped. The 327MB was the
         // TARBALL size; no tarball path exists in the entry dialect.)
-        assertEquals(41, entries.size)
+        assertEquals(42, entries.size)
 
         // The three schema-1 manifest entries: family/languages from the index,
         // entryUrl is the live manifest (no committed asset; see the
@@ -378,7 +378,8 @@ class ExternalCatalogTest {
         // with "ar" (the arabic pair matches "ar" BY DESIGN since TASK-770,
         // so filter("ar") == filter("arabic") == both).
         val persian = ExternalCatalog.filter(entries, "fa")
-        assertEquals(1, persian.size)
+        // TASK-997: the streaming Nemotron joins the Shenava entry under fa.
+        assertEquals(2, persian.size)
         assertEquals(ModelFamily.TRANSDUCER, persian[0].family)
         // "ry" is an inner substring of "Canary": word matching keeps it silent
         assertTrue(ExternalCatalog.filter(entries, "ry").isEmpty())

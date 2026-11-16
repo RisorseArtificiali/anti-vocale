@@ -1,0 +1,36 @@
+{
+  "name": "Farsi Streaming Nemotron int8 (best Persian, OpenMDW-1.1)",
+  "family": "TRANSDUCER",
+  "modelType": "",
+  "streaming": true,
+  "languages": [
+    "fa"
+  ],
+  "licence": "OpenMDW-1.1",
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/mentisialog/sherpa-onnx-nemotron-asr-streaming-farsi-1120ms-int8/resolve/main/encoder.int8.onnx",
+      "sha256": "13c1d630f1c82a3534c76ff36a38b4823bdc2413254d5cf7489927b000d57aa2",
+      "size": 657573705
+    },
+    {
+      "name": "decoder.int8.onnx",
+      "url": "https://huggingface.co/mentisialog/sherpa-onnx-nemotron-asr-streaming-farsi-1120ms-int8/resolve/main/decoder.int8.onnx",
+      "sha256": "548a4763366e3ba4ba5272f3d68465425f5c62b207922ee2d617be920a921b06",
+      "size": 7257753
+    },
+    {
+      "name": "joiner.int8.onnx",
+      "url": "https://huggingface.co/mentisialog/sherpa-onnx-nemotron-asr-streaming-farsi-1120ms-int8/resolve/main/joiner.int8.onnx",
+      "sha256": "e5e365bd22a7f678899674ecad00a9fae23323973de73b508e54ea79eb56b3cc",
+      "size": 1735861
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/mentisialog/sherpa-onnx-nemotron-asr-streaming-farsi-1120ms-int8/resolve/main/tokens.txt",
+      "sha256": "7ace7d33f3784d50f9a46156cce7c411f39faab64b43df17bd5796abc56a3057",
+      "size": 15037
+    }
+  ]
+}

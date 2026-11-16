@@ -83,6 +83,14 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/dolphin-small.json"
     },
     {
+      "name": "Farsi Streaming Nemotron int8 (best Persian, OpenMDW-1.1)",
+      "languages": [
+        "fa"
+      ],
+      "family": "TRANSDUCER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/farsi.json"
+    },
+    {
       "name": "Fritter English int8 (Parakeet TDT v2 fine-tune, CC-BY-NC)",
       "languages": [
         "en"
