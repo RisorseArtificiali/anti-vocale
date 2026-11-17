@@ -125,6 +125,8 @@ Yes, if the app supports the open Open Transcribe contract (Forkgram and Forkgra
 ### Can the app transcribe files automatically as they appear in a folder?
 Yes: the scheduled folder watch. You pick the folders (Settings, Scheduled folder watch), and periodic scans transcribe every new audio file with the currently selected model; on Android 11+ the picker can open shared-storage locations such as a messaging app's media folder. Scans run when the system allows them, so aggressive battery savers can delay them; the manual Scan now always works. Every run lands in the History tab like a normal transcription.
 
+When a file name comes from a call recorder and carries the caller's number or name (for example Cube ACR's "Call from ..." names or the BCR recorder's templates), the transcribed entry gets that caller as its label, the same way WhatsApp voice notes get the sender's name. This is best effort and stays conservative: only file names matching known recorder formats get a label, anything unrecognized is transcribed with no attribution, and nothing is ever parsed out of the audio itself.
+
 ### What is Remote offload, and where does my audio go?
 Remote offload (experimental, off by default) delegates long or heavy transcriptions to a server YOU configure: any OpenAI-compatible endpoint speaking the /v1/audio/transcriptions API (OmniVoice, the whisper.cpp server, and others). When enabled, the audio of the transcriptions you delegate is sent only to the server address you entered, wherever that server is (home network or internet); everything else stays on-device, and you can turn the feature off at any time.
 

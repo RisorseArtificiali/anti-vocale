@@ -4444,7 +4444,8 @@ class TranscriptionOrchestrator @Inject constructor(
         prompt: String = "",
         filePath: String? = null,
         sourcePackageName: String? = null,
-        /** TASK-736: the matched voice-note sender, from the share flow. */
+        /** TASK-736: the matched voice-note sender (share flow), or the
+         *  folder-watch caller label (TASK-1016). */
         senderName: String? = null,
         /** TASK-842: the intake content hash (the interactive guard's
          *  lookup key); null on every legacy/non-interactive producer. */

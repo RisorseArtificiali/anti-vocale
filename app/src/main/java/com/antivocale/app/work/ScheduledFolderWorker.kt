@@ -16,6 +16,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.antivocale.app.data.CallRecordingFilenames
 import com.antivocale.app.data.FileSnapshot
 import com.antivocale.app.data.FolderScanPlanner
 import com.antivocale.app.data.ScheduledFolderStore
@@ -231,7 +232,8 @@ class ScheduledFolderWorker @AssistedInject constructor(
             // same-named file scanned in the same millisecond must not
             // collide (the service drops duplicate task ids silently).
             "fwatch_${treeUri.hashCode().toUInt()}_${System.currentTimeMillis()}_${fileName.hashCode().toUInt()}",
-            localPath)
+            localPath,
+            senderName = CallRecordingFilenames.callerFromFileName(fileName))
 
     companion object {
         private const val TAG = "ScheduledFolderWorker"
