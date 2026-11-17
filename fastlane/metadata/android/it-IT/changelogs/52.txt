@@ -1,0 +1,6 @@
+• Nuovo: Ask AI, domande sulle trascrizioni salvate, risposte sul dispositivo (serve Gemma)
+• Nuovo: il dizionario personale orienta la trascrizione verso nomi e termini tuoi
+• Nuovo: preset di riepilogo: sintesi, azioni, verbali o personalizzato
+• Nuovo nel catalogo: farsi in streaming, finlandese, Parakeet compatto; Qwen3 più leggero del 35%
+• Nuovo: le schede modelli dichiarano l'adeguatezza alla RAM
+• Migliorato: la ricerca di parole simili trova anche russo e greco

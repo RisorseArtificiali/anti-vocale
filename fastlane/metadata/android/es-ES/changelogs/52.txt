@@ -1,0 +1,6 @@
+• Nuevo: Ask AI, pregunta a tus transcripciones guardadas, respuestas en el dispositivo (requiere Gemma)
+• Nuevo: el diccionario personal orienta la transcripción a tus nombres y términos
+• Nuevo: preajustes de resumen: resumen, acciones, acta o personalizado
+• Nuevo en el catálogo: persa en streaming, finlandés, Parakeet compacto; Qwen3 35% menor
+• Nuevo: las fichas indican la adecuación a tu RAM
+• Mejorado: la búsqueda de palabras similares ahora cubre ruso y griego

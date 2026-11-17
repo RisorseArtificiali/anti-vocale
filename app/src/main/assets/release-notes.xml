@@ -1,4 +1,11 @@
 <en-US>
+What's new in 1.17.0:
+• New: Ask AI, question your saved transcripts, answered on-device (needs Gemma)
+• New: personal dictionary steers transcription toward your names and terms
+• New: summary presets: recap, action items, meeting minutes, or custom
+• New in the catalog: Persian streaming, Finnish, compact Parakeet; Qwen3 downloads 35% less
+• New: model cards state how each model fits your phone's RAM
+• Improved: similar-words search now matches Russian and Greek
 What's new in 1.16.1:
 • Fixed: the default Parakeet model download failed its integrity check after the publisher replaced the files; downloads now use our verified mirror
 • Fixed: a rare crash when resuming from a notification on some devices
@@ -60,6 +67,13 @@ What's new in 1.12.0:
 • Fixed: clearer low-memory and corrupt-model errors</en-US>
 
 <it-IT>
+Novità in 1.17.0:
+• Nuovo: Ask AI, domande sulle trascrizioni salvate, risposte sul dispositivo (serve Gemma)
+• Nuovo: il dizionario personale orienta la trascrizione verso nomi e termini tuoi
+• Nuovo: preset di riepilogo: sintesi, azioni, verbali o personalizzato
+• Nuovo nel catalogo: farsi in streaming, finlandese, Parakeet compatto; Qwen3 più leggero del 35%
+• Nuovo: le schede modelli dichiarano l'adeguatezza alla RAM
+• Migliorato: la ricerca di parole simili trova anche russo e greco
 Novità della versione 1.16.1:
 • Corretto: il download del modello Parakeet predefinito falliva il controllo di integrità dopo la sostituzione dei file upstream; i download usano ora il nostro mirror verificato
 • Corretto: un raro crash alla riapertura da notifica su alcuni dispositivi
@@ -326,6 +340,13 @@ Novità dalla versione 1.0.3:
 • Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)</it-IT>
 
 <de-DE>
+Neu in 1.17.0:
+• Neu: Ask AI, Fragen zu gespeicherten Transkripten, auf dem Gerät beantwortet (benötigt Gemma)
+• Neu: das persönliche Wörterbuch lenkt die Transkription auf deine Namen und Begriffe
+• Neu: Zusammenfassungs-Presets: Zusammenfassung, Aufgaben, Protokoll oder eigene
+• Neu im Katalog: Persisch streaming, Finnisch, kompakter Parakeet; Qwen3 35% kleiner
+• Neu: Modellkarten nennen die RAM-Eignung
+• Verbessert: die Suche nach ähnlichen Wörtern trifft jetzt auch Russisch und Griechisch
 Neuigkeiten in Version 1.16.1:
 • Behoben: Der Download des Standard-Parakeet-Modells scheiterte an der Integritätsprüfung, nachdem der Herausgeber die Dateien ausgetauscht hatte; Downloads nutzen jetzt unseren geprüften Mirror
 • Behoben: seltener Absturz beim Fortsetzen aus einer Benachrichtigung auf einigen Geräten
@@ -357,6 +378,13 @@ Neuigkeiten in Version 1.14.0:
 • Verbessert: kompakter Erweitert-Bereich, Gemma-Downloads auf eigener Seite</de-DE>
 
 <es-ES>
+Novedades de 1.17.0:
+• Nuevo: Ask AI, pregunta a tus transcripciones guardadas, respuestas en el dispositivo (requiere Gemma)
+• Nuevo: el diccionario personal orienta la transcripción a tus nombres y términos
+• Nuevo: preajustes de resumen: resumen, acciones, acta o personalizado
+• Nuevo en el catálogo: persa en streaming, finlandés, Parakeet compacto; Qwen3 35% menor
+• Nuevo: las fichas indican la adecuación a tu RAM
+• Mejorado: la búsqueda de palabras similares ahora cubre ruso y griego
 Novedades de la versión 1.16.1:
 • Corregido: la descarga del modelo Parakeet predeterminado fallaba la comprobación de integridad tras que quien lo publica reemplazara los archivos; las descargas usan ahora nuestro mirror verificado
 • Corregido: un fallo poco frecuente al reanudar desde una notificación en algunos dispositivos
@@ -388,6 +416,13 @@ Novedades de la versión 1.14.0:
 • Mejorado: sección Avanzado compacta, descargas de Gemma en su propia página</es-ES>
 
 <fr-FR>
+Nouveautés de 1.17.0 :
+• Nouveau : Ask AI, questionnez vos transcriptions, réponses sur l'appareil (Gemma requis)
+• Nouveau : le dictionnaire personnel oriente la transcription vers vos noms et termes
+• Nouveau : préréglages : résumé, points d'action, compte rendu ou personnalisé
+• Nouveau au catalogue : persan streaming, finnois, Parakeet compact ; Qwen3 35% plus léger
+• Nouveau : les fiches indiquent l'adéquation à votre RAM
+• Amélioré : la recherche de mots similaires couvre russe et grec
 Nouveautés de la version 1.16.1 :
 • Corrigé : le téléchargement du modèle Parakeet par défaut échouait à la vérification d'intégrité après que l'éditeur a remplacé les fichiers ; les téléchargements utilisent désormais notre miroir vérifié
 • Corrigé : un plantage rare à la reprise depuis une notification sur certains appareils
@@ -419,6 +454,13 @@ Nouveautés de la version 1.14.0 :
 • Amélioré : section Avancé compacte, téléchargements Gemma sur leur propre page</fr-FR>
 
 <pt-BR>
+Novidades da versão 1.17.0:
+• Novo: Ask AI, pergunte às suas transcrições salvas, com respostas no aparelho (requer Gemma)
+• Novo: o dicionário pessoal orienta a transcrição para seus nomes e termos
+• Novo: predefinições de resumo: resumo, itens de ação, ata ou personalizado
+• Novo no catálogo: persa em streaming, finlandês, Parakeet compacto; Qwen3 pesa 35% menos
+• Novo: as fichas indicam a adequação à RAM do telefone
+• Melhorado: a busca por palavras semelhantes agora cobre russo e grego
 Novidades da versão 1.16.1:
 • Corrigido: o download do modelo Parakeet padrão falhava na verificação de integridade depois que o publicador substituiu os arquivos; os downloads agora usam nosso mirror verificado
 • Corrigido: uma falha rara ao retomar de uma notificação em alguns dispositivos
@@ -450,6 +492,13 @@ Novidades da versão 1.14.0:
 • Melhorado: seção Avançada compacta, downloads do Gemma em página própria</pt-BR>
 
 <ru-RU>
+Что нового в 1.17.0:
+• Новое: Ask AI, вопросы к сохранённым расшифровкам, ответы на устройстве (нужна Gemma)
+• Новое: личный словарь направляет расшифровку к вашим именам и терминам
+• Новое: пресеты резюме: краткое содержание, пункты задач, протокол или своё
+• Новое в каталоге: персидский потоковый, финский, компактный Parakeet; Qwen3 меньше на 35%
+• Новое: карточки моделей указывают соответствие RAM телефона
+• Улучшено: поиск похожих слов теперь работает и для русского с греческим
 Что нового в версии 1.16.1:
 • Исправлено: загрузка модели Parakeet по умолчанию не проходила проверку целостности после того, как издатель заменил файлы; загрузки теперь идут с нашего проверенного зеркала
 • Исправлено: редкий сбой при возобновлении из уведомления на некоторых устройствах
@@ -481,6 +530,13 @@ Novidades da versão 1.14.0:
 • Улучшено: компактный раздел «Дополнительно», загрузки Gemma на отдельной странице</ru-RU>
 
 <tr-TR>
+1.17.0 sürümündeki yenilikler:
+• Yeni: Ask AI, kayıtlı transkriptlerinize sorular sorun, yanıtlar cihazda verilir (Gemma gerekir)
+• Yeni: kişisel sözlük, transkripsiyonu adlarınıza ve terimlerinize yönlendirir
+• Yeni: özet ön ayarları: özet, eylem maddeleri, tutanak veya özel
+• Katalogda yeni: akışlı Farsça, Fince, kompakt Parakeet; Qwen3 %35 daha küçük
+• Yeni: model kartları telefonunuzun RAM'ine uygunluğu belirtir
+• İyileştirildi: benzer kelimeler arama artık Rusça ve Yunanca'da da çalışıyor
 Sürüm 1.16.1'daki yenilikler:
 • Düzeltildi: yayıncı dosyaları değiştirdikten sonra varsayılan Parakeet modeli indirmesi bütünlük denetiminde başarısız oluyordu; indirmeler artık doğrulanmış mirror'ımızı kullanıyor
 • Düzeltildi: bazı cihazlarda bildirimden dönerken nadir bir çökme
@@ -512,6 +568,13 @@ Sürüm 1.14.0'daki yenilikler:
 • İyileştirildi: kompakt Gelişmiş bölümü, Gemma indirmeleri kendi sayfasında</tr-TR>
 
 <pl-PL>
+Nowości w 1.17.0:
+• Nowość: Ask AI, pytaj o zapisane transkrypcje, odpowiedzi na urządzeniu (wymaga Gemma)
+• Nowość: osobisty słownik kieruje transkrypcję ku twoim nazwiskom i terminom
+• Nowość: ustawienia podsumowania: streszczenie, punkty działania, protokół lub własne
+• Nowość w katalogu: perski streaming, fiński, kompaktowy Parakeet; Qwen3 mniejszy o 35%
+• Nowość: karty modeli podają dopasowanie do RAM
+• Ulepszone: wyszukiwanie podobnych słów działa teraz też dla rosyjskiego i greckiego
 Nowości w wersji 1.16.1:
 • Naprawiono: pobieranie domyślnego modelu Parakeet nie przechodziło kontroli integralności po wymianie plików przez wydawcę; pobierania korzystają teraz z naszego zweryfikowanego mirrora
 • Naprawiono: rzadka awaria przy wznawianiu z powiadomienia na niektórych urządzeniach
@@ -543,6 +606,13 @@ Nowości w wersji 1.14.0:
 • Ulepszone: kompaktowa sekcja Zaawansowane, pobieranie Gemma na osobnej stronie</pl-PL>
 
 <hi-IN>
+1.17.0 में नया क्या है:
+• नया: Ask AI, अपनी सहेजी ट्रांसक्रिप्ट पर सवाल पूछें, जवाब डिवाइस पर मिलते हैं (Gemma आवश्यक)
+• नया: पर्सनल डिक्शनरी ट्रांसक्रिप्शन को आपके नामों और शब्दों की ओर मोड़ती है
+• नया: सारांश प्रीसेट: सारांश, कार्रवाई बिंदु, बैठक नोट्स या कस्टम
+• कैटलॉग में नया: स्ट्रीमिंग फ़ारसी, फ़िनिश, कॉम्पैक्ट Parakeet; Qwen3 35% छोटा
+• नया: मॉडल कार्ड फ़ोन की RAM के अनुसार उपयुक्तता बताते हैं
+• सुधार: समान शब्द खोज अब रूसी और यूनानी में भी काम करती है
 संस्करण 1.16.1 में नया क्या है:
 • सुधार: प्रकाशक द्वारा फ़ाइलें बदले जाने के बाद डिफ़ॉल्ट Parakeet मॉडल डाउनलोड अखंडता जाँच में विफल हो रहा था; डाउनलोड अब हमारे सत्यापित मिरर का उपयोग करते हैं
 • सुधार: कुछ डिवाइस पर सूचना से लौटते समय एक दुर्लभ क्रैश
@@ -574,6 +644,13 @@ Nowości w wersji 1.14.0:
 • बेहतर: कॉम्पैक्ट एडवांस्ड सेक्शन, Gemma डाउनलोड अलग पेज पर</hi-IN>
 
 <uk>
+Що нового у 1.17.0:
+• Нове: Ask AI, ставте запитання до збережених розшифровок, відповіді на пристрої (потрібна Gemma)
+• Нове: особистий словник спрямовує розшифровку на ваші імена та терміни
+• Нове: пресети резюме: стислий підсумок, пункти дій, протокол або власний
+• Нове в каталозі: перська потокова, фінська, компактний Parakeet; Qwen3 менший на 35%
+• Нове: картки моделей вказують відповідність RAM телефону
+• Покращено: пошук схожих слів тепер працює і для російської та грецької
 Новинки версії 1.16.1:
 • Виправлено: завантаження стандартної моделі Parakeet не проходило перевірку цілісності після того, як видавець замінив файли; завантаження тепер йдуть з нашого перевіреного дзеркала
 • Виправлено: рідкісний збій при відновленні зі сповіщення на деяких пристроях
@@ -604,6 +681,13 @@ Nowości w wersji 1.14.0:
 • Нове: інтерфейс китайською; каталог спільноти понад 30 моделей з фільтром мови
 • Покращено: компактний розділ «Додатково», завантаження Gemma на окремій сторінці</uk>
 <he-IL>
+מה חדש בגרסה 1.17.0:
+• חדש: Ask AI, שאלו שאלות על התמלילים השמורים, התשובות ניתנות במכשיר (דורש Gemma)
+• חדש: המילון האישי מכוון את התמלול אל השמות והמונחים שלכם
+• חדש: הגדרות סיכום: תקציר, סעיפי פעולה, פרוטוקול או מותאם אישית
+• חדש בקטלוג: פרסית בזרימה, פינית, Parakeet קומפקטי; Qwen3 קטן ב-35%
+• חדש: כרטיסי הדגמים מציינים התאמה לזיכרון הטלפון
+• שופר: חיפוש מילים דומות עובד עכשיו גם ברוסית וביוונית
 מה חדש בגרסה 1.16.1:
 • תוקן: הורדת ברירת המחדל של דגם Parakeet נכשלה בבדיקת התקינות לאחר שהמפרסם החליף את הקבצים; ההורדות משתמשות כעת במראה המאומתת שלנו
 • תוקן: קריסה נדירה בחזרה מהתראה בחלק מהמכשירים
@@ -634,6 +718,13 @@ Nowości w wersji 1.14.0:
 • חדש: ממשק בסינית; קטלוג הקהילה מעל 30 מודלים, מסונן לפי שפה
 • שופר: מקטע מתקדם קומפקטי, הורדות Gemma בעמוד משלהן</he-IL>
 <fa-IR>
+چه خبر در 1.17.0:
+• جدید: Ask AI، از رونوشت‌های ذخیره‌شده سؤال بپرسید، پاسخ‌ها روی دستگاه داده می‌شود (نیازمند Gemma)
+• جدید: واژه‌نامه شخصی رونویسی را به سمت نام‌ها و اصطلاح‌های شما هدایت می‌کند
+• جدید: پیش‌تنظیم‌های خلاصه: خلاصه، اقدامها، صورت‌جلسه یا سفارشی
+• جدید در کاتالوگ: فارسی جریانی، فنلاندی، Parakeet فشرده؛ Qwen3 سی‌وپنج درصد کوچک‌تر
+• جدید: کارت مدل‌ها تناسب با رم گوشی را می‌گوید
+• بهبود: جست‌وجی واژه‌های مشابه حالا روسی و یونانی را هم می‌یابد
 چه چیز جدید‌های نسخه 1.16.1:
 • رفع اشکال: دانلود مدل پیش‌فرض Parakeet پس از جایگزینی فایل‌ها توسط ناشر در بررسی یکپارچگی شکست می‌خورد؛ دانلودها اکنون از میرور تأییدشده ما استفاده می‌کنند
 • رفع اشکال: کرش نادر هنگام بازگشت از یک اعلان روی برخی دستگاه‌ها
@@ -664,6 +755,13 @@ Nowości w wersji 1.14.0:
 • جدید: رابط چینی؛ کاتالوگ جامعه بالای 30 مدل، فیلتر زبان
 • بهبود: بخش پیشرفته فشرده، دانلودهای Gemma در صفحه خودشان</fa-IR>
 <zh-CN>
+1.17.0 更新内容：
+• 新增：Ask AI，向已保存的转写文本提问，答案在设备上生成（需要 Gemma）
+• 新增：个人词典引导转写偏向你的姓名和术语
+• 新增：摘要预设：普通摘要、行动项、会议纪要或自定义
+• 目录新增：流式波斯语、芬兰语、紧凑版 Parakeet；Qwen3 体积缩小 35%
+• 新增：模型卡片标明与手机内存的匹配度
+• 改进：相似词搜索现支持俄语和希腊语
 1.16.1 版本更新：
 • 修复：模型发布者更换文件后，默认 Parakeet 模型下载未能通过完整性校验；下载现在使用我们已验证的镜像
 • 修复：部分设备上从通知恢复时的偶发崩溃

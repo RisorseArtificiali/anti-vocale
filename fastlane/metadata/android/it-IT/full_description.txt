@@ -17,6 +17,10 @@ Importa modelli di trascrizione custom da una cartella o da un link: fine-tune d
 
 FUNZIONALITÀ
 
+- Dizionario personale: elenca i nomi e i termini che ti interessano e i modelli che supportano il biasing (Parakeet, GigaAM, Nemotron in streaming, Qwen3) orientano la decodifica verso di essi; uno slider di intensità regola quanto è aggressiva la correzione
+- Ask AI: con un modello Gemma installato, fai domande sulle trascrizioni salvate e ottieni risposte sul dispositivo, basate sulla tua cronologia
+- Preset di riepilogo: riassunti come sintesi semplice, punti d'azione o verbali di riunione, oppure un prompt personalizzato
+- Le schede dei modelli dichiarano come l'ingombro in memoria di ciascuno si adatta alla fascia di RAM del tuo telefono, così i download impegnativi sono una scelta consapevole
 - Condividi vocali da qualunque app tramite la condivisione Android
 - Notifiche smart: copia con un tocco, ricondividi, sfoglia le trascrizioni lunghe senza aprire l'app
 - Copia automatica negli appunti e salvataggio automatico delle trascrizioni in una cartella a scelta (Drive, Syncthing, ...)

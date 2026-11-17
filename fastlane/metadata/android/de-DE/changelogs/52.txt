@@ -1,0 +1,6 @@
+• Neu: Ask AI, Fragen zu gespeicherten Transkripten, auf dem Gerät beantwortet (benötigt Gemma)
+• Neu: das persönliche Wörterbuch lenkt die Transkription auf deine Namen und Begriffe
+• Neu: Zusammenfassungs-Presets: Zusammenfassung, Aufgaben, Protokoll oder eigene
+• Neu im Katalog: Persisch streaming, Finnisch, kompakter Parakeet; Qwen3 35% kleiner
+• Neu: Modellkarten nennen die RAM-Eignung
+• Verbessert: die Suche nach ähnlichen Wörtern trifft jetzt auch Russisch und Griechisch

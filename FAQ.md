@@ -128,6 +128,26 @@ Yes: the scheduled folder watch. You pick the folders (Settings, Scheduled folde
 ### What is Remote offload, and where does my audio go?
 Remote offload (experimental, off by default) delegates long or heavy transcriptions to a server YOU configure: any OpenAI-compatible endpoint speaking the /v1/audio/transcriptions API (OmniVoice, the whisper.cpp server, and others). When enabled, the audio of the transcriptions you delegate is sent only to the server address you entered, wherever that server is (home network or internet); everything else stays on-device, and you can turn the feature off at any time.
 
+## The personal dictionary
+
+### Can I make the app transcribe names and technical terms correctly?
+
+Often, yes. Settings, "Personal dictionary": list the names or terms you care about, separated by commas, and the models that support biasing steer their decoding toward them. Parakeet, GigaAM and the streaming Nemotron re-rank their search with your terms; Qwen3 receives them as part of its prompt. Whisper-family models have no biasing hook and ignore the list. The strength slider's default is the safe end: it fixes clearly mis-heard spellings without touching the rest of the transcript. Pushing it higher can also flip words that merely sound similar.
+
+### The dictionary fixes a name, but now some word endings come out wrong. Why?
+
+Two things can cause it. The strength slider set high makes corrections aggressive everywhere, not only on your terms; lowering it back toward the default stops that. And in heavily inflected languages like Russian the dictionary itself can cause it: a list of base forms only pulls inflected endings toward the base, so a spoken inflected surname can come out in its nominative form. List the forms you actually hear spoken, not just the base form; with the spoken forms listed, even aggressive settings kept every ending intact in our tests on GigaAM v3.
+
+### Does the dictionary work with every model?
+
+No, and the dictionary page says so per model family: Parakeet, GigaAM, the streaming Nemotron and Qwen3 support it, Whisper-family models ignore it. The Farsi streaming model does not support the dictionary yet; the vocabulary file that biasing needs is not part of its published package.
+
+## Ask your transcripts
+
+### Can I ask questions about my saved transcripts?
+
+With a Gemma model installed, yes. In History, tap "Ask AI", type a question, and the app retrieves the transcripts whose content matches the question's terms and answers using them as context, all on your device: the question, the matching transcripts, and the answer never leave the phone. The answer states how many transcripts it is based on, and when nothing matches the question's terms it says so instead of inventing an answer.
+
 ## Results and metadata
 
 ### Where do I see which model was used and how long it took?

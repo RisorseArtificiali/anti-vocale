@@ -17,6 +17,10 @@ Import custom transcription models from a folder on your phone or from a link: W
 
 FEATURES
 
+- Personal dictionary: list the names and terms you care about and the models that support biasing (Parakeet, GigaAM, streaming Nemotron, Qwen3) steer their decoding toward them; a strength slider tunes how aggressive the correction is
+- Ask AI: with a Gemma model installed, ask questions about your saved transcripts and get answers on-device, grounded in your own history
+- Summary presets: recaps shaped as plain summaries, action items, or meeting minutes, or your own custom prompt
+- Model cards state how each model's memory footprint fits your phone's RAM tier, so big downloads are an informed choice
 - Share voice messages from any app via the Android share sheet
 - Smart notifications: one-tap copy, share back, page through long transcripts without opening the app
 - Auto-copy to clipboard and auto-save transcripts to a folder you pick (Drive, Syncthing, ...)

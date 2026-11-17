@@ -58,6 +58,7 @@ Measured by us, not declared by vendors: the per-language error rates of every m
 - **Full user manual** - Getting started, choosing a model, troubleshooting and FAQ, in 8 languages ([user guide](docs/user-guide/))
 - **Any audio length** - Long inputs are automatically split and stitched; practical ceilings are declared up front (2 hours on the streaming path, memory-dependent with VAD enabled) (see the [FAQ](FAQ.md))
 - **Declared limits before download** - Each model card states its audio-length capability up front, so big downloads are informed choices
+- **Fits-your-device labels** - Model cards also state how their memory footprint fits your phone's RAM tier, so heavy models are an informed choice too; nothing is hidden, you can always install anyway
 - **Model benchmarking** - Compare real-world transcription speed between models on your own device
 
 ### Transcription pipeline
@@ -68,6 +69,8 @@ Measured by us, not declared by vendors: the per-language error rates of every m
 - **Confidence indicator** - Shows detected language and warns about low-confidence results
 - **Video file support** - Transcribe audio from video files; extract embedded subtitles
 - **Summaries** - With a Gemma model installed, long transcripts get an optional short recap (and a punctuation polish pass), opt-in from Settings
+- **Summary presets** - Shape that recap as a plain summary, action items, or meeting minutes, or write your own prompt; applies to new transcriptions and to any entry you re-transcribe
+- **Personal dictionary** - List the names and terms you care about and the models that support biasing steer their decoding toward them: Parakeet, GigaAM and the streaming Nemotron re-rank their search, Qwen3 receives the terms in its prompt, while Whisper-family models have no biasing hook and ignore the list. A strength slider tunes how aggressive the correction is; the default is the safe end (fixes hard misspellings, leaves the rest of the transcript alone), higher values can also flip words that sound similar. For heavily inflected languages like Russian, add the forms you actually hear spoken: a list of base forms alone pulls inflected endings toward the nominative
 - **Speaker labels** - Optional per-sentence speaker attribution in conversations, rendered as SPEAKER turns in the result and every export
 - **Calibration-based ETA** - Progress estimates improve as the model adapts to your device
 - **Hostile-ROM resilience** - On phones whose vendor customizations freeze or kill background work (common on some Oppo, Realme, OnePlus and Vivo models), an opt-in background-protection toggle keeps transcription running with the screen off, a native NNAPI crash resets the provider to CPU on the next launch, and a corrupted model directory heals itself with a fresh download instead of failing forever
@@ -79,6 +82,7 @@ Measured by us, not declared by vendors: the per-language error rates of every m
 - **Duplicate guard** - Share a file that is already transcribed with the same model and the app offers to open the existing result instead of running it again ([#157](https://github.com/RisorseArtificiali/anti-vocale/issues/157))
 - **Language hint** - When a transcript's language clearly differs from your phone's, a one-line hint names how to lock the language for models that honor the setting ([#146](https://github.com/RisorseArtificiali/anti-vocale/issues/146))
 - **Similar-words search** - History search has a second mode that also finds words the recognizer mis-heard: toggle it on and a query for "castellazzo" matches a transcript that says "castelazzo"; plain substring search stays the default ([#161](https://github.com/RisorseArtificiali/anti-vocale/issues/161))
+- **Ask your transcripts** - With a Gemma model installed, ask plain-language questions about your saved history and get answers grounded in your own transcripts; the question, the transcripts, and the answer never leave the device
 - **Paragraph breaks** - Long pauses in a dictation become paragraph breaks in the transcript, so hours of audio read as paragraphs instead of one wall of text
 - **Backup & transfer** - Export your settings and full history to a zip archive you choose, and merge it back on any device; the archive is plaintext, so treat the file like the data it holds ([#158](https://github.com/RisorseArtificiali/anti-vocale/issues/158))
 - **Re-transcribe** - Retry any transcription with a different model straight from the history
@@ -93,6 +97,7 @@ Measured by us, not declared by vendors: the per-language error rates of every m
 - **Share integration** - Share audio from any messaging app to transcribe
 - **Direct file picker** - Pick any audio or video file from storage in the app, no messaging app needed
 - **Model-specific share targets** - Pick a specific model directly from the Android share sheet
+- **One-tap import links** - An `antivocale://import?url=...` link opens the import dialog pre-filled, so model pages and guides can offer installation in one tap
 - **WhatsApp voice notes** - New WhatsApp and WhatsApp Business voice notes are transcribed automatically as they arrive, zero taps, and the history row can carry the sender's name; see [Advanced integrations](#whatsapp-voice-notes-automatic-transcription)
 - **Tasker/automation support** - Trigger transcription via broadcast intents
 - **Open Transcribe provider (experimental)** - Apps that speak the open [Open Transcribe](https://github.com/23rd/Scrib/blob/master/CONTRACT.md) contract, like [Forkgram](https://github.com/forkgram/TelegramAndroid), can turn Anti-Vocale into their inline voice-message transcriber; off by default (Settings, Automation, Open Transcribe API), and the audio never leaves the device (see [Advanced integrations](#open-transcribe-experimental))

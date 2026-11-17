@@ -17,6 +17,10 @@ Importeer aangepaste transcriptiemodellen vanuit een map op je telefoon of vanui
 
 FUNCTIES
 
+- Persoonlijk woordenboek: noem de namen en termen die voor jou tellen en de modellen die biasing ondersteunen (Parakeet, GigaAM, streaming-Nemotron, Qwen3) sturen hun decodering die kant op; een schuifregelaar bepaalt hoe agressief de correctie is
+- Ask AI: met een Gemma-model geïnstalleerd stel je vragen over je opgeslagen transcripties en krijg je antwoorden op het apparaat, gebaseerd op je eigen geschiedenis
+- Samenvattingspresets: samenvattingen als gewone samenvatting, actiepunten of notulen, of met een eigen prompt
+- Modelkaarten vermelden hoe het geheugengebruik van elk model past bij de RAM-klasse van je telefoon, zodat grote downloads een bewuste keuze zijn
 - Deel spraakberichten vanuit elke app via het deelsheet van Android
 - Slimme meldingen: kopiëren in een tik, terugdelen, door lange transcripties bladeren zonder de app te openen
 - Automatisch naar klembord kopiëren en transcripties automatisch opslaan in een map die je kiest (Drive, Syncthing, ...)

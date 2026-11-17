@@ -17,6 +17,10 @@ Tuo omia transkriptiomalleja puhelimen kansiosta tai linkistä: Whisper-hienosä
 
 OMINAISUUDET
 
+- Oma sanasto: listaa nimet ja termit, joista välität, ja niitä tukevat mallit (Parakeet, GigaAM, suoratoisto-Nemotron, Qwen3) ohjaavat purkamista niitä kohti; voimakkuuden liukusäädin säätää korjauksen aggressiivisuutta
+- Ask AI: kun Gemma-malli on asennettuna, kysy tallennetuista transkripteistä ja saat vastaukset laitteella, omaa historiaasi pohjautuen
+- Tiivistelmäesiasetukset: yhteenvedot tavallisena yhteenvetona, toimenpidekohtina tai kokousmuistiona, tai omalla kehotteella
+- Mallikortit kertovat, miten kunkin mallin muistijalanjälki sopii puhelimesi RAM-luokkaan, joten suuret lataukset ovat tietoinen valinta
 - Jaa ääniviestit mistä tahansa sovelluksesta Androidin jakovalikon kautta
 - Älykkäät ilmoitukset: kopioi yhdellä napautuksella, jaa takaisin ja selaile pitkiä transkriptejä sivuittain avaamatta sovellusta
 - Automaattinen kopiointi leikepöydälle ja transkriptien automaattinen tallennus valitsemaasi kansioon (Drive, Syncthing, …)
