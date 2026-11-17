@@ -328,12 +328,17 @@ class ExternalSherpaBackend @Inject constructor(
                             modelType = "",
                         ),
                         featConfig = FeatureConfig(sampleRate = 16000, featureDim = 80),
-                        // TASK-874: deliberately GREEDY, unlike the built-in
-                        // streaming entry's beam (see SherpaBackend
-                        // STREAMING_DECODING_METHOD): the desktop A/B measured the
-                        // bundled Nemotron artifact only, and these user
-                        // imports are unmeasured per-model; flipping them to
-                        // beam is a per-family measurement, not a free ride.
+                        // TASK-874: UNARMED stays deliberately GREEDY (the
+                        // desktop A/B measured the bundled Nemotron artifact
+                        // only; flipping unmeasured user imports to beam is a
+                        // per-family measurement, not a free ride). ARMED must
+                        // switch to beam: the native greedy branch never
+                        // constructs the bpe encoder (only the beam branch
+                        // does), so hotwords on a greedy+vocab recognizer is
+                        // a NULL-deref SIGSEGV inside createStream (TASK-1011,
+                        // the tombstone puts the fault at bpe_encoder->Encode).
+                        decodingMethod = if (streamingBiasingArmed) SherpaBackend.STREAMING_DECODING_METHOD else "greedy_search",
+                        maxActivePaths = if (streamingBiasingArmed) SherpaBackend.STREAMING_MAX_ACTIVE_PATHS else 1,
                     )
                     onlineRecognizer = OnlineRecognizer(config = onlineConfig)
                     modelDir = record.dir

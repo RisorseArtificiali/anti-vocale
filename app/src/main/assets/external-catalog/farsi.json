@@ -32,5 +32,12 @@
       "sha256": "7ace7d33f3784d50f9a46156cce7c411f39faab64b43df17bd5796abc56a3057",
       "size": 15037
     }
+  ],
+  "supplements": [
+    {
+      "name": "bpe.vocab",
+      "url": "https://huggingface.co/pantinor/nemotron-asr-streaming-farsi/resolve/main/bpe.vocab",
+      "sha256": "796eae910f47a7d81255d83e76b644ebe74b98bb2ccf77b955ad70fdaa66cdb1"
+    }
   ]
 }

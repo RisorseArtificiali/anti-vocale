@@ -77,10 +77,12 @@ class SherpaBackend(
          * OPPOSITE of the Parakeet greedy-vs-beam precedent (identical quality,
          * 3x cost) that justified greedy elsewhere. Gated on the device A/B leg
          * before this ships: the phone must show the same ratio, not the
-         * Parakeet-like collapse. Deliberately scoped to the BUILT-IN
-         * streaming entry: the A/B measured the bundled Nemotron artifact;
-         * ExternalSherpaBackend's streaming imports stay greedy (recorded
-         * at that site).
+         * Parakeet-like collapse. Used by the BUILT-IN streaming entry
+         * unconditionally and by ExternalSherpaBackend's streaming imports
+         * when biasing is armed (unarmed imports stay greedy: beam on
+         * unmeasured user exports is a per-family measurement, while armed
+         * must switch because the native greedy branch never constructs
+         * the bpe encoder, TASK-1011).
          */
         internal const val STREAMING_DECODING_METHOD = "modified_beam_search"
 
