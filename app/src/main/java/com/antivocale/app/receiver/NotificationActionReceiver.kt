@@ -66,8 +66,9 @@ class NotificationActionReceiver : BroadcastReceiver() {
     /**
      * Handles a subtitle-choice notification tap: cancels the timed fallback worker
      * (either action resolves the prompt), then forwards the request to [InferenceService]
-     * with the chosen [requestType] ("subtitles" or "audio"). All extras set by
-     * [com.antivocale.app.receiver.ShareReceiverActivity] are passed through verbatim.
+     * with the chosen [requestType] ("subtitles" or "audio"). The prompt's
+     * extras ([SubtitleChoice]'s baseExtras bundle) are passed through
+     * wholesale (TASK-1018); the owned keys follow the copy.
      *
      * The notification tap is user-initiated, which on Android 12+ permits starting a
      * foreground service from this broadcast context; a still-restricted start rides the
@@ -94,31 +95,16 @@ class NotificationActionReceiver : BroadcastReceiver() {
         }
 
         val serviceIntent = Intent(context, InferenceService::class.java).apply {
+            // TASK-1018: the choice prompt's extras are a passthrough bundle
+            // the producer (SubtitleChoice.baseExtras) stamps wholesale;
+            // copy them the same way instead of hand-enumerating keys (the
+            // third manual addition was the review-round rediscovery this
+            // closes). InferenceService reads only known keys, so an inert
+            // extra riding along is harmless. The two keys THIS arm owns
+            // follow the copy: the chosen request type and, for the
+            // subtitles arm, the derived track index.
+            intent.extras?.let { putExtras(it) }
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, requestType)
-            intent.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)?.let {
-                putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, it)
-            }
-            intent.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)?.let {
-                putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, it)
-            }
-            intent.getStringExtra(EXTRA_SOURCE_PACKAGE)?.let {
-                putExtra(EXTRA_SOURCE_PACKAGE, it)
-            }
-            intent.getStringExtra(InferenceService.EXTRA_SOURCE)?.let {
-                putExtra(InferenceService.EXTRA_SOURCE, it)
-            }
-            intent.getStringExtra(InferenceService.EXTRA_BACKEND_OVERRIDE)?.let {
-                putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, it)
-            }
-            // TASK-842: the intake content hash, onto the chosen arm's row.
-            intent.getStringExtra(InferenceService.EXTRA_CONTENT_HASH)?.let {
-                putExtra(InferenceService.EXTRA_CONTENT_HASH, it)
-            }
-            // TASK-1016: the caller/sender label (the folder watch parses it
-            // from call-recorder file names); rides the row like the
-            // WhatsApp sender. Forwarded so the SPI-driven transcribe trials
-            // exercise the same extra the worker sends.
-            forwardExtra(intent, InferenceService.EXTRA_SENDER_NAME)
             if (requestType == TaskerRequestReceiver.REQUEST_TYPE_SUBTITLES) {
                 putExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, trackIndexFromIntent(intent))
             }
@@ -146,7 +132,9 @@ class NotificationActionReceiver : BroadcastReceiver() {
      * scaffold's dispatch shape; the row pins no backend). The notification
      * tap is user-initiated, so the FGS start rides the same exemption the
      * subtitle choice above relies on, and a still-restricted start survives
-     * on the trampoline notification.
+     * on the trampoline notification. NOT a passthrough: this arm mints its
+     * own task id and pins source; applying the choice arm's wholesale copy
+     * here would drag the notification's stale diagnostic task_id back in.
      */
     private fun handleRerunSuspended(context: Context, intent: Intent) {
         val filePath = intent.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)
@@ -169,7 +157,9 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 putExtra(InferenceService.EXTRA_SOURCE_PACKAGE, it)
             }
             // TASK-736: keep the sender label on the re-run's row.
-            forwardExtra(intent, InferenceService.EXTRA_SENDER_NAME)
+            intent.getStringExtra(InferenceService.EXTRA_SENDER_NAME)?.let {
+                putExtra(InferenceService.EXTRA_SENDER_NAME, it)
+            }
         }
         when (com.antivocale.app.service.InferenceEnqueue.start(context, serviceIntent)) {
             com.antivocale.app.service.InferenceEnqueue.Outcome.Started,
@@ -241,12 +231,6 @@ class NotificationActionReceiver : BroadcastReceiver() {
         com.antivocale.app.util.ToastCompat.show(context, R.string.copied_to_clipboard)
     }
 
-    /** Copies one string extra when present; the receiver's per-key
-     *  forwarding idiom (the allow-list this arm is, see the factory's
-     *  KDoc for why it is not wholesale). */
-    private fun Intent.forwardExtra(source: Intent, key: String) {
-        source.getStringExtra(key)?.let { putExtra(key, it) }
-    }
 
     private fun handleShareAction(context: Context, intent: Intent) {
         val text = intent.getStringExtra(EXTRA_TRANSCRIPTION_TEXT)
