@@ -224,6 +224,25 @@ class InferenceServiceNotificationTest {
     }
 
     @Test
+    fun `onCreate alone promotes the service (TASK-1014 cold-start window)`() {
+        // The 1.16.1 field events: the fgRequired window expired BETWEEN
+        // service construction and the first delivery (no app code ran in
+        // between), which the delivery-time promotion cannot cover. onCreate
+        // must put the service in the foreground by itself, before any
+        // intent exists.
+        val service = Robolectric.buildService(InferenceService::class.java)
+            .create().get()
+        val shadow = Shadows.shadowOf(service)
+        // The id-matched notification is the recorded post; isForegroundStopped
+        // false proves the service never left the foreground state after it.
+        assertTrue(
+            "onCreate must promote to foreground with no delivery",
+            shadow.lastForegroundNotificationId == InferenceService.NOTIFICATION_ID &&
+                !shadow.isForegroundStopped
+        )
+    }
+
+    @Test
     fun `every delivery promotes the service before any early-return arm (TASK-978)`() {
         // The 1.16.0 crash class: a startForegroundService delivery whose
         // window expired because the promotion sat BELOW the early-return
@@ -239,7 +258,7 @@ class InferenceServiceNotificationTest {
             service.onStartCommand(intentFactory(service), 0, 1)
             // Either witness proves the promotion: the live notification for
             // arms that stay foreground, or isForegroundStopped for the arms
-            // whose idle-retire (stopIfBatchIdle, the review round's
+            // whose idle-retire (retireIfIdle, the review round's
             // stranded-service fix) already cleared the notification (the
             // ExtractionServiceTest precedent: you cannot stopForeground
             // without having first started it).

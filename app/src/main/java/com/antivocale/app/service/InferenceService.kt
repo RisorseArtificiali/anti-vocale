@@ -277,11 +277,50 @@ class InferenceService : Service(), TranscriptionListener {
 
     // ---- Android Lifecycle ----
 
+    /**
+     * TASK-978/1014: satisfy the system's fgRequired expectation with the
+     * best-shape notification. The NAV shape wins when a chunk view is live
+     * (F3: a single-chunk job's file/progress/ETA/chronometer survives the
+     * promotion instead of degrading to the bare form), then the last
+     * foreground notification, then the bare "Processing audio" form.
+     *
+     * The failure arm records through CrashReporter (TASK-1014): the review
+     * round's warning that "a silent swallow would turn an OEM FGS
+     * restriction into an unattributable ForegroundServiceDidNotStartInTime
+     * kill" proved out in the field (1.16.1, two Samsung issue groups,
+     * TASK-1014), where Log.w alone left the swallow undiscriminable from a
+     * pre-delivery process stall. A REQUIRED delivery that throws here still
+     * ends in that kill class ten seconds later; the report is what makes
+     * the next event attributable.
+     */
+    private fun promoteToForeground(origin: String) {
+        runCatching {
+            startForeground(
+                NOTIFICATION_ID,
+                deriveChunkNavView()?.let { assembleChunkNavNotification(it) }
+                    ?: lastForegroundNotification
+                    ?: createNotification(getString(R.string.processing_audio)))
+        }.onFailure {
+            Log.w(TAG, "startForeground promotion failed ($origin)", it)
+            // The failure arm runs OUTSIDE the catch: reporting infra (the
+            // playStore Firebase path during early process start) throwing
+            // here must not convert a promotion failure into a service
+            // crash from onCreate.
+            runCatching { CrashReporter.report(it, "InferenceService.startForeground/$origin") }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         alive = true
         createNotificationChannel()
         createResultNotificationChannel()
+        // TASK-1014: promote before the delivery. The onStartCommand
+        // promotion covers every delivery that RUNS; it cannot cover the gap
+        // between service construction and that delivery, where the 1.16.1
+        // events landed. The promotion below upgrades the shape when a live
+        // chunk-nav view exists.
+        promoteToForeground("onCreate")
         Log.i(TAG, "Service created")
     }
 
@@ -296,45 +335,26 @@ class InferenceService : Service(), TranscriptionListener {
             Log.i(TAG, "deferred dictionary re-arm drained at intake")
         }
 
-        // TASK-978: the foreground promotion is the FIRST statement, before
-        // every early-return arm. Every startForegroundService delivery
-        // re-arms the system's fgRequired expectation, and the 1.16.0 crash
-        // (LogsViewModel.continueBrowseIntake's enqueue; map e0234b8f,
-        // deobfuscated) was exactly that window expiring. On a live service
-        // the call is an idempotent same-id refresh; on a cold start it
-        // closes the window at the earliest runnable moment. The control
-        // actions below arrive from TWO sources (review round): notification
-        // buttons through getService PendingIntents (no expectation), and
-        // in-app callers through direct startService (HistoryTab.cancelTask);
-        // both are safe today because both run with the app foreground, and
-        // the runCatching below absorbs a lapsed-allowlist delivery on the
-        // PendingIntent side. Promoting for them costs only a same-id
-        // repost; a control tap that revived a dead service gets a brief
-        // honest notification before the idle stop. PROMOTING WITH THE NAV
-        // SHAPE when one is live (altitude round): the bare form would
-        // overwrite the pinned chunk view, and no-op nav taps plus the
-        // signature dedup could never restore it.
-        // The guard (F4 of the release review, restored here after the
-        // merge dropped it): on a REQUIRED delivery the allowance existed at
-        // startForegroundService time so this cannot throw; on a getService
-        // control delivery with a lapsed temporary-allowlist window it can
-        // throw ForegroundServiceStartNotAllowedException on API 31+, and
-        // swallowing that one is strictly safe (no fgRequired window exists
-        // for a startService command).
-        runCatching {
-            startForeground(
-                NOTIFICATION_ID,
-                deriveChunkNavView()?.let { assembleChunkNavNotification(it) }
-                    // F3: a single-chunk job's live progress shape (file,
-                    // progress, ETA, chronometer) survives the promotion
-                    // instead of degrading to the bare form.
-                    ?: lastForegroundNotification
-                    ?: createNotification(getString(R.string.processing_audio)))
-        }.onFailure {
-            // Review round: a silent swallow would turn an OEM FGS restriction
-            // into an unattributable ForegroundServiceDidNotStartInTime kill.
-            Log.w(TAG, "startForeground promotion failed", it)
-        }
+        // TASK-978: the promotion is still FIRST among the delivery arms,
+        // because every startForegroundService delivery re-arms the system's
+        // fgRequired expectation and must be answered before ANY early return
+        // (the 1.16.0 crash: LogsViewModel.continueBrowseIntake's re-entrant
+        // start; map e0234b8f, deobfuscated). onCreate now promotes too
+        // (TASK-1014), but a re-delivery to a LIVE service re-arms without
+        // re-running onCreate, so this call cannot be folded away. The
+        // control actions below arrive from TWO sources (review round):
+        // notification buttons through getService PendingIntents (no
+        // expectation), and in-app callers through direct startService
+        // (HistoryTab.cancelTask); both run with the app foreground, and a
+        // lapsed-allowlist PendingIntent delivery on API 31+ only produces a
+        // recorded failure (no fgRequired window exists for a startService
+        // command). Promoting for them costs only a same-id repost; a control
+        // tap that revived a dead service gets a brief honest notification
+        // before the idle stop. PROMOTING WITH THE NAV SHAPE when one is live
+        // (altitude round): the bare form would overwrite the pinned chunk
+        // view, and no-op nav taps plus the signature dedup could never
+        // restore it.
+        promoteToForeground("onStartCommand")
 
         if (intent?.action == ACTION_CANCEL) {
             handleCancelRequest()
