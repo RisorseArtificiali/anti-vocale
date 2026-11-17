@@ -123,6 +123,10 @@ class ModelViewModel @Inject constructor(
     // IPCs) killed the enablement and the affected model stayed MISSING from
     // share sheets until the next cold start. The application scope survives.
     @ApplicationScope private val applicationScope: CoroutineScope,
+    // TASK-1012: the biasing supplement pass fires at external-import
+    // completion (parity with the built-in download hook). Default-null so
+    // the view-model tests construct without it; Hilt ignores defaults.
+    private val biasingVocabSupplement: com.antivocale.app.data.download.BiasingVocabSupplement? = null,
 ) : ViewModel() {
 
     val tokenState = tokenManager.tokenState
@@ -1902,6 +1906,17 @@ class ModelViewModel @Inject constructor(
                                 is ModelBundleTransfer.Outcome.Imported -> {
                                     _snackbarEvent.tryEmit(SnackbarEvent.Message(
                                         ctx.getString(R.string.external_imported, outcome.record.displayName)))
+                                    // TASK-1012: the supplement pass parity the
+                                    // built-in download hook has: an entry whose
+                                    // supplements are missing lands them THIS
+                                    // session, so biasing arms on the first
+                                    // transcription after the import.
+                                    biasingVocabSupplement?.let { supplement ->
+                                        applicationScope.launch {
+                                            runCatching { supplement.run(ctx) }
+                                                .onFailure { Log.w("ModelViewModel", "supplement pass failed", it) }
+                                        }
+                                    }
                                     // First-run behavior: auto-select when nothing
                                     // is active. TASK-675: a demoted external model
                                     // is skipped by that auto-selection.

@@ -25,6 +25,12 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     // TASK-908: see reportingReplaceCorruptionHandler.
     corruptionHandler = reportingReplaceCorruptionHandler("preferences"))
 
+// TASK-1009 convention for every preference flow below: DataStore re-emits
+// on EVERY write to ANY key, so a flow feeding a change-reactive collector
+// MUST carry .distinctUntilChanged() (see keywordBiasing/biasingScore for
+// the shape, and the TASK-1008 regression test for what happens without
+// it). Flows feeding only stateIn(WhileSubscribed) UI collectors are
+// exempt (the terminal dedupe covers them).
 class PreferencesManagerImpl(
     private val context: Context,
     injectedDataStore: DataStore<Preferences>? = null,
