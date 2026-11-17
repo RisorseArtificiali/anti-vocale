@@ -118,9 +118,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             // from call-recorder file names); rides the row like the
             // WhatsApp sender. Forwarded so the SPI-driven transcribe trials
             // exercise the same extra the worker sends.
-            intent.getStringExtra(InferenceService.EXTRA_SENDER_NAME)?.let {
-                putExtra(InferenceService.EXTRA_SENDER_NAME, it)
-            }
+            forwardExtra(intent, InferenceService.EXTRA_SENDER_NAME)
             if (requestType == TaskerRequestReceiver.REQUEST_TYPE_SUBTITLES) {
                 putExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, trackIndexFromIntent(intent))
             }
@@ -171,9 +169,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 putExtra(InferenceService.EXTRA_SOURCE_PACKAGE, it)
             }
             // TASK-736: keep the sender label on the re-run's row.
-            intent.getStringExtra(InferenceService.EXTRA_SENDER_NAME)?.let {
-                putExtra(InferenceService.EXTRA_SENDER_NAME, it)
-            }
+            forwardExtra(intent, InferenceService.EXTRA_SENDER_NAME)
         }
         when (com.antivocale.app.service.InferenceEnqueue.start(context, serviceIntent)) {
             com.antivocale.app.service.InferenceEnqueue.Outcome.Started,
@@ -243,6 +239,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
         Log.i(TAG, "Copied transcription to clipboard (${text.length} chars)")
         com.antivocale.app.util.ToastCompat.show(context, R.string.copied_to_clipboard)
+    }
+
+    /** Copies one string extra when present; the receiver's per-key
+     *  forwarding idiom (the allow-list this arm is, see the factory's
+     *  KDoc for why it is not wholesale). */
+    private fun Intent.forwardExtra(source: Intent, key: String) {
+        source.getStringExtra(key)?.let { putExtra(key, it) }
     }
 
     private fun handleShareAction(context: Context, intent: Intent) {

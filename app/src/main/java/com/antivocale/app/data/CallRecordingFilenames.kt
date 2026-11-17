@@ -122,8 +122,7 @@ object CallRecordingFilenames {
         // caller (a real bare phone number, 7..11 digits, stays eligible:
         // the sibling matcher accepts the same shape).
         val digitsOnly = caller.filter { it.isDigit() }
-        if (caller.length == digitsOnly.length && digitsOnly.length == 8 &&
-            (digitsOnly.startsWith("19") || digitsOnly.startsWith("20"))) return null
+        if (caller.length == digitsOnly.length && isYearLikeDigits(digitsOnly)) return null
         return caller.takeIf { isPlausibleCaller(it) }
     }
 
@@ -152,14 +151,18 @@ object CallRecordingFilenames {
      * being read as a number.
      */
     private fun callerFromKeywordAndNumber(stem: String): String? {
+        // Cheap substring pre-gate before tokenizing (the reject path for
+        // most folder audio): no token can start with a keyword the whole
+        // stem does not contain.
+        if (CALL_KEYWORDS.none { stem.contains(it, ignoreCase = true) }) return null
         // Token-boundary keyword match, not substring: "recall" must not
         // satisfy "call" (the review's false-attribution class).
         val tokens = NON_WORD.split(stem).filter { it.isNotBlank() }.map { it.lowercase() }
-        if (CALL_KEYWORDS.none { keyword -> tokens.any { it == keyword || it.startsWith(keyword) } }) {
+        if (CALL_KEYWORDS.none { keyword -> tokens.any { it.startsWith(keyword) } }) {
             return null
         }
         val number = NUMBER_SHAPED.findAll(stem)
-            .map { it.value.trim() }
+            .map { it.value }
             .firstOrNull { token ->
                 val digitsOnly = token.filter { it.isDigit() }
                 val digits = digitsOnly.length
@@ -170,8 +173,7 @@ object CallRecordingFilenames {
                 if (token.startsWith("+")) {
                     digits in 7..15
                 } else {
-                    digits in 7..11 && !(digits == 8 &&
-                        (digitsOnly.startsWith("19") || digitsOnly.startsWith("20")))
+                    digits in 7..11 && !isYearLikeDigits(digitsOnly)
                 }
             } ?: return null
         return normalizeCaller(number)
@@ -186,23 +188,32 @@ object CallRecordingFilenames {
     }
 
     /** Drops bracket characters whose partner a cut or the recorder's own
-     *  naming removed, then trims the seam. */
+     *  naming removed, then trims the seam. Type-blind by design (any
+     *  closer closes any opener), so unmatchedness is a depth property:
+     *  left-to-right drops orphan closers, right-to-left drops orphan
+     *  openers. */
     private fun balanceParens(label: String): String {
-        val keep = BooleanArray(label.length) { true }
-        val opens = ArrayDeque<Int>()
-        label.forEachIndexed { i, c ->
-            when (c) {
-                '(', '[' -> opens.addLast(i)
-                ')', ']' -> if (opens.isNotEmpty()) opens.removeLast() else keep[i] = false
-            }
+        val sb = StringBuilder(label.length)
+        var depth = 0
+        for (c in label) when (c) {
+            '(', '[' -> { depth++; sb.append(c) }
+            ')', ']' -> if (depth > 0) { depth--; sb.append(c) }
+            else -> sb.append(c)
         }
-        opens.forEach { keep[it] = false }
-        val out = StringBuilder()
-        label.forEachIndexed { i, c -> if (keep[i]) out.append(c) }
-        return out.toString().trim(' ', '-', '.')
+        depth = 0
+        for (i in sb.length - 1 downTo 0) when (sb[i]) {
+            ')', ']' -> depth++
+            '(', '[' -> if (depth > 0) depth-- else sb.deleteCharAt(i)
+        }
+        return sb.toString().trim(' ', '-', '.')
     }
 
     /** A caller label must not be the recorder's own "no caller" marker. */
     private fun isPlausibleCaller(label: String): Boolean =
         label.lowercase().replace(PUNCTUATION_RUN, "") !in ANONYMOUS
+
+    /** The one date-shape both digit guards use (the sibling-matchers'
+     *  parity their comments assert lives here). */
+    private fun isYearLikeDigits(digits: String): Boolean =
+        digits.length == 8 && (digits.startsWith("19") || digits.startsWith("20"))
 }
