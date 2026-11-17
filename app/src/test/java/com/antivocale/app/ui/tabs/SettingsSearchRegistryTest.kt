@@ -56,7 +56,7 @@ class SettingsSearchRegistryTest {
     // ---- TASK-588.2: the advanced reveal's membership and stable count ----
 
     @Test
-    fun `the advanced flag marks exactly the reveal's ten cards`() {
+    fun `the advanced flag marks exactly the reveal's cards`() {
         val advanced = SETTINGS_SEARCH_CARDS.filter { it.advanced }.map { it.id }.toSet()
         assertEquals(
             setOf(
@@ -65,7 +65,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.SUMMARY_PROMPT, SettingsSearchId.DEFAULT_PROMPT,
                 SettingsSearchId.DIARIZATION_HUB, SettingsSearchId.SIGNATURE,
                 SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, SettingsSearchId.KEEP_ALIVE_TIMEOUT,
-                SettingsSearchId.REFINEMENT_MODEL,
+                SettingsSearchId.KEYWORD_BIASING,
             ),
             advanced,
         )
@@ -82,11 +82,11 @@ class SettingsSearchRegistryTest {
                 it.section == SettingsSearchSection.TRANSCRIPTION &&
                 it.outerSectionGate(state)
         }
-        // gemma configured, ASR backend: 6 always + punctuation pair + summary prompt
+        // gemma configured, ASR backend: 7 always (incl. the dictionary hub) + punctuation pair + summary prompt
         assertEquals(10, folded(state(gemmaConfigured = true, isLlmBackend = false)))
-        // no gemma: the six unconditional cards alone
+        // no gemma: the seven unconditional cards alone
         assertEquals(7, folded(state(gemmaConfigured = false, isLlmBackend = false)))
-        // LLM backend: 6 + the default-prompt hub
+        // LLM backend: the unconditional seven + the default-prompt hub
         assertEquals(8, folded(state(gemmaConfigured = false, isLlmBackend = true)))
         // STABILITY: inner toggles never move the folded count
         assertEquals(
@@ -100,11 +100,13 @@ class SettingsSearchRegistryTest {
     }
     @Test
     fun `the refine-model card rides the two-pass availability gate`() {
-        // TASK-740.1: visible only when the two-pass is on AND can run, and
-        // advanced (behind the TRANSCRIPTION reveal).
+        // TASK-740.1: visible only when the two-pass is on AND can run.
+        // TASK-1017: NOT advanced: the row renders in the basic block under
+        // REFINEMENT, outside the reveal, so it must not count into the
+        // reveal's population.
         val id = SettingsSearchId.REFINEMENT_MODEL
         val card = SETTINGS_SEARCH_CARDS.first { it.id == id }
-        assertTrue(card.advanced)
+        assertTrue(!card.advanced)
         assertTrue(id in visibleIds(SettingsSearchSection.TRANSCRIPTION, state(refinementOn = true)))
         assertTrue(id !in visibleIds(SettingsSearchSection.TRANSCRIPTION, state(refinementOn = false)))
     }

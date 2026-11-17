@@ -1047,12 +1047,41 @@ fun SettingsTab(
                     it.section == SettingsSearchSection.TRANSCRIPTION &&
                     it.outerSectionGate(searchState)
             } }
+            // TASK-1017: during a search the unit renders headerless; if no
+            // advanced card matches the query it must not render at all
+            // (the empty container was the ghost card between results).
+            // The population filters by visible(), the SAME gate the count
+            // line and searchGroups read (the TASK-689 one-registry
+            // contract): outerSectionGate here would match state-hidden
+            // cards (summarize off) and re-render the empty container.
+            // Deliberately NOT the count's predicate above: the count must
+            // stay stable across inner toggle flips (TASK-588.2), the
+            // search gate must not (it mirrors what renders).
+            // Vocabulary resolution is state-keyed like every other match
+            // path here (the TASK-733 doctrine) and only runs while a
+            // search is active: the per-keystroke work is only the cheap
+            // contains, never string resolution.
+            val advancedHasMatch = if (!searchActive) {
+                true
+            } else {
+                val advancedVocabularies = remember(context, searchState) {
+                    SETTINGS_SEARCH_CARDS
+                        .filter {
+                            it.advanced &&
+                                it.section == SettingsSearchSection.TRANSCRIPTION &&
+                                it.visible(searchState)
+                        }
+                        .map { localizedVocabulary(resolver, it, searchState) }
+                }
+                advancedVocabularies.any { matchesQuery(searchQuery, it) }
+            }
             // TASK-780 (road test): the reveal component owns the whole
             // advanced-subsection unit, header and bounded content, so the
             // group has a visible start AND end (the maintainer's report).
             AdvancedRevealCard(
                 count = advancedCount,
                 mode = when {
+                    searchActive && !advancedHasMatch -> AdvancedRevealMode.SearchHidden
                     searchActive -> AdvancedRevealMode.SearchContent
                     transcriptionAdvancedExpanded -> AdvancedRevealMode.Expanded
                     else -> AdvancedRevealMode.Collapsed
@@ -3422,6 +3451,10 @@ private fun AdvancedRevealCard(
     onToggle: () -> Unit,
     content: @Composable () -> Unit = {},
 ) {
+    // TASK-1017: a search matching no advanced card must not leave the
+    // headerless container behind as an empty colored box between the
+    // results (the maintainer's ghost card on the "folder" query).
+    if (mode == AdvancedRevealMode.SearchHidden) return
     val expanded = mode == AdvancedRevealMode.Expanded
     val flushUnderHeader = mode == AdvancedRevealMode.Expanded
     // TASK-382 contract (as CollapsibleSection): the row is the accessible
@@ -3501,13 +3534,15 @@ private fun AdvancedRevealCard(
 private val AdvancedRevealRadius = 12.dp
 
 /**
- * The three renderable states of the advanced reveal: collapsed (header
- * only), expanded (header merged flush into the bounded content), and the
- * settings-search shape (content only, all corners rounded, nothing above
- * it). An enum, not two booleans, so the invalid combinations cannot be
- * expressed (review finding).
+ * The renderable states of the advanced reveal: collapsed (header only),
+ * expanded (header merged flush into the bounded content), the settings-
+ * search shape (content only, all corners rounded, nothing above it), and
+ * the search-matched-nothing shape (TASK-1017: nothing at all, so the
+ * headerless container cannot linger as an empty colored box). An enum,
+ * not two booleans, so the invalid combinations cannot be expressed
+ * (review finding).
  */
-private enum class AdvancedRevealMode { Collapsed, Expanded, SearchContent }
+private enum class AdvancedRevealMode { Collapsed, Expanded, SearchContent, SearchHidden }
 
 /**
  * TASK-542: card-level gate for the settings search. Renders [content] only
@@ -4093,6 +4128,11 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         // TASK-937: state-dependent like MODEL_STATUS: the tree renders ONE
         // description variant, and the vocabulary must not match text the
         // tree does not show (the ghost-match class the registry bans).
+        // TASK-1017: the nested refine-model row renders INSIDE this card,
+        // gated by the same refinementOn the row's own entry uses, so its
+        // strings join this vocabulary the hub-union way: a query matching
+        // the row must also match the card that wraps it, or the outer
+        // filter hides a counted result.
         res = { state ->
             listOf(
                 R.string.refinement_title,
@@ -4101,7 +4141,15 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
                 } else {
                     R.string.refinement_description
                 },
-            )
+            ) + if (state.refinementOn) {
+                listOf(
+                    R.string.refinement_model_title,
+                    R.string.refinement_model_description,
+                    R.string.refinement_model_inherit,
+                )
+            } else {
+                emptyList()
+            }
         },
         group = SettingsSearchGroup.DECODING,
     ),
@@ -4112,7 +4160,9 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.refinement_model_inherit),
         visible = { s -> s.refinementOn },
         group = SettingsSearchGroup.DECODING,
-        advanced = true,
+        // TASK-1017: not advanced: the row renders in the basic block under
+        // REFINEMENT, outside the reveal; the flag had it counted into the
+        // reveal's population it does not render in.
     ),
     SettingsSearchCard(
         SettingsSearchId.PUNCTUATION_MODE, SettingsSearchSection.TRANSCRIPTION,
@@ -4169,10 +4219,12 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         // TASK-994: unconditional (the dictionary applies to every
         // backend's Gemma passes and Whistle; the copy states the rest).
         visible = { true },
-        // Deliberately ungrouped: the DECODING cluster lives inside the
-        // advanced reveal (a contiguous tree run the registry pins); this
-        // card renders in the basic block beside the model-specific
-        // default-prompt hub, and a one-card group header would be noise.
+        // TASK-1017: advanced = the row renders inside the advanced reveal;
+        // the 2026-11-14 hub move put this row there and the flag stayed
+        // behind, so the reveal's search gate counted it out of the unit
+        // it renders in. Deliberately ungrouped (a one-card group header
+        // would be noise).
+        advanced = true,
     ),
     // The GH #83 speaker-labels toggle.
     // Maintainer decision 2026-09-30: the diarization hub. Union
