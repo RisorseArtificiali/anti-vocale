@@ -140,7 +140,7 @@ Two things can cause it. The strength slider set high makes corrections aggressi
 
 ### Does the dictionary work with every model?
 
-No, and the dictionary page says so per model family: Parakeet, GigaAM, the streaming Nemotron and Qwen3 support it, Whisper-family models ignore it. On the Farsi streaming model the dictionary works after the vocabulary file it needs lands on your phone: that happens automatically the first time the app starts with a dictionary set (a small one-time download, about 20KB).
+No, and the dictionary page says so per model family: Parakeet, GigaAM, the streaming Nemotron and Qwen3 support it, Whisper-family models ignore it. On the Farsi streaming model the dictionary works after the vocabulary file it needs lands on your phone: the app downloads it once, about 20KB, the first time it starts with a dictionary set, and retries on later starts if the download cannot get through.
 
 ## Ask your transcripts
 

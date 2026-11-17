@@ -696,7 +696,8 @@ class SherpaBackend(
 
             try {
                 if (entry.isStreaming) {
-                    initOnline(dir, sherpaConfig, entry, variant, roles)
+                    initOnline(dir, sherpaConfig, entry, variant, roles,
+                        biasingScore = preferences.biasingScore.first())
                 } else {
                     initOffline(dir, sherpaConfig, entry, variant, roles,
                         hotwordsCsv = PersonalDictionary.promptTerms(
@@ -834,6 +835,9 @@ class SherpaBackend(
         entry: CatalogEntry,
         variant: CatalogVariant,
         roles: Roles,
+        /** TASK-994 knob: the user's biasing strength (per-stream hotwords
+         *  read the config score in the C++ context graph). */
+        biasingScore: Float,
     ) {
         // TASK-994 phase 3: the streaming vocab file gates biasing (same
         // shape as the offline transducer's bpe.vocab check; the streaming
@@ -870,6 +874,9 @@ class SherpaBackend(
             // streaming per the desktop A/B; see STREAMING_DECODING_METHOD.
             decodingMethod = STREAMING_DECODING_METHOD,
             maxActivePaths = STREAMING_MAX_ACTIVE_PATHS,
+            // The strength knob applies to per-stream hotwords too (the C++
+            // context graph reads the config score); unarmed passes 0.
+            hotwordsScore = if (streamingBiasing) biasingScore else 0f,
         )
         onlineRecognizer = OnlineRecognizer(config = recognizerConfig)
     }

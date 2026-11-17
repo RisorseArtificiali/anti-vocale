@@ -308,7 +308,10 @@ class ExternalSherpaBackend @Inject constructor(
                     // import's files (the Fritter lane); either way its
                     // presence at construction arms the engine.
                     val streamingVocab = java.io.File(record.dir, com.antivocale.app.data.BIASING_VOCAB_FILE)
-                    streamingBiasingArmed = streamingVocab.isFile
+                    // Dictionary-gated like the offline arm (biasingCsv != null):
+                    // a vocab without terms would beam every decode for nothing.
+                    streamingBiasingArmed = streamingVocab.isFile &&
+                        PersonalDictionary.promptTerms(preferences.keywordBiasing.first()) != null
                     if (streamingBiasingArmed) {
                         Log.i(TAG, "External streaming biasing armed ($configuredId): vocab=${streamingVocab.name}")
                     }
@@ -339,6 +342,7 @@ class ExternalSherpaBackend @Inject constructor(
                         // the tombstone puts the fault at bpe_encoder->Encode).
                         decodingMethod = if (streamingBiasingArmed) SherpaBackend.STREAMING_DECODING_METHOD else "greedy_search",
                         maxActivePaths = if (streamingBiasingArmed) SherpaBackend.STREAMING_MAX_ACTIVE_PATHS else 1,
+                        hotwordsScore = if (streamingBiasingArmed) preferences.biasingScore.first() else 0f,
                     )
                     onlineRecognizer = OnlineRecognizer(config = onlineConfig)
                     modelDir = record.dir
@@ -436,12 +440,13 @@ class ExternalSherpaBackend @Inject constructor(
             // unload mid-bracket still trims its loop tail.
             val lower = lowercaseOutput
             val trimLoops = trimsDegenerateRepetition
+            val biasingArmed = streamingBiasingArmed
             onlineRecognizer?.let { rec ->
                 return@withWork withContext(Dispatchers.IO) {
                     // TASK-1007: per-request hotwords gated on the
                     // construction-time arming flag (the SherpaBackend
                     // createStream(String) contract).
-                    val hotwords = if (streamingBiasingArmed) {
+                    val hotwords = if (biasingArmed) {
                         PersonalDictionary.promptTerms(preferences.keywordBiasing.first()) ?: ""
                     } else ""
                     transcribeStreamingBatch(rec, samples, sampleRate, lower, hotwords)
@@ -590,6 +595,7 @@ class ExternalSherpaBackend @Inject constructor(
         configuredId = PLACEHOLDER_ID
         configuredFamily = null
         lowercaseOutput = false
+        streamingBiasingArmed = false
     }
 
     override fun setKeepAliveTimeout(minutes: Int) {
