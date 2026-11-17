@@ -112,7 +112,10 @@ object CallRecordingFilenames {
         if (rest.isEmpty()) return null
         // The template's caller arrives after a marker or is itself the
         // phone-number segment; a name with neither anchor is unproven.
-        val anchored = sawMarker || rest.first().any { it.isDigit() } || rest.first().startsWith("+")
+        // Number-shaped means '+' or a real digit run (5+): "v2"/"note2"
+        // memo suffixes carry digits but prove nothing about a caller.
+        val first = rest.first()
+        val anchored = sawMarker || first.startsWith("+") || first.count { it.isDigit() } >= 5
         if (!anchored) return null
         val caller = normalizeCaller(rest.joinToString(" ")) ?: return null
         // A tail that is nothing but a bare date run is metadata, not a
@@ -174,10 +177,29 @@ object CallRecordingFilenames {
         return normalizeCaller(number)
     }
 
-    /** Underscore-joined tokens become spaces; outer separators go. */
+    /** Underscore-joined tokens become spaces; outer separators go.
+     *  Brackets are NOT trimmed here (a balanced parenthetical is part of
+     *  the name): balanceParens alone drops unmatched ones. */
     private fun normalizeCaller(raw: String): String? {
-        val cleaned = raw.replace('_', ' ').trim(' ', '-', '.', '(', ')')
-        return cleaned.takeIf { it.isNotBlank() }
+        val cleaned = raw.replace('_', ' ').trim(' ', '-', '.')
+        return balanceParens(cleaned).takeIf { it.isNotBlank() }
+    }
+
+    /** Drops bracket characters whose partner a cut or the recorder's own
+     *  naming removed, then trims the seam. */
+    private fun balanceParens(label: String): String {
+        val keep = BooleanArray(label.length) { true }
+        val opens = ArrayDeque<Int>()
+        label.forEachIndexed { i, c ->
+            when (c) {
+                '(', '[' -> opens.addLast(i)
+                ')', ']' -> if (opens.isNotEmpty()) opens.removeLast() else keep[i] = false
+            }
+        }
+        opens.forEach { keep[it] = false }
+        val out = StringBuilder()
+        label.forEachIndexed { i, c -> if (keep[i]) out.append(c) }
+        return out.toString().trim(' ', '-', '.')
     }
 
     /** A caller label must not be the recorder's own "no caller" marker. */

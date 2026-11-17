@@ -173,4 +173,17 @@ class CallRecordingFilenamesTest {
             "Anna",
             CallRecordingFilenames.callerFromFileName("Call from Anna 12-03-2024.m4a"))
     }
+
+    @Test
+    fun `digit-bearing memo suffix is not a number anchor`() {
+        assertNull(CallRecordingFilenames.callerFromFileName("20260101_120101_v2.m4a"))
+        assertNull(CallRecordingFilenames.callerFromFileName("20260101_120101_note2.m4a"))
+    }
+
+    @Test
+    fun `balanced parenthetical survives the date cut`() {
+        assertEquals(
+            "Anna (mobile)",
+            CallRecordingFilenames.callerFromFileName("Call from Anna (mobile) 2024-01-01.m4a"))
+    }
 }

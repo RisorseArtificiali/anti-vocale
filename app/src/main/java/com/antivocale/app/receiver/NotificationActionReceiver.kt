@@ -114,6 +114,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
             intent.getStringExtra(InferenceService.EXTRA_CONTENT_HASH)?.let {
                 putExtra(InferenceService.EXTRA_CONTENT_HASH, it)
             }
+            // TASK-1016: the caller/sender label (the folder watch parses it
+            // from call-recorder file names); rides the row like the
+            // WhatsApp sender. Forwarded so the SPI-driven transcribe trials
+            // exercise the same extra the worker sends.
+            intent.getStringExtra(InferenceService.EXTRA_SENDER_NAME)?.let {
+                putExtra(InferenceService.EXTRA_SENDER_NAME, it)
+            }
             if (requestType == TaskerRequestReceiver.REQUEST_TYPE_SUBTITLES) {
                 putExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, trackIndexFromIntent(intent))
             }
