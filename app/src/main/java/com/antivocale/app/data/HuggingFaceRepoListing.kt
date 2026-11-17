@@ -141,6 +141,15 @@ object ExternalModelEntryJson {
 
     data class EntryFile(val name: String, val url: String, val sha256: String, val size: Long)
 
+    /**
+     * TASK-1007: a supplement rides OUTSIDE [Entry.files] (completeness is
+     * files-only, so a dir without its supplements stays a valid install
+     * forever). External entries carry an EXPLICIT url (they have no source
+     * repo to derive one from, unlike built-in catalog variants). The
+     * dictionary supplement pass fetches these into installed model dirs.
+     */
+    data class EntrySupplement(val name: String, val url: String, val sha256: String)
+
     data class Entry(
         val name: String,
         val family: ModelFamily,
@@ -157,6 +166,8 @@ object ExternalModelEntryJson {
          * (no shipped entry declares it).
          */
         val licence: String? = null,
+        /** TASK-1007: optional biasing supplements; absent = none. */
+        val supplements: List<EntrySupplement> = emptyList(),
     )
 
     fun parse(text: String): Entry {
@@ -228,6 +239,24 @@ object ExternalModelEntryJson {
                     "conformer_transducer, or empty, WHISPER/SENSE_VOICE/CANARY/MOONSHINE/DOLPHIN take empty)")
         }
 
+        // TASK-1007: optional supplements. Unlike files (whose missing pin
+        // rejects the whole entry, an integrity contract), a malformed
+        // supplement is SKIPPED: it is auxiliary metadata, and blocking the
+        // import of a loadable model over an optional file's typo inverts
+        // the optionality contract (review F5). A size is not required
+        // because supplements never feed the disk pre-flight.
+        val supplementsJson = o.optJSONArray("supplements")
+        val supplements = buildList {
+            if (supplementsJson != null) {
+                for (i in 0 until supplementsJson.length()) {
+                    val s = supplementsJson.getJSONObject(i)
+                    val sha = s.optString("sha256", "")
+                    if (sha.length != 64 || !s.has("url")) continue
+                    add(EntrySupplement(s.getString("name"), s.getString("url"), sha))
+                }
+            }
+        }
+
         return Entry(
             name = o.getString("name"),
             family = family,
@@ -236,6 +265,7 @@ object ExternalModelEntryJson {
             options = options,
             files = files,
             streaming = streaming,
+            supplements = supplements,
         )
     }
 }

@@ -40,6 +40,7 @@ class BiasingVocabSupplementTest {
 
     @Before
     fun setUp() {
+        com.antivocale.app.service.InferenceService.alive = false
         every { backendManager.activeBackendId } returns
             kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
         filesRoot = tmp.newFolder("files")
@@ -76,14 +77,14 @@ class BiasingVocabSupplementTest {
     }
 
     private fun newPass(bytes: ByteArray = vocabBytes) =
-        BiasingVocabSupplement(prefs, backendManager).apply {
+        BiasingVocabSupplement(prefs, backendManager, com.antivocale.app.data.FakeExternalRecordsProvider()).apply {
         fetcher = { url, temp, target ->
             fetched.add(Triple(url, temp, target))
             runCatching { target.writeBytes(bytes); target }
         }
     }
 
-    private fun newFailingPass() = BiasingVocabSupplement(prefs, backendManager).apply {
+    private fun newFailingPass() = BiasingVocabSupplement(prefs, backendManager, com.antivocale.app.data.FakeExternalRecordsProvider()).apply {
         fetcher = { _, _, _ -> Result.failure(IllegalStateException("offline")) }
     }
 
@@ -251,5 +252,111 @@ class BiasingVocabSupplementTest {
         assertFalse(File(modelDir, "bpe.vocab").exists())
         // The dir stays a valid install: completeness never saw the supplement.
         assertTrue(File(modelDir, "tokens.txt").isFile)
+    }
+
+
+    @Test
+    fun `an external catalog record gains its entry-declared supplement and re-arms`() = runTest {
+        seedCatalog()
+        File(modelDir, "tokens.txt").delete() // the built-in lane stays not-installed
+        prefs._keywordBiasing.value = "قنبری"
+        val recordDir = seedExternalFarsi()
+        val entryJson = farsiEntryJson()
+        val provider = com.antivocale.app.data.FakeExternalRecordsProvider(listOf(farsiRecord()))
+        every { backendManager.activeBackendId } returns
+            kotlinx.coroutines.flow.MutableStateFlow("external:abc")
+        val entryFetches = mutableListOf<String>()
+        val pass = BiasingVocabSupplement(prefs, backendManager, provider).apply {
+            entryTextFetcher = { entryFetches.add(it); entryJson }
+            fetcher = { url, temp, target ->
+                fetched.add(Triple(url, temp, target))
+                runCatching { target.writeBytes(vocabBytes); target }
+            }
+        }
+        pass.run(context)
+        assertEquals(listOf("https://catalog/farsi.json"), entryFetches)
+
+        val landed = File(recordDir, "bpe.vocab")
+        assertTrue(landed.isFile)
+        assertTrue(landed.readBytes().contentEquals(vocabBytes))
+        // the entry JSON rides the text seam, then the supplement the binary one
+        assertEquals(listOf("https://mirror/bpe.vocab"), fetched.map { it.first })
+        io.mockk.verify(exactly = 1) { backendManager.unloadActiveBackend() }
+    }
+
+    @Test
+    fun `an external record with an already-pinned supplement costs no network`() = runTest {
+        seedCatalog()
+        File(modelDir, "tokens.txt").delete() // the built-in lane stays not-installed
+        prefs._keywordBiasing.value = "قنبری"
+        val recordDir = seedExternalFarsi(supplementPresent = true)
+        val provider = com.antivocale.app.data.FakeExternalRecordsProvider(listOf(farsiRecord()))
+        val entryFetches = mutableListOf<String>()
+        BiasingVocabSupplement(prefs, backendManager, provider).apply {
+            entryTextFetcher = { entryFetches.add(it); farsiEntryJson() }
+            fetcher = { url, _, _ ->
+                fetched.add(Triple(url, File("/tmp"), File("/tmp")))
+                Result.failure(IllegalStateException("offline after recording"))
+            }
+        }.run(context)
+        // The entry JSON is the one unavoidable touch (the supplement names
+        // live in it); the PRESENT supplement itself is never fetched.
+        assertEquals(listOf("https://catalog/farsi.json"), entryFetches)
+        assertTrue(fetched.isEmpty())
+        io.mockk.verify(exactly = 0) { backendManager.unloadActiveBackend() }
+    }
+
+    @Test
+    fun `onDictionaryChanged unloads immediately when no service is alive`() = runTest {
+        seedCatalog()
+        every { backendManager.activeBackendId } returns
+            kotlinx.coroutines.flow.MutableStateFlow("supp-test")
+        newPass().onDictionaryChanged()
+        io.mockk.verify(exactly = 1) { backendManager.unloadActiveBackend() }
+    }
+
+    @Test
+    fun `onDictionaryChanged defers to the batch drain when a service is alive`() = runTest {
+        seedCatalog()
+        every { backendManager.activeBackendId } returns
+            kotlinx.coroutines.flow.MutableStateFlow("supp-test")
+        com.antivocale.app.service.InferenceService.alive = true
+        try {
+            newPass().onDictionaryChanged()
+            io.mockk.verify(exactly = 0) { backendManager.unloadActiveBackend() }
+            // the deferred flag is armed; the service's drain consumes it
+            assertTrue(com.antivocale.app.service.InferenceService.takePendingRearm())
+            assertFalse(com.antivocale.app.service.InferenceService.takePendingRearm())
+        } finally {
+            com.antivocale.app.service.InferenceService.alive = false
+        }
+    }
+
+    private fun farsiEntryJson() = """
+        {"name": "Farsi Streaming", "family": "TRANSDUCER", "modelType": "",
+         "languages": ["fa"], "streaming": true,
+         "files": [{"name": "tokens.txt", "url": "https://x/tokens.txt",
+                    "sha256": "${"a".repeat(64)}", "size": 2}],
+         "supplements": [{"name": "bpe.vocab", "url": "https://mirror/bpe.vocab",
+                          "sha256": "$vocabSha"}]}
+    """.trimIndent()
+
+    private fun farsiRecord() = com.antivocale.app.data.ExternalModelRecord(
+        id = "abc", displayName = "Farsi Streaming",
+        dir = File(filesRoot, "models/external/farsi-abc").absolutePath,
+        family = com.antivocale.app.data.ModelFamily.TRANSDUCER,
+        modelType = "", languages = listOf("fa"),
+        source = com.antivocale.app.data.ExternalModelSource.URL,
+        sourceUrl = "https://catalog/farsi.json",
+        files = emptyMap(), sizeBytes = 1, importedAt = 0L,
+        streaming = true)
+
+    /** Seeds the Farsi record dir; returns it (supplement optionally pre-planted). */
+    private fun seedExternalFarsi(supplementPresent: Boolean = false): File {
+        val recordDir = File(File(filesRoot, "models/external"), "farsi-abc")
+        recordDir.mkdirs()
+        File(recordDir, "tokens.txt").writeText("x\n")
+        if (supplementPresent) File(recordDir, "bpe.vocab").writeBytes(vocabBytes)
+        return recordDir
     }
 }

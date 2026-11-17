@@ -89,6 +89,15 @@ class BenchmarkManager @Inject constructor(
     companion object {
         private const val TAG = "BenchmarkManager"
         internal const val SAMPLE_DURATION_SECONDS = 10f
+
+        /**
+         * TASK-1010: the benchmark drives the shared backend directly (no
+         * InferenceService), so the dictionary re-arm gate must defer here
+         * too: an edit mid-benchmark must not unload under its decode.
+         */
+        @Volatile
+        var running: Boolean = false
+            internal set
     }
 
     private val sampleAudio: FloatArray by lazy {
@@ -106,6 +115,7 @@ class BenchmarkManager @Inject constructor(
         config: BackendConfig,
         onProgress: (Float) -> Unit = {}
     ): Result<BenchmarkResult> {
+        running = true
         return try {
             onProgress(0.1f)
             // TASK-644: never benchmark a resident engine: its config is
@@ -186,6 +196,11 @@ class BenchmarkManager @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Benchmark failed", e)
             Result.failure(e)
+        } finally {
+            // TASK-1010: EVERY exit path resets the gate, including the
+            // busy early-return that precedes the inner try (a stale true
+            // here poisons the dictionary re-arm gate process-wide).
+            running = false
         }
     }
 

@@ -2,6 +2,13 @@ package com.antivocale.app.data.download
 
 import android.content.Context
 import android.util.Log
+import com.antivocale.app.data.ExternalModelEntryJson
+import com.antivocale.app.data.ExternalModelRecord
+import com.antivocale.app.data.BIASING_VOCAB_FILE
+import com.antivocale.app.data.ExternalModelImporter
+import com.antivocale.app.data.ExternalModelRecordsProvider
+import com.antivocale.app.data.HuggingFaceRepoListing
+import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.data.catalog.CatalogFile
@@ -28,6 +35,13 @@ import kotlinx.coroutines.sync.withLock
  * into the model dir (~100-320KB, pinned sha), so the next model
  * construction arms biasing with no full-model re-download and no heal.
  *
+ * TASK-1007: the same lane now serves EXTERNAL records whose community
+ * catalog entry declares supplements: the record's sourceUrl IS the entry
+ * JSON (the import path records it), so the pass re-reads the entry, and
+ * a missing supplement lands into the record's dir the same way. This is
+ * what arms the Farsi streaming model's dictionary (its vocab lives on
+ * our mirror; mentisialog ships none).
+ *
  * GATED on the personal dictionary being non-empty: the supplement serves
  * biasing only, so a user without terms gets no network traffic from this
  * pass at all. Silent by design (an internal engine file, not a user
@@ -38,6 +52,7 @@ import kotlinx.coroutines.sync.withLock
 class BiasingVocabSupplement @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val backendManager: TranscriptionBackendManager,
+    private val recordsProvider: ExternalModelRecordsProvider,
 ) {
 
     /**
@@ -73,12 +88,36 @@ class BiasingVocabSupplement @Inject constructor(
      * built-in entry.
      */
     fun onDictionaryChanged() {
-        val active = backendManager.activeBackendId.value
-        val isSupplementEntry = BundledCatalog.byId(active ?: return)
-            ?.variants?.any { it.supplements.isNotEmpty() } == true
+        val active = backendManager.activeBackendId.value ?: return
+        val isSupplementEntry = if (active.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX)) {
+            // TASK-1007: an external TRANSDUCER whose dir carries the vocab
+            // is armed (or armable at construction); an edit must re-arm it.
+            recordsProvider.records.value.any { r ->
+                r.backendId == active && r.family == ModelFamily.TRANSDUCER &&
+                    File(r.dir, BIASING_VOCAB_FILE).isFile
+            }
+        } else {
+            BundledCatalog.byId(active)?.variants?.any { it.supplements.isNotEmpty() } == true
+        }
         if (isSupplementEntry) {
+            rearmOrDefer("dictionary changed: active backend $active")
+        }
+    }
+
+    /**
+     * TASK-1010: unload now only when no service instance is alive (no
+     * request can be mid-preprocessing); with a live service the re-arm
+     * defers to its batch drain, so a dictionary edit during a run costs
+     * nothing to the run (the next request arms the new vocab).
+     */
+    private fun rearmOrDefer(reason: String) {
+        if (com.antivocale.app.service.InferenceService.alive ||
+            com.antivocale.app.benchmark.BenchmarkManager.running) {
+            com.antivocale.app.service.InferenceService.requestRearm()
+            Log.i(TAG, "$reason; re-arm deferred to drain (service or benchmark busy)")
+        } else {
             backendManager.unloadActiveBackend()
-            Log.i(TAG, "dictionary changed: active backend $active unloaded; next request re-arms")
+            Log.i(TAG, "$reason unloaded; next request re-arms")
         }
     }
 
@@ -104,72 +143,135 @@ class BiasingVocabSupplement @Inject constructor(
                 if (!manager.isValidModelDir(dir)) continue
                 for (supplement in variant.supplements) {
                     val target = File(dir, supplement.name)
-                    // Presence is not validity: a rotted or sideloaded vocab
-                    // would ride straight into the native recognizer (the
-                    // load gate content-checks only .onnx/.txt). Verify and
-                    // surgically refetch JUST the supplement, never the
-                    // whole model (a heal here would delete 326-862MB for a
-                    // 316KB file).
-                    if (target.isFile) {
-                        val pin = supplement.sha256
-                        if (pin == null || HashVerifier.verify(target, pin)) continue
-                        Log.w(TAG, "supplement ${supplement.name}: pin mismatch on disk, refetching")
-                        target.delete()
+                    // The repo override serves supplements hosted on a
+                    // different repo than the variant's source (the streaming
+                    // Nemotron's vocab on our mirror while the model stays
+                    // upstream).
+                    val source = if (supplement.repo != null) {
+                        CatalogSource(kind = "huggingface", repo = supplement.repo)
+                    } else {
+                        variant.source
                     }
-                    if (fetch(context, entry.id, variant, supplement, target) &&
-                        backendManager.activeBackendId.value == entry.id) {
-                        // TASK-994 review: a mid-session landing must reach
-                        // the RESIDENT recognizer. Transducer/streaming
-                        // biasing arms at construction, so an initialized
-                        // backend would stay greedy (the copy names these
-                        // engines as honored); unloading makes the next
-                        // transcription re-construct with the vocab in
-                        // place. Built-in backend ids are the catalog entry
-                        // ids, so the comparison is direct.
-                        backendManager.unloadActiveBackend()
-                        Log.i(TAG, "active backend ${entry.id} unloaded; next request re-arms biasing")
-                    }
+                    // TASK-994 review: a mid-session landing must reach
+                    // the RESIDENT recognizer. Transducer/streaming
+                    // biasing arms at construction, so an initialized
+                    // backend would stay greedy (the copy names these
+                    // engines as honored); unloading makes the next
+                    // transcription re-construct with the vocab in
+                    // place. Built-in backend ids are the catalog entry
+                    // ids, so the comparison is direct.
+                    landIfMissing(
+                        context, target, source.resolveUrl(supplement.name),
+                        supplement.sha256, "builtin-${entry.id}-${variant.dirName}", entry.id)
                 }
+            }
+        }
+        runExternalLane(context)
+    }
+
+    /**
+     * Presence-then-pin check, fetch, and the resident-recognizer re-arm:
+     * the discipline both lanes share. Presence is not validity: a rotted
+     * or sideloaded vocab would ride straight into the native recognizer
+     * (the load gate content-checks only .onnx/.txt), so a pin mismatch
+     * deletes and refetches JUST the supplement, never the whole model (a
+     * heal here would delete 326-862MB for a 316KB file). A landing that
+     * matches the active backend unloads it so the next request re-arms.
+     */
+    private suspend fun landIfMissing(
+        context: Context,
+        target: File,
+        url: String,
+        pin: String?,
+        tempKey: String,
+        activeBackendId: String,
+    ) {
+        if (target.isFile) {
+            if (pin == null || HashVerifier.verify(target, pin)) return
+            Log.w(TAG, "supplement ${target.name}: pin mismatch on disk, refetching")
+            target.delete()
+        }
+        if (land(context, url, target.name, pin, tempKey, target) &&
+            backendManager.activeBackendId.value == activeBackendId) {
+            rearmOrDefer("active backend $activeBackendId")
+        }
+    }
+
+    /**
+     * TASK-1007: community-catalog records whose entry JSON declares
+     * supplements. The record's [ExternalModelRecord.sourceUrl] IS the entry
+     * URL (the catalog-entry import path records it), so the entry is
+     * re-read live and its supplements land into the record's dir with the
+     * same presence-then-pin discipline as the built-in lane. A record whose
+     * entry has no supplements costs one small JSON fetch per pass; a
+     * non-catalog record (folder import, repo URL) has a sourceUrl the entry
+     * parse rejects or that is null, and the lane skips it on the parse
+     * failure alone (silently, like every other deferral here).
+     */
+    private suspend fun runExternalLane(context: Context) {
+        for (record in recordsProvider.records.value) {
+            if (record.family != ModelFamily.TRANSDUCER) continue
+            // Only catalog-entry sourceUrls carry supplements; repo imports
+            // persist the repo web URL, and fetching it would download the
+            // HTML landing page to fail the parse (the classification is the
+            // importer's own one choke point, reused verbatim).
+            val sourceUrl = record.sourceUrl ?: continue
+            if (!ExternalModelImporter.isCatalogEntryUrl(sourceUrl)) continue
+            // Quarantined and half-wiped dirs cannot load; a supplement
+            // landing there is a wasted fetch into a dead dir.
+            val dir = File(record.dir)
+            if (!dir.isDirectory || record.quarantined) continue
+            val entry = fetchEntry(sourceUrl)
+            if (entry == null) {
+                Log.i(TAG, "entry $sourceUrl unreadable: supplements deferred to next pass")
+                continue
+            }
+            for (supplement in entry.supplements) {
+                landIfMissing(
+                    context, File(dir, supplement.name), supplement.url,
+                    supplement.sha256, "external-${record.id}", "external:${record.id}")
             }
         }
     }
 
-    /** Fetches one supplement; true when it landed pin-verified. */
-    private suspend fun fetch(
+    /** Fetches and parses one entry JSON; null on any failure (the lane logs the cause and skips). */
+    private suspend fun fetchEntry(url: String): ExternalModelEntryJson.Entry? =
+        runCatching { ExternalModelEntryJson.parse(entryTextFetcher(url)) }
+            .onFailure { Log.i(TAG, "entry fetch/parse failed: ${it.message}") }
+            .getOrNull()
+
+    /** Test seam: JVM tests replace the text fetch (production is a plain GET). */
+    internal var entryTextFetcher: suspend (String) -> String =
+        { HuggingFaceRepoListing().fetchText(it) }
+
+    /**
+     * Downloads one supplement to [target] through the [fetcher] seam and
+     * pin-verifies it; true when it landed. Shared by the built-in lane
+     * (URL derived from the variant source or its repo override) and the
+     * TASK-1007 external lane (URL authored in the entry JSON).
+     */
+    private suspend fun land(
         context: Context,
-        entryId: String,
-        variant: CatalogVariant,
-        supplement: CatalogFile,
+        url: String,
+        name: String,
+        pin: String?,
+        tempKey: String,
         target: File,
     ): Boolean {
-        // The repo override serves supplements hosted on a different repo
-        // than the variant's source (the streaming Nemotron's vocab on our
-        // mirror while the model stays upstream). Supplement pins ride OUR
-        // mirrors only, so the PinOverrides drift channel (TASK-986, for
-        // third-party repos that re-upload) does not apply: a drifted
-        // mirror pin is re-pinned in a release, like any catalog pin.
-        val source = if (supplement.repo != null) {
-            CatalogSource(kind = "huggingface", repo = supplement.repo)
-        } else {
-            variant.source
-        }
-        val url = source.resolveUrl(supplement.name)
         // The resume temp lives in cacheDir, NEVER in the model dir: a
         // leftover partial must not ride exported bundles (the codec
         // excludes only .size sidecars) nor meet any model-dir validator.
-        val temp = File(context.cacheDir,
-            "supplement-$entryId-${variant.dirName}-${supplement.name}$PART_SUFFIX")
+        val temp = File(context.cacheDir, "supplement-$tempKey-$name$PART_SUFFIX")
         target.parentFile?.mkdirs()
         val result = fetcher(url, temp, target)
         var landed = false
         result.fold(
             onSuccess = { file ->
-                val pin = supplement.sha256
                 if (pin != null && !HashVerifier.verify(file, pin)) {
-                    Log.w(TAG, "supplement ${supplement.name}: pin mismatch, deleted (upstream moved?)")
+                    Log.w(TAG, "supplement $name: pin mismatch, deleted (upstream moved?)")
                     file.delete()
                 } else {
-                    Log.i(TAG, "supplement ${supplement.name} landed (${file.length()} bytes)")
+                    Log.i(TAG, "supplement $name landed (${file.length()} bytes)")
                     landed = true
                 }
                 // The helper's resume sidecar outlives the rename; a model
@@ -177,7 +279,7 @@ class BiasingVocabSupplement @Inject constructor(
                 ResumeDownloadHelper.sizeSidecar(temp).delete()
             },
             onFailure = { e ->
-                Log.i(TAG, "supplement ${supplement.name} deferred to next start: ${e.message}")
+                Log.i(TAG, "supplement $name deferred to next start: ${e.message}")
                 // The temp partial STAYS: the next attempt resumes from it.
             },
         )

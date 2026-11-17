@@ -11,10 +11,11 @@ import org.junit.Test
  */
 class ExternalStreamingFlagTest {
 
-    private fun entryJson(family: String?, streaming: Boolean?): String {
+    private fun entryJson(family: String?, streaming: Boolean?, supplements: String? = null): String {
         val f = family?.let { """"family":"$it",""" } ?: ""
         val s = streaming?.let { """"streaming":$it,""" } ?: ""
-        return """{"name":"kroko","modelType":"",""" + f + s + """"languages":["es"],
+        val supp = supplements?.let { """"supplements":$it,""" } ?: ""
+        return """{"name":"kroko","modelType":"",""" + f + s + supp + """"languages":["es"],
             "files":[{"name":"encoder.onnx","url":"https://x/e.onnx","sha256":"${"a".repeat(64)}","size":1},
                      {"name":"decoder.onnx","url":"https://x/d.onnx","sha256":"${"b".repeat(64)}","size":1},
                      {"name":"joiner.onnx","url":"https://x/j.onnx","sha256":"${"c".repeat(64)}","size":1},
@@ -58,5 +59,34 @@ class ExternalStreamingFlagTest {
         // Legacy record without the field still parses (default false)
         val legacy = JSONObject(json.toString().replace("\"streaming\":true,", ""))
         assertFalse(ExternalModelRecord.fromJson(legacy)!!.streaming)
+    }
+
+    @Test
+    fun `supplements parse with explicit url and sha pin`() {
+        val json = entryJson(
+            family = "TRANSDUCER", streaming = null,
+            supplements = """[{"name":"bpe.vocab","url":"https://mirror/bpe.vocab","sha256":"${"e".repeat(64)}"}]""")
+        val entry = ExternalModelEntryJson.parse(json)
+        val s = entry.supplements.single()
+        assertEquals("bpe.vocab", s.name)
+        assertEquals("https://mirror/bpe.vocab", s.url)
+        assertEquals("e".repeat(64), s.sha256)
+    }
+
+    @Test
+    fun `entries without supplements parse to none`() {
+        assertTrue(ExternalModelEntryJson.parse(entryJson(family = "TRANSDUCER", streaming = null)).supplements.isEmpty())
+    }
+
+    @Test
+    fun `a malformed supplement is skipped, not import-blocking`() {
+        val json = entryJson(
+            family = "TRANSDUCER", streaming = null,
+            supplements = """[{"name":"bpe.vocab","url":"https://mirror/bpe.vocab","sha256":"${"e".repeat(64)}"},
+                             {"name":"broken"}]""")
+        val entry = ExternalModelEntryJson.parse(json)
+        // the model imports; only the well-formed supplement rides
+        assertEquals(1, entry.supplements.size)
+        assertEquals("bpe.vocab", entry.supplements.single().name)
     }
 }

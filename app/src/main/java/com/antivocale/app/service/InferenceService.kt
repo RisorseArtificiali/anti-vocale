@@ -55,6 +55,7 @@ class InferenceService : Service(), TranscriptionListener {
     @Inject lateinit var preferencesManager: PreferencesManager
     @Inject lateinit var perAppPreferencesManager: PerAppPreferencesManager
     @Inject lateinit var orchestrator: TranscriptionOrchestrator
+    @Inject lateinit var backendManager: TranscriptionBackendManager
     @Inject lateinit var logDao: LogDao
     @Inject lateinit var shareShortcutManager: ShareShortcutManager
 
@@ -76,6 +77,33 @@ class InferenceService : Service(), TranscriptionListener {
         // (the slot-band comment in InferenceEnqueue documents the same class).
 
         const val EXTRA_SOURCE = "source"
+
+        /**
+         * TASK-1010: the dictionary-change re-arm gate. The supplement pass
+         * and the collector may unload the active backend to re-arm biasing;
+         * unloading under a request that is still PREPROCESSING kills it (the
+         * TASK-1008 class: the 789 drain safety brackets decodes, not the
+         * audio-prep that precedes them). The service owns the truth about
+         * in-flight work, so re-arm requests land here as a pending flag
+         * while a service instance is alive, and the drain checkpoints
+         * perform the unload only once the batch is idle. A flag left set by
+         * a dying service is moot: the next construction reads the vocab
+         * file from disk anyway.
+         */
+        @Volatile
+        var alive: Boolean = false
+            internal set
+
+        private val pendingRearm = java.util.concurrent.atomic.AtomicBoolean(false)
+
+        /** Defer a backend re-arm unload to the next idle drain (TASK-1010). */
+        fun requestRearm() {
+            pendingRearm.set(true)
+        }
+
+        /** True when a re-arm was pending; the caller performs the unload under its own idle check. */
+        fun takePendingRearm(): Boolean = pendingRearm.getAndSet(false)
+
         /** TASK-889: the cold-start catch-up sweep's flag (the per-note
          *  SUCCESS notification is suppressed; the digest replaces it). */
         const val EXTRA_CATCHUP = "catchup"
@@ -251,6 +279,7 @@ class InferenceService : Service(), TranscriptionListener {
 
     override fun onCreate() {
         super.onCreate()
+        alive = true
         createNotificationChannel()
         createResultNotificationChannel()
         Log.i(TAG, "Service created")
@@ -258,6 +287,14 @@ class InferenceService : Service(), TranscriptionListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "onStartCommand called, action=${intent?.action}")
+        // TASK-1010 intake serialization: drain a re-arm deferred while no
+        // request existed BEFORE this request joins the queue (main thread =
+        // the intake point; the drain-tail check below can otherwise race a
+        // request enqueued between its batchIdle read and its unload).
+        if (takePendingRearm() && batchIdle()) {
+            backendManager.unloadActiveBackend()
+            Log.i(TAG, "deferred dictionary re-arm drained at intake")
+        }
 
         // TASK-978: the foreground promotion is the FIRST statement, before
         // every early-return arm. Every startForegroundService delivery
@@ -396,6 +433,14 @@ class InferenceService : Service(), TranscriptionListener {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        alive = false
+        // TASK-1010: an edit landing between the drain tail's check and the
+        // stopSelf must not carry a stale recognizer into the next service
+        // instance; at teardown nothing is in flight, so drain here.
+        if (takePendingRearm()) {
+            backendManager.unloadActiveBackend()
+            Log.i(TAG, "deferred dictionary re-arm drained at teardown")
+        }
         silentKeepalive.stop()
         super.onDestroy()
         serviceScope.cancel()
@@ -561,6 +606,15 @@ class InferenceService : Service(), TranscriptionListener {
                 // (flag clause); a batch holding a started keepalive can
                 // never see batchIdle() true here.
                 if (batchIdle()) silentKeepalive.stop()
+            }
+
+            // TASK-1010: a dictionary-change re-arm deferred while the batch
+            // ran (the supplement pass routes its unload here when a service
+            // is alive). batchIdle re-checked: work enqueued during the join
+            // below owns the backend until ITS drain.
+            if (batchIdle() && takePendingRearm()) {
+                backendManager.unloadActiveBackend()
+                Log.i(TAG, "deferred dictionary re-arm: backend unloaded at batch drain")
             }
 
             // Wait for any pending result-notification jobs before teardown:

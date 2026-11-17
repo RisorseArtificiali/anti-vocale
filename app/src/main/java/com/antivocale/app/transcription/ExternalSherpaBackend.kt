@@ -115,6 +115,11 @@ class ExternalSherpaBackend @Inject constructor(
      *  notifications, auto-copy) sees the lowered text with no per-site
      *  edits. */
     @Volatile private var lowercaseOutput: Boolean = false
+    /** TASK-1007: streaming biasing gate (vocab presence at construction, the
+     *  SherpaBackend.initOnline shape); the per-request hotwords read THIS,
+     *  never a fresh file stat (hotwords on a recognizer built without
+     *  bpeVocab is the native exit-255 class). */
+    @Volatile private var streamingBiasingArmed = false
 
     /** The loaded external record's family, for memory-policy dispatch (TASK-475). */
     val memoryFamily: ModelFamily? get() = configuredFamily
@@ -297,10 +302,22 @@ class ExternalSherpaBackend @Inject constructor(
                         decoder = "${record.dir}/${SherpaBackend.CANONICAL_DECODER}",
                         joiner = "${record.dir}/${SherpaBackend.CANONICAL_JOINER}",
                     )
+                    // TASK-1007: the SherpaBackend.initOnline biasing shape.
+                    // The vocab lands via the entry's supplements (the
+                    // BiasingVocabSupplement external lane) or rides the
+                    // import's files (the Fritter lane); either way its
+                    // presence at construction arms the engine.
+                    val streamingVocab = java.io.File(record.dir, com.antivocale.app.data.BIASING_VOCAB_FILE)
+                    streamingBiasingArmed = streamingVocab.isFile
+                    if (streamingBiasingArmed) {
+                        Log.i(TAG, "External streaming biasing armed ($configuredId): vocab=${streamingVocab.name}")
+                    }
                     val onlineConfig = OnlineRecognizerConfig(
                         modelConfig = OnlineModelConfig(
                             transducer = transducerConfig,
                             tokens = "${record.dir}/${SherpaBackend.CANONICAL_TOKENS}",
+                            bpeVocab = if (streamingBiasingArmed) streamingVocab.absolutePath else "",
+                            modelingUnit = if (streamingBiasingArmed) "bpe" else "",
                             numThreads = externalConfig.numThreads,
                             debug = false,
                             provider = externalConfig.provider,
@@ -416,7 +433,13 @@ class ExternalSherpaBackend @Inject constructor(
             val trimLoops = trimsDegenerateRepetition
             onlineRecognizer?.let { rec ->
                 return@withWork withContext(Dispatchers.IO) {
-                    transcribeStreamingBatch(rec, samples, sampleRate, lower)
+                    // TASK-1007: per-request hotwords gated on the
+                    // construction-time arming flag (the SherpaBackend
+                    // createStream(String) contract).
+                    val hotwords = if (streamingBiasingArmed) {
+                        PersonalDictionary.promptTerms(preferences.keywordBiasing.first()) ?: ""
+                    } else ""
+                    transcribeStreamingBatch(rec, samples, sampleRate, lower, hotwords)
                 }
             }
             val rec = recognizer
@@ -489,10 +512,11 @@ class ExternalSherpaBackend @Inject constructor(
         samples: FloatArray,
         sampleRate: Int,
         lower: Boolean,
+        hotwords: String,
     ): Result<TranscriptionResult> {
         var stream: OnlineStream? = null
         try {
-            stream = rec.createStream()
+            stream = if (hotwords.isNotEmpty()) rec.createStream(hotwords) else rec.createStream()
             stream.acceptWaveform(samples, sampleRate)
             stream.acceptWaveform(FloatArray(sampleRate), sampleRate) // streaming flush pad (TASK-715: the streaming verdict was the opposite; without it trailing words are lost)
             while (rec.isReady(stream)) rec.decode(stream)
