@@ -766,10 +766,21 @@ class PreferencesManagerImpl(
 
     override val keywordBiasing: Flow<String> = dataStore.data.map { it[KEYWORD_BIASING] ?: "" }
         .onStart { emit(cache.get().keywordBiasing) }
+        // TASK-1008: every DataStore write re-runs the map above and without
+        // this guard the unchanged value re-emits; the 994.1 collector read
+        // that as a dictionary edit and unloaded the active backend 2s after
+        // every activation (the footprint write), killing long-audio runs
+        // mid-preprocessing. New preference flows feeding change-reactive
+        // collectors need the same guard (see transcriptionBackend above).
+        .distinctUntilChanged()
 
     override val biasingScore: Flow<Float> =
         dataStore.data.map { it[BIASING_SCORE] ?: PreferencesManager.DEFAULT_BIASING_SCORE }
             .onStart { emit(cache.get().biasingScore) }
+            // Same TASK-1008 class, closed for the feature pair: a future
+            // change-reactive collector on the knob must not fire on
+            // unrelated writes either.
+            .distinctUntilChanged()
 
     override suspend fun saveBiasingScore(value: Float) {
         val clamped = value.coerceIn(PreferencesManager.MIN_BIASING_SCORE, PreferencesManager.MAX_BIASING_SCORE)
