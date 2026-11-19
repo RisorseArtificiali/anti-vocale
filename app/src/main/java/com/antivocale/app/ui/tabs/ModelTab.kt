@@ -23,6 +23,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import android.net.Uri
@@ -598,16 +600,16 @@ fun ModelTab(
             }
         }
 
-        // Language filter
-        LanguageFilterBar(
-            selectedLanguageCode = filterLanguageCode,
-            onLanguageSelected = { viewModel.setModelFilterLanguage(it) }
-        )
-
-        // TASK-996: the device RAM-class line, one honest frame for every
-        // fit chip below (curated and full views share this header).
-        DeviceTierLine()
-
+        // TASK-1021 (trial round 2): the header stack (language filter,
+        // tier line, active model, fit chips, summary) grew taller than one
+        // screen-third on small phones; the whole block is now COLLAPSIBLE.
+        // Collapsed leaves ONE compact line (the essentials: tier + filter
+        // state + count); expanded is everything as before. The state
+        // survives tab switches and process death like the filter itself.
+        var modelsHeaderExpanded by rememberSaveable { mutableStateOf(true) }
+        ModelHeaderCollapseToggle(expanded = modelsHeaderExpanded) {
+            modelsHeaderExpanded = !modelsHeaderExpanded
+        }
         // TASK-1021: the device-fit suggestion filter. Advisory only: it
         // hides nothing the user cannot reach ("Tutti i modelli" restores
         // the full catalog); on the HIGH band it does not exist at all.
@@ -620,7 +622,11 @@ fun ModelTab(
             com.antivocale.app.util.DeviceCompatibility.ramTier(fitContext)
         }
         val fitBudgetMb = fitTier?.let { DeviceFitSuggestion.budgetMb[it] }
-        var fitFilterOn by rememberSaveable { mutableStateOf(true) }
+        // Default OFF (maintainer, trial round 2): the suggestion is an
+        // opt-in discovery tool, never a pre-emptive limit - the TASK-631
+        // principle applied to what the user SEES. At start the catalog is
+        // whole (heavy models carry the badge); one tap on the ✦ chip narrows the list.
+        var fitFilterOn by rememberSaveable { mutableStateOf(false) }
         // TASK-1021 (review round): everything below runs ONLY when a
         // budget exists (never on the HIGH band) AND the catalog view is
         // on screen (in curated mode the toggle would filter nothing and
@@ -661,31 +667,17 @@ fun ModelTab(
             else viewModel.catalogEntries.count { fitEligible(it).isNotEmpty() }
         }
 
-        // TASK-1021: the badge pair the cards read when the filter is OFF
-        // (with the filter ON the out-of-band cards are simply absent, so
-        // the badge resource goes null and the budget sentinel never fires).
+        // TASK-1021: the badge the cards read when the filter is OFF (with
+        // the filter ON the out-of-band cards are simply absent). ONE short
+        // word ("Pesante"): the badge row shares space with the variant
+        // TITLE, where a full sentence ellipsizes the name away (the
+        // maintainer's trial finding); the tier line and the summary above
+        // already carry the full context.
         val heavyFitBudgetMb =
             if (fitBudgetMb != null && !fitFilterOn) fitBudgetMb else Long.MAX_VALUE
         val heavyFitBadgeRes =
             if (fitBudgetMb == null || fitFilterOn) null
-            else when (fitTier) {
-                com.antivocale.app.util.DeviceCompatibility.RamTier.CONSTRAINED ->
-                    R.string.models_fit_badge_constrained
-                com.antivocale.app.util.DeviceCompatibility.RamTier.STANDARD ->
-                    R.string.models_fit_badge_standard
-                else -> null
-            }
-
-        // TASK-786: states the active model once, right under the filter;
-        // the dot pairs with the external cards' badge (catalog cards carry
-        // the "Active" pill).
-        activeModelLabel?.let { name ->
-            MetaLineRow(
-                icon = Icons.Default.RadioButtonChecked,
-                tint = MaterialTheme.colorScheme.primary,
-                text = stringResource(R.string.models_active_model_line, name),
-            )
-        }
+            else R.string.models_fit_badge_heavy
 
         // GH #70: curated "For your language" elevation. The language comes
         // from the UI configuration (the per-app locale when one is set, else
@@ -707,6 +699,97 @@ fun ModelTab(
         // still surface as fully functional cards inside the recommendations).
         val catalogEntriesVisible = if (showCuratedSection) emptyList() else viewModel.catalogEntries
 
+        if (modelsHeaderExpanded) {
+        LanguageFilterBar(
+            selectedLanguageCode = filterLanguageCode,
+            onLanguageSelected = { viewModel.setModelFilterLanguage(it) }
+        )
+
+        // TASK-996: the device RAM-class line, one honest frame for every
+        // fit chip below (curated and full views share this header).
+        DeviceTierLine()
+
+        // TASK-1021: the device-fit suggestion filter. Advisory only: it
+        // hides nothing the user cannot reach ("Tutti i modelli" restores
+        // the full catalog); on the HIGH band it does not exist at all.
+        // The default is ON: a weak phone's first view is the comfortable
+        // set, ordered by the maintainer's rule (user language, then
+        // measured quality, then size). The quality axis reads
+        // ModelAccuracy internally and NEVER renders inline (TASK-658).
+        val fitContext = LocalContext.current
+        val fitTier = remember(fitContext) {
+            com.antivocale.app.util.DeviceCompatibility.ramTier(fitContext)
+        }
+        val fitBudgetMb = fitTier?.let { DeviceFitSuggestion.budgetMb[it] }
+        // Default OFF (maintainer, trial round 2): the suggestion is an
+        // opt-in discovery tool, never a pre-emptive limit - the TASK-631
+        // principle applied to what the user SEES. At start the catalog is
+        // whole (heavy models carry the badge); one tap on the ✦ chip narrows the list.
+        var fitFilterOn by rememberSaveable { mutableStateOf(false) }
+        // TASK-1021 (review round): everything below runs ONLY when a
+        // budget exists (never on the HIGH band) AND the catalog view is
+        // on screen (in curated mode the toggle would filter nothing and
+        // the summary would count a list that is not rendered). The
+        // derivation is remembered on its inputs so download progress
+        // ticks never re-derive it; the asset loads once per process.
+        // Eligibility = the language filter AND the budget cut, the same
+        // two gates the visible cards apply, so the counts match the
+        // rendered entries by construction; the language is modern-coded
+        // (iw->he) so it matches the catalog's codes.
+        val fitLanguageRaw = filterLanguageCode
+            ?: LocalConfiguration.current.locales[0]?.language.orEmpty()
+        val fitLanguage = DeviceFitSuggestion.orderingLanguage(fitLanguageRaw)
+        val fitEligible: ((com.antivocale.app.data.catalog.CatalogEntry) -> List<CatalogVariantUi>)? =
+            if (fitBudgetMb == null) null
+            else remember(fitBudgetMb, fitLanguageRaw, filterLanguageCode) {
+                { entry: com.antivocale.app.data.catalog.CatalogEntry ->
+                    filterVariants(
+                        CatalogVariantUi.forEntry(entry.id), filterLanguageCode
+                    ) { it.supportedLanguageCodes }
+                        .filter { DeviceFitSuggestion.fits(it.estimatedSizeMB, fitTier!!) }
+                }
+            }
+        val fitMeasurements = if (fitEligible == null) null
+            else remember(fitContext) { com.antivocale.app.data.ModelAccuracy.load(fitContext) }
+        // The denominator counts what "Tutti i modelli" would actually
+        // render under the current language filter (the review finding:
+        // raw entry size counted language-hidden entries too).
+        val fitVisibleTotal = remember(viewModel.catalogEntries, filterLanguageCode) {
+            viewModel.catalogEntries.count { entry ->
+                filterVariants(
+                    CatalogVariantUi.forEntry(entry.id), filterLanguageCode
+                ) { it.supportedLanguageCodes }.isNotEmpty()
+            }
+        }
+        val fitEligibleCount = remember(viewModel.catalogEntries, fitEligible) {
+            if (fitEligible == null) 0
+            else viewModel.catalogEntries.count { fitEligible(it).isNotEmpty() }
+        }
+
+        // TASK-1021: the badge the cards read when the filter is OFF (with
+        // the filter ON the out-of-band cards are simply absent). ONE short
+        // word ("Pesante"): the badge row shares space with the variant
+        // TITLE, where a full sentence ellipsizes the name away (the
+        // maintainer's trial finding); the tier line and the summary above
+        // already carry the full context.
+        val heavyFitBudgetMb =
+            if (fitBudgetMb != null && !fitFilterOn) fitBudgetMb else Long.MAX_VALUE
+        val heavyFitBadgeRes =
+            if (fitBudgetMb == null || fitFilterOn) null
+            else R.string.models_fit_badge_heavy
+
+        // TASK-786: states the active model once, right under the filter;
+        // the dot pairs with the external cards' badge (catalog cards carry
+        // the "Active" pill).
+        activeModelLabel?.let { name ->
+            MetaLineRow(
+                icon = Icons.Default.RadioButtonChecked,
+                tint = MaterialTheme.colorScheme.primary,
+                text = stringResource(R.string.models_active_model_line, name),
+            )
+        }
+
+
         // TASK-1021 (review): the chips render only when the catalog view
         // is on screen; in curated mode the toggle would filter nothing.
         if (fitEligible != null && !showCuratedSection) {
@@ -720,6 +803,7 @@ fun ModelTab(
                 totalCount = fitVisibleTotal,
             )
         }
+        } // end modelsHeaderExpanded
         val hasToken by viewModel.hasHuggingFaceToken.collectAsState()
         if (showCuratedSection) {
             CuratedLanguageSection(
@@ -3132,6 +3216,38 @@ private fun exportFileName(entryId: String, variantName: String?): String =
  * ✦ suggestion are one segmented pair (never both off); the ✦ marks
  * curation, not a mere filter, per the maintainer's copy direction.
  */
+/**
+ * TASK-1021 (trial round 2): the header stack's collapse toggle. Collapsed
+ * shows ONE compact line carrying the essentials so the model cards start
+ * one tap and ~150px earlier; expanded restores the full controls. The
+ * chevron announces expand/collapse.
+ */
+@Composable
+private fun ModelHeaderCollapseToggle(expanded: Boolean, onToggle: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.models_header_toggle_title),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = onToggle, modifier = Modifier.size(28.dp)) {
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = stringResource(
+                    if (expanded) R.string.a11y_collapse else R.string.a11y_expand),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
 @Composable
 private fun DeviceFitFilterRow(
     suggested: Boolean,

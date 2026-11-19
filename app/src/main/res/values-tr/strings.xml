@@ -1396,6 +1396,6 @@
     <string name="models_fit_filter_suggested">Telefonun için önerilenler</string>
     <string name="models_fit_summary_on">Telefonunuza uygun modeller: %1$d · diğerleri «Tüm modeller» altında</string>
     <string name="models_fit_summary_off">Telefonunuza uygun modeller: %2$d modelden %1$d</string>
-    <string name="models_fit_badge_constrained">Telefonunuz için zorlayıcı</string>
-    <string name="models_fit_badge_standard">Güçlü bir telefon gerektirir</string>
+    <string name="models_fit_badge_heavy">Ağır</string>
+    <string name="models_header_toggle_title">Filtreler ve uyumluluk</string>
 </resources>

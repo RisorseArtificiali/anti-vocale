@@ -1424,6 +1424,6 @@
     <string name="models_fit_filter_suggested">Polecane dla twojego telefonu</string>
     <string name="models_fit_summary_on">Modele pasujące do twojego telefonu: %1$d · pozostałe w „Wszystkie modele”</string>
     <string name="models_fit_summary_off">Modele pasujące do twojego telefonu: %1$d z %2$d</string>
-    <string name="models_fit_badge_constrained">Wymagający dla twojego telefonu</string>
-    <string name="models_fit_badge_standard">Wymaga wydajnego telefonu</string>
+    <string name="models_fit_badge_heavy">Ciężki</string>
+    <string name="models_header_toggle_title">Filtry i dopasowanie</string>
 </resources>

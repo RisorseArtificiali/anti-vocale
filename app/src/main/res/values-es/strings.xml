@@ -1264,6 +1264,6 @@
     <string name="models_fit_filter_suggested">Sugeridos para tu teléfono</string>
     <string name="models_fit_summary_on">Modelos aptos para tu teléfono: %1$d · los demás en «Todos los modelos»</string>
     <string name="models_fit_summary_off">Modelos aptos para tu teléfono: %1$d de %2$d</string>
-    <string name="models_fit_badge_constrained">Exigente para tu teléfono</string>
-    <string name="models_fit_badge_standard">Requiere un teléfono potente</string>
+    <string name="models_fit_badge_heavy">Pesado</string>
+    <string name="models_header_toggle_title">Filtros y compatibilidad</string>
 </resources>

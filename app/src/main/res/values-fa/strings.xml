@@ -1401,6 +1401,6 @@
     <string name="models_fit_filter_suggested">پیشنهادی برای گوشی شما</string>
     <string name="models_fit_summary_on">مدل‌های مناسب گوشی شما: %1$d · بقیه در «همه مدل‌ها»</string>
     <string name="models_fit_summary_off">مدل‌های مناسب گوشی شما: %1$d از %2$d</string>
-    <string name="models_fit_badge_constrained">سنگین برای گوشی شما</string>
-    <string name="models_fit_badge_standard">نیازمند گوشی قدرتمند</string>
+    <string name="models_fit_badge_heavy">سنگین</string>
+    <string name="models_header_toggle_title">فیلترها و سازگاری</string>
 </resources>

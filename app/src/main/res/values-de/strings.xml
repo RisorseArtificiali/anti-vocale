@@ -1396,6 +1396,6 @@
     <string name="models_fit_filter_suggested">Vorschläge für dein Handy</string>
     <string name="models_fit_summary_on">Modelle, die zu deinem Handy passen: %1$d · die übrigen über „Alle Modelle“</string>
     <string name="models_fit_summary_off">Modelle, die zu deinem Handy passen: %1$d von %2$d</string>
-    <string name="models_fit_badge_constrained">Belastend für dein Handy</string>
-    <string name="models_fit_badge_standard">Benötigt ein leistungsstarkes Handy</string>
+    <string name="models_fit_badge_heavy">Schwer</string>
+    <string name="models_header_toggle_title">Filter und Gerätetauglichkeit</string>
 </resources>

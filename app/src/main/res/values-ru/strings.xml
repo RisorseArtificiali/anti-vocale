@@ -1425,6 +1425,6 @@
     <string name="models_fit_filter_suggested">Рекомендовано для вашего телефона</string>
     <string name="models_fit_summary_on">Модели, подходящие вашему телефону: %1$d · остальные в «Все модели»</string>
     <string name="models_fit_summary_off">Модели, подходящие вашему телефону: %1$d из %2$d</string>
-    <string name="models_fit_badge_constrained">Нагружает ваш телефон</string>
-    <string name="models_fit_badge_standard">Требуется мощный телефон</string>
+    <string name="models_fit_badge_heavy">Тяжёлый</string>
+    <string name="models_header_toggle_title">Фильтры и совместимость</string>
 </resources>

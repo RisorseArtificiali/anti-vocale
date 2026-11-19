@@ -1408,6 +1408,6 @@
     <string name="models_fit_filter_suggested">מומלץ לטלפון שלך</string>
     <string name="models_fit_summary_on">דגמים המתאימים לטלפון שלך: %1$d · השאר ב«כל הדגמים»</string>
     <string name="models_fit_summary_off">דגמים המתאימים לטלפון שלך: %1$d מתוך %2$d</string>
-    <string name="models_fit_badge_constrained">תובעני לטלפון שלך</string>
-    <string name="models_fit_badge_standard">דורש טלפון חזק</string>
+    <string name="models_fit_badge_heavy">כבד</string>
+    <string name="models_header_toggle_title">מסננים והתאמה</string>
 </resources>

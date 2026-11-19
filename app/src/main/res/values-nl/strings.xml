@@ -1412,6 +1412,6 @@
     <string name="models_fit_filter_suggested">Aanbevolen voor je telefoon</string>
     <string name="models_fit_summary_on">Geschikt voor je telefoon: %1$d · de rest via ‘Alle modellen’</string>
     <string name="models_fit_summary_off">Modellen die geschikt zijn voor je telefoon: %1$d van %2$d</string>
-    <string name="models_fit_badge_constrained">Zwaar voor je telefoon</string>
-    <string name="models_fit_badge_standard">Vereist een krachtige telefoon</string>
+    <string name="models_fit_badge_heavy">Zwaar</string>
+    <string name="models_header_toggle_title">Filters en apparaatgeschiktheid</string>
 </resources>

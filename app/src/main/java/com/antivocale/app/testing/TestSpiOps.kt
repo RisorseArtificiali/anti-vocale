@@ -136,6 +136,7 @@ internal class TestSpiOps(
             OP_CLIPBOARD -> clipboard()
             OP_NOTIFICATIONS -> notifications()
             OP_UNLOAD -> unload()
+            OP_RAM_TIER -> ramTier(value)
             OP_VOICE_NOTE_STATE -> voiceNoteState(value)
             OP_MODEL_DOWNLOAD -> modelDownload(entry, value)
             OP_CLEAR_ORPHANED -> clearOrphaned(entry, value)
@@ -853,6 +854,27 @@ internal class TestSpiOps(
         return JSONObject().put("op", OP_UNLOAD).put("unloaded", true).toString()
     }
 
+    /**
+     * TASK-1021: force the device RAM tier (value: constrained|standard|
+     * high|off; anything else answers usage). PROCESS-ONLY: a restart
+     * clears it. The Models tab reads the tier at composition, so after
+     * setting it re-enter the tab (switch away and back) to recompose.
+     */
+    private fun ramTier(value: String?): String {
+        val forced = when (value?.lowercase()) {
+            "constrained", "entry" -> com.antivocale.app.util.DeviceCompatibility.RamTier.CONSTRAINED
+            "standard", "mid" -> com.antivocale.app.util.DeviceCompatibility.RamTier.STANDARD
+            "high" -> com.antivocale.app.util.DeviceCompatibility.RamTier.HIGH
+            "off", null -> null
+            else -> return """{"op":"ram_tier","error":"value must be constrained|standard|high|off"}"""
+        }
+        com.antivocale.app.util.DeviceCompatibility.debugTierOverride = forced
+        val effective = appContext?.let { com.antivocale.app.util.DeviceCompatibility.ramTier(it) }
+        return JSONObject().put("op", "ram_tier").put("forced", forced?.name ?: JSONObject.NULL)
+            .put("effective", effective?.name ?: JSONObject.NULL)
+            .put("note", "process-only; re-enter the Models tab to recompose").toString()
+    }
+
     /** Both history ops share the same null-under-fakes guard. */
     private val dao: com.antivocale.app.data.local.LogDao
         get() = requireNotNull(logDao) {
@@ -1520,6 +1542,7 @@ internal class TestSpiOps(
         const val OP_CLIPBOARD = "clipboard"
         const val OP_NOTIFICATIONS = "notifications"
         const val OP_UNLOAD = "unload"
+        const val OP_RAM_TIER = "ram_tier"
         /** TASK-365: dispatch a catalog model download (the UI confirm dialog's
          *  action, scriptable: entry=<catalog id> value=<variant name>). */
         const val OP_MODEL_DOWNLOAD = "model_download"
@@ -1580,7 +1603,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_RAM_TIER, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024

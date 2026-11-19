@@ -1395,6 +1395,6 @@
     <string name="models_fit_filter_suggested">आपके फ़ोन के लिए सुझाए गए</string>
     <string name="models_fit_summary_on">आपके फ़ोन के लिए उपयुक्त मॉडल: %1$d · बाकी «सभी मॉडल» में</string>
     <string name="models_fit_summary_off">आपके फ़ोन के लिए उपयुक्त मॉडल: %2$d में से %1$d</string>
-    <string name="models_fit_badge_constrained">आपके फ़ोन के लिए भारी</string>
-    <string name="models_fit_badge_standard">शक्तिशाली फ़ोन आवश्यक</string>
+    <string name="models_fit_badge_heavy">भारी</string>
+    <string name="models_header_toggle_title">फ़िल्टर और अनुकूलता</string>
 </resources>

@@ -1426,6 +1426,6 @@
     <string name="models_fit_filter_suggested">Рекомендовано для вашого телефону</string>
     <string name="models_fit_summary_on">Моделі, які підходять вашому телефону: %1$d · решта в «Усі моделі»</string>
     <string name="models_fit_summary_off">Моделі, які підходять вашому телефону: %1$d із %2$d</string>
-    <string name="models_fit_badge_constrained">Важке для вашого телефону</string>
-    <string name="models_fit_badge_standard">Потрібен потужний телефон</string>
+    <string name="models_fit_badge_heavy">Важкий</string>
+    <string name="models_header_toggle_title">Фільтри та сумісність</string>
 </resources>
