@@ -1289,4 +1289,10 @@
     <string name="audio_swept_explanation">تم حذف الملف الصوتي الأصلي بواسطة تنظيف التخزين المؤقت للنظام (خلال 24 ساعة تقريبًا). تم الحفاظ على التفريغ.</string>
     <string name="ask_transcripts_instruction">أجب عن السؤال أدناه بالاعتماد على هذه التفريغات فقط. إذا لم تكن التفريغات تحتوي على الإجابة، فقل ذلك. أجب بلغة السؤال.</string>
 <string name="ask_transcripts_working">جارٍ سؤال النموذج على الجهاز…</string>
+    <string name="models_fit_filter_all">كل الطُرز</string>
+    <string name="models_fit_filter_suggested">مقترح لهاتفك</string>
+    <string name="models_fit_summary_on">الطُرز المناسبة لهاتفك: %1$d · البقية في «كل الطُرز»</string>
+    <string name="models_fit_summary_off">الطُرز المناسبة لهاتفك: %1$d من %2$d</string>
+    <string name="models_fit_badge_constrained">مُرهق لهاتفك</string>
+    <string name="models_fit_badge_standard">يتطلب هاتفًا قويًا</string>
 </resources>

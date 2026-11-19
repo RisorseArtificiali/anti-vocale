@@ -1422,4 +1422,10 @@
     <string name="audio_swept_explanation">Оригінальний звук було видалено очищенням тимчасового сховища системи (приблизно через 24 години). Транскрипція збережена.</string>
     <string name="ask_transcripts_instruction">Відповідай на запитання нижче, спираючись ЛИШЕ на ці транскрипції. Якщо відповіді в них немає, так і скажи. Відповідай мовою запитання.</string>
 <string name="ask_transcripts_working">Запитуємо модель на пристрої…</string>
+    <string name="models_fit_filter_all">Усі моделі</string>
+    <string name="models_fit_filter_suggested">Рекомендовано для вашого телефону</string>
+    <string name="models_fit_summary_on">Моделі, які підходять вашому телефону: %1$d · решта в «Усі моделі»</string>
+    <string name="models_fit_summary_off">Моделі, які підходять вашому телефону: %1$d із %2$d</string>
+    <string name="models_fit_badge_constrained">Важке для вашого телефону</string>
+    <string name="models_fit_badge_standard">Потрібен потужний телефон</string>
 </resources>

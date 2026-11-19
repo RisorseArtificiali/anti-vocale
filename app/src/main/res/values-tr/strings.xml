@@ -1392,4 +1392,10 @@
     <string name="audio_swept_explanation">Orijinal ses, sistemin geçici depolama temizliği tarafından silindi (yaklaşık 24 saat sonra). Transkript korunuyor.</string>
     <string name="ask_transcripts_instruction">Aşağıdaki soruyu SADECE bu transkriptlere dayanarak yanıtla. Transkriptlerde yanıt yoksa bunu söyle. Sorunun dilinde yanıtla.</string>
 <string name="ask_transcripts_working">Cihazdaki modele soruluyor…</string>
+    <string name="models_fit_filter_all">Tüm modeller</string>
+    <string name="models_fit_filter_suggested">Telefonun için önerilenler</string>
+    <string name="models_fit_summary_on">Telefonunuza uygun modeller: %1$d · diğerleri «Tüm modeller» altında</string>
+    <string name="models_fit_summary_off">Telefonunuza uygun modeller: %2$d modelden %1$d</string>
+    <string name="models_fit_badge_constrained">Telefonunuz için zorlayıcı</string>
+    <string name="models_fit_badge_standard">Güçlü bir telefon gerektirir</string>
 </resources>

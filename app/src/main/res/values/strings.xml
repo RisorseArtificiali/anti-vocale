@@ -1418,4 +1418,10 @@
     <string name="audio_swept_explanation">The original audio was cleaned up by the system\'s temporary storage sweep (about 24 hours). The transcript is preserved.</string>
     <string name="ask_transcripts_instruction">Answer the question below based ONLY on these transcripts. If the transcripts do not contain the answer, say so. Answer in the language of the question.</string>
 <string name="ask_transcripts_working">Asking the on-device model…</string>
+    <string name="models_fit_filter_all">All models</string>
+    <string name="models_fit_filter_suggested">Suggested for your phone</string>
+    <string name="models_fit_summary_on">Models that fit your phone: %1$d · the rest sit behind "All models"</string>
+    <string name="models_fit_summary_off">Models that fit your phone: %1$d of %2$d</string>
+    <string name="models_fit_badge_constrained">Demanding for your phone</string>
+    <string name="models_fit_badge_standard">Needs a powerful phone</string>
 </resources>

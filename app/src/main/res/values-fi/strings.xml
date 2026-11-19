@@ -1232,4 +1232,10 @@
     <string name="audio_swept_explanation">Alkuperäinen ääni poistettiin järjestelmän väliaikaisen tallennustilan siivouksessa (noin 24 tunnin kuluttua). Teksti on säilytetty.</string>
     <string name="ask_transcripts_instruction">Vastaa alla olevaan kysymykseen VUOROVAAN näiden litterointien perusteella. Jos litteroinnit eivät sisällä vastausta, sano se. Vastaa kysymyksen kielellä.</string>
 <string name="ask_transcripts_working">Kysytään mallilta laitteella…</string>
+    <string name="models_fit_filter_all">Kaikki mallit</string>
+    <string name="models_fit_filter_suggested">Suositellut puhelimellesi</string>
+    <string name="models_fit_summary_on">Puhelimellesi sopivat mallit: %1$d · loput kohdassa «Kaikki mallit»</string>
+    <string name="models_fit_summary_off">Puhelimellesi sopivat mallit: %1$d/%2$d</string>
+    <string name="models_fit_badge_constrained">Raskas puhelimellesi</string>
+    <string name="models_fit_badge_standard">Vaatii tehokkaan puhelimen</string>
 </resources>

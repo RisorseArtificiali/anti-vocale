@@ -1397,4 +1397,10 @@
     <string name="audio_swept_explanation">صدای اصلی توسط پاکسازی ذخیره‌سازی موقت سیستم حذف شده است (حدود ۲۴ ساعت). تفریغ حفظ شده است.</string>
     <string name="ask_transcripts_instruction">به پرسش زیر فقط بر اساس این تفریغ‌ها پاسخ بده. اگر تفریغ‌ها پاسخ را در بر ندارند، همین را بگو. به زبان پرسش پاسخ بده.</string>
 <string name="ask_transcripts_working">در حال پرسیدن از مدل روی دستگاه…</string>
+    <string name="models_fit_filter_all">همه مدل‌ها</string>
+    <string name="models_fit_filter_suggested">پیشنهادی برای گوشی شما</string>
+    <string name="models_fit_summary_on">مدل‌های مناسب گوشی شما: %1$d · بقیه در «همه مدل‌ها»</string>
+    <string name="models_fit_summary_off">مدل‌های مناسب گوشی شما: %1$d از %2$d</string>
+    <string name="models_fit_badge_constrained">سنگین برای گوشی شما</string>
+    <string name="models_fit_badge_standard">نیازمند گوشی قدرتمند</string>
 </resources>

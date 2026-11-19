@@ -1392,4 +1392,10 @@
     <string name="audio_swept_explanation">Die ursprüngliche Audiodatei wurde durch die temporäre Speicherbereinigung des Systems entfernt (nach etwa 24 Stunden). Das Transkript bleibt erhalten.</string>
     <string name="ask_transcripts_instruction">Beantworte die folgende Frage NUR auf Grundlage dieser Transkripte. Wenn die Transkripte die Antwort nicht enthalten, sage das. Antworte in der Sprache der Frage.</string>
 <string name="ask_transcripts_working">Frage das Modell auf dem Gerät…</string>
+    <string name="models_fit_filter_all">Alle Modelle</string>
+    <string name="models_fit_filter_suggested">Vorschläge für dein Handy</string>
+    <string name="models_fit_summary_on">Modelle, die zu deinem Handy passen: %1$d · die übrigen über „Alle Modelle“</string>
+    <string name="models_fit_summary_off">Modelle, die zu deinem Handy passen: %1$d von %2$d</string>
+    <string name="models_fit_badge_constrained">Belastend für dein Handy</string>
+    <string name="models_fit_badge_standard">Benötigt ein leistungsstarkes Handy</string>
 </resources>

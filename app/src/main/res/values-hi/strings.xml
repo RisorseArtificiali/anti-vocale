@@ -1391,4 +1391,10 @@
     <string name="audio_swept_explanation">मूल ऑडियो सिस्टम की अस्थायी स्टोरेज सफाई से हटा दिया गया था (लगभग 24 घंटे)। प्रतिलिपि सुरक्षित है।</string>
     <string name="ask_transcripts_instruction">नीचे दिए गए प्रश्न का उत्तर केवल इन प्रतिलिपियों के आधार पर दें। यदि प्रतिलिपियों में उत्तर नहीं है, तो ऐसा कहें। प्रश्न की भाषा में उत्तर दें।</string>
 <string name="ask_transcripts_working">ऑन-डिवाइस मॉडल से पूछ रहे हैं…</string>
+    <string name="models_fit_filter_all">सभी मॉडल</string>
+    <string name="models_fit_filter_suggested">आपके फ़ोन के लिए सुझाए गए</string>
+    <string name="models_fit_summary_on">आपके फ़ोन के लिए उपयुक्त मॉडल: %1$d · बाकी «सभी मॉडल» में</string>
+    <string name="models_fit_summary_off">आपके फ़ोन के लिए उपयुक्त मॉडल: %2$d में से %1$d</string>
+    <string name="models_fit_badge_constrained">आपके फ़ोन के लिए भारी</string>
+    <string name="models_fit_badge_standard">शक्तिशाली फ़ोन आवश्यक</string>
 </resources>

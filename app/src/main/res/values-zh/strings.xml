@@ -1219,4 +1219,10 @@
     <string name="audio_swept_explanation">原始音频已被系统临时存储清理删除（约24小时后）。转写已保留。</string>
     <string name="ask_transcripts_instruction">仅根据这些转写回答下面的问题。如果转写中不包含答案，请说明。用提问的语言回答。</string>
 <string name="ask_transcripts_working">正在询问设备端模型…</string>
+    <string name="models_fit_filter_all">全部模型</string>
+    <string name="models_fit_filter_suggested">为你的手机推荐</string>
+    <string name="models_fit_summary_on">适合你手机的模型:%1$d 个 · 其余在「全部模型」中</string>
+    <string name="models_fit_summary_off">适合你手机的模型：%2$d 个中的 %1$d 个</string>
+    <string name="models_fit_badge_constrained">对你的手机负担较重</string>
+    <string name="models_fit_badge_standard">需要性能更强的手机</string>
 </resources>

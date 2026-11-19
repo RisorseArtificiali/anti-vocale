@@ -1260,4 +1260,10 @@
     <string name="audio_swept_explanation">El audio original fue eliminado por la limpieza de almacenamiento temporal del sistema (aproximadamente 24 horas). La transcripción se conserva.</string>
     <string name="ask_transcripts_instruction">Responde a la pregunta siguiente basándote SOLO en estas transcripciones. Si las transcripciones no contienen la respuesta, dilo. Responde en el idioma de la pregunta.</string>
 <string name="ask_transcripts_working">Preguntando al modelo en el dispositivo…</string>
+    <string name="models_fit_filter_all">Todos los modelos</string>
+    <string name="models_fit_filter_suggested">Sugeridos para tu teléfono</string>
+    <string name="models_fit_summary_on">Modelos aptos para tu teléfono: %1$d · los demás en «Todos los modelos»</string>
+    <string name="models_fit_summary_off">Modelos aptos para tu teléfono: %1$d de %2$d</string>
+    <string name="models_fit_badge_constrained">Exigente para tu teléfono</string>
+    <string name="models_fit_badge_standard">Requiere un teléfono potente</string>
 </resources>

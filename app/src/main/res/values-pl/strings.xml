@@ -1420,4 +1420,10 @@
     <string name="audio_swept_explanation">Oryginalny dźwięk został usunięty przez czyszczenie pamięci tymczasowej systemu (po około 24 godzinach). Transkrypcja została zachowana.</string>
     <string name="ask_transcripts_instruction">Odpowiedz na poniższe pytanie, opierając się WYŁĄCZNIE na tych transkrypcjach. Jeśli transkrypcje nie zawierają odpowiedzi, tak napisz. Odpowiedz w języku pytania.</string>
 <string name="ask_transcripts_working">Pytam model na urządzeniu…</string>
+    <string name="models_fit_filter_all">Wszystkie modele</string>
+    <string name="models_fit_filter_suggested">Polecane dla twojego telefonu</string>
+    <string name="models_fit_summary_on">Modele pasujące do twojego telefonu: %1$d · pozostałe w „Wszystkie modele”</string>
+    <string name="models_fit_summary_off">Modele pasujące do twojego telefonu: %1$d z %2$d</string>
+    <string name="models_fit_badge_constrained">Wymagający dla twojego telefonu</string>
+    <string name="models_fit_badge_standard">Wymaga wydajnego telefonu</string>
 </resources>

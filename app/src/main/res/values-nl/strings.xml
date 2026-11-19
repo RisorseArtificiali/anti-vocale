@@ -1408,4 +1408,10 @@
     <string name="audio_swept_explanation">De originele audio is verwijderd door de tijdelijke opslagruimte-schoonmaak van het systeem (na ongeveer 24 uur). De transcriptie is bewaard.</string>
     <string name="ask_transcripts_instruction">Beantwoord de onderstaande vraag ALLEEN op basis van deze transcripties. Zijn de antwoorden er niet in te vinden, zeg dat dan. Antwoord in de taal van de vraag.</string>
 <string name="ask_transcripts_working">Bezig met vragen aan het model op het apparaat…</string>
+    <string name="models_fit_filter_all">Alle modellen</string>
+    <string name="models_fit_filter_suggested">Aanbevolen voor je telefoon</string>
+    <string name="models_fit_summary_on">Geschikt voor je telefoon: %1$d · de rest via ‘Alle modellen’</string>
+    <string name="models_fit_summary_off">Modellen die geschikt zijn voor je telefoon: %1$d van %2$d</string>
+    <string name="models_fit_badge_constrained">Zwaar voor je telefoon</string>
+    <string name="models_fit_badge_standard">Vereist een krachtige telefoon</string>
 </resources>
