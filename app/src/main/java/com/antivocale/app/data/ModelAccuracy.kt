@@ -113,8 +113,23 @@ object ModelAccuracy {
         }.getOrDefault(emptyList())
     }
 
-    /** Fail-open read of the bundled asset; a corrupt asset is logged once per process. */
+    /**
+     * The decoded asset, cached: the asset is immutable, TASK-658's dialog
+     * and TASK-1021's Models-tab ordering both read it, and a re-parse per
+     * tab visit is wasted work on exactly the low-RAM devices the fit
+     * feature targets. Written once; read on every load.
+     */
+    @Volatile
+    private var cached: List<Measurement>? = null
+
+    /**
+     * Fail-open read of the bundled asset, parsed once per process (the
+     * cache also holds the decoded-empty verdict; an UNREADABLE asset is
+     * not cached, so a retry stays possible). A corrupt asset is logged
+     * once per process.
+     */
     fun load(context: Context): List<Measurement> {
+        cached?.let { return it }
         val text = runCatching {
             context.assets.open(ASSET_NAME).bufferedReader().use { it.readText() }
         }.getOrElse {
@@ -123,6 +138,7 @@ object ModelAccuracy {
         }
         return decode(text).also {
             if (it.isEmpty()) warnOnce("asset $ASSET_NAME decoded empty (corrupt?); accuracy section hidden")
+            cached = it
         }
     }
 

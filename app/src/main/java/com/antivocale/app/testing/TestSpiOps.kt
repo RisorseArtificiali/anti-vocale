@@ -23,6 +23,7 @@ import com.antivocale.app.transcription.variantTitle
 import com.antivocale.app.ui.theme.ThemeMode
 import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType
+import com.antivocale.app.util.DeviceCompatibility
 import com.antivocale.app.util.SubtitleFormatter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -862,14 +863,14 @@ internal class TestSpiOps(
      */
     private fun ramTier(value: String?): String {
         val forced = when (value?.lowercase()) {
-            "constrained", "entry" -> com.antivocale.app.util.DeviceCompatibility.RamTier.CONSTRAINED
-            "standard", "mid" -> com.antivocale.app.util.DeviceCompatibility.RamTier.STANDARD
-            "high" -> com.antivocale.app.util.DeviceCompatibility.RamTier.HIGH
+            "constrained", "entry" -> DeviceCompatibility.RamTier.CONSTRAINED
+            "standard", "mid" -> DeviceCompatibility.RamTier.STANDARD
+            "high" -> DeviceCompatibility.RamTier.HIGH
             "off", null -> null
             else -> return """{"op":"ram_tier","error":"value must be constrained|standard|high|off"}"""
         }
-        com.antivocale.app.util.DeviceCompatibility.debugTierOverride = forced
-        val effective = appContext?.let { com.antivocale.app.util.DeviceCompatibility.ramTier(it) }
+        DeviceCompatibility.debugTierOverride = forced
+        val effective = appContext?.let { DeviceCompatibility.ramTier(it) }
         return JSONObject().put("op", "ram_tier").put("forced", forced?.name ?: JSONObject.NULL)
             .put("effective", effective?.name ?: JSONObject.NULL)
             .put("note", "process-only; re-enter the Models tab to recompose").toString()

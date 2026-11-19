@@ -68,8 +68,7 @@ class DeviceFitSuggestionTest {
             userLanguage = "it",
             sizeMb = { it.sizeMb },
             languages = { it.langs },
-            modelKey = { it.id to it.variant },
-            measurements = measurements,
+            wer = { DeviceFitSuggestion.qualityWer(it.id, it.variant, "it", measurements) },
         )
 
         // Italian-capable first, best WER first; the non-Italian set follows
@@ -89,8 +88,7 @@ class DeviceFitSuggestionTest {
             userLanguage = "it",
             sizeMb = { it.sizeMb },
             languages = { it.langs },
-            modelKey = { it.id to it.variant },
-            measurements = measurements,
+            wer = { DeviceFitSuggestion.qualityWer(it.id, it.variant, "it", measurements) },
         )
 
         assertEquals(listOf("whisper-small", "qwen3-asr"), ordered.map { it.variant })
@@ -181,8 +179,7 @@ class DeviceFitSuggestionTest {
             userLanguage = "he",
             sizeMb = { it.sizeMb },
             languages = { it.langs },
-            modelKey = { it.id to it.variant },
-            measurements = emptyList(),
+            wer = { DeviceFitSuggestion.qualityWer(it.id, it.variant, "he", emptyList()) },
         )
 
         assertEquals("zipformer-he", ordered.first().variant)

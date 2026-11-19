@@ -41,11 +41,16 @@ object DeviceFitSuggestion {
         DeviceCompatibility.RamTier.STANDARD to 1500L,
     )
 
-    /** Whether the variant fits the tier's budget; true on a null budget (HIGH, unknown). */
-    fun fits(sizeMb: Long, tier: DeviceCompatibility.RamTier): Boolean {
-        val budget = budgetMb[tier] ?: return true
-        return sizeMb <= budget
-    }
+    /** Whether the variant fits the tier's budget; true on a tier without one (HIGH, unknown). */
+    fun fits(sizeMb: Long, tier: DeviceCompatibility.RamTier): Boolean =
+        fits(sizeMb, budgetMb[tier])
+
+    /**
+     * The one budget predicate every site shares (eligibility, the visible
+     * cut, the badge): a null budget fits everything, which is the advisory
+     * contract (HIGH band, filter off, no badge).
+     */
+    fun fits(sizeMb: Long, budgetMb: Long?): Boolean = budgetMb == null || sizeMb <= budgetMb
 
     /**
      * Locale codes the platform still reports in legacy form (Locale.forLanguageTag
@@ -77,23 +82,21 @@ object DeviceFitSuggestion {
      * Orders models that are already inside the budget: user-language
      * coverage first, then the best WER for that language, then size; the
      * models without the language follow, by size. Stable on equal keys so
-     * the catalog's own order survives as the last resort.
+     * the catalog's own order survives as the last resort. The [wer]
+     * selector is the caller's to compute: decorate once before sorting
+     * rather than deriving it inside the comparator.
      */
     fun <T> order(
         models: List<T>,
         userLanguage: String,
         sizeMb: (T) -> Long,
         languages: (T) -> Set<String>,
-        modelKey: (T) -> Pair<String, String>,
-        measurements: List<ModelAccuracy.Measurement>,
+        wer: (T) -> Double?,
     ): List<T> =
         models.sortedWith(
             compareBy(
                 { userLanguage !in languages(it) },
-                {
-                    val key = modelKey(it)
-                    qualityWer(key.first, key.second, userLanguage, measurements) ?: Double.MAX_VALUE
-                },
+                { wer(it) ?: Double.MAX_VALUE },
                 { sizeMb(it) },
             )
         )
@@ -101,11 +104,12 @@ object DeviceFitSuggestion {
     /**
      * Entry-level convenience for the tab. [eligible] is the caller's own
      * two-gate variant list (the language filter AND the budget cut - the
-     * same gates the visible cards apply), computed ONCE per entry: the
-     * decorate-once shape exists so the sort's selectors never re-derive
-     * it per comparison. An entry stays when ANY variant is eligible, and
-     * orders by its best eligible variant (the suggestion rule applied to
-     * the variant each entry would actually surface first).
+     * same gates the visible cards apply), computed ONCE per entry; the
+     * decoration pass resolves each entry's size, languages, and quality
+     * key once so the sort's selectors only read fields. An entry stays
+     * when ANY variant is eligible, and orders by its best eligible
+     * variant (the suggestion rule applied to the variant each entry
+     * would actually surface first).
      */
     fun orderEntries(
         entries: List<CatalogEntry>,
@@ -117,7 +121,7 @@ object DeviceFitSuggestion {
             val entry: CatalogEntry,
             val sizeMb: Long,
             val languages: Set<String>,
-            val modelKey: Pair<String, String>,
+            val wer: Double?,
         )
         return order(
             entries.mapNotNull { entry ->
@@ -131,20 +135,21 @@ object DeviceFitSuggestion {
                 val measured: Pair<CatalogVariantUi, Double>? = variants
                     .mapNotNull { v -> qualityWer(entry.id, v.dirName, userLanguage, measurements)?.let { v to it } }
                     .minByOrNull { it.second }
+                // variants is non-empty (guarded above), so minByOrNull
+                // cannot yield null here; the assertion only satisfies types.
                 val spokenFor = measured?.first
-                    ?: variants.minByOrNull { it.estimatedSizeMB }
+                    ?: variants.minByOrNull { it.estimatedSizeMB }!!
                 Decorated(
                     entry = entry,
-                    sizeMb = spokenFor?.estimatedSizeMB ?: 0L,
+                    sizeMb = spokenFor.estimatedSizeMB,
                     languages = variants.flatMap { it.supportedLanguageCodes }.toSet(),
-                    modelKey = entry.id to (spokenFor?.dirName ?: ""),
+                    wer = measured?.second,
                 )
             },
             userLanguage = userLanguage,
             sizeMb = { it.sizeMb },
             languages = { it.languages },
-            modelKey = { it.modelKey },
-            measurements = measurements,
+            wer = { it.wer },
         ).map { it.entry }
     }
 }

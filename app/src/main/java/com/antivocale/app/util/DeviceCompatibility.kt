@@ -86,17 +86,22 @@ object DeviceCompatibility {
      * sit below the nominal marks by that gap. Band pins in
      * DeviceCompatibilityFitTest hold the literals.
      */
-    /**
-     * TEST_SPI ram_tier override (TASK-1021): the debug test surface can
-     * force a band to trial tier-dependent UI on any device. Process-only
-     * (a restart clears it), null in production builds forever.
-     */
-    @Volatile
-    var debugTierOverride: RamTier? = null
-
     /** The tier of THIS device; null when total RAM is unreadable (fail-open, no tier line). */
     fun ramTier(context: Context): RamTier? =
         debugTierOverride ?: ramTierFor(com.antivocale.app.audio.MemoryReadings.totalRamBytesCached(context))
+
+    /**
+     * TEST_SPI ram_tier override (TASK-1021): the debug test surface can
+     * force a band to trial tier-dependent UI on any device. Process-only
+     * (a restart clears it); the setter is debug-build-checked so a stray
+     * production write fails loudly instead of silently faking a tier.
+     */
+    @Volatile
+    var debugTierOverride: RamTier? = null
+        set(value) {
+            check(com.antivocale.app.BuildConfig.DEBUG) { "debugTierOverride is a debug-only seam" }
+            field = value
+        }
 
     /** Pure core (JVM-testable): null on unreadable forms. */
     internal fun ramTierFor(totalRamBytes: Long?): RamTier? {
