@@ -1163,6 +1163,12 @@ ask_transcripts_error,Error: %1$s,formatted,keep verbatim: ['%1$s']
 audio_swept_explanation,The original audio was cleaned up by the system\'s temporary storage sweep (about 24 hours). The transcript is preserved.,plain,
 ask_transcripts_instruction,"Answer the question below based ONLY on these transcripts. If the transcripts do not contain the answer, say so. Answer in the language of the question.",plain,
 ask_transcripts_working,Asking the on-device model…,plain,
+models_fit_filter_all,All models,plain,
+models_fit_filter_suggested,Suggested for your phone,plain,
+models_fit_summary_on,"Models that fit your phone: %1$d · the rest sit behind ""All models""",formatted,keep verbatim: ['%1$d']
+models_fit_summary_off,Models that fit your phone: %1$d of %2$d,formatted,"keep verbatim: ['%1$d', '%2$d']"
+models_fit_badge_heavy,Heavy,plain,
+models_header_toggle_title,Filters and device fit,plain,
 logs_entries_deleted [one],%d entry deleted,plural,supply only the quantities the locale table lists
 logs_entries_deleted [other],%d entries deleted,plural,supply only the quantities the locale table lists
 settings_search_matches [one],%1$d match,plural,supply only the quantities the locale table lists
