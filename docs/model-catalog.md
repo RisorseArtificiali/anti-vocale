@@ -6,6 +6,8 @@ Bundled models are downloaded on demand inside the app. Community models are one
 
 Speed context for everything below: measured by us on an Italian voice-message test set with the desktop eval harness (2026-05), your device and your language will differ. The in-app benchmark tab measures the models you have installed on your own hardware. Quality context by language: the same harness family runs every bundled model on FLEURS clips per language, and the [per-language quality matrix](quality-matrix.md) shows which model leads where.
 
+Device-fit context: the in-app Models tab groups what it suggests by how much RAM your phone reports (entry-level under ~4 GB, mid-range ~4-8 GB, high-end 8 GB and up). Entry-level phones see suggestions capped at ~750 MB per model, mid-range at ~1.5 GB; the tab marks anything above the bar "Heavy" and the suggestion filter is off by default, so the size classes here are guidance for slow storage and tight RAM, never a hard limit.
+
 ## Bundled models
 
 ### Parakeet TDT 0.6B v3 (default)

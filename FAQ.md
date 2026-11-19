@@ -8,6 +8,10 @@ Yes, if you have the recording: share the audio file with the app (your recorder
 
 ## Models and their limits
 
+### What is "Suggested for your phone" in the Models tab?
+
+On phones with 4 GB of RAM or less (and, with a higher bar, on 4-8 GB phones) the Models tab carries a suggestion filter. Off by default, it never hides anything until you ask: with the filter off you see the whole catalog, and models that are demanding for your device carry a small "Heavy" tag. One tap on the "Suggested for your phone" chip narrows the list to the models your phone sustains comfortably, ordered for you: the ones covering your language first (the system language, or the one you picked with the language filter), then by measured accuracy, then by size. The bar sits under "Filters and device fit", a row you can collapse to get the model list right away; it starts expanded and remembers your choice for the session. The tags and the filter are advice only: any model can still be downloaded and run on any phone, exactly as before.
+
 ### How long can an audio file be?
 
 There is no app-level limit. Each model has its own **per-segment** limit, and the app transparently splits longer audio into chunks and concatenates the transcripts:
