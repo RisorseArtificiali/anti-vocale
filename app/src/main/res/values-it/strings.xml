@@ -1376,6 +1376,10 @@
     <string name="notification_channel_model_repair_description">Notifiche quando un pulitore di archiviazione di sistema elimina un modello importato e sull\'esito del ripristino.</string>
     <string name="wiped_imports_title">Un pulitore di sistema ha eliminato file del modello</string>
     <string name="wiped_imports_text">Un pulitore di archiviazione di sistema ha eliminato i file di modelli importati (%1$d): %2$s. Tocca Recupera per scaricarli di nuovo dalla fonte originale.</string>
+    <string name="wiped_banner_title">Modelli importati senza file</string>
+    <string name="wiped_banner_text">%1$d modelli importati sono stati eliminati da un pulitore di sistema. Recupera li scarica di nuovo; Rimuovi li dimentica.</string>
+    <string name="wiped_forgot_title">Modelli importati rimossi</string>
+    <string name="wiped_forgot_text">Rimossi %1$d modelli importati. Puoi importarli di nuovo in ogni momento.</string>
     <string name="wiped_imports_names_overflow">+ altri %1$d</string>
     <string name="wiped_imports_recover_action">Recupera</string>
     <string name="wiped_imports_recovered_title">Ripristino completato</string>

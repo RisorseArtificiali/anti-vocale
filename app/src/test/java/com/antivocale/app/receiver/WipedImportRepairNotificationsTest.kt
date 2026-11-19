@@ -48,7 +48,7 @@ class WipedImportRepairNotificationsTest {
         val notification = WipedImportRepairNotifications.wipedNotification(
             context, listOf(record("a"), record("b")))
 
-        val action = notification.actions!!.single()
+        val action = notification.actions!!.first { it.title.toString() == "Recover" }
         val intent = Shadows.shadowOf(action.actionIntent).savedIntent
 
         // TASK-971: the run belongs to the foreground service (the system
@@ -59,6 +59,31 @@ class WipedImportRepairNotificationsTest {
                 context.packageName,
                 com.antivocale.app.service.WipedImportRepairService::class.java.name),
             intent.component)
+    }
+
+    @Test
+    fun `forget action rides the wiped notice beside recover and targets the receiver`() {
+        val notification = WipedImportRepairNotifications.wipedNotification(
+            context, listOf(record("a")))
+
+        // TASK-1023: BOTH closures are quick actions - the do-not-want-
+        // them-back half deserved a one-tap exit, not five per-card deletes
+        // inside the collapsed Advanced section.
+        val titles = notification.actions!!.map { it.title.toString() }
+        assertEquals(listOf("Recover", "Remove"), titles)
+        val forget = notification.actions!!.single { it.title.toString() == "Remove" }
+        val intent = Shadows.shadowOf(forget.actionIntent).savedIntent
+
+        // A deletion, not a service run: the receiver's forget arm (the
+        // component is not exported, so the intent names it explicitly).
+        assertEquals(
+            ComponentName(
+                context.packageName,
+                com.antivocale.app.receiver.WipedImportRepairReceiver::class.java.name),
+            intent.component)
+        assertEquals(
+            com.antivocale.app.receiver.WipedImportRepairReceiver.ACTION_FORGET_WIPED_IMPORTS,
+            intent.action)
     }
 
     @Test

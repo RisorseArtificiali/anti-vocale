@@ -733,6 +733,22 @@ fun ModelTab(
                 )
             }
         }
+        // TASK-1023: the recovery banner, the wiped-imports notice's
+        // landing context (the wiped cards sit at the bottom of this tab
+        // inside the Advanced section collapsed by default; the TASK-746
+        // principle: actionable state is never buried in the collapse).
+        // Rationale for the two closures lives on the notice family; the
+        // count derives from the same single emission as the per-card
+        // wiped lines. Renders in the curated view too: it repairs
+        // imports, it does not browse the catalog.
+        val wipedState by viewModel.externalModelState.collectAsState()
+        if (wipedState.recoverableCount > 0) {
+            WipedImportsBanner(
+                count = wipedState.recoverableCount,
+                onRecover = { viewModel.recoverWipedImports() },
+                onForget = { viewModel.forgetWipedImports() },
+            )
+        }
         val hasToken by viewModel.hasHuggingFaceToken.collectAsState()
         if (showCuratedSection) {
             CuratedLanguageSection(
@@ -3175,6 +3191,48 @@ private fun ModelHeaderCollapseToggle(expanded: Boolean, onToggle: () -> Unit) {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
+        }
+    }
+}
+
+/**
+ * TASK-1023: the Models-tab recovery banner (the wiped-imports notice's
+ * landing context; the friction story lives on
+ * [com.antivocale.app.data.ExternalImportRepairer.forgetWipedImports]).
+ * No confirm dialog on Forget: the notification's own Remove action
+ * already deletes without one and the records are re-importable.
+ * Recover is the filled button: recovery, not removal, is the happy path.
+ */
+@Composable
+private fun WipedImportsBanner(count: Int, onRecover: () -> Unit, onForget: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        ),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = stringResource(R.string.wiped_banner_title),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+            Text(
+                text = stringResource(R.string.wiped_banner_text, count),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.align(Alignment.End),
+            ) {
+                TextButton(onClick = onForget) {
+                    Text(stringResource(R.string.wiped_imports_remove_action))
+                }
+                Button(onClick = onRecover) {
+                    Text(stringResource(R.string.wiped_imports_recover_action))
+                }
+            }
         }
     }
 }

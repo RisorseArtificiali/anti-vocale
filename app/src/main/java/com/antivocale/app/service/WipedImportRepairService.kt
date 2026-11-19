@@ -163,5 +163,13 @@ class WipedImportRepairService : Service() {
     companion object {
         private const val TAG = "WipedImportRepairService"
         const val ACTION_CANCEL = "com.antivocale.app.CANCEL_WIPED_IMPORT_REPAIR"
+
+        /** TASK-1023: the ONE repair-start intent (explicit component: the
+         *  service is not exported). The notification's Recover
+         * PendingIntent, the receiver's stale-notice router arm, and the
+         *  Models-tab banner's Recover button all start the same run. */
+        fun repairIntent(context: android.content.Context): android.content.Intent =
+            android.content.Intent(
+                context, com.antivocale.app.service.WipedImportRepairService::class.java)
     }
 }

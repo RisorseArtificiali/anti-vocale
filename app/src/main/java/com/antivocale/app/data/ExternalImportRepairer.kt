@@ -144,8 +144,9 @@ class ExternalImportRepairer(
         // keeps the SAME id (the dedupe repoints it), and a stale dead
         // entry would otherwise hide a future wipe of that record from
         // this scan forever (the 2026-11-10 review's re-wipe scenario).
+        val records = store.records()
         val dangling = dead.filterNot { id ->
-            val record = store.records().firstOrNull { it.id == id }
+            val record = records.firstOrNull { it.id == id }
             record == null || store.isLoadable(record)
         }.toSet()
         if (dangling != dead) {
@@ -156,11 +157,7 @@ class ExternalImportRepairer(
 
     private suspend fun scanWipedImports(dead: Set<String>): List<ExternalModelRecord> {
         return store.records().filter { record ->
-            record.source == ExternalModelSource.URL &&
-                !record.sourceUrl.isNullOrBlank() &&
-                !record.quarantined &&
-                record.id !in dead &&
-                !store.isLoadable(record)
+            isRecoverCandidate(record, dead) && !store.isLoadable(record)
         }.also { dangling ->
             if (dangling.isNotEmpty()) {
                 android.util.Log.i(
@@ -169,13 +166,15 @@ class ExternalImportRepairer(
         }
     }
 
-    /** Clears the pending selection snapshot when a startup scan found
-     *  nothing dangling: either nothing was ever wiped this cycle or the
-     *  user already fixed it, and a pending snapshot for an intact model
-     *  would re-apply a selection the user has since replaced. Called from
-     *  the startup scan path ONLY (a tap-time scan finding nothing must
-     *  NOT clear the snapshot: that is exactly the state the restore is
-     *  for). */
+    /** Clears the pending selection snapshot when nothing is dangling any
+     *  more: either nothing was ever wiped this cycle, the user already
+     *  fixed it, or a Forget removed the last dangling record (TASK-1023).
+     *  In every case a pending snapshot would re-apply a selection the
+     *  user has since replaced. Two call sites own the condition: the
+     *  startup scan (empty result) and forgetWipedImports (full removal).
+     *  A REPAIR-side scan finding nothing must NOT clear it on its own:
+     *  that is exactly the state the restore is for (the guard lives in
+     *  repairAll's flow, not here). */
     suspend fun clearCapturedSelectionsIfIdle() {
         preferencesManager.saveWipedRepairCapturedActive("")
         preferencesManager.saveWipedRepairCapturedPin("")
@@ -216,6 +215,39 @@ class ExternalImportRepairer(
         // set too (their ids no longer name anything).
         preferencesManager.saveWipedRepairDeadSources(emptySet())
         return removed
+    }
+
+    /** TASK-1023: the wiped notice's Forget action and the Models-tab
+     *  banner's twin button. Removes the CURRENTLY dangling set (the same
+     *  candidates [scanWipedImports] names) instead of the persisted
+     *  dead-source set: the user decides against recovery BEFORE any
+     *  repair ran, and the manual per-card deletes behind a collapsed
+     *  Advanced section are the friction this closes. Re-derives at call
+     *  time like [repairAll] (a stale notice forgets exactly what is still
+     *  dangling); the SAME [repairMutex] serializes against a repair in
+     *  flight, and each delete re-checks loadability so a manual re-import
+     *  landing between scan and delete is refused, not destroyed. Dead-set
+     *  ids naming the removed records need no explicit pruning here: the
+     *  next [scanWipedImports] drops ids that no longer name a dangling
+     *  record. Returns the removed record ids. */
+    suspend fun forgetWipedImports(): List<String> = repairMutex.withLock {
+        sweepJob?.join()
+        val candidates = scanWipedImports()
+        val removed = mutableListOf<String>()
+        for (record in candidates) {
+            if (!store.isLoadable(record) && deleter.delete(record).existed) {
+                removed += record.id
+            }
+        }
+        // Every candidate left the loop removed, loadable again, or already
+        // gone, so a full removal clears the selection snapshot (it lived
+        // for a repair that will never run); a partial forget keeps it for
+        // the remaining recover. The count comparison answers what a
+        // re-scan would, minus the I/O.
+        if (removed.size == candidates.size && candidates.isNotEmpty()) {
+            clearCapturedSelectionsIfIdle()
+        }
+        removed
     }
 
     suspend fun repairAll(): RepairResult = repairMutex.withLock {
@@ -351,6 +383,21 @@ class ExternalImportRepairer(
 
     companion object {
         private const val TAG = "ExternalImportRepairer"
+
+        /**
+         * The ONE recover-or-forget candidate predicate (TASK-1023): the
+         * shape the notification names, the repairer scans, and the
+         * Models-tab banner counts. Pure, so UI derivations apply it
+         * without the startup scan's dead-set pruning write.
+         */
+        fun isRecoverCandidate(
+            record: ExternalModelRecord,
+            deadSourceIds: Set<String>,
+        ): Boolean =
+            record.source == ExternalModelSource.URL &&
+                !record.sourceUrl.isNullOrBlank() &&
+                !record.quarantined &&
+                record.id !in deadSourceIds
 
         /**
          * TASK-973: is this failure PROVEN dead, the only state that may

@@ -1197,6 +1197,10 @@
     <string name="notification_channel_model_repair_description">当系统存储清理工具删除已导入的模型时发出的通知，以及恢复结果。</string>
     <string name="wiped_imports_title">系统清理工具删除了模型文件</string>
     <string name="wiped_imports_text">系统存储清理工具删除了 %1$d 个已导入模型的文件：%2$s。点按“恢复”可从原始来源重新下载。</string>
+    <string name="wiped_banner_title">导入的模型丢失了文件</string>
+    <string name="wiped_banner_text">您的 %1$d 个导入模型已被系统存储清理工具删除。恢复会重新下载它们；移除会忘记它们。</string>
+    <string name="wiped_forgot_title">已移除导入的模型</string>
+    <string name="wiped_forgot_text">已移除 %1$d 个导入的模型。您可以随时重新导入它们。</string>
     <string name="wiped_imports_names_overflow">及另外 %1$d 个</string>
     <string name="wiped_imports_recover_action">恢复</string>
     <string name="wiped_imports_recovered_title">模型恢复完成</string>

@@ -19,6 +19,7 @@ import com.antivocale.app.di.ApplicationScope
 import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.ExternalModelDeleter
+import com.antivocale.app.data.ExternalImportRepairer
 import com.antivocale.app.data.ExternalModelImportOperations
 import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelRecord
@@ -68,6 +69,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
@@ -87,6 +89,12 @@ import javax.inject.Inject
 data class ExternalModelsState(
     val records: List<ExternalModelRecord> = emptyList(),
     val wipedIds: Set<String> = emptySet(),
+    /** TASK-1023: how many records the recover-or-forget machinery sees
+     *  (the notification's own predicate, the pure [ExternalImportRepairer.isRecoverCandidate]
+     *  plus the dir stat): the recovery banner's count. Deliberately
+     *  narrower than [wipedIds], which also carries folder imports and
+     *  dead-marked records for their per-card lines. */
+    val recoverableCount: Int = 0,
 )
 
 @HiltViewModel
@@ -1553,21 +1561,36 @@ class ModelViewModel @Inject constructor(
      * so this reads recordsFlow, not the loadability-filtered
      * validRecordsFlow.
      */
-    /** TASK-965: the imported cards' ONE state: the record list and the
-     *  wiped-id set derive from a SINGLE records emission, so a repaired
-     *  record cannot flash the wiped line for a frame (two independent
-     *  stateIn chains on the same DataStore key update out of order; the
-     *  code-review round's skew finding). The dir stats run off-main
-     *  (flowOn Default, the records provider's own discipline). */
+    /** TASK-965/TASK-1023: the imported cards' ONE state: the record list,
+     *  the wiped-id set, and the recover-or-forget count all derive from a
+     *  SINGLE emission of the records and dead-source flows, so a repaired
+     *  record cannot flash the wiped line (or the banner count) for a
+     *  frame (two independent stateIn chains on the same DataStore key
+     *  update out of order; the code-review round's skew finding). The
+     *  count applies the repairer's PURE candidate predicate (the
+     *  notification's own shape) inside the same pass the dir stats
+     *  already run - never the public scan, whose dead-set pruning WRITE
+     *  does not belong in a UI derivation. Stats run off-main (flowOn
+     *  Default, the records provider's own discipline). */
     val externalModelState: StateFlow<ExternalModelsState> =
-        externalModelStore.recordsFlow
-            .map { records ->
-                ExternalModelsState(
-                    records = records,
-                    wipedIds = records
-                        .filter { !it.quarantined && !externalModelStore.isLoadable(it) }
-                        .mapTo(mutableSetOf()) { it.id })
+        combine(
+            externalModelStore.recordsFlow,
+            preferencesManager.wipedRepairDeadSources,
+        ) { records, dead ->
+            // ONE loadability stat per record derives both sets.
+            val wiped = mutableSetOf<String>()
+            var recoverable = 0
+            for (record in records) {
+                if (externalModelStore.isLoadable(record)) continue
+                if (!record.quarantined) wiped += record.id
+                if (ExternalImportRepairer.isRecoverCandidate(record, dead)) recoverable++
             }
+            ExternalModelsState(
+                records = records,
+                wipedIds = wiped,
+                recoverableCount = recoverable,
+            )
+        }
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExternalModelsState())
 
@@ -2045,6 +2068,30 @@ class ModelViewModel @Inject constructor(
             _snackbarEvent.tryEmit(SnackbarEvent.Message(
                 ctx.getString(R.string.external_deleted, record.displayName)))
         }
+    }
+
+    /** TASK-1023: the banner's Forget button dispatches the SAME explicit
+     *  broadcast the notification's Forget PendingIntent carries: one
+     *  pipeline (the receiver's arm: application scope, single-flight,
+     *  its own outcome notice), no second orchestration to keep in sync.
+     *  Rationale for the forget itself lives on
+     *  [ExternalImportRepairer.forgetWipedImports]. */
+    fun forgetWipedImports() {
+        ctx.sendBroadcast(
+            android.content.Intent(
+                ctx, com.antivocale.app.receiver.WipedImportRepairReceiver::class.java
+            ).apply {
+                action = com.antivocale.app.receiver.WipedImportRepairReceiver.ACTION_FORGET_WIPED_IMPORTS
+            })
+    }
+
+    /** TASK-1023: the banner's Recover button: the same foreground-service
+     *  run the notification's Recover action starts (one intent factory,
+     *  [WipedImportRepairService.repairIntent]). ContextCompat form per the
+     *  ExtractionService download-start convention in this class. */
+    fun recoverWipedImports() {
+        androidx.core.content.ContextCompat.startForegroundService(
+            ctx, com.antivocale.app.service.WipedImportRepairService.repairIntent(ctx))
     }
 
     /**

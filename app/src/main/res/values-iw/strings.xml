@@ -1382,6 +1382,10 @@
     <string name="notification_channel_model_repair_description">התראות כשמנקה אחסון של המערכת מוחק מודל מיובא, ועל תוצאת השחזור.</string>
     <string name="wiped_imports_title">מנקה של המערכת מחק קובצי מודל</string>
     <string name="wiped_imports_text">מנקה אחסון של המערכת מחק את הקבצים של %1$d מהמודלים המיובאים: %2$s. הקש על "שחזר" כדי להוריד אותם שוב מהמקור המקורי.</string>
+    <string name="wiped_banner_title">מודלים מיובאים איבדו את הקבצים שלהם</string>
+    <string name="wiped_banner_text">%1$d מהמודלים המיובאים שלך נמחקו על ידי מנקה אחסון של המערכת. שחזור יוריד אותם שוב; הסרה תשכח אותם.</string>
+    <string name="wiped_forgot_title">מודלים מיובאים הוסרו</string>
+    <string name="wiped_forgot_text">%1$d מודלים מיובאים הוסרו. ניתן לייבא אותם שוב בכל עת.</string>
     <string name="wiped_imports_names_overflow">+ %1$d נוספים</string>
     <string name="wiped_imports_recover_action">שחזר</string>
     <string name="wiped_imports_recovered_title">השחזור הסתיים</string>

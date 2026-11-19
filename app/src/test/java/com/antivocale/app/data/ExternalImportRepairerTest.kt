@@ -257,6 +257,64 @@ class ExternalImportRepairerTest {
         assertEquals(0, store.records().size)
     }
 
+    // ---- TASK-1023: the wiped notice's Forget action ----
+
+    @Test
+    fun `forget removes the dangling set and clears the pending selection snapshot`() = runTest {
+        val dangling = record("forgotten", dirPresent = false)
+        val healthy = record("intact", dirPresent = true)
+        store.add(dangling)
+        store.add(healthy)
+        prefs._wipedRepairCapturedActive.value = "external:forgotten"
+        prefs._wipedRepairCapturedPin.value = "external:forgotten"
+        val deleter = ExternalModelDeleter(store, prefs)
+
+        val repairer = ExternalImportRepairer(store, prefs, deleter, reimport = reimport)
+        val removed = repairer.forgetWipedImports()
+
+        assertEquals(listOf("forgotten"), removed)
+        // Only the intact record survives; the snapshot lived for a repair
+        // that will never run.
+        assertEquals(listOf("intact"), store.records().map { it.id })
+        assertEquals("", prefs._wipedRepairCapturedActive.value)
+        assertEquals("", prefs._wipedRepairCapturedPin.value)
+    }
+
+    @Test
+    fun `forget spares non-url, quarantined, and intact records`() = runTest {
+        val localImport = record("local", dirPresent = false, source = ExternalModelSource.LOCAL, sourceUrl = null)
+        val parked = record("parked", dirPresent = false, quarantined = true)
+        val intact = record("intact", dirPresent = true)
+        store.add(localImport)
+        store.add(parked)
+        store.add(intact)
+        val deleter = ExternalModelDeleter(store, prefs)
+
+        val repairer = ExternalImportRepairer(store, prefs, deleter, reimport = reimport)
+        val removed = repairer.forgetWipedImports()
+
+        assertEquals(emptyList<String>(), removed)
+        assertEquals(setOf("local", "parked", "intact"), store.records().map { it.id }.toSet())
+    }
+
+    @Test
+    fun `a record whose files came back is not forgotten`() = runTest {
+        // A hand re-import landing before the Forget tap (the dir exists
+        // again): the scan drops the record and the delete-loop's
+        // loadability re-check backs it up (the same guard the dead-source
+        // Remove arm carries for the true interleaving).
+        val rec = record("back", dirPresent = false)
+        store.add(rec)
+        java.io.File(rec.dir).mkdirs()
+        val deleter = ExternalModelDeleter(store, prefs)
+
+        val repairer = ExternalImportRepairer(store, prefs, deleter, reimport = reimport)
+        val removed = repairer.forgetWipedImports()
+
+        assertEquals(emptyList<String>(), removed)
+        assertEquals(1, store.records().size)
+    }
+
     @Test
     fun `the production reimport routes through the metadata carrier with the record's own flags`() = runTest {
         val streamingRecord = record(

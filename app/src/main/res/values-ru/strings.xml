@@ -1399,6 +1399,10 @@
     <string name="notification_channel_model_repair_description">Уведомления, когда системная очистка хранилища удаляет импортированную модель, и о результате восстановления.</string>
     <string name="wiped_imports_title">Системная очистка удалила файлы модели</string>
     <string name="wiped_imports_text">Системная очистка хранилища удалила файлы импортированных моделей (%1$d шт.): %2$s. Нажмите «Восстановить», чтобы скачать их заново из первоисточника.</string>
+    <string name="wiped_banner_title">У импортированных моделей пропали файлы</string>
+    <string name="wiped_banner_text">%1$d импортированных моделей были удалены системным очистителем хранилища. Восстановить скачает их заново; Удалить забудет их.</string>
+    <string name="wiped_forgot_title">Импортированные модели удалены</string>
+    <string name="wiped_forgot_text">Удалено импортированных моделей: %1$d. Вы можете импортировать их снова в любой момент.</string>
     <string name="wiped_imports_names_overflow">+ ещё %1$d</string>
     <string name="wiped_imports_recover_action">Восстановить</string>
     <string name="wiped_imports_recovered_title">Восстановление завершено</string>

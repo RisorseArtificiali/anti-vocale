@@ -237,6 +237,7 @@ class PreferencesManagerImpl(
         val compactResultActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         val languageChipEnabled: Boolean = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         val externalModelsJson: String? = null,
+        val wipedRepairDeadSources: Set<String> = emptySet(),
         val scheduledFoldersJson: String? = null,
         val whatsNewLastShownVersion: Int = PreferencesManager.DEFAULT_WHATS_NEW_LAST_SHOWN_VERSION
     )
@@ -318,6 +319,7 @@ class PreferencesManagerImpl(
         compactResultActions = this[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         languageChipEnabled = this[LANGUAGE_CHIP_ENABLED] ?: PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         externalModelsJson = this[EXTERNAL_MODELS_JSON],
+        wipedRepairDeadSources = this[WIPED_REPAIR_DEAD_SOURCES] ?: emptySet(),
         scheduledFoldersJson = this[SCHEDULED_FOLDERS_JSON],
         whatsNewLastShownVersion =
             this[WHATS_NEW_LAST_SHOWN_VERSION] ?: PreferencesManager.DEFAULT_WHATS_NEW_LAST_SHOWN_VERSION
@@ -507,6 +509,14 @@ class PreferencesManagerImpl(
         dataStore.data.map { preferences ->
             preferences[WIPED_REPAIR_DEAD_SOURCES] ?: emptySet()
         }
+            // The warm cache first (same discipline as externalModelsJson:
+            // the external-models state chain combines this flow with the
+            // records, and must not wait a cold DataStore read to show the
+            // imported cards), then the same-value skip: DataStore re-emits
+            // the whole map on every unrelated write and downstream would
+            // re-derive on each.
+            .onStart { emit(cache.get().wipedRepairDeadSources) }
+            .distinctUntilChanged()
 
     override suspend fun saveWipedRepairDeadSources(ids: Set<String>) {
         dataStore.edit { preferences ->
