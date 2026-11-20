@@ -1,6 +1,6 @@
-• New: Ask AI, question your saved transcripts, answered on-device (needs Gemma)
-• New: personal dictionary steers transcription toward your names and terms
-• New: summary presets: recap, action items, meeting minutes, or custom
-• New in the catalog: Persian streaming, Finnish, compact Parakeet; Qwen3 downloads 35% less
-• New: model cards state how each model fits your phone's RAM
-• Improved: similar-words search now matches Russian and Greek
+• New: Ask AI answers questions about your transcripts (needs Gemma)
+• New: a personal dictionary steers transcription toward your terms
+• New: "Suggested for your phone" picks models your device handles well
+• New: cleaner-deleted models get a recovery banner: recover or forget in one tap
+• New: summary presets: recap, actions, minutes, custom
+• New: catalog: Persian streaming, Finnish, lighter Qwen3

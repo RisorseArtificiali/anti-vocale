@@ -1,6 +1,6 @@
-• Nuovo: Ask AI, domande sulle trascrizioni salvate, risposte sul dispositivo (serve Gemma)
-• Nuovo: il dizionario personale orienta la trascrizione verso nomi e termini tuoi
-• Nuovo: preset di riepilogo: sintesi, azioni, verbali o personalizzato
-• Nuovo nel catalogo: farsi in streaming, finlandese, Parakeet compatto; Qwen3 più leggero del 35%
-• Nuovo: le schede modelli dichiarano l'adeguatezza alla RAM
-• Migliorato: la ricerca di parole simili trova anche russo e greco
+• Nuovo: Chiedi all'AI risponde sulle tue trascrizioni (richiede Gemma)
+• Nuovo: il dizionario personale orienta la trascrizione verso i tuoi termini
+• Nuovo: "Suggeriti per il tuo telefono" sceglie i modelli che il device regge bene
+• Nuovo: banner di recupero per i modelli cancellati dai pulitori: un tocco
+• Nuovo: preset di riepilogo: punti, azioni, verbali, personalizzato
+• Nuovo nel catalogo: persiano in streaming, finlandese, Qwen3 leggero

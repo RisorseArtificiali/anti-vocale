@@ -1,11 +1,11 @@
 <en-US>
 What's new in 1.17.0:
-• New: Ask AI, question your saved transcripts, answered on-device (needs Gemma)
-• New: personal dictionary steers transcription toward your names and terms
-• New: summary presets: recap, action items, meeting minutes, or custom
-• New in the catalog: Persian streaming, Finnish, compact Parakeet; Qwen3 downloads 35% less
-• New: model cards state how each model fits your phone's RAM
-• Improved: similar-words search now matches Russian and Greek
+• New: Ask AI answers questions about your transcripts (needs Gemma)
+• New: a personal dictionary steers transcription toward your terms
+• New: "Suggested for your phone" picks models your device handles well
+• New: cleaner-deleted models get a recovery banner: recover or forget in one tap
+• New: summary presets: recap, actions, minutes, custom
+• New: catalog: Persian streaming, Finnish, lighter Qwen3
 What's new in 1.16.1:
 • Fixed: the default Parakeet model download failed its integrity check after the publisher replaced the files; downloads now use our verified mirror
 • Fixed: a rare crash when resuming from a notification on some devices
@@ -67,16 +67,13 @@ What's new in 1.12.0:
 • Fixed: clearer low-memory and corrupt-model errors</en-US>
 
 <it-IT>
-Novità in 1.17.0:
-• Nuovo: Ask AI, domande sulle trascrizioni salvate, risposte sul dispositivo (serve Gemma)
-• Nuovo: il dizionario personale orienta la trascrizione verso nomi e termini tuoi
-• Nuovo: preset di riepilogo: sintesi, azioni, verbali o personalizzato
-• Nuovo nel catalogo: farsi in streaming, finlandese, Parakeet compatto; Qwen3 più leggero del 35%
-• Nuovo: le schede modelli dichiarano l'adeguatezza alla RAM
-• Migliorato: la ricerca di parole simili trova anche russo e greco
-Novità della versione 1.16.1:
-• Corretto: il download del modello Parakeet predefinito falliva il controllo di integrità dopo la sostituzione dei file upstream; i download usano ora il nostro mirror verificato
-• Corretto: un raro crash alla riapertura da notifica su alcuni dispositivi
+Novità della versione 1.17.0:
+• Nuovo: Chiedi all'AI risponde sulle tue trascrizioni (richiede Gemma)
+• Nuovo: il dizionario personale orienta la trascrizione verso i tuoi termini
+• Nuovo: "Suggeriti per il tuo telefono" sceglie i modelli che il device regge bene
+• Nuovo: banner di recupero per i modelli cancellati dai pulitori: un tocco
+• Nuovo: preset di riepilogo: punti, azioni, verbali, personalizzato
+• Nuovo nel catalogo: persiano in streaming, finlandese, Qwen3 leggero
 Novità della versione 1.16.0:
 • Nuovo: se un pulitore del telefono cancella i modelli scaricati, l'app se ne accorge e li ripristina con un tocco
 • Nuovi modelli: Parakeet Ultra (20% più accurato), Fritter streaming inglese, Sabich, fine-tune francese e tedesco
@@ -340,16 +337,13 @@ Novità dalla versione 1.0.3:
 • Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)</it-IT>
 
 <de-DE>
-Neu in 1.17.0:
-• Neu: Ask AI, Fragen zu gespeicherten Transkripten, auf dem Gerät beantwortet (benötigt Gemma)
-• Neu: das persönliche Wörterbuch lenkt die Transkription auf deine Namen und Begriffe
-• Neu: Zusammenfassungs-Presets: Zusammenfassung, Aufgaben, Protokoll oder eigene
-• Neu im Katalog: Persisch streaming, Finnisch, kompakter Parakeet; Qwen3 35% kleiner
-• Neu: Modellkarten nennen die RAM-Eignung
-• Verbessert: die Suche nach ähnlichen Wörtern trifft jetzt auch Russisch und Griechisch
-Neuigkeiten in Version 1.16.1:
-• Behoben: Der Download des Standard-Parakeet-Modells scheiterte an der Integritätsprüfung, nachdem der Herausgeber die Dateien ausgetauscht hatte; Downloads nutzen jetzt unseren geprüften Mirror
-• Behoben: seltener Absturz beim Fortsetzen aus einer Benachrichtigung auf einigen Geräten
+Neuigkeiten in Version 1.17.0:
+• Neu: KI-Befragung beantwortet Fragen zu Ihren Transkripten (benötigt Gemma)
+• Neu: das persönliche Wörterbuch lenkt die Transkription auf Ihre Begriffe
+• Neu: „Empfohlen für Ihr Telefon“ wählt Modelle, die Ihr Gerät gut schafft
+• Neu: Wiederherstellungs-Banner für vom Cleaner gelöschte Modelle
+• Neu: Zusammenfassungs-Vorlagen: Kurzinfo, Aufgaben, Protokoll, eigene
+• Neu im Katalog: Persisch streaming, Finnisch; Qwen3 kleiner
 Neuigkeiten in Version 1.16.0:
 • Neu: löscht ein Handy-Reiniger heruntergeladene Modelle, merkt die App es und stellt sie mit einem Tipp wieder her
 • Neue Modelle: Parakeet Ultra (rund 20% genauer), Fritter (streaming Englisch), Sabich, Französisch- und Deutsch-Feintuning
@@ -378,16 +372,13 @@ Neuigkeiten in Version 1.14.0:
 • Verbessert: kompakter Erweitert-Bereich, Gemma-Downloads auf eigener Seite</de-DE>
 
 <es-ES>
-Novedades de 1.17.0:
-• Nuevo: Ask AI, pregunta a tus transcripciones guardadas, respuestas en el dispositivo (requiere Gemma)
-• Nuevo: el diccionario personal orienta la transcripción a tus nombres y términos
-• Nuevo: preajustes de resumen: resumen, acciones, acta o personalizado
-• Nuevo en el catálogo: persa en streaming, finlandés, Parakeet compacto; Qwen3 35% menor
-• Nuevo: las fichas indican la adecuación a tu RAM
-• Mejorado: la búsqueda de palabras similares ahora cubre ruso y griego
-Novedades de la versión 1.16.1:
-• Corregido: la descarga del modelo Parakeet predeterminado fallaba la comprobación de integridad tras que quien lo publica reemplazara los archivos; las descargas usan ahora nuestro mirror verificado
-• Corregido: un fallo poco frecuente al reanudar desde una notificación en algunos dispositivos
+Novedades de la versión 1.17.0:
+• Nuevo: Pregunta a la AI responde sobre tus transcripciones (requiere Gemma)
+• Nuevo: el diccionario personal orienta la transcripción hacia tus términos
+• Nuevo: "Sugeridos para tu teléfono" elige modelos que tu equipo maneja bien
+• Nuevo: banner de recuperación para modelos borrados por limpiadores
+• Nuevo: presets de resumen: puntos, tareas, actas, personalizado
+• Nuevo en el catálogo: persa en streaming, finés, Qwen3 más liviano
 Novedades de la versión 1.16.0:
 • Nuevo: si un limpiador del teléfono borra los modelos descargados, la app lo nota y los restaura con un toque
 • Modelos nuevos: Parakeet Ultra (20% más preciso), Fritter streaming en inglés, Sabich, ajustes de francés y alemán
@@ -416,16 +407,13 @@ Novedades de la versión 1.14.0:
 • Mejorado: sección Avanzado compacta, descargas de Gemma en su propia página</es-ES>
 
 <fr-FR>
-Nouveautés de 1.17.0 :
-• Nouveau : Ask AI, questionnez vos transcriptions, réponses sur l'appareil (Gemma requis)
-• Nouveau : le dictionnaire personnel oriente la transcription vers vos noms et termes
-• Nouveau : préréglages : résumé, points d'action, compte rendu ou personnalisé
-• Nouveau au catalogue : persan streaming, finnois, Parakeet compact ; Qwen3 35% plus léger
-• Nouveau : les fiches indiquent l'adéquation à votre RAM
-• Amélioré : la recherche de mots similaires couvre russe et grec
-Nouveautés de la version 1.16.1 :
-• Corrigé : le téléchargement du modèle Parakeet par défaut échouait à la vérification d'intégrité après que l'éditeur a remplacé les fichiers ; les téléchargements utilisent désormais notre miroir vérifié
-• Corrigé : un plantage rare à la reprise depuis une notification sur certains appareils
+Nouveautés de la version 1.17.0 :
+• Nouveau : Demander à l'AI répond sur vos transcriptions (nécessite Gemma)
+• Nouveau : le dictionnaire personnel oriente la transcription vers vos termes
+• Nouveau : « Suggérés pour votre téléphone » choisit les modèles adaptés
+• Nouveau : bannière pour récupérer les modèles supprimés par un nettoyeur
+• Nouveau : modèles de résumé : points, actions, compte rendu, perso
+• Nouveau au catalogue : persan en streaming, finnois, Qwen3 allégé
 Nouveautés de la version 1.16.0 :
 • Nouveau : si un nettoyeur supprime les modèles téléchargés, l'appli le remarque et les restaure en un geste
 • Nouveaux modèles : Parakeet Ultra (20 % plus précis), Fritter streaming anglais, Sabich, affinages français et allemand
@@ -455,12 +443,12 @@ Nouveautés de la version 1.14.0 :
 
 <pt-BR>
 Novidades da versão 1.17.0:
-• Novo: Ask AI, pergunte às suas transcrições salvas, com respostas no aparelho (requer Gemma)
-• Novo: o dicionário pessoal orienta a transcrição para seus nomes e termos
-• Novo: predefinições de resumo: resumo, itens de ação, ata ou personalizado
-• Novo no catálogo: persa em streaming, finlandês, Parakeet compacto; Qwen3 pesa 35% menos
-• Novo: as fichas indicam a adequação à RAM do telefone
-• Melhorado: a busca por palavras semelhantes agora cobre russo e grego
+• Novo: Pergunte à AI responde sobre suas transcrições (precisa de Gemma)
+• Novo: o dicionário pessoal direciona a transcrição para seus termos
+• Novo: "Sugeridos para o seu telefone" escolhe modelos que o aparelho roda bem
+• Novo: banner de recuperação para modelos apagados por limpadores
+• Novo: predefinições de resumo: pontos, ações, ata, personalizado
+• Novo no catálogo: persa em streaming, finlandês, Qwen3 menor
 Novidades da versão 1.16.1:
 • Corrigido: o download do modelo Parakeet padrão falhava na verificação de integridade depois que o publicador substituiu os arquivos; os downloads agora usam nosso mirror verificado
 • Corrigido: uma falha rara ao retomar de uma notificação em alguns dispositivos
@@ -492,16 +480,13 @@ Novidades da versão 1.14.0:
 • Melhorado: seção Avançada compacta, downloads do Gemma em página própria</pt-BR>
 
 <ru-RU>
-Что нового в 1.17.0:
-• Новое: Ask AI, вопросы к сохранённым расшифровкам, ответы на устройстве (нужна Gemma)
-• Новое: личный словарь направляет расшифровку к вашим именам и терминам
-• Новое: пресеты резюме: краткое содержание, пункты задач, протокол или своё
-• Новое в каталоге: персидский потоковый, финский, компактный Parakeet; Qwen3 меньше на 35%
-• Новое: карточки моделей указывают соответствие RAM телефона
-• Улучшено: поиск похожих слов теперь работает и для русского с греческим
-Что нового в версии 1.16.1:
-• Исправлено: загрузка модели Parakeet по умолчанию не проходила проверку целостности после того, как издатель заменил файлы; загрузки теперь идут с нашего проверенного зеркала
-• Исправлено: редкий сбой при возобновлении из уведомления на некоторых устройствах
+Что нового в версии 1.17.0:
+• Новое: «Спросить ИИ» отвечает по вашим расшифровкам (нужна Gemma)
+• Новое: личный словарь направляет расшифровку на ваши термины
+• Новое: «Рекомендовано для вашего телефона» выбирает посильные модели
+• Новое: баннер восстановления для моделей, удалённых очистителем
+• Новое: шаблоны итогов: тезисы, задачи, протокол, свой
+• Новое в каталоге: персидский потоковый, финский; Qwen3 меньше
 Что нового в версии 1.16.0:
 • Новое: если системный очиститель удалит скачанные модели, приложение заметит и вернёт их одним нажатием
 • Новые модели: Parakeet Ultra (примерно на 20% точнее), Fritter (стриминг английского), Sabich, французская и немецкая дообученные версии
@@ -530,16 +515,13 @@ Novidades da versão 1.14.0:
 • Улучшено: компактный раздел «Дополнительно», загрузки Gemma на отдельной странице</ru-RU>
 
 <tr-TR>
-1.17.0 sürümündeki yenilikler:
-• Yeni: Ask AI, kayıtlı transkriptlerinize sorular sorun, yanıtlar cihazda verilir (Gemma gerekir)
-• Yeni: kişisel sözlük, transkripsiyonu adlarınıza ve terimlerinize yönlendirir
-• Yeni: özet ön ayarları: özet, eylem maddeleri, tutanak veya özel
-• Katalogda yeni: akışlı Farsça, Fince, kompakt Parakeet; Qwen3 %35 daha küçük
-• Yeni: model kartları telefonunuzun RAM'ine uygunluğu belirtir
-• İyileştirildi: benzer kelimeler arama artık Rusça ve Yunanca'da da çalışıyor
-Sürüm 1.16.1'daki yenilikler:
-• Düzeltildi: yayıncı dosyaları değiştirdikten sonra varsayılan Parakeet modeli indirmesi bütünlük denetiminde başarısız oluyordu; indirmeler artık doğrulanmış mirror'ımızı kullanıyor
-• Düzeltildi: bazı cihazlarda bildirimden dönerken nadir bir çökme
+Sürüm 1.17.0 yenilikler:
+• Yeni: Yapay zekâya sor, deşifreleriniz hakkında yanıtlar (Gemma gerekir)
+• Yeni: kişisel sözlük deşifreyi terimlerinize yönlendirir
+• Yeni: "Telefonunuz için önerilen" cihazınızın rahat çalıştırdığı modelleri seçer
+• Yeni: temizleyicinin sildiği modellere kurtarma bandı
+• Yeni: özet şablonları: özet, görevler, tutanak, özel
+• Katalogda yeni: akışlı Farsça, Fince; Qwen3 daha küçük
 Sürüm 1.16.0'daki yenilikler:
 • Yeni: telefon temizleyicisi indirilen modelleri silerse uygulama fark eder ve tek dokunuşla geri getirir
 • Yeni modeller: Parakeet Ultra (yaklaşık %20 daha isabetli), Fritter İngilizce akış, Sabich, Fransızca ve Almanca ince ayar
@@ -568,16 +550,13 @@ Sürüm 1.14.0'daki yenilikler:
 • İyileştirildi: kompakt Gelişmiş bölümü, Gemma indirmeleri kendi sayfasında</tr-TR>
 
 <pl-PL>
-Nowości w 1.17.0:
-• Nowość: Ask AI, pytaj o zapisane transkrypcje, odpowiedzi na urządzeniu (wymaga Gemma)
-• Nowość: osobisty słownik kieruje transkrypcję ku twoim nazwiskom i terminom
-• Nowość: ustawienia podsumowania: streszczenie, punkty działania, protokół lub własne
-• Nowość w katalogu: perski streaming, fiński, kompaktowy Parakeet; Qwen3 mniejszy o 35%
-• Nowość: karty modeli podają dopasowanie do RAM
-• Ulepszone: wyszukiwanie podobnych słów działa teraz też dla rosyjskiego i greckiego
-Nowości w wersji 1.16.1:
-• Naprawiono: pobieranie domyślnego modelu Parakeet nie przechodziło kontroli integralności po wymianie plików przez wydawcę; pobierania korzystają teraz z naszego zweryfikowanego mirrora
-• Naprawiono: rzadka awaria przy wznawianiu z powiadomienia na niektórych urządzeniach
+Nowości w wersji 1.17.0:
+• Nowość: Zapytaj AI odpowiada o Twoje transkrypcje (wymaga Gemma)
+• Nowość: osobisty słownik kieruje transkrypcję na Twoje terminy
+• Nowość: „Sugerowane dla telefonu” wybiera modele, które urządzenie udźwignie
+• Nowość: baner odzyskiwania dla modeli usuniętych przez czyściciel
+• Nowość: szablony podsumowań: streszczenie, zadania, protokół, własny
+• Nowość w katalogu: perski strumieniowy, fiński; Qwen3 mniejszy
 Nowości w wersji 1.16.0:
 • Nowość: jeśli czyścicz telefonu usunie pobrane modele, aplikacja to zauważy i przywróci je jednym dotknięciem
 • Nowe modele: Parakeet Ultra (ok. 20% dokładniejszy), Fritter streaming po angielsku, Sabich, dostrajanie francuskie i niemieckie
@@ -606,16 +585,13 @@ Nowości w wersji 1.14.0:
 • Ulepszone: kompaktowa sekcja Zaawansowane, pobieranie Gemma na osobnej stronie</pl-PL>
 
 <hi-IN>
-1.17.0 में नया क्या है:
-• नया: Ask AI, अपनी सहेजी ट्रांसक्रिप्ट पर सवाल पूछें, जवाब डिवाइस पर मिलते हैं (Gemma आवश्यक)
-• नया: पर्सनल डिक्शनरी ट्रांसक्रिप्शन को आपके नामों और शब्दों की ओर मोड़ती है
-• नया: सारांश प्रीसेट: सारांश, कार्रवाई बिंदु, बैठक नोट्स या कस्टम
-• कैटलॉग में नया: स्ट्रीमिंग फ़ारसी, फ़िनिश, कॉम्पैक्ट Parakeet; Qwen3 35% छोटा
-• नया: मॉडल कार्ड फ़ोन की RAM के अनुसार उपयुक्तता बताते हैं
-• सुधार: समान शब्द खोज अब रूसी और यूनानी में भी काम करती है
-संस्करण 1.16.1 में नया क्या है:
-• सुधार: प्रकाशक द्वारा फ़ाइलें बदले जाने के बाद डिफ़ॉल्ट Parakeet मॉडल डाउनलोड अखंडता जाँच में विफल हो रहा था; डाउनलोड अब हमारे सत्यापित मिरर का उपयोग करते हैं
-• सुधार: कुछ डिवाइस पर सूचना से लौटते समय एक दुर्लभ क्रैश
+संस्करण 1.17.0 में नया क्या है:
+• नया: Ask AI आपकी ट्रांसक्रिप्शन के बारे में जवाब देता है (Gemma चाहिए)
+• नया: निजी शब्दकोश ट्रांसक्रिप्शन को आपके शब्दों की ओर मोड़ता है
+• नया: "आपके फ़ोन के लिए सुझाए गए" वे मॉडल चुनता है जिन्हें डिवाइस आराम से चलाता है
+• नया: क्लीनर से मिटे मॉडलों पर रिकवरी बैनर: एक टैप में पुनर्प्राप्त करें या भूलें
+• नया: सारांश प्रीसेट: बिंदु, कार्य, नोट्स, अपना
+• कैटलॉग में नया: स्ट्रीमिंग फ़ारसी, फ़िनिश, हल्का Qwen3
 संस्करण 1.16.0 में नया क्या है:
 • नया: फ़ोन का क्लीनर डाउनलोड किए मॉडल मिटा दे, तो ऐप इसे पकड़ती है और एक टैप में उन्हें वापस ला देती है
 • नए मॉडल: Parakeet Ultra (करीब 20% ज़्यादा सटीक), Fritter स्ट्रीमिंग अंग्रेज़ी, Sabich, फ़्रेंच और जर्मन फ़ाइन-ट्यून
@@ -644,16 +620,13 @@ Nowości w wersji 1.14.0:
 • बेहतर: कॉम्पैक्ट एडवांस्ड सेक्शन, Gemma डाउनलोड अलग पेज पर</hi-IN>
 
 <uk>
-Що нового у 1.17.0:
-• Нове: Ask AI, ставте запитання до збережених розшифровок, відповіді на пристрої (потрібна Gemma)
-• Нове: особистий словник спрямовує розшифровку на ваші імена та терміни
-• Нове: пресети резюме: стислий підсумок, пункти дій, протокол або власний
-• Нове в каталозі: перська потокова, фінська, компактний Parakeet; Qwen3 менший на 35%
-• Нове: картки моделей вказують відповідність RAM телефону
-• Покращено: пошук схожих слів тепер працює і для російської та грецької
-Новинки версії 1.16.1:
-• Виправлено: завантаження стандартної моделі Parakeet не проходило перевірку цілісності після того, як видавець замінив файли; завантаження тепер йдуть з нашого перевіреного дзеркала
-• Виправлено: рідкісний збій при відновленні зі сповіщення на деяких пристроях
+Новинки версії 1.17.0:
+• Нове: «Запитати ШІ» відповідає за вашими розшифровками (потрібна Gemma)
+• Нове: особистий словник спрямовує розшифровку на ваші терміни
+• Нове: «Пропоновано для вашого телефону» обирає моделі, які пристрій підтягує
+• Нове: банер відновлення для моделей, видалених чистильником
+• Нове: шаблони підсумків: тези, завдання, протокол, власний
+• Нове в каталозі: перська потокова, фінська; Qwen3 менше
 Новинки версії 1.16.0:
 • Нове: якщо системний чистильник видалить завантажені моделі, застосунок помітить і поверне їх одним дотиком
 • Нові моделі: Parakeet Ultra (приблизно на 20% точніший), Fritter (стримінг англійської), Sabich, французька та німецька донавчені версії
@@ -682,12 +655,12 @@ Nowości w wersji 1.14.0:
 • Покращено: компактний розділ «Додатково», завантаження Gemma на окремій сторінці</uk>
 <he-IL>
 מה חדש בגרסה 1.17.0:
-• חדש: Ask AI, שאלו שאלות על התמלילים השמורים, התשובות ניתנות במכשיר (דורש Gemma)
-• חדש: המילון האישי מכוון את התמלול אל השמות והמונחים שלכם
-• חדש: הגדרות סיכום: תקציר, סעיפי פעולה, פרוטוקול או מותאם אישית
-• חדש בקטלוג: פרסית בזרימה, פינית, Parakeet קומפקטי; Qwen3 קטן ב-35%
-• חדש: כרטיסי הדגמים מציינים התאמה לזיכרון הטלפון
-• שופר: חיפוש מילים דומות עובד עכשיו גם ברוסית וביוונית
+• חדש: לשאול את ה־AI עונה על התמלילים שלך (דורש Gemma)
+• חדש: המילון האישי מכוון את התמליל למונחים שלך
+• חדש: „מומלץ לטלפון שלך” בוחר דגמים שהמכשיר מריץ בקלות
+• חדש: דגמים שנמחקו על ידי מנקה מקבלים כרזת שחזור: שחזור או שכחה בנגיעה
+• חדש: תבניות סיכום: נקודות, משימות, פרוטוקול, מותאם
+• חדש בקטלוג: פרסית בזרימה, פינית, Qwen3 קטן
 מה חדש בגרסה 1.16.1:
 • תוקן: הורדת ברירת המחדל של דגם Parakeet נכשלה בבדיקת התקינות לאחר שהמפרסם החליף את הקבצים; ההורדות משתמשות כעת במראה המאומתת שלנו
 • תוקן: קריסה נדירה בחזרה מהתראה בחלק מהמכשירים
@@ -718,16 +691,13 @@ Nowości w wersji 1.14.0:
 • חדש: ממשק בסינית; קטלוג הקהילה מעל 30 מודלים, מסונן לפי שפה
 • שופר: מקטע מתקדם קומפקטי, הורדות Gemma בעמוד משלהן</he-IL>
 <fa-IR>
-چه خبر در 1.17.0:
-• جدید: Ask AI، از رونوشت‌های ذخیره‌شده سؤال بپرسید، پاسخ‌ها روی دستگاه داده می‌شود (نیازمند Gemma)
-• جدید: واژه‌نامه شخصی رونویسی را به سمت نام‌ها و اصطلاح‌های شما هدایت می‌کند
-• جدید: پیش‌تنظیم‌های خلاصه: خلاصه، اقدامها، صورت‌جلسه یا سفارشی
-• جدید در کاتالوگ: فارسی جریانی، فنلاندی، Parakeet فشرده؛ Qwen3 سی‌وپنج درصد کوچک‌تر
-• جدید: کارت مدل‌ها تناسب با رم گوشی را می‌گوید
-• بهبود: جست‌وجی واژه‌های مشابه حالا روسی و یونانی را هم می‌یابد
-چه چیز جدید‌های نسخه 1.16.1:
-• رفع اشکال: دانلود مدل پیش‌فرض Parakeet پس از جایگزینی فایل‌ها توسط ناشر در بررسی یکپارچگی شکست می‌خورد؛ دانلودها اکنون از میرور تأییدشده ما استفاده می‌کنند
-• رفع اشکال: کرش نادر هنگام بازگشت از یک اعلان روی برخی دستگاه‌ها
+چه چیز جدید‌های نسخه 1.17.0:
+• جدید: پرسش از هوش مصنوعی درباره رونوشت‌هایتان پاسخ می‌دهد (نیازمند Gemma)
+• جدید: واژه‌نامه شخصی رونویسی را به سمت اصطلاحات شما می‌برد
+• جدید: «پیشنهاد برای گوشی شما» مدل‌هایی را برمی‌گزیند که دستگاه راحت اجرا می‌کند
+• جدید: بنر بازیابی برای مدل‌های پاک‌شده توسط پاک‌کننده: یک لمس
+• جدید: قالب‌های خلاصه: نکات، اقدام‌ها، صورت‌جلسه، سفارشی
+• جدید در کاتالوگ: فارسی جریانی، فنلاندی، Qwen3 کوچک‌تر
 چه چیز جدید‌های نسخه 1.16.0:
 • جدید: اگر پاک‌کننده‌ی گوشی مدل‌های دانلودشده را پاک کند، برنامه متوجه می‌شود و با یک لمس آن‌ها را برمی‌گرداند
 • مدل‌های جدید: Parakeet Ultra (حدود ۲۰٪ دقیق‌تر)، Fritter استریم انگلیسی، Sabich، تنظیم دقیق فرانسوی و آلمانی
@@ -755,16 +725,13 @@ Nowości w wersji 1.14.0:
 • جدید: رابط چینی؛ کاتالوگ جامعه بالای 30 مدل، فیلتر زبان
 • بهبود: بخش پیشرفته فشرده، دانلودهای Gemma در صفحه خودشان</fa-IR>
 <zh-CN>
-1.17.0 更新内容：
-• 新增：Ask AI，向已保存的转写文本提问，答案在设备上生成（需要 Gemma）
-• 新增：个人词典引导转写偏向你的姓名和术语
-• 新增：摘要预设：普通摘要、行动项、会议纪要或自定义
-• 目录新增：流式波斯语、芬兰语、紧凑版 Parakeet；Qwen3 体积缩小 35%
-• 新增：模型卡片标明与手机内存的匹配度
-• 改进：相似词搜索现支持俄语和希腊语
-1.16.1 版本更新：
-• 修复：模型发布者更换文件后，默认 Parakeet 模型下载未能通过完整性校验；下载现在使用我们已验证的镜像
-• 修复：部分设备上从通知恢复时的偶发崩溃
+1.17.0 版本更新:
+• 新增：问 AI 可解答关于已存转写的问题（需要 Gemma）
+• 新增：个人词典让转写偏向您的术语
+• 新增：“为您的手机推荐”挑出设备轻松运行的模型
+• 新增：被清理工具删除的模型显示恢复横幅：一键恢复或忘记
+• 新增：摘要预设：要点、任务、纪要、自定义
+• 目录新增：流式波斯语、芬兰语、更轻的 Qwen3
 1.16.0 版本更新：
 • 新增：手机清理工具误删已下载的模型时，应用会发现并一键恢复
 • 新模型：Parakeet Ultra（准确率约高 20%）、Fritter 英语流式、Sabich、法语和德语微调版

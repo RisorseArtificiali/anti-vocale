@@ -1,6 +1,6 @@
-• Neu: Ask AI, Fragen zu gespeicherten Transkripten, auf dem Gerät beantwortet (benötigt Gemma)
-• Neu: das persönliche Wörterbuch lenkt die Transkription auf deine Namen und Begriffe
-• Neu: Zusammenfassungs-Presets: Zusammenfassung, Aufgaben, Protokoll oder eigene
-• Neu im Katalog: Persisch streaming, Finnisch, kompakter Parakeet; Qwen3 35% kleiner
-• Neu: Modellkarten nennen die RAM-Eignung
-• Verbessert: die Suche nach ähnlichen Wörtern trifft jetzt auch Russisch und Griechisch
+• Neu: KI-Befragung beantwortet Fragen zu Ihren Transkripten (benötigt Gemma)
+• Neu: das persönliche Wörterbuch lenkt die Transkription auf Ihre Begriffe
+• Neu: „Empfohlen für Ihr Telefon“ wählt Modelle, die Ihr Gerät gut schafft
+• Neu: Wiederherstellungs-Banner für vom Cleaner gelöschte Modelle
+• Neu: Zusammenfassungs-Vorlagen: Kurzinfo, Aufgaben, Protokoll, eigene
+• Neu im Katalog: Persisch streaming, Finnisch; Qwen3 kleiner

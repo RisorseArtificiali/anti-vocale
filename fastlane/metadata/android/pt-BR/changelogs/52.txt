@@ -1,6 +1,6 @@
-• Novo: Ask AI, pergunte às suas transcrições salvas, com respostas no aparelho (requer Gemma)
-• Novo: o dicionário pessoal orienta a transcrição para seus nomes e termos
-• Novo: predefinições de resumo: resumo, itens de ação, ata ou personalizado
-• Novo no catálogo: persa em streaming, finlandês, Parakeet compacto; Qwen3 pesa 35% menos
-• Novo: as fichas indicam a adequação à RAM do telefone
-• Melhorado: a busca por palavras semelhantes agora cobre russo e grego
+• Novo: Pergunte à AI responde sobre suas transcrições (precisa de Gemma)
+• Novo: o dicionário pessoal direciona a transcrição para seus termos
+• Novo: "Sugeridos para o seu telefone" escolhe modelos que o aparelho roda bem
+• Novo: banner de recuperação para modelos apagados por limpadores
+• Novo: predefinições de resumo: pontos, ações, ata, personalizado
+• Novo no catálogo: persa em streaming, finlandês, Qwen3 menor

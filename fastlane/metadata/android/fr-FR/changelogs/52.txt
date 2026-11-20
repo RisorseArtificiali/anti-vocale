@@ -1,6 +1,6 @@
-• Nouveau : Ask AI, questionnez vos transcriptions, réponses sur l'appareil (Gemma requis)
-• Nouveau : le dictionnaire personnel oriente la transcription vers vos noms et termes
-• Nouveau : préréglages : résumé, points d'action, compte rendu ou personnalisé
-• Nouveau au catalogue : persan streaming, finnois, Parakeet compact ; Qwen3 35% plus léger
-• Nouveau : les fiches indiquent l'adéquation à votre RAM
-• Amélioré : la recherche de mots similaires couvre russe et grec
+• Nouveau : Demander à l'AI répond sur vos transcriptions (nécessite Gemma)
+• Nouveau : le dictionnaire personnel oriente la transcription vers vos termes
+• Nouveau : « Suggérés pour votre téléphone » choisit les modèles adaptés
+• Nouveau : bannière pour récupérer les modèles supprimés par un nettoyeur
+• Nouveau : modèles de résumé : points, actions, compte rendu, perso
+• Nouveau au catalogue : persan en streaming, finnois, Qwen3 allégé

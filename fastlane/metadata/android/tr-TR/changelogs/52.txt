@@ -1,6 +1,6 @@
-• Yeni: Ask AI, kayıtlı transkriptlerinize sorular sorun, yanıtlar cihazda verilir (Gemma gerekir)
-• Yeni: kişisel sözlük, transkripsiyonu adlarınıza ve terimlerinize yönlendirir
-• Yeni: özet ön ayarları: özet, eylem maddeleri, tutanak veya özel
-• Katalogda yeni: akışlı Farsça, Fince, kompakt Parakeet; Qwen3 %35 daha küçük
-• Yeni: model kartları telefonunuzun RAM'ine uygunluğu belirtir
-• İyileştirildi: benzer kelimeler arama artık Rusça ve Yunanca'da da çalışıyor
+• Yeni: Yapay zekâya sor, deşifreleriniz hakkında yanıtlar (Gemma gerekir)
+• Yeni: kişisel sözlük deşifreyi terimlerinize yönlendirir
+• Yeni: "Telefonunuz için önerilen" cihazınızın rahat çalıştırdığı modelleri seçer
+• Yeni: temizleyicinin sildiği modellere kurtarma bandı
+• Yeni: özet şablonları: özet, görevler, tutanak, özel
+• Katalogda yeni: akışlı Farsça, Fince; Qwen3 daha küçük
