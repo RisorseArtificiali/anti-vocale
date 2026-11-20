@@ -1371,7 +1371,7 @@
     <string name="wiped_imports_title">Systembereinigung hat Modelldateien gelöscht</string>
     <string name="wiped_imports_text">Ein System-Speicherbereiniger hat die Dateien von %1$d importierten Modell(en) gelöscht: %2$s. Tippe auf Wiederherstellen, um sie erneut von der ursprünglichen Quelle herunterzuladen.</string>
     <string name="wiped_banner_title">Importierte Modelle haben ihre Dateien verloren</string>
-    <string name="wiped_banner_text">%1$d Ihrer importierten Modelle wurden von einer System-Speicherbereinigung gelöscht. Wiederherstellen lädt sie erneut herunter; Entfernen verwirft sie.</string>
+    <string name="wiped_banner_text">Ein System-Speicherbereiniger hat %1$d Ihrer importierten Modelle gelöscht. Wiederherstellen lädt sie erneut herunter; Entfernen verwirft sie.</string>
     <string name="wiped_forgot_title">Importierte Modelle entfernt</string>
     <string name="wiped_forgot_text">%1$d importierte Modelle wurden entfernt. Sie können sie jederzeit wieder importieren.</string>
     <string name="wiped_imports_names_overflow">+ %1$d weitere</string>

@@ -50,11 +50,33 @@ class WipedImportRepairReceiver : BroadcastReceiver() {
             return
         }
         // TASK-1023: the wiped notice's Forget action (the user decides
-        // against recovery BEFORE any repair ran): deletes the currently
-        // dangling set.
+        // against recovery): deletes the currently dangling set. A repair
+        // in flight is CANCELLED first (the forget would otherwise queue on
+        // the single-flight mutex for the whole multi-GB download); the
+        // in-app origin extra swaps the outcome post for a quiet retire of
+        // the actionable notice (the banner's disappearance is the
+        // on-screen acknowledgment).
         if (intent.action == ACTION_FORGET_WIPED_IMPORTS) {
-            launchRemoval(context, "wiped-import forget",
-                post = WipedImportRepairNotifications::postForgot) { repairer.forgetWipedImports() }
+            if (repairer.isRepairInFlight()) {
+                runCatching {
+                    context.startService(
+                        android.content.Intent(
+                            context,
+                            com.antivocale.app.service.WipedImportRepairService::class.java
+                        ).apply {
+                            action = com.antivocale.app.service.WipedImportRepairService.ACTION_CANCEL
+                        })
+                }.onFailure { e -> Log.e(TAG, "Failed to cancel the in-flight repair", e) }
+            }
+            val post: (Context, Int) -> Unit =
+                if (intent.getBooleanExtra(EXTRA_IN_APP_ORIGIN, false)) {
+                    { c, _ -> WipedImportRepairNotifications.cancelActionable(c) }
+                } else {
+                    WipedImportRepairNotifications::postForgot
+                }
+            launchRemoval(context, "wiped-import forget", post = post) {
+                repairer.forgetWipedImports()
+            }
             return
         }
         if (intent.action != ACTION_REPAIR_WIPED_IMPORTS) return
@@ -111,6 +133,11 @@ class WipedImportRepairReceiver : BroadcastReceiver() {
             Intent(context, WipedImportRepairReceiver::class.java).apply {
                 action = ACTION_FORGET_WIPED_IMPORTS
             }
+
+        /** TASK-1023: the banner's button sets this so the outcome stays
+         *  on screen (the notice quietly retires) instead of posting a
+         *  system notification for a tap the user is watching. */
+        const val EXTRA_IN_APP_ORIGIN = "com.antivocale.app.EXTRA_IN_APP_ORIGIN"
     }
 }
 
@@ -245,6 +272,14 @@ object WipedImportRepairNotifications {
     /** TASK-973: the Remove outcome, on the same id. A no-op removal
      *  (stale second tap) posts nothing: a "Removed 0" confirmation would
      *  claim work that did not happen. */
+    /** TASK-1023: retire the actionable notice WITHOUT an outcome post:
+     *  the in-app banner's forget is acknowledged on screen (the banner
+     *  disappears), so the shade notice just goes away instead of gaining
+     *  a system notification for a tap the user watched happen. */
+    fun cancelActionable(context: Context) = runCatching {
+        context.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
+    }
+
     fun postRemoved(context: Context, removedCount: Int) {
         if (removedCount == 0) return
         post(context) {

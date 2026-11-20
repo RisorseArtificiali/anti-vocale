@@ -523,6 +523,11 @@ class PreferencesManagerImpl(
             if (ids.isEmpty()) preferences.remove(WIPED_REPAIR_DEAD_SOURCES)
             else preferences[WIPED_REPAIR_DEAD_SOURCES] = ids
         }
+        // Cache refresh, the sibling saves' rule: the flow's onStart warm
+        // emit makes every in-process first() read the CACHE, so a save
+        // without this would leave the repairer's next scan and Remove
+        // tap reading a stale dead-set (the review round's finding).
+        cache.updateAndGet { it.copy(wipedRepairDeadSources = ids) }
     }
 
     override val wipedRepairCapturedPin: Flow<String> =

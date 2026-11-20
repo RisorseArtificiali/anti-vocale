@@ -1211,7 +1211,7 @@
     <string name="wiped_imports_title">Järjestelmän siivous poisti mallitiedostoja</string>
     <string name="wiped_imports_text">Järjestelmän tallennustilan siivous poisti tuotujen mallien tiedostot (%1$d kpl): %2$s. Napauta Palauta, jolloin ne ladataan uudelleen alkuperäisestä lähteestä.</string>
     <string name="wiped_banner_title">Tuotujen mallien tiedostot puuttuvat</string>
-    <string name="wiped_banner_text">%1$d tuomistasi malleista on poistettu järjestelmän tallennustilan siivouksessa. Palauta lataa ne uudelleen; Poista unhottaa ne.</string>
+    <string name="wiped_banner_text">Järjestelmän tallennustilan siivouja poisti %1$d tuomistasi malleista. Palauta lataa ne uudelleen; Poista unhottaa ne.</string>
     <string name="wiped_forgot_title">Tuodut mallit poistettu</string>
     <string name="wiped_forgot_text">%1$d tuotua mallia poistettiin. Voit tuoda ne uudelleen milloin tahansa.</string>
     <string name="wiped_imports_names_overflow">+ %1$d lisää</string>

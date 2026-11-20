@@ -1376,7 +1376,7 @@
     <string name="wiped_imports_title">پاک‌کننده سیستم فایل‌های مدل را حذف کرد</string>
     <string name="wiped_imports_text">پاک‌کننده فضای ذخیره‌سازی سیستم فایل‌های %1$d مدل واردشده را حذف کرد: %2$s. برای دانلود دوباره از منبع اصلی، «بازیابی» را بزنید.</string>
     <string name="wiped_banner_title">مدل‌های واردشده فایل‌های خود را از دست داده‌اند</string>
-    <string name="wiped_banner_text">%1$d از مدل‌های واردشده شما توسط پاک‌کننده فضای ذخیره‌سازی سیستم حذف شده‌اند. بازیابی دوباره آنها را دانلود می‌کند؛ حذف آنها را فراموش می‌کند.</string>
+    <string name="wiped_banner_text">یک پاک‌کننده فضای ذخیره‌سازی سیستم، %1$d از مدل‌های واردشده شما را حذف کرد. بازیابی دوباره آنها را دانلود می‌کند؛ حذف آنها را فراموش می‌کند.</string>
     <string name="wiped_forgot_title">نمونه‌های واردشده حذف شدند</string>
     <string name="wiped_forgot_text">%1$d نمونه واردشده حذف شد. می‌توانید هر زمان بخواهید دوباره آنها را وارد کنید.</string>
     <string name="wiped_imports_names_overflow">+ %1$d مورد دیگر</string>

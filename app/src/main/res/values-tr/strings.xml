@@ -1371,7 +1371,7 @@
     <string name="wiped_imports_title">Sistem temizleyici model dosyalarını sildi</string>
     <string name="wiped_imports_text">Sistem depolama temizleyicisi %1$d içe aktarılan modelin dosyalarını sildi: %2$s. Orijinal kaynaktan yeniden indirmek için Kurtar düğmesine dokunun.</string>
     <string name="wiped_banner_title">İçe aktarılan modeller dosyalarını kaybetti</string>
-    <string name="wiped_banner_text">İçe aktardığınız %1$d model, sistem depolama temizleyicisi tarafından silindi. Kurtar bunları yeniden indirir; Kaldır bunları unutur.</string>
+    <string name="wiped_banner_text">Bir sistem depolama temizleyicisi, içe aktardığınız %1$d modeli sildi. Kurtar bunları yeniden indirir; Kaldır bunları unutur.</string>
     <string name="wiped_forgot_title">İçe aktarılan modeller kaldırıldı</string>
     <string name="wiped_forgot_text">%1$d içe aktarılan model kaldırıldı. Bunları istediğiniz zaman yeniden içe aktarabilirsiniz.</string>
     <string name="wiped_imports_names_overflow">+ %1$d tane daha</string>

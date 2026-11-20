@@ -1370,7 +1370,7 @@
     <string name="wiped_imports_title">सिस्टम क्लीनर ने मॉडल फ़ाइलें हटाईं</string>
     <string name="wiped_imports_text">सिस्टम स्टोरेज क्लीनर ने %1$d आयातित मॉडल की फ़ाइलें हटा दीं: %2$s. मूल स्रोत से दोबारा डाउनलोड करने के लिए "पुनर्प्राप्त करें" पर टैप करें।</string>
     <string name="wiped_banner_title">इंपोर्ट किए गए मॉडल की फ़ाइलें गायब हैं</string>
-    <string name="wiped_banner_text">आपके %1$d इंपोर्ट किए गए मॉडल सिस्टम स्टोरेज क्लीनर से डिलीट हो गए हैं। पुनर्प्राप्त करें उन्हें फिर से डाउनलोड करता है; हटाएं उन्हें भुला देता है।</string>
+    <string name="wiped_banner_text">सिस्टम स्टोरेज क्लीनर ने आपके %1$d इंपोर्ट किए गए मॉडल हटा दिए हैं। पुनर्प्राप्त करें उन्हें फिर से डाउनलोड करता है; हटाएं उन्हें भुला देता है।</string>
     <string name="wiped_forgot_title">इंपोर्ट किए गए मॉडल हटाए गए</string>
     <string name="wiped_forgot_text">%1$d इंपोर्ट किए गए मॉडल हटाए गए। आप इन्हें किसी भी समय फिर से इंपोर्ट कर सकते हैं।</string>
     <string name="wiped_imports_names_overflow">+ %1$d और</string>

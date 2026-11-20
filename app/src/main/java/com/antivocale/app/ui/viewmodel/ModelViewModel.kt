@@ -2073,9 +2073,13 @@ class ModelViewModel @Inject constructor(
 
     /** TASK-1023: the banner's Forget button rides the SAME broadcast the
      *  notification's Forget PendingIntent carries (the receiver's
-     *  forgetIntent factory): one pipeline, no second orchestration. */
+     *  forgetIntent factory): one pipeline, no second orchestration. The
+     *  in-app origin extra makes the outcome stay on screen (the banner
+     *  disappearing) instead of posting a system notification. */
     fun forgetWipedImports() {
-        ctx.sendBroadcast(WipedImportRepairReceiver.forgetIntent(ctx))
+        ctx.sendBroadcast(
+            WipedImportRepairReceiver.forgetIntent(ctx)
+                .putExtra(WipedImportRepairReceiver.EXTRA_IN_APP_ORIGIN, true))
     }
 
     /** TASK-1023: the banner's Recover button rides the notification's

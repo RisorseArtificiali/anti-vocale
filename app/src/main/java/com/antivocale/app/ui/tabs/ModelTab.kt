@@ -3219,7 +3219,8 @@ private fun WipedImportsBanner(names: List<String>, onRecover: () -> Unit, onFor
         Column(modifier = Modifier.padding(12.dp)) {
             // The whole title row toggles the list (TASK-382's idiom:
             // whole-target clickable, Role.Button, and the expanded state
-            // announced - the row is the focus target, not the chevron).
+            // announced on the ROW, which is the focus target, not the
+            // chevron).
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

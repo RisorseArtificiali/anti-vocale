@@ -1268,7 +1268,7 @@
     <string name="wiped_imports_title">منظّف النظام حذف ملفات النموذج</string>
     <string name="wiped_imports_text">حذف منظّف مساحة التخزين في النظام ملفات نماذج مستوردة عددها %1$d: %2$s. اضغط زر الاسترداد لتنزيلها مرة أخرى من المصدر الأصلي.</string>
     <string name="wiped_banner_title">فقدت النماذج المستوردة ملفاتها</string>
-    <string name="wiped_banner_text">تم حذف %1$d من نماذجك المستوردة بواسطة منظف مساحة التخزين في النظام. الاسترداد يعيد تنزيلها؛ الإزالة تنساها.</string>
+    <string name="wiped_banner_text">قام منظف مساحة التخزين في النظام بحذف %1$d من النماذج المستوردة. الاسترداد يعيد تنزيلها؛ الإزالة تنساها.</string>
     <string name="wiped_forgot_title">تمت إزالة النماذج المستوردة</string>
     <string name="wiped_forgot_text">تمت إزالة %1$d من النماذج المستوردة. يمكنك استيرادها مرة أخرى في أي وقت.</string>
     <string name="wiped_imports_names_overflow">+ %1$d أخرى</string>

@@ -1395,7 +1395,7 @@
     <string name="wiped_imports_title">System cleaner deleted model files</string>
     <string name="wiped_imports_text">%1$d imported model(s) had their files deleted by a system storage cleaner: %2$s. Tap Recover to download them again from the original source.</string>
     <string name="wiped_banner_title">Imported models lost their files</string>
-    <string name="wiped_banner_text">%1$d of your imported models were deleted by a system storage cleaner. Recover downloads them again; Remove forgets them.</string>
+    <string name="wiped_banner_text">A system storage cleaner deleted %1$d of your imported models. Recover downloads them again; Remove forgets them.</string>
     <string name="wiped_forgot_title">Imported models removed</string>
     <string name="wiped_forgot_text">Removed %1$d imported model(s). You can import them again any time.</string>
     <string name="wiped_imports_names_overflow">+ %1$d more</string>

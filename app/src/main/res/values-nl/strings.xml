@@ -1387,7 +1387,7 @@
     <string name="wiped_imports_title">Opschoontool van het systeem verwijderde modelbestanden</string>
     <string name="wiped_imports_text">Een opschoontool van de systeemopslag heeft de bestanden van %1$d geïmporteerd model(len) verwijderd: %2$s. Tik op Herstellen om ze opnieuw te downloaden van de oorspronkelijke bron.</string>
     <string name="wiped_banner_title">Geïmporteerde modellen zijn hun bestanden kwijt</string>
-    <string name="wiped_banner_text">%1$d van je geïmporteerde modellen zijn verwijderd door een systeemopschoner. Herstellen downloadt ze opnieuw; Verwijderen vergeet ze.</string>
+    <string name="wiped_banner_text">Een systeemopschoner heeft %1$d van je geïmporteerde modellen verwijderd. Herstellen downloadt ze opnieuw; Verwijderen vergeet ze.</string>
     <string name="wiped_forgot_title">Geïmporteerde modellen verwijderd</string>
     <string name="wiped_forgot_text">%1$d geïmporteerde modellen zijn verwijderd. Je kunt ze op elk moment opnieuw importeren.</string>
     <string name="wiped_imports_names_overflow">+ %1$d extra</string>

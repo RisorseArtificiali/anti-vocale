@@ -1239,7 +1239,7 @@
     <string name="wiped_imports_title">Un nettoyeur système a supprimé des fichiers de modèle</string>
     <string name="wiped_imports_text">Un nettoyeur de stockage système a supprimé les fichiers de %1$d modèle(s) importé(s) : %2$s. Touchez Récupérer pour les télécharger à nouveau depuis la source d\'origine.</string>
     <string name="wiped_banner_title">Modèles importés sans fichiers</string>
-    <string name="wiped_banner_text">%1$d de vos modèles importés ont été supprimés par un nettoyeur de stockage système. Récupérer les retélécharge ; Supprimer les oublie.</string>
+    <string name="wiped_banner_text">Un nettoyeur de stockage système a supprimé %1$d de vos modèles importés. Récupérer les retélécharge ; Supprimer les oublie.</string>
     <string name="wiped_forgot_title">Modèles importés supprimés</string>
     <string name="wiped_forgot_text">%1$d modèles importés ont été supprimés. Vous pouvez les réimporter à tout moment.</string>
     <string name="wiped_imports_names_overflow">+ %1$d autres</string>

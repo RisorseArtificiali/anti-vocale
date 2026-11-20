@@ -234,21 +234,34 @@ class ExternalImportRepairer(
         sweepJob?.join()
         val candidates = scanWipedImports()
         val removed = mutableListOf<String>()
+        var refused = 0
         for (record in candidates) {
-            if (!store.isLoadable(record) && deleter.delete(record).existed) {
-                removed += record.id
+            if (store.isLoadable(record)) {
+                // The re-import race guard: the record holds fresh files
+                // again, so the delete is refused and it stays recoverable.
+                refused++
+                continue
             }
+            // existed=false: the record vanished by another path; nothing
+            // of it stays dangling either.
+            if (deleter.delete(record).existed) removed += record.id
         }
-        // Every candidate left the loop removed, loadable again, or already
-        // gone, so a full removal clears the selection snapshot (it lived
-        // for a repair that will never run); a partial forget keeps it for
-        // the remaining recover. The count comparison answers what a
-        // re-scan would, minus the I/O.
-        if (removed.size == candidates.size && candidates.isNotEmpty()) {
+        // A refusal is the ONLY outcome that can leave a candidate
+        // dangling, so a refusal-free sweep (every candidate removed or
+        // already gone) is exactly the re-scan's nothing-dangling verdict
+        // and retires the selection snapshot (it lived for a repair that
+        // will never run); a partial forget keeps it for the remaining
+        // recover.
+        if (candidates.isNotEmpty() && refused == 0) {
             clearCapturedSelectionsIfIdle()
         }
         removed
     }
+
+    /** TASK-1023: whether a repair holds the single-flight mutex right now
+     *  (a forget tapped mid-download must first cancel the run; a cheap
+     *  isLocked probe, no liveness guarantees beyond the instant). */
+    fun isRepairInFlight(): Boolean = repairMutex.isLocked
 
     suspend fun repairAll(): RepairResult = repairMutex.withLock {
         sweepJob?.join()

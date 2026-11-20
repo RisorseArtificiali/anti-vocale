@@ -1399,7 +1399,7 @@
     <string name="wiped_imports_title">Narzędzie systemowe usunęło pliki modeli</string>
     <string name="wiped_imports_text">Systemowe narzędzie do czyszczenia pamięci usunęło pliki zaimportowanych modeli (%1$d szt.): %2$s. Dotknij Przywróć, aby pobrać je ponownie z pierwotnego źródła.</string>
     <string name="wiped_banner_title">Zaimportowane modele utraciły swoje pliki</string>
-    <string name="wiped_banner_text">%1$d z Twoich zaimportowanych modeli zostało usuniętych przez cleaner pamięci systemowej. Odzyskaj pobiera je ponownie; Usuń porzuca je.</string>
+    <string name="wiped_banner_text">Cleaner pamięci systemowej usunął %1$d z Twoich zaimportowanych modeli. Odzyskaj pobiera je ponownie; Usuń porzuca je.</string>
     <string name="wiped_forgot_title">Usunięto zaimportowane modele</string>
     <string name="wiped_forgot_text">Usunięto %1$d zaimportowanych modeli. Możesz zaimportować je ponownie w dowolnym momencie.</string>
     <string name="wiped_imports_names_overflow">+ %1$d więcej</string>
