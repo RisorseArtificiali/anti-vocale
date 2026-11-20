@@ -876,6 +876,14 @@ jobs:
           [ -n "$TRIO" ] || { echo "ERROR: no versionCodes found for newest versionName $LASTVN"; exit 1; }
           # Newer build-tools ship aapt2 only; both support 'dump badging'.
           AAPT=$(find /opt/android-sdk/build-tools \( -name aapt -o -name aapt2 \) | sort | tail -1)
+          [ -n "$AAPT" ] || {
+            # fdroidserver's post-build SDK cleanup removes sdkmanager-installed
+            # packages (run 44825349290: build-tools installed at setup was gone
+            # by guard time). Reinstall one for the badging dump, then re-find.
+            echo "no aapt under build-tools (fdroid cleanup): reinstalling"
+            yes | sdkmanager "build-tools;34.0.0" >/dev/null
+            AAPT=$(find /opt/android-sdk/build-tools \( -name aapt -o -name aapt2 \) | sort | tail -1)
+          }
           [ -n "$AAPT" ] || { echo "ERROR: no aapt/aapt2 under /opt/android-sdk/build-tools"; exit 1; }
           # The directory that actually contains the NEWEST version is the only one
           # the sign step may touch (exported below). Scanning everywhere, as the old

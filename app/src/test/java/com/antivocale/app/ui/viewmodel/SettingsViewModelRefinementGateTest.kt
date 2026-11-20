@@ -69,13 +69,15 @@ class SettingsViewModelRefinementGateTest : ViewModelTeardownTest() {
     }
 
     /**
-     * Polls until [settled] holds (5s cap, then the caller's assertion
-     * names the failure): the combine hops to the real Default dispatcher,
-     * which the virtual-time scheduler cannot drain.
+     * Polls until [settled] holds (30s cap - the CI-runner-slow ceiling the
+     * flake family documents; a 5s cap flaked on run 44825349290 on this
+     * exact line - then the caller's assertion names the failure): the
+     * combine hops to the real Default dispatcher, which the virtual-time
+     * scheduler cannot drain.
      */
     private fun TestScope.awaitGate(settled: () -> Boolean) {
         runCurrent()
-        val deadline = System.currentTimeMillis() + 5_000
+        val deadline = System.currentTimeMillis() + 30_000
         while (!settled() && System.currentTimeMillis() < deadline) {
             runCurrent()
             Thread.sleep(20)
