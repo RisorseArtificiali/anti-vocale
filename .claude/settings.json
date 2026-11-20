@@ -42,6 +42,15 @@
             "timeout": 10000
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/pre-push-invariant-gate.py"
+          }
+        ]
       }
     ]
   }
