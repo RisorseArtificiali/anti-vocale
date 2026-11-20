@@ -43,3 +43,8 @@ else
     mv "$TMP" "$TARGET"
     echo "Installed app/libs/sherpa-onnx.aar ($(wc -c < "$TARGET" | tr -d " ") bytes)"
 fi
+
+# Stamp the fetched version beside the AAR (uncommitted, like the AAR):
+# check-sherpa-sync.sh's local leg compares it against the marker so a
+# marker bump without a re-fetch cannot pass silently on a dev host.
+echo "$SHERPA_ONNX_VERSION" > "$PROJECT_DIR/app/libs/sherpa-onnx.aar.version"
