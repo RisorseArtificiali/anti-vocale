@@ -10,7 +10,11 @@ on the same FLEURS test clips and compute the error rate the same way.
 - **Measurement**: 2026-11-01, 40 FLEURS test clips per (model, language),
   sherpa-onnx 2.0.1, harness `eval/fleurs_bench.py` (commit
   `424fcb43`), on an Apple M3 Pro; the Distil Italian row was added
-  2026-11-02 with the same harness, clips, and machine. Full data:
+  2026-11-02 with the same harness, clips, and machine. NOTE: the app
+  now ships sherpa-onnx 2.0.2 (2026-11-20, TASK-1025), whose VAD-flush
+  and NeMo-TDT beam fixes change decode output on the chunking and
+  beam paths; these numbers are 2.0.1-until-remeasured (re-run planned
+  post-1.17.0). Full data:
   `eval/results/quality-matrix-2026-11-01.json`.
 - **Caveat**: numbers are comparable within our script only. Our WER
   normalization differs from published FLEURS benchmarks and from other

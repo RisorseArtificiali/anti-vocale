@@ -6,7 +6,9 @@ package com.antivocale.app.transcription
  * vocabulary today). ONE parsing home for the newline-separated terms.
  *
  * The honest per-engine matrix (probed at the sherpa-onnx v2.0.1 pin,
- * af2d8d81: source read + desktop probe on the stock Parakeet TDT):
+ * af2d8d81, source read + desktop probe on the stock Parakeet TDT;
+ * v2.0.2 touched EncodeHotwords (our PR #4224 guard) - re-probe the
+ * matrix on any runtime bump that touches the hotwords path):
  * - Whistle: native biasing (TASK-858, shipped).
  * - Qwen3-ASR: hotwords ride the chat-template system prompt per stream
  *   (OfflineStream.setOption("hotwords", csv)); wired in SherpaBackend's

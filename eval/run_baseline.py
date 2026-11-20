@@ -11,7 +11,7 @@ See eval/README.md for the clip/transcript format and metric definitions.
 
 NOTE on the sherpa-onnx Python API: the recognizer config nesting below mirrors the
 app's Kotlin config (greedy_search, tailPaddings=1000, modelType="" for Nemotron
-online, etc.) for sherpa-onnx==1.13.8 (the shipped pin, .sherpa-version). If
+online, etc.) for the shipped sherpa-onnx (see .sherpa-version). If
 check OfflineRecognizerConfig / OnlineRecognizerConfig field shapes first.
 """
 
@@ -31,7 +31,7 @@ try:
 except ImportError:
     sys.exit(
         "sherpa-onnx not installed. Run:  pip install -r eval/requirements.txt\n"
-        "(pinned to sherpa-onnx==1.13.8 to match the shipped AAR)"
+        "(pinned via eval/requirements.txt to match the shipped AAR)"
     )
 
 # Audio decode: shared ffmpeg+soundfile loader (audio_loader.py, TASK-461),

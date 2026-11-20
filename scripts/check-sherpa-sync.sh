@@ -71,13 +71,22 @@ fi
 # must match the srclib-commit in .sherpa-version. The recipe has one
 # srclibs line per historical version; only the FIRST (newest) is checked.
 marker_srclib=$(grep '^srclib-commit ' .sherpa-version | awk '{print $2}')
-fdroid_srclib=$(grep -A1 'srclibs:' metadata/com.antivocale.app.yml \
-    | head -2 | tail -1 | sed 's/.*sherpa_onnx@//;s/[[:space:]]*$//')
-if [ "$fdroid_srclib" != "$marker_srclib" ]; then
-    echo "FAIL: F-Droid recipe srclib pin out of sync:"
+# The recent-era recipe blocks (the newest 9 versionCodes) all track the
+# CURRENT marker; older blocks are frozen at their ANCIENT pins. A bump
+# that repoints only the first entry leaves the previous era's commit in
+# the recent run and fails here (the GH#175 drift class at smaller scale).
+# Update ANCIENT_SRCLIBS only when an era rolls off (the previous marker
+# joins nothing: recent blocks MOVE, they do not freeze - f6e08261).
+ANCIENT_SRCLIBS="3dc7c569f31ca2cd4a20ed6f7db780327e6714c5 11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf"
+stale=$(grep -o 'sherpa_onnx@[0-9a-f]*' metadata/com.antivocale.app.yml \
+    | sed 's/sherpa_onnx@//' | sort -u | grep -v -F "$marker_srclib" \
+    | grep -v -f <(printf '%s\n' $ANCIENT_SRCLIBS) || true)
+if [ -n "$stale" ] || ! grep -q "sherpa_onnx@$marker_srclib" metadata/com.antivocale.app.yml; then
+    echo "FAIL: F-Droid recipe srclib pins out of sync:"
     echo "  .sherpa-version:            $marker_srclib"
-    echo "  metadata (first srclibs):   $fdroid_srclib"
-    echo "Update metadata/com.antivocale.app.yml to sherpa_onnx@$marker_srclib"
+    echo "  recipe pins not marker/ancient:"
+    echo "$stale"
+    echo "Repoint every recent-era block to sherpa_onnx@$marker_srclib"
     exit 1
 fi
 

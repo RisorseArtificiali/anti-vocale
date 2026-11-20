@@ -171,3 +171,6 @@ temp-upstream-drafts.md
 *.png
 *.jpg
 align-mockup*
+
+# cwd-drift recovery stub (memory reference_cwd_drift_hook_trap), deliberate working-tree artifact
+eval/.claude/
