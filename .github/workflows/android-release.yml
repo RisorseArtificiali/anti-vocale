@@ -690,6 +690,12 @@ jobs:
           [ -n "$UNMAPPED" ] && exit 1
 
           # Batch install: sdkmanager accepts multiple packages in one call (efficiency fix)
+          # TASK-1025: the refreshed buildserver image (2026-11) no longer
+          # preinstalls build-tools (AGP fetches its own aapt2, so builds run),
+          # but the reference-APK guard needs a real aapt2 for the badging dump
+          # (run 44818706694 died on the empty find). Install one explicitly;
+          # the version is irrelevant to output (the guard only dumps badging).
+          PACKAGES="$PACKAGES build-tools;34.0.0"
           yes | sdkmanager $PACKAGES
           # Verify each NDK actually installed (C2: || true masked real failures)
           for PIN in $NDK_PINS; do
