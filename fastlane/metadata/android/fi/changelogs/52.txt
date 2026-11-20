@@ -1,6 +1,7 @@
-• Uutta: Ask AI, kysy tallennetuista transkripteistä, vastaukset laitteella (vaatii Gemman)
-• Uutta: oma sanasto ohjaa purkamista nimiesi ja termiesi suuntaan
-• Uutta: tiivistelmäesiasetukset: yhteenveto, toimenpiteet, kokousmuistio tai oma
-• Uutta katalogissa: suoratoistofarsi, suomi, kompakti Parakeet; Qwen3 35% pienempi
-• Uutta: mallikortit kertovat sopivuuden puhelimen RAM-muistiin
-• Parannettu: samankaltaisten sanojen haku toimii nyt myös venäjäksi ja kreikaksi
+• Uutta: Kysy tekoälyltä vastaa transkriptioistasi (vaatii Gemman)
+• Uutta: henkilökohtainen sanasto ohjaa transkriptiota termeihisi
+• Uutta: "Suositellut puhelimellesi" valitsee sopivat mallit
+• Uutta: siivoojan poistamat mallit saavat palautusbannerin
+• Uutta: yhteenvetovalmiit: tiivistelma, tehtavat, muistio, oma
+• Uutta luettelossa: suoratoisto-persia, suomi; Qwen3 pienempi
+• Parannettu: samankaltaisten sanojen haku venajaksi ja kreikaksi

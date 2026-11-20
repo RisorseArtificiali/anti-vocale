@@ -1,6 +1,7 @@
-• Nieuw: Ask AI, stel vragen over je opgeslagen transcripties, antwoorden op het apparaat (vereist Gemma)
-• Nieuw: het persoonlijk woordenboek stuurt de transcriptie richting jouw namen en termen
+• Nieuw: Ask AI beantwoordt vragen over je transcripties (vereist Gemma)
+• Nieuw: het persoonlijk woordenboek stuurt transcriptie naar jouw termen
+• Nieuw: "Aanbevolen voor je telefoon" kiest modellen voor je toestel
+• Nieuw: door cleaners verwijderde modellen krijgen een herstelbanner
 • Nieuw: samenvattingspresets: samenvatting, actiepunten, notulen of eigen
-• Nieuw in de catalogus: streaming Perzisch, Fins, compacte Parakeet; Qwen3 35% kleiner
-• Nieuw: modelkaarten vermelden de geschiktheid voor het RAM van je telefoon
-• Verbeterd: de zoekfunctie voor vergelijkbare woorden dekt nu ook Russisch en Grieks
+• Nieuw in de catalogus: streaming Perzisch, Fins; Qwen3 kleiner
+• Verbeterd: zoeken op vergelijkbare woorden dekt Russisch en Grieks
