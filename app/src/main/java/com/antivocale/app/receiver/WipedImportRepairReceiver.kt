@@ -102,6 +102,15 @@ class WipedImportRepairReceiver : BroadcastReceiver() {
         /** TASK-1023: the wiped notice's Forget action (the dangling set). */
         const val ACTION_FORGET_WIPED_IMPORTS =
             "com.antivocale.app.FORGET_WIPED_IMPORTS"
+
+        /** TASK-1023: the ONE forget dispatch, the notification's Forget
+         *  PendingIntent and the banner's button both ride it (the sibling
+         *  of WipedImportRepairService.repairIntent; explicit component,
+         *  the receiver is not exported). */
+        fun forgetIntent(context: Context): Intent =
+            Intent(context, WipedImportRepairReceiver::class.java).apply {
+                action = ACTION_FORGET_WIPED_IMPORTS
+            }
     }
 }
 
@@ -294,6 +303,7 @@ object WipedImportRepairNotifications {
             context, requestCode,
             Intent(context, WipedImportRepairReceiver::class.java).apply { this.action = action },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
 
     /** The wiped notice's base: unlike the outcome alerts this state is
      *  actionable and BigText, so it keeps its own builder (the factory's

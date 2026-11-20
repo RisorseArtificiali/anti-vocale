@@ -42,7 +42,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -601,6 +603,19 @@ fun ModelTab(
             }
         }
 
+        // TASK-1023: the recovery banner, FIRST thing in the tab body: it
+        // is effectively a notification and outranks the controls
+        // (maintainer direction). Renders in the curated view too: it
+        // repairs imports, it does not browse the catalog.
+        val wipedState by viewModel.externalModelState.collectAsState()
+        if (wipedState.recoverableNames.isNotEmpty()) {
+            WipedImportsBanner(
+                names = wipedState.recoverableNames,
+                onRecover = { viewModel.recoverWipedImports() },
+                onForget = { viewModel.forgetWipedImports() },
+            )
+        }
+
         // TASK-1021 (trial round 2): the header stack (language filter,
         // tier line, active model, fit chips, summary) grew taller than one
         // screen-third on small phones; the whole block is now COLLAPSIBLE.
@@ -732,22 +747,6 @@ fun ModelTab(
                     totalCount = fitVisibleTotal,
                 )
             }
-        }
-        // TASK-1023: the recovery banner, the wiped-imports notice's
-        // landing context (the wiped cards sit at the bottom of this tab
-        // inside the Advanced section collapsed by default; the TASK-746
-        // principle: actionable state is never buried in the collapse).
-        // Rationale for the two closures lives on the notice family; the
-        // count derives from the same single emission as the per-card
-        // wiped lines. Renders in the curated view too: it repairs
-        // imports, it does not browse the catalog.
-        val wipedState by viewModel.externalModelState.collectAsState()
-        if (wipedState.recoverableCount > 0) {
-            WipedImportsBanner(
-                count = wipedState.recoverableCount,
-                onRecover = { viewModel.recoverWipedImports() },
-                onForget = { viewModel.forgetWipedImports() },
-            )
         }
         val hasToken by viewModel.hasHuggingFaceToken.collectAsState()
         if (showCuratedSection) {
@@ -3199,12 +3198,18 @@ private fun ModelHeaderCollapseToggle(expanded: Boolean, onToggle: () -> Unit) {
  * TASK-1023: the Models-tab recovery banner (the wiped-imports notice's
  * landing context; the friction story lives on
  * [com.antivocale.app.data.ExternalImportRepairer.forgetWipedImports]).
- * No confirm dialog on Forget: the notification's own Remove action
- * already deletes without one and the records are re-importable.
- * Recover is the filled button: recovery, not removal, is the happy path.
+ * The title row EXPANDS to name every missing model (the maintainer's
+ * trial finding: with five gone, "which ones?" is the decision's other
+ * half); collapsed keeps the card one line tall. No confirm dialog on
+ * Forget: the notification's own Remove action already deletes without
+ * one and the records are re-importable. Recover is the filled button:
+ * recovery, not removal, is the happy path.
  */
 @Composable
-private fun WipedImportsBanner(count: Int, onRecover: () -> Unit, onForget: () -> Unit) {
+private fun WipedImportsBanner(names: List<String>, onRecover: () -> Unit, onForget: () -> Unit) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val expandStateText = stringResource(
+        if (expanded) R.string.a11y_collapse else R.string.a11y_expand)
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -3212,16 +3217,62 @@ private fun WipedImportsBanner(count: Int, onRecover: () -> Unit, onForget: () -
         ),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
+            // The whole title row toggles the list (TASK-382's idiom:
+            // whole-target clickable, Role.Button, and the expanded state
+            // announced - the row is the focus target, not the chevron).
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(role = Role.Button) { expanded = !expanded }
+                    .semantics { stateDescription = expandStateText },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.wiped_banner_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = stringResource(
+                        if (expanded) R.string.a11y_collapse else R.string.a11y_expand),
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
             Text(
-                text = stringResource(R.string.wiped_banner_title),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-            )
-            Text(
-                text = stringResource(R.string.wiped_banner_text, count),
+                text = stringResource(R.string.wiped_banner_text, names.size),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer,
             )
+            if (expanded) {
+                // Bullet as its own column with a hanging indent: a long
+                // unbroken name (an id-like displayName) wraps under
+                // ITSELF, never orphaning the bullet on a line of its own
+                // (the in-text 'bullet space' prefix breaks only at the
+                // space). The Row mirrors with the layout direction; the
+                // bullet itself is invisible to TalkBack.
+                names.forEach { name ->
+                    Row {
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier
+                                .clearAndSetSemantics { }
+                                .padding(top = 1.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.align(Alignment.End),
