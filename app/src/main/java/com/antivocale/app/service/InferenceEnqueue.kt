@@ -57,8 +57,14 @@ object InferenceEnqueue {
      * Mirrors [TaskerRequestReceiver]'s fallback: sequential id in the
      * reserved Tasker band (two concurrent posts never share a slot; the
      * notification's contentIntent is the sole carrier of the request).
+     *
+     * TASK-1030 mechanism A: also the preservation path. InferenceService's
+     * failed-promotion arm re-posts a delivery here when its own
+     * startForeground threw: the request then survives the process kill the
+     * failed promotion guarantees, and the notification tap re-enqueues it
+     * legally.
      */
-    private fun postFallbackNotification(context: Context, serviceIntent: Intent): Outcome =
+    internal fun postFallbackNotification(context: Context, serviceIntent: Intent): Outcome =
         runCatching {
             postFallbackNotificationUnchecked(context, serviceIntent)
         }.getOrElse { e ->
