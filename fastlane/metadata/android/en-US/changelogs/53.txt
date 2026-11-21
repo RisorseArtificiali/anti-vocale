@@ -1,1 +1,2 @@
 • Fixed: a rare crash when a background transcription starts on some devices; a start the system blocks is now kept as a tappable notification instead of being lost
+• Fixed: transcription could crash with models that append a silence pad, including the default Parakeet and GigaAM

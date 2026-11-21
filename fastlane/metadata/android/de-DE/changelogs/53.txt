@@ -1,1 +1,2 @@
 • Behoben: ein seltener Absturz, wenn auf einigen Geräten eine Transkription im Hintergrund startet; ein vom System blockierter Start bleibt jetzt als tippbare Benachrichtigung erhalten, statt verloren zu gehen
+• Behoben: die Transkription konnte mit Modellen abstürzen, die ein Silence-Pad anhängen, darunter das Standard-Parakeet und GigaAM

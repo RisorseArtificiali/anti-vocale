@@ -1,1 +1,2 @@
 • Korjattu: harvinainen kaatuminen, kun transkriptio käynnistyy taustalla joillakin laitteilla; järjestelmän estämä käynnistys säilyy nyt napautettavana ilmoituksena katoamisen sijaan
+• Korjattu: transkriptio saattoi kaatua malleilla, jotka lisäävät hiljaisuustäytettä, mukaan lukien oletus-Parakeet ja GigaAM

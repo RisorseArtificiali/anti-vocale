@@ -1,6 +1,7 @@
 <en-US>
 What's new in 1.17.1:
 • Fixed: a rare crash when a background transcription starts on some devices; a start the system blocks is now kept as a tappable notification instead of being lost
+• Fixed: transcription could crash with models that append a silence pad, including the default Parakeet and GigaAM
 What's new in 1.17.0:
 • New: Ask AI answers questions about your transcripts (needs Gemma)
 • New: a personal dictionary steers transcription toward your terms
@@ -71,6 +72,7 @@ What's new in 1.12.0:
 <it-IT>
 Novità della versione 1.17.1:
 • Corretto: un raro crash all'avvio in background di una trascrizione su alcuni dispositivi; un avvio bloccato dal sistema viene ora conservato in una notifica toccabile invece di andare perso
+• Corretto: la trascrizione poteva andare in crash con i modelli che aggiungono una coda di silenzio, incluso il Parakeet predefinito e GigaAM
 Novità della versione 1.17.0:
 • Nuovo: Chiedi all'AI risponde sulle tue trascrizioni (richiede Gemma)
 • Nuovo: il dizionario personale orienta la trascrizione verso i tuoi termini
@@ -343,6 +345,7 @@ Novità dalla versione 1.0.3:
 <de-DE>
 Neuigkeiten in Version 1.17.1:
 • Behoben: ein seltener Absturz, wenn auf einigen Geräten eine Transkription im Hintergrund startet; ein vom System blockierter Start bleibt jetzt als tippbare Benachrichtigung erhalten, statt verloren zu gehen
+• Behoben: die Transkription konnte mit Modellen abstürzen, die ein Silence-Pad anhängen, darunter das Standard-Parakeet und GigaAM
 Neuigkeiten in Version 1.17.0:
 • Neu: KI-Befragung beantwortet Fragen zu Ihren Transkripten (benötigt Gemma)
 • Neu: das persönliche Wörterbuch lenkt die Transkription auf Ihre Begriffe
@@ -380,6 +383,7 @@ Neuigkeiten in Version 1.14.0:
 <es-ES>
 Novedades de la versión 1.17.1:
 • Corregido: un fallo poco frecuente al iniciar una transcripción en segundo plano en algunos dispositivos; un inicio bloqueado por el sistema se conserva ahora como notificación tocable en lugar de perderse
+• Corregido: la transcripción podía fallar con modelos que añaden un colchón de silencio, incluidos el Parakeet predeterminado y GigaAM
 Novedades de la versión 1.17.0:
 • Nuevo: Pregunta a la AI responde sobre tus transcripciones (requiere Gemma)
 • Nuevo: el diccionario personal orienta la transcripción hacia tus términos
@@ -417,6 +421,7 @@ Novedades de la versión 1.14.0:
 <fr-FR>
 Nouveautés de la version 1.17.1 :
 • Corrigé : un plantage rare au démarrage en arrière-plan d'une transcription sur certains appareils ; un démarrage bloqué par le système est désormais conservé dans une notification tapable au lieu d'être perdu
+• Corrigé : la transcription pouvait planter avec les modèles qui ajoutent un bourrage de silence, dont le Parakeet par défaut et GigaAM
 Nouveautés de la version 1.17.0 :
 • Nouveau : Demander à l'AI répond sur vos transcriptions (nécessite Gemma)
 • Nouveau : le dictionnaire personnel oriente la transcription vers vos termes
@@ -454,6 +459,7 @@ Nouveautés de la version 1.14.0 :
 <pt-BR>
 Novidades da versão 1.17.1:
 • Corrigido: uma falha rara ao iniciar uma transcrição em segundo plano em alguns dispositivos; um início bloqueado pelo sistema agora fica guardado como notificação tocável em vez de perder-se
+• Corrigido: a transcrição podia falhar com modelos que acrescentam um intervalo de silêncio, incluindo o Parakeet padrão e o GigaAM
 Novidades da versão 1.17.0:
 • Novo: Pergunte à AI responde sobre suas transcrições (precisa de Gemma)
 • Novo: o dicionário pessoal direciona a transcrição para seus termos
@@ -494,6 +500,7 @@ Novidades da versão 1.14.0:
 <ru-RU>
 Что нового в версии 1.17.1:
 • Исправлено: редкий сбой при запуске транскрипции в фоновом режиме на некоторых устройствах; заблокированный системой запуск теперь сохраняется как уведомление вместо потери
+• Исправлено: транскрипция могла завершаться сбоем на моделях, добавляющих тишину в конец, включая стандартный Parakeet и GigaAM
 Что нового в версии 1.17.0:
 • Новое: «Спросить ИИ» отвечает по вашим расшифровкам (нужна Gemma)
 • Новое: личный словарь направляет расшифровку на ваши термины
@@ -531,6 +538,7 @@ Novidades da versão 1.14.0:
 <tr-TR>
 Sürüm 1.17.1 yenilikler:
 • Düzeltildi: bazı cihazlarda arka planda transkripsiyon başlarken nadir yaşanan çökme; sistem tarafından engellenen bir başlatma artık kaybolmak yerine dokunulabilir bir bildirimde saklanıyor
+• Düzeltildi: sessizlik dolgusu ekleyen modellerde (varsayılan Parakeet ve GigaAM dahil) transkripsiyon çökebiliyordu
 Sürüm 1.17.0 yenilikler:
 • Yeni: Yapay zekâya sor, deşifreleriniz hakkında yanıtlar (Gemma gerekir)
 • Yeni: kişisel sözlük deşifreyi terimlerinize yönlendirir
@@ -568,6 +576,7 @@ Sürüm 1.14.0'daki yenilikler:
 <pl-PL>
 Nowości w wersji 1.17.1:
 • Naprawiono: rzadka awaria przy uruchamianiu transkrypcji w tle na niektórych urządzeniach; start zablokowany przez system jest teraz zachowany jako powiadomienie do dotknięcia, zamiast przepaść
+• Naprawiono: transkrypcja mogła się kończyć awarią przy modelach dopisujących ciszę na końcu, w tym domyślny Parakeet i GigaAM
 Nowości w wersji 1.17.0:
 • Nowość: Zapytaj AI odpowiada o Twoje transkrypcje (wymaga Gemma)
 • Nowość: osobisty słownik kieruje transkrypcję na Twoje terminy
@@ -605,6 +614,7 @@ Nowości w wersji 1.14.0:
 <hi-IN>
 संस्करण 1.17.1 में नया क्या है:
 • सुधार: कुछ डिवाइस पर बैकग्राउंड में ट्रांसक्रिप्शन शुरू होने पर एक दुर्लभ क्रैश; सिस्टम द्वारा रोका गया आरंभ अब खोने के बजाय एक टैप की जा सकने वाली नोटिफ़िकेशन में सुरक्षित रहता है
+• सुधार: साइलेंस पैड जोड़ने वाले मॉडल के साथ ट्रांसक्रिप्शन क्रैश हो सकता था, जिनमें डिफ़ॉल्ट Parakeet और GigaAM शामिल हैं
 संस्करण 1.17.0 में नया क्या है:
 • नया: Ask AI आपकी ट्रांसक्रिप्शन के बारे में जवाब देता है (Gemma चाहिए)
 • नया: निजी शब्दकोश ट्रांसक्रिप्शन को आपके शब्दों की ओर मोड़ता है
@@ -642,6 +652,7 @@ Nowości w wersji 1.14.0:
 <uk>
 Новинки версії 1.17.1:
 • Виправлено: рідкий збій під час фонового запуску транскрипції на деяких пристроях; запуск, заблокований системою, тепер зберігається як сповіщення замість втрати
+• Виправлено: транскрибування могло завершуватися збоєм на моделях, що додають хвіст тиші, зокрема стандартний Parakeet і GigaAM
 Новинки версії 1.17.0:
 • Нове: «Запитати ШІ» відповідає за вашими розшифровками (потрібна Gemma)
 • Нове: особистий словник спрямовує розшифровку на ваші терміни
@@ -678,6 +689,7 @@ Nowości w wersji 1.14.0:
 <he-IL>
 מה חדש בגרסה 1.17.1:
 • תוקן: קריסה נדירה בהתחלת תמלול ברקע בחלק מהמכשירים; התחלה שהמערכת חוסמת נשמרת עכשיו כהתראה שניתן להקיש במקום ללכת לאיבוד
+• תוקן: התמלול יכול היה לקרוס עם מודלים שמוסיפים ריפוד שקט, לרבות Parakeet ברירת המחדל ו-GigaAM
 מה חדש בגרסה 1.17.0:
 • חדש: לשאול את ה־AI עונה על התמלילים שלך (דורש Gemma)
 • חדש: המילון האישי מכוון את התמליל למונחים שלך
@@ -717,6 +729,7 @@ Nowości w wersji 1.14.0:
 <fa-IR>
 چه چیز جدید‌های نسخه 1.17.1:
 • رفع اشکال: خرابی نادر هنگام شروع پس‌زمینه‌ای تبدیل گفتار به متن روی برخی دستگاه‌ها؛ شروعی که سیستم مسدودش می‌کند اکنون به‌جای از دست رفتن در یک اعلان قابل لمس حفظ می‌شود
+• رفع اشکال: تبدیل گفتار به متن با مدل‌هایی که سکوت انتهایی اضافه می‌کنند (از جمله Parakeet پیش‌فرض و GigaAM) می‌توانست خرابی ایجاد کند
 چه چیز جدید‌های نسخه 1.17.0:
 • جدید: پرسش از هوش مصنوعی درباره رونوشت‌هایتان پاسخ می‌دهد (نیازمند Gemma)
 • جدید: واژه‌نامه شخصی رونویسی را به سمت اصطلاحات شما می‌برد
@@ -753,6 +766,7 @@ Nowości w wersji 1.14.0:
 <zh-CN>
 1.17.1 版本更新:
 • 修复：部分设备上在后台开始转录时偶发的崩溃；被系统阻止的启动现在保留为一条可点按的通知，而不是丢失
+• 修复：使用追加静音填充的模型（包括默认 Parakeet 和 GigaAM）转录时可能崩溃
 1.17.0 版本更新:
 • 新增：问 AI 可解答关于已存转写的问题（需要 Gemma）
 • 新增：个人词典让转写偏向您的术语

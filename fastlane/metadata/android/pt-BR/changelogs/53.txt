@@ -1,1 +1,2 @@
 • Corrigido: uma falha rara ao iniciar uma transcrição em segundo plano em alguns dispositivos; um início bloqueado pelo sistema agora fica guardado como notificação tocável em vez de perder-se
+• Corrigido: a transcrição podia falhar com modelos que acrescentam um intervalo de silêncio, incluindo o Parakeet padrão e o GigaAM

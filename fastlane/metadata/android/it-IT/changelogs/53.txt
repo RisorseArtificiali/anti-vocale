@@ -1,1 +1,2 @@
 • Corretto: un raro crash all'avvio in background di una trascrizione su alcuni dispositivi; un avvio bloccato dal sistema viene ora conservato in una notifica toccabile invece di andare perso
+• Corretto: la trascrizione poteva andare in crash con i modelli che aggiungono una coda di silenzio, incluso il Parakeet predefinito e GigaAM

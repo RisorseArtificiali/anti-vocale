@@ -1,1 +1,2 @@
 • Corrigé : un plantage rare au démarrage en arrière-plan d'une transcription sur certains appareils ; un démarrage bloqué par le système est désormais conservé dans une notification tapable au lieu d'être perdu
+• Corrigé : la transcription pouvait planter avec les modèles qui ajoutent un bourrage de silence, dont le Parakeet par défaut et GigaAM

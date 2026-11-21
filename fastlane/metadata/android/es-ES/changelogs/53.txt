@@ -1,1 +1,2 @@
 • Corregido: un fallo poco frecuente al iniciar una transcripción en segundo plano en algunos dispositivos; un inicio bloqueado por el sistema se conserva ahora como notificación tocable en lugar de perderse
+• Corregido: la transcripción podía fallar con modelos que añaden un colchón de silencio, incluidos el Parakeet predeterminado y GigaAM

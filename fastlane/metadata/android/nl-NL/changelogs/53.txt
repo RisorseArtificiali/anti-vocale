@@ -1,1 +1,2 @@
 • Opgelost: een zeldzame crash bij het starten van een transcriptie op de achtergrond op sommige apparaten; een door het systeem geblokkeerde start blijft nu als tikbare melding behouden in plaats van verloren te gaan
+• Opgelost: transcriptie kon crashen met modellen die een stilte-opvulling toevoegen, waaronder de standaard Parakeet en GigaAM
