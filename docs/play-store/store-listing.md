@@ -2,12 +2,14 @@
 
 ## Short Description (80 chars max)
 ```
-Turn voice messages into text. Works offline, right on your phone.
+Free voice-message transcription. No ads, no internet needed.
 ```
 
 Too many voice notes and no time to listen? Turn them into text and read them whenever you want.
 
 Anti-Vocale turns the voice messages of WhatsApp, Telegram, and any other app into text, directly on your phone. It works on recorded calls and audio files too. Everything happens on your device: the audio never leaves your phone.
+
+It's completely free. No ads, no subscriptions, no hidden costs.
 
 HOW IT WORKS
 1. Long-press a voice message and share it with Anti-Vocale
@@ -50,13 +52,14 @@ Free and open source. Want the technical details, the model list, measured quali
 
 ## Descrizione Breve (80 caratteri max)
 ```
-Trasforma i vocali in testo. Funziona offline, direttamente sul telefono.
+Trascrizione vocale gratuita. Senza pubblicità, senza internet.
 ```
 
 Troppi vocali e nessun tempo per ascoltarli? Trasformali in testo e leggili quando vuoi.
 
 Anti-Vocale trasforma i vocali di WhatsApp, Telegram e di qualunque altra app in testo, direttamente sul tuo telefono. Funziona anche con chiamate registrate e file audio. Tutto avviene sul tuo dispositivo: l'audio non lascia mai il telefono.
 
+È completamente gratuita. Nessuna pubblicità, nessun abbonamento, nessun costo nascosto.
 COME FUNZIONA
 1. Tieni premuto un vocale e condividilo con Anti-Vocale
 2. Leggi la trascrizione che arriva nella notifica
@@ -98,13 +101,14 @@ Gratuita e open source. Vuoi i dettagli tecnici, l'elenco dei modelli, la qualit
 
 ### de-DE (German)
 ```
-Sprachnachrichten in Text umwandeln. Offline, direkt auf dem Handy.
+Kostenlose Sprachnachrichten-Transkription. Keine Werbung, kein Internet.
 ```
 
 Zu viele Sprachnachrichten und keine Zeit zum Anhören? Mach sie zu Text und lies sie, wann immer du willst.
 
 Anti-Vocale wandelt die Sprachnachrichten von WhatsApp, Telegram und jeder anderen App direkt auf deinem Handy in Text um. Es funktioniert auch mit aufgezeichneten Anrufen und Audiodateien. Alles passiert auf deinem Gerät: Die Audio verlässt dein Handy nie.
 
+Es ist komplett kostenlos. Keine Werbung, keine Abos, keine versteckten Kosten.
 SO FUNKTIONIERT ES
 1. Sprachnachricht gedrückt halten und mit Anti-Vocale teilen
 2. Das Transkript in der Benachrichtigung lesen
@@ -146,13 +150,14 @@ Kostenlos und Open Source. Du willst technische Details, die Modellliste, die ge
 
 ### fr-FR (French)
 ```
-Transformez les messages vocaux en texte. Hors ligne, sur votre téléphone.
+Transcription vocale gratuite. Sans pub, sans internet.
 ```
 
 Trop de messages vocaux et pas le temps d'écouter ? Transformez-les en texte et lisez-les quand vous voulez.
 
 Anti-Vocale transforme les messages vocaux de WhatsApp, Telegram et de n'importe quelle application en texte, directement sur votre téléphone. Il fonctionne aussi sur les appels enregistrés et les fichiers audio. Tout se passe sur votre appareil : l'audio ne quitte jamais votre téléphone.
 
+C'est entièrement gratuit. Pas de publicité, pas d'abonnement, aucun coût caché.
 COMMENT ÇA MARCHE
 1. Maintenez un message vocal et partagez-le avec Anti-Vocale
 2. Lisez la transcription qui arrive dans la notification
@@ -194,13 +199,14 @@ Gratuit et open source. Vous voulez les détails techniques, la liste des modèl
 
 ### es-ES (Spanish)
 ```
-Convierte notas de voz en texto. Sin conexión, en tu teléfono.
+Transcripción de voz gratis. Sin anuncios, sin internet.
 ```
 
 ¿Demasiadas notas de voz y sin tiempo para escucharlas? Conviértelas en texto y léelas cuando quieras.
 
 Anti-Vocale transforma las notas de voz de WhatsApp, Telegram y cualquier otra app en texto, directamente en tu teléfono. También funciona con llamadas grabadas y archivos de audio. Todo ocurre en tu dispositivo: el audio nunca sale de tu teléfono.
 
+Es completamente gratis. Sin anuncios, sin suscripciones, sin costes ocultos.
 CÓMO FUNCIONA
 1. Mantén pulsada una nota de voz y compártela con Anti-Vocale
 2. Lee la transcripción que llega en la notificación
@@ -242,13 +248,14 @@ Gratis y de código abierto. ¿Quieres los detalles técnicos, la lista de model
 
 ### pt-BR (Portuguese (Brazil))
 ```
-Transforme mensagens de voz em texto. Offline, no seu telefone.
+Transcrição de voz grátis. Sem anúncios, sem internet.
 ```
 
 Muitas mensagens de voz e sem tempo para ouvir? Transforme-as em texto e leia quando quiser.
 
 O Anti-Vocale transforma as mensagens de voz do WhatsApp, Telegram e qualquer outro app em texto, direto no seu telefone. Também funciona com chamadas gravadas e arquivos de áudio. Tudo acontece no seu aparelho: o áudio nunca sai do seu telefone.
 
+É completamente grátis. Sem anúncios, sem assinaturas, sem custos ocultos.
 COMO FUNCIONA
 1. Segure uma mensagem de voz e compartilhe com o Anti-Vocale
 2. Leia a transcrição que chega na notificação
@@ -290,12 +297,14 @@ Grátis e de código aberto. Quer os detalhes técnicos, a lista de modelos, a q
 
 ### ja-JP (Japanese)
 ```
-ボイスメッセージをテキストに。オフラインで、スマホ上で完結。
+無料の音声文字起こし。広告なし、インターネット不要。
 ```
 
 ボイスメッセージが多すぎて聞く暇がない？テキストに変換して、いつでも読みましょう。
 
 Anti-Vocaleは、WhatsApp、Telegram、その他のアプリのボイスメッセージをスマホ上で直接テキストに変換します。録音された通話や音声ファイルにも対応。すべて端末上で処理されるため、音声がスマホの外に出ることはありません。
+
+完全無料です。広告もサブスクリプションも隠れたコストもありません。
 
 使い方
 1. ボイスメッセージを長押ししてAnti-Vocaleで共有
@@ -338,12 +347,14 @@ Anti-Vocaleは、WhatsApp、Telegram、その他のアプリのボイスメッ�
 
 ### ko-KR (Korean)
 ```
-음성 메시지를 텍스트로. 오프라인으로, 휴대폰에서 바로.
+무료 음성 메시지 변환. 광고 없음, 인터넷 불필요.
 ```
 
 음성 메시지가 너무 많아서 들을 시간이 없나요? 텍스트로 바꿔서 원할 때 읽으세요.
 
 Anti-Vocale은 WhatsApp, Telegram 및 다른 모든 앱의 음성 메시지를 휴대폰에서 직접 텍스트로 변환합니다. 녹음된 통화와 오디오 파일도 됩니다. 모든 것이 내 기기에서 처리됩니다: 오디오는 절대 휴대폰을 떠나지 않습니다.
+
+완전히 무료입니다. 광고도, 구독도, 숨은 비용도 없습니다.
 
 작동 방식
 1. 음성 메시지를 길게 눌러 Anti-Vocale과 공유
@@ -386,13 +397,14 @@ Anti-Vocale은 WhatsApp, Telegram 및 다른 모든 앱의 음성 메시지를 �
 
 ### zh-CN (Chinese (Simplified))
 ```
-把语音消息变成文字。离线工作，就在你的手机上。
+免费语音转文字。无广告，无需网络。
 ```
 
 语音消息太多，没时间听？把它们变成文字，随时阅读。
 
 Anti-Vocale 直接在手机上把 WhatsApp、Telegram 和其他应用的语音消息转换成文字。也支持录制的通话和音频文件。一切都在你的设备上完成：音频永远不会离开你的手机。
 
+完全免费。没有广告，没有订阅，没有隐藏费用。
 如何工作
 1. 长按语音消息，分享给 Anti-Vocale
 2. 阅读通知中收到的转写文本
@@ -434,13 +446,14 @@ Anti-Vocale 直接在手机上把 WhatsApp、Telegram 和其他应用的语音�
 
 ### ru-RU (Russian)
 ```
-Превратите голосовые сообщения в текст. Офлайн, прямо на телефоне.
+Бесплатная расшифровка голосовых. Без рекламы, без интернета.
 ```
 
 Слишком много голосовых сообщений и нет времени слушать? Превратите их в текст и читайте когда хотите.
 
 Anti-Vocale превращает голосовые сообщения из WhatsApp, Telegram и любого другого приложения в текст прямо на вашем телефоне. Работает и с записанными звонками, и с аудиофайлами. Всё происходит на вашем устройстве: аудио никогда не покидает ваш телефон.
 
+Полностью бесплатно. Без рекламы, без подписок, без скрытых платежей.
 КАК ЭТО РАБОТАЕТ
 1. Удерживайте голосовое сообщение и поделитесь им с Anti-Vocale
 2. Прочитайте транскрипцию в уведомлении
@@ -482,13 +495,14 @@ Anti-Vocale превращает голосовые сообщения из What
 
 ### nl-NL (Dutch)
 ```
-Zet spraakberichten om in tekst. Offline, op je eigen telefoon.
+Gratis spraak-naar-tekst. Geen advertenties, geen internet.
 ```
 
 Te veel spraakberichten en geen tijd om te luisteren? Maak er tekst van en lees ze wanneer je wilt.
 
 Anti-Vocale zet de spraakberichten van WhatsApp, Telegram en elke andere app om in tekst, direct op je telefoon. Het werkt ook met opgenomen gesprekken en audiobestanden. Alles gebeurt op je apparaat: de audio verlaat je telefoon nooit.
 
+Het is volledig gratis. Geen advertenties, geen abonnementen, geen verborgen kosten.
 HOE HET WERKT
 1. Houd een spraakbericht ingedrukt en deel het met Anti-Vocale
 2. Lees de transcriptie die in de melding verschijnt
@@ -530,13 +544,14 @@ Gratis en open source. Wil je de technische details, de modellenlijst, de gemete
 
 ### pl-PL (Polish)
 ```
-Zamień wiadomości głosowe na tekst. Offline, na twoim telefonie.
+Darmowa transkrypcja głosowych. Bez reklam, bez internetu.
 ```
 
 Za dużo wiadomości głosowych i brak czasu na słuchanie? Zamień je na tekst i czytaj kiedy chcesz.
 
 Anti-Vocale zamienia wiadomości głosowe z WhatsApp, Telegram i każdej innej aplikacji na tekst, bezpośrednio na twoim telefonie. Działa też z nagranymi rozmowami i plikami audio. Wszystko dzieje się na twoim urządzeniu: audio nigdy nie opuszcza telefonu.
 
+Jest całkowicie darmowa. Bez reklam, bez subskrypcji, bez ukrytych kosztów.
 JAK TO DZIAŁA
 1. Przytrzymaj wiadomość głosową i udostępnij ją Anti-Vocale
 2. Przeczytaj transkrypcję, która przychodzi w powiadomieniu
@@ -578,12 +593,14 @@ Darmowa i open source. Chcesz szczegóły techniczne, listę modeli, zmierzoną 
 
 ### tr-TR (Turkish)
 ```
-Sesli mesajları metne dönüştür. Çevrimdışı, telefonunda.
+Ücretsiz sesli mesaj metne. Reklamsız, internetsiz.
 ```
 
 Çok fazla sesli mesaj ve dinlemeye vaktin yok mu? Onları metne dönüştür ve istediğin zaman oku.
 
 Anti-Vocale, WhatsApp, Telegram ve diğer herhangi bir uygulamadaki sesli mesajları doğrudan telefonunda metne dönüştürür. Kayıtlı çağrılar ve ses dosyalarıyla da çalışır. Her şey cihazında olur: ses telefonundan asla çıkmaz.
+
+Tamamen ücretsiz. Reklam yok, abonelik yok, gizli maliyet yok.
 
 NASIL ÇALIŞIR
 1. Bir sesli mesajı basılı tut ve Anti-Vocale ile paylaş
@@ -626,13 +643,14 @@ AÇIK KAYNAK
 
 ### ar-SA (Arabic)
 ```
-حوّل الرسائل الصوتية إلى نص. يعمل دون اتصال، على هاتفك مباشرة.
+تحويل صوتي إلى نص مجاني. بدون إعلانات، بدون إنترنت.
 ```
 
 الكثير من الرسائل الصوتية ولا وقت للاستماع؟ حوّلها إلى نص واقرأها متى شئت.
 
 يقوم Anti-Vocale بتحويل الرسائل الصوتية من واتساب وتيليجرام وأي تطبيق آخر إلى نص مباشرة على هاتفك. يعمل أيضاً مع المكالمات المسجلة والملفات الصوتية. كل شيء يحدث على جهازك: الصوت لا يغادر هاتفك أبداً.
 
+مجاني تماماً. لا إعلانات، لا اشتراكات، لا تكاليف خفية.
 كيف يعمل
 1. اضغط مطولاً على رسالة صوتية وشاركها مع Anti-Vocale
 2. اقرأ النص الذي يصل في الإشعار
@@ -674,13 +692,14 @@ AÇIK KAYNAK
 
 ### hi-IN (Hindi)
 ```
-वॉइस संदेशों को टेक्स्ट में बदलें। ऑफ़लाइन, सीधे आपके फ़ोन पर।
+मुफ़्त वॉइस ट्रांसक्रिप्शन। विज्ञापन नहीं, इंटरनेट ज़रूरी नहीं।
 ```
 
 बहुत सारे वॉइस मैसेज और सुनने का समय नहीं? उन्हें टेक्स्ट में बदलें और जब चाहें पढ़ें।
 
 Anti-Vocale WhatsApp, Telegram और किसी भी ऐप के वॉइस मैसेज को सीधे आपके फ़ोन पर टेक्स्ट में बदलता है। रिकॉर्ड की गई कॉल और ऑडियो फ़ाइलों के साथ भी काम करता है। सब कुछ आपके डिवाइस पर होता है: ऑडियो कभी भी आपका फ़ोन नहीं छोड़ता।
 
+यह पूरी तरह मुफ़्त है। कोई विज्ञापन नहीं, कोई सदस्यता नहीं, कोई छिपा शुल्क नहीं।
 यह कैसे काम करता है
 1. वॉइस मैसेज को दबाकर रखें और Anti-Vocale के साथ साझा करें
 2. नोटिफिकेशन में आने वाला ट्रांसक्रिप्ट पढ़ें
