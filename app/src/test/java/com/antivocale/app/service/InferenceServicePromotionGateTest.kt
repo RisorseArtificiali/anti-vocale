@@ -29,13 +29,14 @@ import org.robolectric.annotation.Config
  * drain must observe the promotion already happened.
  *
  * Mechanism A (the TASK-1014 recorded-but-unhandled arm): a promotion that
- * THROWS leaves a REQUIRED delivery unsatisfiable; the system kills the
- * process when the window expires. A request enqueued on that doomed
- * instance dies mid-load with it, so the failure arm must instead preserve
- * request deliveries through the enqueue path's fallback notification
- * (whose tap is a user-initiated start) and stop the empty service.
- * Control deliveries carry no request identity and must not become
- * notifications.
+ * THROWS on an EMPTY instance leaves a REQUIRED delivery unsatisfiable; the
+ * system raises the same exception whatever the app does, so the failure arm
+ * preserves the request through the enqueue path's fallback notification
+ * (whose tap is a user-initiated start) and stops the empty service. On a
+ * LIVE batch the delivery is not doomed (AOSP arms the per-delivery timeout
+ * only when the service is not already foreground) and 1.17.0's
+ * report-and-carry-on stands. Control deliveries carry no request identity
+ * and must not become notifications.
  *
  * Determinism: the [InferenceService.foregroundPromotion] seam records and
  * still performs the real promotion, the mocked backend manager records the
@@ -53,6 +54,16 @@ class InferenceServicePromotionGateTest {
         val f = target.javaClass.getDeclaredField(field)
         f.isAccessible = true
         f.set(target, value)
+    }
+
+    /** The queue depth increments synchronously inside onStartCommand
+     * (before the async drain touches it), so this is the deterministic
+     * enqueue-vs-preserve discriminator; the logQueued coVerify alone can
+     * race its Dispatchers.IO launch (fable review). */
+    private fun pendingCountOf(service: InferenceService): Int {
+        val f = InferenceService::class.java.getDeclaredField("pendingCount")
+        f.isAccessible = true
+        return (f.get(service) as java.util.concurrent.atomic.AtomicInteger).get()
     }
 
     /** The fallback notification is the only traffic on the tasker_fallback
@@ -111,8 +122,10 @@ class InferenceServicePromotionGateTest {
             "the failed delivery must be preserved via the fallback notification",
             fallbackNotifications(service).isNotEmpty(),
         )
+        assertEquals("nothing may be queued on the doomed instance", 0, pendingCountOf(service))
         // A queued request would have logged its History row at enqueue
-        // time: nothing may start on the doomed instance.
+        // time; the IO-launched logQueued can lag the assertion, so this is
+        // corroborating rather than load-bearing evidence.
         coVerify(exactly = 0) { orchestrator.logQueued(any(), any(), any(), any(), any(), any(), any()) }
         assertTrue("the empty service must stop itself", Shadows.shadowOf(service).isStoppedBySelf)
     }
@@ -134,17 +147,23 @@ class InferenceServicePromotionGateTest {
     }
 
     @Test
-    fun `a failed promotion on a live batch keeps the batch's window (review round)`() {
+    fun `a failed promotion on a live batch carries on like 1_17_0 (fable review)`() {
         val service = Robolectric.buildService(InferenceService::class.java).create().get()
         service.foregroundPromotion = { throw SecurityException("simulated FGS restriction") }
         // A batch mid-inference: batchIdle() false via the companion
         // transcribing flag (the drain sets it before touching audio), the
-        // same field the public isTranscribing flow exposes.
+        // same field the public isTranscribing flow exposes. The drain gate
+        // is pre-armed so the enqueue's processQueue launch stays out: a
+        // REAL drain here would outlive the test and leave the JVM-shared
+        // transcribing flag set for whichever test runs next.
         val flag = InferenceService::class.java.getDeclaredField("_isTranscribing")
         flag.isAccessible = true
         @Suppress("UNCHECKED_CAST")
         val flow = flag.get(null) as kotlinx.coroutines.flow.MutableStateFlow<Boolean>
         flow.value = true
+        val gate = InferenceService::class.java.getDeclaredField("drainEntered")
+        gate.isAccessible = true
+        (gate.get(service) as java.util.concurrent.atomic.AtomicBoolean).set(true)
         try {
             val intent = Intent(service, InferenceService::class.java).apply {
                 putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, "gate-live")
@@ -153,15 +172,19 @@ class InferenceServicePromotionGateTest {
             }
             service.onStartCommand(intent, 0, 1)
 
+            // AOSP arms the per-delivery fgRequired timeout only when the
+            // service is not already foreground: a live batch means an
+            // earlier promotion answered it, so the delivery is not doomed
+            // and must be enqueued, not diverted to a tap-to-run
+            // notification (which would also drop any concurrent cancel or
+            // nav tap).
+            assertEquals("the delivery must be enqueued, not preserved", 1, pendingCountOf(service))
             assertTrue(
-                "the redelivered request must still be preserved",
-                fallbackNotifications(service).isNotEmpty(),
+                "a live batch must not be diverted to a fallback notification",
+                fallbackNotifications(service).isEmpty(),
             )
-            // The pre-fix code (and the first fix round) cancelled the
-            // in-flight batch at t=0; the system kill ends the process
-            // anyway, so the stop must yield the window to the live batch.
             assertFalse(
-                "a live batch must keep the kill window, not die to an immediate stop",
+                "a live batch must not be stopped from the failed-promotion arm",
                 Shadows.shadowOf(service).isStoppedBySelf,
             )
         } finally {

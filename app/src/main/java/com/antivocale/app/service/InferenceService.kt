@@ -370,9 +370,15 @@ class InferenceService : Service(), TranscriptionListener {
         // (altitude round): the bare form would overwrite the pinned chunk
         // view, and no-op nav taps plus the signature dedup could never
         // restore it.
-        if (!promoteToForeground("onStartCommand")) {
-            // TASK-1030 mechanism A: the delivery-time promotion failed; see
-            // [preserveFailedDelivery] for what happens to this delivery.
+        if (!promoteToForeground("onStartCommand") && batchIdle()) {
+            // TASK-1030 mechanism A, EMPTY instance only (fable review
+            // round): AOSP sendServiceArgsLocked arms the per-delivery
+            // fgRequired timeout only when the service is not already
+            // foreground, so a failed promotion on a LIVE batch (an earlier
+            // promotion answered the service-level expectation) is not a
+            // doomed delivery; 1.17.0's report-and-carry-on stands there.
+            // An idle instance has nothing that will ever answer the
+            // expectation: see [preserveFailedDelivery].
             preserveFailedDelivery(intent)
             return START_NOT_STICKY
         }
@@ -383,8 +389,12 @@ class InferenceService : Service(), TranscriptionListener {
         // answer must never sit behind it). The drain still runs BEFORE this
         // request joins the queue (main thread = the intake point; the
         // drain-tail check below can otherwise race a request enqueued
-        // between its batchIdle read and its unload).
-        if (takePendingRearm() && batchIdle()) {
+        // between its batchIdle read and its unload). Operand order is
+        // load-bearing (fable review round): batchIdle() FIRST, exactly as
+        // the drain tail orders it, because takePendingRearm() CONSUMES the
+        // flag - the old order ate a pending re-arm whenever a delivery
+        // arrived mid-batch and the stale vocabulary stayed loaded.
+        if (batchIdle() && takePendingRearm()) {
             backendManager.unloadActiveBackend()
             Log.i(TAG, "deferred dictionary re-arm drained at intake")
         }
@@ -484,29 +494,28 @@ class InferenceService : Service(), TranscriptionListener {
     }
 
     /**
-     * TASK-1030 mechanism A: the delivery-time promotion failed (the OEM/OS
-     * restriction class TASK-1014 recorded in the field), so this REQUIRED
-     * delivery can no longer be answered and the system kills the process
-     * when the window expires. A request enqueued now would die mid-load
-     * with it; instead an identity-carrying delivery rides the SAME fallback
-     * notification the enqueue path posts for restricted starts
-     * ([InferenceEnqueue.postFallbackNotification]): its tap is
-     * user-initiated, which satisfies the FGS restriction, and the trampoline
-     * forwards the full extras set unchanged. Control deliveries are dropped,
-     * as before. The failure itself was already reported by
+     * TASK-1030 mechanism A, reached only with the batch idle: the
+     * delivery-time promotion failed (the OEM/OS restriction class TASK-1014
+     * records) and nothing else will ever answer this delivery's fgRequired
+     * expectation. The exception itself cannot be prevented (fable review,
+     * from AOSP bringDownServiceLocked: a teardown with fgRequired set
+     * raises it immediately, and the window expiry raises it otherwise; the
+     * AOSP default window is 30s, our 1.16.1 field events measured about
+     * 10s), so what is saved is the REQUEST: an identity-carrying delivery
+     * rides the SAME fallback notification the enqueue path posts for
+     * restricted starts ([InferenceEnqueue.postFallbackNotification]); its
+     * tap is user-initiated, which satisfies the FGS restriction, and the
+     * trampoline forwards the full extras set unchanged. Control deliveries
+     * are dropped, as before. The failure itself was already reported by
      * [promoteToForeground]'s failure arm, with the origin key.
      *
-     * The stop keeps the retireIfIdle discipline, minus the idle ENTRY
-     * guard (a doomed empty service must stop) and with the idleness
-     * RE-CHECK kept (review round): a LIVE batch at entry keeps the
-     * remainder of the kill window to finish (the system ends the process
-     * regardless; the startup sweep closes any non-terminal rows it
-     * leaves), and a tap on the just-posted fallback can legally re-promote
-     * and start a batch during the join window, which the re-check then
-     * spares exactly as retireIfIdle spares the burst-share race. The
-     * nothing-tracked-and-idle case stops synchronously, so the common
-     * empty case stays deterministic (both checks run on the delivery
-     * thread, which serializes against any later delivery).
+     * The stop keeps the retireIfIdle discipline with the idleness re-check:
+     * a tap on the just-posted fallback can legally re-promote and start a
+     * batch during the join window, which the re-check then spares exactly
+     * as retireIfIdle spares the burst-share race. The
+     * nothing-tracked-and-idle case stops synchronously, so the common empty
+     * case stays deterministic (both checks run on the delivery thread,
+     * which serializes against any later delivery).
      */
     private fun preserveFailedDelivery(intent: Intent?) {
         if (intent != null && !isControlDelivery(intent)) {
@@ -517,7 +526,7 @@ class InferenceService : Service(), TranscriptionListener {
                     Log.e(TAG, "Promotion failed and preservation failed too ($outcome); delivery lost")
             }
         }
-        if (batchIdle() && pendingResultNotifications.isEmpty()) {
+        if (pendingResultNotifications.isEmpty()) {
             stopSelf()
         } else {
             serviceScope.launch {
