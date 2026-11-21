@@ -140,7 +140,17 @@ class ExtractionService : Service() {
         Log.i(TAG, "Service created")
     }
 
+    /**
+     * TASK-1032 A: the startId of the most recent delivery; teardown stops
+     * are conditional on it so a startForegroundService delivery landing
+     * during a teardown owns the service instead of dying to our
+     * unconditional stop (the InferenceService comment documents the
+     * ActiveServices mechanics).
+     */
+    @Volatile private var lastStartId = -1
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        lastStartId = startId
         if (intent?.action == ACTION_CANCEL) {
             val modelKey = intent.getStringExtra(EXTRA_MODEL_KEY)
             val variant = intent.getStringExtra(EXTRA_CANCEL_VARIANT)
@@ -158,13 +168,13 @@ class ExtractionService : Service() {
 
         if (intent == null) {
             Log.w(TAG, "Null intent, stopping")
-            stopSelf()
+            stopSelf(lastStartId)
             return START_NOT_STICKY
         }
 
         val modelKey = intent.getStringExtra(EXTRA_MODEL_KEY) ?: run {
             Log.w(TAG, "No model_key extra, stopping")
-            stopSelf()
+            stopSelf(lastStartId)
             return START_NOT_STICKY
         }
         val variant = intent.getStringExtra(EXTRA_VARIANT)
@@ -257,7 +267,9 @@ class ExtractionService : Service() {
             if (activeJobs.isEmpty()) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 getSystemService(NotificationManager::class.java).cancelAll()
-                stopSelf()
+                // TASK-1032 A: conditional stop; a delivery that landed
+                // while this job finished owns the service now.
+                stopSelf(lastStartId)
             }
         }
     }
@@ -309,7 +321,8 @@ class ExtractionService : Service() {
 
         if (activeJobs.isEmpty()) {
             stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            // TASK-1032 A: conditional stop, same as the finally's.
+            stopSelf(lastStartId)
         }
     }
 

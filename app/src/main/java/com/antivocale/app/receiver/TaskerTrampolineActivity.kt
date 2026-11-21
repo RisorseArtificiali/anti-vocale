@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import com.antivocale.app.service.InferenceEnqueue
 import com.antivocale.app.service.InferenceService
 
 /**
@@ -30,10 +31,16 @@ class TaskerTrampolineActivity : Activity() {
             intent?.extras?.let { putExtras(it) }
         }
 
-        try {
-            startForegroundService(serviceIntent)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to start InferenceService from trampoline", e)
+        // TASK-1032 H: a failed start rides InferenceEnqueue.start (the ONE
+        // enqueue path) instead of being dropped: even a user tap can meet
+        // an FGS restriction, and the enqueue path owns the fallback that
+        // preserves the request.
+        when (val outcome = InferenceEnqueue.start(this, serviceIntent)) {
+            is InferenceEnqueue.Outcome.Started -> Unit
+            is InferenceEnqueue.Outcome.FallbackNotificationPosted ->
+                Log.w(TAG, "Trampoline start restricted; fallback notification carries the request")
+            is InferenceEnqueue.Outcome.Failed ->
+                Log.e(TAG, "Failed to start InferenceService from trampoline: $outcome")
         }
         finish()
     }

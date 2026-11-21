@@ -255,6 +255,19 @@ class InferenceService : Service(), TranscriptionListener {
     @Volatile private var latestEtaText = ""
     @Volatile private var latestDurationSeconds = 0
     @Volatile private var latestQueuedCount = 0
+
+    /**
+     * TASK-1032 A: the startId of the most recent delivery, consulted by
+     * every teardown stopSelf. The plain stopSelf() is UNCONDITIONAL in
+     * ActiveServices (stopServiceTokenLocked with startId -1), so an IO
+     * teardown could bring the service down while a startForegroundService
+     * delivery that re-armed fgRequired was still in flight: the same
+     * ForegroundServiceDidNotStartInTimeException, window of milliseconds,
+     * no non-fatal alongside. stopSelf(lastStartId) makes the system's own
+     * compare-and-stop close the race atomically: a newer delivery (its own
+     * promotion and its own teardown duties) survives ours.
+     */
+    @Volatile private var lastStartId = -1
     // Signature of the last rendered nav notification; when unchanged we skip the rebuild+notify
     // to avoid re-posting on every 200ms progress tick while the viewed chunk is stable.
     @Volatile private var lastNavSignature: String? = null
@@ -346,6 +359,7 @@ class InferenceService : Service(), TranscriptionListener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        lastStartId = startId
         Log.i(TAG, "onStartCommand called, action=${intent?.action}")
 
         // TASK-978: the promotion is the delivery's FIRST statement,
@@ -379,7 +393,7 @@ class InferenceService : Service(), TranscriptionListener {
             // doomed delivery; 1.17.0's report-and-carry-on stands there.
             // An idle instance has nothing that will ever answer the
             // expectation: see [preserveFailedDelivery].
-            preserveFailedDelivery(intent)
+            preserveFailedDelivery(intent, startId)
             return START_NOT_STICKY
         }
 
@@ -517,7 +531,7 @@ class InferenceService : Service(), TranscriptionListener {
      * case stays deterministic (both checks run on the delivery thread,
      * which serializes against any later delivery).
      */
-    private fun preserveFailedDelivery(intent: Intent?) {
+    private fun preserveFailedDelivery(intent: Intent?, bailStartId: Int) {
         if (intent != null && !isControlDelivery(intent)) {
             when (val outcome = InferenceEnqueue.postFallbackNotification(this, intent)) {
                 is InferenceEnqueue.Outcome.FallbackNotificationPosted ->
@@ -527,11 +541,18 @@ class InferenceService : Service(), TranscriptionListener {
             }
         }
         if (pendingResultNotifications.isEmpty()) {
-            stopSelf()
+            stopSelf(bailStartId)
         } else {
+            // TASK-1032 A (simplify round): capture THIS delivery's startId,
+            // not the live field. A delivery landing in the join window owns
+            // the service; a stale stopSelf is ignored by the system, so the
+            // captured form can never stop a newer delivery's work. (The
+            // drain tail reads the field instead: its re-kick loop processes
+            // any delivery that arrived mid-drain, so at true completion the
+            // field equals the last processed id.)
             serviceScope.launch {
                 joinPendingResultJobs()
-                if (batchIdle()) stopSelf()
+                if (batchIdle()) stopSelf(bailStartId)
             }
         }
     }
@@ -733,7 +754,9 @@ class InferenceService : Service(), TranscriptionListener {
             // would kill it via onDestroy's scope cancel.
             if (batchIdle()) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
+                // TASK-1032 A: conditional stop; a delivery that landed in
+                // the join window owns the service now.
+                stopSelf(lastStartId)
             }
 
             // Re-kick: a request landing in the window between the while
@@ -836,7 +859,8 @@ class InferenceService : Service(), TranscriptionListener {
             if (batchIdle()) {
                 silentKeepalive.stop()
                 stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
+                // TASK-1032 A: conditional stop, same as the drain tail.
+                stopSelf(lastStartId)
             }
         }
     }

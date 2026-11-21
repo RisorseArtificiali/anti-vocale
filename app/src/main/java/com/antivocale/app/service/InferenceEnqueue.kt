@@ -99,7 +99,21 @@ object InferenceEnqueue {
         // starts with colliding hashes overwrite one PendingIntent while the
         // two notifications stayed distinct, silently losing the first request
         // (the band comment's exact failure class, closed here).
-        val slot = TaskerRequestReceiver.fallbackNotificationId()
+        // TASK-1032 G: the slot must also be FREE. The sequential counter
+        // resets with the process, and the TASK-1030 preservation arm
+        // guarantees the process dies right after each post, so a second
+        // preservation on the same device reused slot one and silently
+        // replaced the earlier preserved request. Take the first idle slot
+        // in the reserved band; the counter stays the overflow path. The
+        // scan is main-thread only today (every caller posts from the main
+        // thread), which serializes it; an off-main caller would need its
+        // own synchronization.
+        val activeIds = notificationManager.activeNotifications.map { it.id }.toSet()
+        val slot = (TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_BASE until
+            TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_BASE +
+            TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_RANGE)
+            .firstOrNull { it !in activeIds }
+            ?: TaskerRequestReceiver.fallbackNotificationId()
         val pendingIntent = PendingIntent.getActivity(
             context,
             slot,

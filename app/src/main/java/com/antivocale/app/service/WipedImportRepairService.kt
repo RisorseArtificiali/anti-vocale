@@ -62,7 +62,17 @@ class WipedImportRepairService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    /**
+     * TASK-1032 A: the startId of the most recent delivery; teardown stops
+     * are conditional on it (the InferenceService comment documents the
+     * ActiveServices mechanics), so a startForegroundService delivery
+     * landing while the repair tears down owns the service instead of dying
+     * to an unconditional stop.
+     */
+    @Volatile private var lastStartId = -1
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        lastStartId = startId
         when (intent?.action) {
             ACTION_CANCEL -> {
                 repairJob?.cancel()
@@ -72,7 +82,7 @@ class WipedImportRepairService : Service() {
                 // requires it. stopSelf drops the foreground notice at
                 // once; the next cold start's scan re-offers the wipe.
                 startForegroundCompat(WipedImportRepairNotifications.progressNotification(this))
-                stopSelf()
+                stopSelf(lastStartId)
                 return START_NOT_STICKY
             }
             else -> {
@@ -112,7 +122,7 @@ class WipedImportRepairService : Service() {
                             networkFailedCount = result?.networkFailedIds?.size ?: 0,
                             sourceFailedCount = result?.sourceFailedIds?.size ?: 0)
                     }.onFailure { e -> Log.w(TAG, "Failed to post the outcome", e) }
-                    stopSelf()
+                    stopSelf(lastStartId)
                 }
                 return START_NOT_STICKY
             }
@@ -140,7 +150,19 @@ class WipedImportRepairService : Service() {
         Log.w(TAG, "dataSync timeout reached; cancelling the repair")
         repairJob?.cancel()
         stopForeground(STOP_FOREGROUND_DETACH)
-        stopSelf()
+        // TASK-1032 A: conditional stop, same discipline as the other
+        // services' teardown tails.
+        stopSelf(lastStartId)
+    }
+
+    /**
+     * TASK-1032 C: Android 15+ delivers the dataSync timeout to the
+     * TWO-argument form; without this override the designed stop above
+     * never runs and the budget exhaustion ends in the system's crash
+     * instead (the review's read of the Android 15 behavior-change note).
+     */
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        onTimeout(startId)
     }
 
     override fun onDestroy() {
