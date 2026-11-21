@@ -1,0 +1,1 @@
+• Düzeltildi: bazı cihazlarda arka planda transkripsiyon başlarken nadir yaşanan çökme; sistem tarafından engellenen bir başlatma artık kaybolmak yerine dokunulabilir bir bildirimde saklanıyor

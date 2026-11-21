@@ -1,0 +1,1 @@
+• Korjattu: harvinainen kaatuminen, kun transkriptio käynnistyy taustalla joillakin laitteilla; järjestelmän estämä käynnistys säilyy nyt napautettavana ilmoituksena katoamisen sijaan

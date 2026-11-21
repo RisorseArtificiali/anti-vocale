@@ -1,0 +1,1 @@
+• Naprawiono: rzadka awaria przy uruchamianiu transkrypcji w tle na niektórych urządzeniach; start zablokowany przez system jest teraz zachowany jako powiadomienie do dotknięcia, zamiast przepaść

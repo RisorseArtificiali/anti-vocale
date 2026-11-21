@@ -1,0 +1,1 @@
+• Opgelost: een zeldzame crash bij het starten van een transcriptie op de achtergrond op sommige apparaten; een door het systeem geblokkeerde start blijft nu als tikbare melding behouden in plaats van verloren te gaan
