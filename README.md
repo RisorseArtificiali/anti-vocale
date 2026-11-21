@@ -59,6 +59,7 @@ Measured by us, not declared by vendors: the per-language error rates of every m
 - **Any audio length** - Long inputs are automatically split and stitched; practical ceilings are declared up front (2 hours on the streaming path, memory-dependent with VAD enabled) (see the [FAQ](FAQ.md))
 - **Declared limits before download** - Each model card states its audio-length capability up front, so big downloads are informed choices
 - **Fits-your-device labels** - Model cards also state how their memory footprint fits your phone's RAM tier, so heavy models are an informed choice too; nothing is hidden, you can always install anyway
+- **Suggested for your phone** - A filter in the Models tab that picks the models your device runs comfortably, ordered by your language and measured quality; advisory only, one tap shows everything again
 - **Model benchmarking** - Compare real-world transcription speed between models on your own device
 
 ### Transcription pipeline
@@ -74,6 +75,7 @@ Measured by us, not declared by vendors: the per-language error rates of every m
 - **Speaker labels** - Optional per-sentence speaker attribution in conversations, rendered as SPEAKER turns in the result and every export
 - **Calibration-based ETA** - Progress estimates improve as the model adapts to your device
 - **Hostile-ROM resilience** - On phones whose vendor customizations freeze or kill background work (common on some Oppo, Realme, OnePlus and Vivo models), an opt-in background-protection toggle keeps transcription running with the screen off, a native NNAPI crash resets the provider to CPU on the next launch, and a corrupted model directory heals itself with a fresh download instead of failing forever
+- **Deleted-model recovery** - If a phone's storage cleaner deletes imported model files, the app notices and shows a recovery banner: download them again or remove the broken entries in one tap
 
 ### Results & history
 
