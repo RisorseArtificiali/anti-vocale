@@ -63,6 +63,28 @@ class SherpaBackend(
          */
         const val QWEN3_HOTWORDS_MAX_CHARS = 80
 
+        /**
+         * TASK-1033: the ONE offline feed, tail pad concatenated. sherpa's
+         * OfflineStream finalizes the feature extractor inside every
+         * acceptWaveform (offline-stream.cc calls fbank_->InputFinished()
+         * per feed), so a SECOND acceptWaveform on the same stream aborts
+         * the process natively ("AcceptWaveform called after
+         * InputFinished() was called."; deterministic on the RMX3853 with
+         * the parakeet tail pad, sherpa 2.0.2, pre-existing in v1.17.0).
+         * The pad keeps its WER effect as trailing samples of the single
+         * feed, the same merged shape ExternalSherpaBackend's offline arm
+         * already uses.
+         */
+        internal fun offlineFeed(
+            samples: FloatArray,
+            sampleRate: Int,
+            tailPadSeconds: Double,
+            tail: TailSilenceBuffer,
+        ): FloatArray =
+            if (tailPadSeconds > 0) {
+                samples + tail.get((sampleRate * tailPadSeconds).toInt())
+            } else samples
+
 
         /**
          * TASK-994 phase 3: the streaming Nemotron vocab file name (its
@@ -507,12 +529,14 @@ class SherpaBackend(
 
     /**
      * Shared tail-pad silence (TASK-340 Fix 1b): chunked transcription used to build a fresh
-     * `samples + FloatArray(tail)` copy per chunk; a second acceptWaveform of this one shared
-     * zero-filled buffer (64KB for 1s at 16kHz) achieves the same final-token flush with no
-     * per-chunk allocation. Never write into the returned array.
+     * `samples + FloatArray(tail)` copy per chunk; on the STREAMING path (OnlineStream, where
+     * multi-feed is legal) a second acceptWaveform of this one shared zero-filled buffer
+     * (64KB for 1s at 16kHz) achieves the same final-token flush with no per-chunk allocation.
+     * The OFFLINE path must NOT second-feed: OfflineStream aborts the process on a second
+     * acceptWaveform (TASK-1033), so it concatenates this buffer into the single feed and
+     * deliberately pays the copy. Never write into the returned array.
      */
     private val tailSilence = TailSilenceBuffer()
-
     private val isStreaming: Boolean get() = BundledCatalog.byId(entryId)?.isStreaming == true
 
     override suspend fun initialize(context: Context, config: BackendConfig): Result<Unit> {
@@ -931,26 +955,25 @@ class SherpaBackend(
                         preferences.keywordBiasing.first(), maxChars = QWEN3_HOTWORDS_MAX_CHARS)
                         ?.let { stream.setOption("hotwords", it) }
                 }
-                stream.acceptWaveform(samples, sampleRate)
-                // Append `tailPadSeconds` (catalog flag) of silence. The pad's
-                // WER effect on parakeet is VARIANT-DEPENDENT (TASK-715 + the
-                // 717 smoothquant arm, DESKTOP numbers): stock-int8 pays 2.5pp
-                // for it (0.0065 without, 0.0313 with), smoothquant GAINS
-                // 0.9pp (0.0476 with, 0.0563 without). The flag is entry-level
-                // and now applies to stock-int8, the default since 1.14.0:
-                // the device A/B of pad-on-stock is THE open follow-up (the
-                // desktop numbers were measured before the input-chain fix);
-                // if it confirms the 2.5pp cost, the flag must become
-                // per-variant. The old "~2% improvement on WhatsApp audio"
-                // claim remains unreproduced on either variant.
-                // Nemotron's 1.5s lives in the STREAMING path below (TASK-340
-                // Fix 1b shape: a second acceptWaveform of one shared zero
-                // buffer, no per-chunk copy). Gigaam's 1s is unmeasured (its
-                // model dir is not on the eval host).
-                val tailPad = entry.flags.tailPadSeconds
-                if (tailPad > 0) {
-                    stream.acceptWaveform(tailSilence.get((sampleRate * tailPad).toInt()), sampleRate)
-                }
+                // TASK-1033: ONE feed, pad concatenated (see offlineFeed).
+                stream.acceptWaveform(
+                    offlineFeed(samples, sampleRate, entry.flags.tailPadSeconds, tailSilence),
+                    sampleRate)
+                // The appended `tailPadSeconds` (catalog flag) of silence.
+                // The pad's WER effect on parakeet is VARIANT-DEPENDENT
+                // (TASK-715 + the 717 smoothquant arm, DESKTOP numbers):
+                // stock-int8 pays 2.5pp for it (0.0065 without, 0.0313
+                // with), smoothquant GAINS 0.9pp (0.0476 with, 0.0563
+                // without). The flag is entry-level and now applies to
+                // stock-int8, the default since 1.14.0: the device A/B of
+                // pad-on-stock is THE open follow-up (the desktop numbers
+                // were measured before the input-chain fix); if it confirms
+                // the 2.5pp cost, the flag must become per-variant. The old
+                // "~2% improvement on WhatsApp audio" claim remains
+                // unreproduced on either variant. Nemotron's 1.5s lives in
+                // the STREAMING path below (OnlineStream: multi-feed is
+                // legal there). Gigaam's 1s is unmeasured (its model dir is
+                // not on the eval host).
                 rec.decode(stream)
 
                 val result = rec.getResult(stream)
@@ -1184,9 +1207,13 @@ class SherpaBackend(
 }
 /**
  * Lazily-allocated, shared all-zero silence buffer for tail padding (TASK-340 Fix 1b).
- * Sized per request and cached per size; feeding it as a second acceptWaveform call
- * replaces the per-chunk `samples + silence` full copy. The buffer must never be
- * written to: callers rely on it staying all zeros.
+ * Sized per request and cached per size. TWO usages, and only one may second-feed:
+ * the streaming callers feed it as a second acceptWaveform on an OnlineStream
+ * (replacing the per-chunk `samples + silence` full copy), while the offline callers
+ * CONCATENATE it into their single feed because sherpa's OfflineStream aborts the
+ * process on a second acceptWaveform (TASK-1033); do not "optimize" the offline arm
+ * back into a second feed. The buffer must never be written to: callers rely on it
+ * staying all zeros.
  */
 internal class TailSilenceBuffer {
     // @Volatile: transcribeAudio may run on more than one coroutine when the
