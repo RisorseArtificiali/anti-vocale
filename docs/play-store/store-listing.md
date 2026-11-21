@@ -46,6 +46,8 @@ No account, no ads, no tracking, no data collection. Your audio stays on your ph
 OPEN SOURCE
 Free and open source. Want the technical details, the model list, measured quality per language, and how to contribute? Everything is on GitHub: https://github.com/RisorseArtificiali/anti-vocale
 
+---
+
 ## Descrizione Breve (80 caratteri max)
 ```
 Trasforma i vocali in testo. Funziona offline, direttamente sul telefono.
