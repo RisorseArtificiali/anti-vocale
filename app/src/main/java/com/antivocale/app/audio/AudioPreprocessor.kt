@@ -69,9 +69,12 @@ class AudioPreprocessor @Inject constructor() {
          * suffix logic drops the total when the stream passes it, so the
          * estimate stays an estimate, never a contract. A floor under-counts
          * by one for every non-exact multiple (TASK-444).
+         * TASK-1037: the implementation moved to [StreamResume] (pure,
+         * JVM-testable, the resumed-variant's shared source); this delegate
+         * keeps the original call sites' shape.
          */
         internal fun expectedChunkCount(totalDurationSeconds: Double, chunkDurationSeconds: Int): Int =
-            kotlin.math.ceil(totalDurationSeconds / chunkDurationSeconds).toInt().coerceAtLeast(1)
+            StreamResume.expectedChunkCount(totalDurationSeconds, chunkDurationSeconds)
 
         /**
          * The "/N" total for interim progress, or "" when showing a total would
@@ -153,7 +156,12 @@ class AudioPreprocessor @Inject constructor() {
         /** 0 = unknown: the container carries no KEY_DURATION, so the count is
          * unknowable pre-decode; consumers render progress without a total
          * instead of inventing one (estimate drift, code review 2026-09-04 F6). */
-        val expectedChunkCount: Int
+        val expectedChunkCount: Int,
+        /** TASK-1037 phase 1: the offset this decode started at, in the same
+         * 16 kHz output-sample timeline (0 = a full decode). The count above
+         * covers ONLY what this stint emits (the remaining audio), so a
+         * resumed header never announces the whole file's count. */
+        val startOffsetSamples: Long = 0,
     )
 
     /**
@@ -344,8 +352,14 @@ class AudioPreprocessor @Inject constructor() {
         vadNumThreads: Int = 1,
         vadProvider: String = "cpu",
         availableRamBytes: Long? = null,
-        maxHeapBytes: Long? = null
+        maxHeapBytes: Long? = null,
+        /** TASK-1037 phase 1: resume the decode at this many 16 kHz OUTPUT
+         * samples (the pipeline's canonical timeline). Baseline
+         * decode-and-discard: exact by construction, no seek. Zero (the
+         * default) is every caller today: unchanged behavior. */
+        startOffsetSamples: Long = 0,
     ): Flow<StreamEvent> = flow {
+        require(startOffsetSamples >= 0) { "startOffsetSamples must be >= 0" }
         validateInputFile(inputPath)
 
         // The whole-file delegation below validates with its own (tighter)
@@ -353,6 +367,9 @@ class AudioPreprocessor @Inject constructor() {
         // open and refuse with the wrong path label for a request that
         // actually decodes whole-file.
         val decodeWholeFile = enableVad && context != null
+        require(!(decodeWholeFile && startOffsetSamples > 0)) {
+            "startOffsetSamples is the pipelined path's resume mechanism; the whole-file/VAD arm does not support it"
+        }
         if (!decodeWholeFile) {
             validateDuration(
                 inputPath,
@@ -435,16 +452,30 @@ class AudioPreprocessor @Inject constructor() {
                 // not from sample counts).
                 var decodeRate = inputSampleRate
 
+                // TASK-1037 phase 1: a resumed stint announces the count for
+                // the REMAINING audio only; the offset rides the header so
+                // the consumer can seed its global timeline.
+                val headerChunks = if (startOffsetSamples > 0) {
+                    StreamResume.expectedChunkCountFrom(
+                        totalDurationSeconds, maxChunkDurationSeconds, startOffsetSamples, outputSampleRate)
+                } else expectedChunks
                 channel.trySendBlocking(StreamEvent.Header(StreamHeader(
                     sampleRate = outputSampleRate,
                     totalDurationSeconds = totalDurationSeconds,
-                    expectedChunkCount = expectedChunks
+                    expectedChunkCount = headerChunks,
+                    startOffsetSamples = startOffsetSamples,
                 )))
 
                 val decoder = createDecoderOrThrow(mime, inputPath)
                 val accumulator = mutableListOf<FloatArray>()
                 var accumulatedSamples = 0
                 var chunkIndex = 0
+                // TASK-1037 phase 1: the running discard counters. skipRemaining
+                // hits 0 exactly when the canonical timeline reaches the resume
+                // point; from then on the loop is byte-identical to a full
+                // decode started at that point.
+                var skippedSamples = 0L
+                var skipRemaining = startOffsetSamples
                 fun emitChunk(samples: FloatArray, isLast: Boolean) {
                     channel.trySendBlocking(StreamEvent.Chunk(StreamChunk(
                         samples = samples,
@@ -488,6 +519,28 @@ class AudioPreprocessor @Inject constructor() {
                                 var decoded = decodeChunkToMonoFloat(outputBuffer, bufferInfo, inputChannels)
                                 if (decodeRate != TARGET_SAMPLE_RATE) {
                                     decoded = resampleFloat(decoded, decodeRate.toDouble() / TARGET_SAMPLE_RATE)
+                                }
+                                // TASK-1037 phase 1: the decode-and-discard
+                                // skip. Applied AFTER the resampler so the
+                                // count is in the canonical 16 kHz timeline;
+                                // the resampler's own warmup samples (the
+                                // fractional tail it carries) differ slightly
+                                // from a seek-based resume, which is exactly
+                                // why discard is the exact baseline and seek
+                                // only an optimization phase 0 measured.
+                                if (skipRemaining > 0) {
+                                    val keep = StreamResume.keepAfterSkip(
+                                        alreadySkipped = skippedSamples,
+                                        decodedCount = decoded.size,
+                                        skipTarget = startOffsetSamples)
+                                    skippedSamples += keep.keepFrom
+                                    skipRemaining = startOffsetSamples - skippedSamples
+                                    if (keep.keepFrom >= decoded.size) {
+                                        decoder.releaseOutputBuffer(outputBufferIndex, false)
+                                        if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) outputEOS = true
+                                        continue
+                                    }
+                                    decoded = decoded.copyOfRange(keep.keepFrom, decoded.size)
                                 }
                                 accumulator.add(decoded)
                                 accumulatedSamples += decoded.size
@@ -554,6 +607,17 @@ class AudioPreprocessor @Inject constructor() {
                     emitChunk(remaining.copyOfRange(0, cut), isLast = false)
                     remaining = remaining.copyOfRange(cut, remaining.size)
                 }
+                // TASK-1037 phase 1 (code review): EOS with the skip still
+                // outstanding means the container's decoded length is SHORTER
+                // than the offset (duration-tag drift, the TASK-449 class, or
+                // a replaced source). Silently completing here would hand the
+                // consumer a zero-chunk stint that reads as success, so the
+                // refusal is loud and carries both numbers.
+                if (skipRemaining > 0) {
+                    throw PreprocessingError.ConversionFailed(
+                        "resume offset $startOffsetSamples samples reached end of audio after $skippedSamples decoded samples")
+                }
+
                 channel.close()
             } catch (e: PreprocessingError) {
                 channel.close(e)
