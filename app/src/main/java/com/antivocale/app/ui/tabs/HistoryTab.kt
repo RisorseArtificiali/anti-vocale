@@ -677,9 +677,13 @@ private fun QueuedStatusLabel() {
 
 fun buildContextMenuActions(log: LogEntry, canRetranscribe: Boolean): List<ContextMenuAction> {
     val actions = mutableListOf<ContextMenuAction>()
-    // In-flight entries (queued or processing) can be cancelled (GH #52 follow-up);
-    // Cancel leads while the item is in flight, it is the primary action there.
-    if (log.status == LogEntry.Status.QUEUED || log.status == LogEntry.Status.PROCESSING) {
+    // In-flight entries (queued, processing or paused) can be cancelled
+    // (GH #52 follow-up); Cancel leads while the item is in flight, it is
+    // the primary action there. PAUSED rides the in-flight arms (code
+    // review): a parked run is still live work the user may want to stop.
+    if (log.status == LogEntry.Status.QUEUED ||
+        log.status == LogEntry.Status.PROCESSING ||
+        log.status == LogEntry.Status.PAUSED) {
         actions.add(ContextMenuAction.CANCEL)
     }
     if (canRetranscribe) actions.add(ContextMenuAction.RETRANSCRIBE)
@@ -1834,12 +1838,17 @@ fun LogEntryItem(
                 // Right: Status icon + Relative time
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
+                        // TASK-1037: a PAUSED row renders like PROCESSING
+                        // here (in flight with partial text); the distinct
+                        // paused icon and label are phase 4 with their own
+                        // localized strings.
                         imageVector = when {
                             log.status == LogEntry.Status.SUCCESS && log.isPartial -> Icons.Default.Warning
                             log.status == LogEntry.Status.SUCCESS -> Icons.Default.CheckCircle
                             log.status == LogEntry.Status.ERROR -> Icons.Default.Error
                             log.status == LogEntry.Status.QUEUED -> Icons.Default.Schedule
-                            log.status == LogEntry.Status.PROCESSING -> Icons.Default.HourglassEmpty
+                            log.status == LogEntry.Status.PROCESSING || log.status == LogEntry.Status.PAUSED ->
+                                Icons.Default.HourglassEmpty
                             else -> Icons.Default.CheckCircle
                         },
                         contentDescription = when {
@@ -1851,7 +1860,7 @@ fun LogEntryItem(
                                 stringResource(R.string.logs_status_error)
                             log.status == LogEntry.Status.QUEUED ->
                                 stringResource(R.string.logs_status_queued)
-                            log.status == LogEntry.Status.PROCESSING ->
+                            log.status == LogEntry.Status.PROCESSING || log.status == LogEntry.Status.PAUSED ->
                                 stringResource(R.string.logs_status_processing)
                             else -> stringResource(R.string.logs_status_success)
                         },
@@ -1861,7 +1870,8 @@ fun LogEntryItem(
                             log.status == LogEntry.Status.SUCCESS -> MaterialTheme.colorScheme.primary
                             log.status == LogEntry.Status.ERROR -> MaterialTheme.colorScheme.error
                             log.status == LogEntry.Status.QUEUED -> MaterialTheme.colorScheme.tertiary
-                            log.status == LogEntry.Status.PROCESSING -> MaterialTheme.colorScheme.secondary
+                            log.status == LogEntry.Status.PROCESSING || log.status == LogEntry.Status.PAUSED ->
+                                MaterialTheme.colorScheme.secondary
                             else -> MaterialTheme.colorScheme.primary
                         }
                     )
@@ -1911,7 +1921,7 @@ fun LogEntryItem(
             } else if (log.status == LogEntry.Status.QUEUED) {
                 Spacer(modifier = Modifier.height(6.dp))
                 QueuedStatusLabel()
-            } else if (log.status == LogEntry.Status.PROCESSING) {
+            } else if (log.status == LogEntry.Status.PROCESSING || log.status == LogEntry.Status.PAUSED) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Crossfade(
                     targetState = log.result.isNotEmpty(),
@@ -2478,7 +2488,10 @@ fun LogEntryItem(
                     LogEntry.Status.QUEUED -> {
                         QueuedStatusLabel()
                     }
-                    LogEntry.Status.PROCESSING -> {
+                    // TASK-1037: PAUSED rides the PROCESSING arm (interim
+                    // text over the cap); its own label, position line and
+                    // Resume/Discard actions are phase 4.
+                    LogEntry.Status.PROCESSING, LogEntry.Status.PAUSED -> {
                         if (log.result.isNotEmpty()) {
                             // Interim transcription text during progressive VAD transcription
                             Text(

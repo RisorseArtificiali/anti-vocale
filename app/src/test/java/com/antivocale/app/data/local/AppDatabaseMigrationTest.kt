@@ -46,7 +46,7 @@ private val ALL_MIGRATIONS = arrayOf(
     AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10,
     AppDatabase.MIGRATION_10_11, AppDatabase.MIGRATION_11_12, AppDatabase.MIGRATION_12_13,
     AppDatabase.MIGRATION_13_14, AppDatabase.MIGRATION_14_15,
-    AppDatabase.MIGRATION_15_16,
+    AppDatabase.MIGRATION_15_16, AppDatabase.MIGRATION_16_17,
 )
 
 @RunWith(AndroidJUnit4::class)
@@ -307,6 +307,51 @@ class AppDatabaseMigrationTest {
         val failed = runBlocking { db!!.logDao().getByTaskId("task-1") }
         assertNull(failed!!.savedFolderName)
         assertEquals("permission revoked", failed.saveFailureReason)
+    }
+
+    /**
+     * TASK-1037 (GH #190): v17 adds the two session tables; the logs table
+     * is untouched. Opening the migrated database passes Room's runtime
+     * schema validation (the exact check that throws when a CREATE TABLE
+     * drifts from the entity), and the DAO round-trip proves both tables
+     * are usable at v17 with rows readable through the entities.
+     */
+    @Test
+    fun migrate_16_to_17_createsSessionTables_andPassesSchemaValidation() {
+        seedV2Database()
+        db = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+
+        val row = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertNotNull("The logs row must survive the v17 migration", row)
+
+        runBlocking {
+            db!!.sessionDao().upsertSession(
+                TranscriptionSessionEntity(
+                    taskId = "task-1",
+                    filePath = "/data/shared_audio/note.m4a",
+                    fileSizeBytes = 1024L,
+                    fileMtimeMs = 42L,
+                    backendId = "parakeet",
+                    modelPath = "/models/parakeet-tdt",
+                    source = "SHARE",
+                    state = TranscriptionSessionEntity.STATE_ACTIVE,
+                    createdAtMs = 1L,
+                    updatedAtMs = 1L,
+                )
+            )
+            db!!.sessionDao().insertChunk(
+                SessionChunkEntity(
+                    taskId = "task-1",
+                    startSample = 0L,
+                    endSample = 160_000L,
+                    text = "primo pezzo",
+                )
+            )
+        }
+        assertEquals(160_000L, runBlocking { db!!.sessionDao().contiguousPrefixEnd("task-1") })
     }
 
     /** A fresh v3 DB (no migration) must also be internally consistent with the entity. */

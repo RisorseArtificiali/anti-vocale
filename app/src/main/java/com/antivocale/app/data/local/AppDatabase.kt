@@ -8,10 +8,16 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 
-@Database(entities = [LogEntity::class], version = 16, exportSchema = true)
+@Database(
+    entities = [LogEntity::class, TranscriptionSessionEntity::class, SessionChunkEntity::class],
+    version = 17,
+    exportSchema = true,
+)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun logDao(): LogDao
+
+    abstract fun sessionDao(): SessionDao
 
     companion object {
         @Volatile
@@ -124,6 +130,57 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * TASK-1037 (GH #190): the resumable-session store. Both tables
+         * are fresh (no logs change, no data move); the DDL mirrors the
+         * entities exactly because Room validates it at open time.
+         */
+        internal val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `transcription_sessions` (
+                        `taskId` TEXT NOT NULL,
+                        `filePath` TEXT NOT NULL,
+                        `fileSizeBytes` INTEGER NOT NULL,
+                        `fileMtimeMs` INTEGER NOT NULL,
+                        `backendId` TEXT NOT NULL,
+                        `modelPath` TEXT NOT NULL,
+                        `languagePin` TEXT,
+                        `prompt` TEXT NOT NULL,
+                        `source` TEXT NOT NULL,
+                        `sourcePackage` TEXT,
+                        `senderName` TEXT,
+                        `state` TEXT NOT NULL,
+                        `totalOutputSamples` INTEGER,
+                        `accumulatedComputeMs` INTEGER NOT NULL,
+                        `failedChunkCount` INTEGER NOT NULL,
+                        `blankChunkCount` INTEGER NOT NULL,
+                        `retriedChunkCount` INTEGER NOT NULL,
+                        `crashAtOffsetCount` INTEGER NOT NULL,
+                        `createdAtMs` INTEGER NOT NULL,
+                        `updatedAtMs` INTEGER NOT NULL,
+                        PRIMARY KEY(`taskId`)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `session_chunks` (
+                        `taskId` TEXT NOT NULL,
+                        `startSample` INTEGER NOT NULL,
+                        `endSample` INTEGER NOT NULL,
+                        `text` TEXT NOT NULL,
+                        `cuesJson` TEXT,
+                        `confidence` REAL,
+                        `detectedLanguage` TEXT,
+                        PRIMARY KEY(`taskId`, `startSample`)
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(
@@ -139,7 +196,7 @@ abstract class AppDatabase : RoomDatabase() {
                             FrameworkSQLiteOpenHelperFactory(),
                         )
                     )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
                     .build().also { INSTANCE = it }
             }
         }

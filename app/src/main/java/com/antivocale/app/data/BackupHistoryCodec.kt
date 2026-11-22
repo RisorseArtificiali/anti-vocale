@@ -1,6 +1,7 @@
 package com.antivocale.app.data
 
 import com.antivocale.app.data.local.LogEntity
+import com.antivocale.app.ui.viewmodel.LogEntry as UiLogEntry
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
@@ -128,43 +129,63 @@ object BackupHistoryCodec {
         return dropped
     }
 
-    /** Column-complete by construction: every LogEntity field, same key on both ends. */
-    internal fun rowToJson(row: LogEntity): JSONObject = JSONObject()
-        .put("id", row.id)
-        .put("timestamp", row.timestamp)
-        .put("taskId", row.taskId)
-        .put("type", row.type)
-        .put("status", row.status)
-        .put("prompt", row.prompt)
-        .put("result", row.result)
-        .put("errorMessage", row.errorMessage ?: JSONObject.NULL)
-        .put("durationMs", row.durationMs)
-        .put("filePath", row.filePath ?: JSONObject.NULL)
-        .put("audioDurationSeconds", row.audioDurationSeconds)
-        .put("sourcePackageName", row.sourcePackageName ?: JSONObject.NULL)
-        .put("senderName", row.senderName ?: JSONObject.NULL)
-        .put("isPartial", row.isPartial)
-        .put("failedChunkCount", row.failedChunkCount)
-        .put("modelName", row.modelName ?: JSONObject.NULL)
-        .put("rawTranscript", row.rawTranscript ?: JSONObject.NULL)
-        .put("summary", row.summary ?: JSONObject.NULL)
-        .put("summarySkipReason", row.summarySkipReason ?: JSONObject.NULL)
-        .put("segments", row.segments ?: JSONObject.NULL)
-        .put("failureContext", row.failureContext ?: JSONObject.NULL)
-        .put("processingContext", row.processingContext ?: JSONObject.NULL)
-        .put("firstPassTranscript", row.firstPassTranscript ?: JSONObject.NULL)
-        .put("detectedLanguage", row.detectedLanguage ?: JSONObject.NULL)
-        .put("languagePin", row.languagePin ?: JSONObject.NULL)
-        .put("savedFolderName", row.savedFolderName ?: JSONObject.NULL)
-        .put("savedFileName", row.savedFileName ?: JSONObject.NULL)
-        .put("saveFailureReason", row.saveFailureReason ?: JSONObject.NULL)
-        // TASK-842's column joined after the format shipped; a missing key
-        // on import reads null (backwards compatible, no version bump).
-        .put("contentHash", row.contentHash ?: JSONObject.NULL)
-        // TASK-904's column joined later still (filed as TASK-913 when the
-        // review caught it missing here); same backwards-compat story: a
-        // missing key on import reads false.
-        .put("switchedToSibling", row.switchedToSibling)
+    /**
+     * Column-complete by construction: every LogEntity field, same key on both ends.
+     *
+     * TASK-1037 (GH #190): the archive never carries a status the importing
+     * build cannot parse. A PAUSED row exports as a partial ERROR row with
+     * its text kept: the honest degradation, rendered by the importer like
+     * any salvaged mid-stream failure (Status.valueOf on an unknown value
+     * would crash the import). Session tables are deliberately excluded
+     * from the archive: they describe in-flight work bound to a local file.
+     */
+    internal fun rowToJson(row: LogEntity): JSONObject {
+        // The UI enum's name is the row's stored spelling (aliased because
+        // this file's LogEntity import is the Room entity).
+        val paused = row.status == UiLogEntry.Status.PAUSED.name
+        return JSONObject()
+            .put("id", row.id)
+            .put("timestamp", row.timestamp)
+            .put("taskId", row.taskId)
+            .put("type", row.type)
+            .put("status", if (paused) UiLogEntry.Status.ERROR.name else row.status)
+            .put("prompt", row.prompt)
+            .put("result", row.result)
+            // Code review: a paused row carries a null errorMessage, which
+            // renders as "unknown error" on the importing device. The
+            // degraded export states the honest reason instead.
+            .put("errorMessage", when {
+                paused -> "Transcription paused before completion"
+                else -> row.errorMessage ?: JSONObject.NULL
+            })
+            .put("durationMs", row.durationMs)
+            .put("filePath", row.filePath ?: JSONObject.NULL)
+            .put("audioDurationSeconds", row.audioDurationSeconds)
+            .put("sourcePackageName", row.sourcePackageName ?: JSONObject.NULL)
+            .put("senderName", row.senderName ?: JSONObject.NULL)
+            .put("isPartial", row.isPartial || paused)
+            .put("failedChunkCount", row.failedChunkCount)
+            .put("modelName", row.modelName ?: JSONObject.NULL)
+            .put("rawTranscript", row.rawTranscript ?: JSONObject.NULL)
+            .put("summary", row.summary ?: JSONObject.NULL)
+            .put("summarySkipReason", row.summarySkipReason ?: JSONObject.NULL)
+            .put("segments", row.segments ?: JSONObject.NULL)
+            .put("failureContext", row.failureContext ?: JSONObject.NULL)
+            .put("processingContext", row.processingContext ?: JSONObject.NULL)
+            .put("firstPassTranscript", row.firstPassTranscript ?: JSONObject.NULL)
+            .put("detectedLanguage", row.detectedLanguage ?: JSONObject.NULL)
+            .put("languagePin", row.languagePin ?: JSONObject.NULL)
+            .put("savedFolderName", row.savedFolderName ?: JSONObject.NULL)
+            .put("savedFileName", row.savedFileName ?: JSONObject.NULL)
+            .put("saveFailureReason", row.saveFailureReason ?: JSONObject.NULL)
+            // TASK-842's column joined after the format shipped; a missing key
+            // on import reads null (backwards compatible, no version bump).
+            .put("contentHash", row.contentHash ?: JSONObject.NULL)
+            // TASK-904's column joined later still (filed as TASK-913 when the
+            // review caught it missing here); same backwards-compat story: a
+            // missing key on import reads false.
+            .put("switchedToSibling", row.switchedToSibling)
+    }
 
     /** The inverse: a missing key reads the entity's own default (never a silent 0-vs-null swap). */
     internal fun rowFromJson(o: JSONObject): LogEntity = LogEntity(

@@ -131,7 +131,14 @@ data class LogEntry(
 ) {
     enum class Type { TEXT, AUDIO }
 
-    enum class Status { QUEUED, PROCESSING, SUCCESS, ERROR }
+    /**
+     * TASK-1037 (GH #190): PAUSED is a live-session row state (a
+     * resumable run parked at a chunk boundary). Appended last so the
+     * existing ordinals stay stable; statuses persist by name. Every
+     * dispatch site renders it like PROCESSING for now; the distinct
+     * paused icon, label and actions are phase 4.
+     */
+    enum class Status { QUEUED, PROCESSING, SUCCESS, ERROR, PAUSED }
 
     /** A final transcript (the collapsed preview and Share gate on it). */
     val hasCompletedResult: Boolean
@@ -148,7 +155,8 @@ data class LogEntry(
      * affordance; the menu/swipe gates key on delivery, not salvage).
      */
     val hasCopyableResult: Boolean
-        get() = result.isNotEmpty() && (status == Status.SUCCESS || status == Status.PROCESSING)
+        get() = result.isNotEmpty() &&
+            (status == Status.SUCCESS || status == Status.PROCESSING || status == Status.PAUSED)
 }
 
 /**
@@ -290,8 +298,8 @@ class LogsViewModel @Inject constructor(
      * Used by the PiP view to efficiently observe only the relevant entry.
      */
     val activeTranscription: StateFlow<LogEntry?> = logs.map { logList ->
-        logList.firstOrNull { it.status == LogEntry.Status.PROCESSING && it.result.isNotEmpty() }
-            ?: logList.firstOrNull { it.status == LogEntry.Status.PROCESSING || it.status == LogEntry.Status.QUEUED }
+        logList.firstOrNull { (it.status == LogEntry.Status.PROCESSING || it.status == LogEntry.Status.PAUSED) && it.result.isNotEmpty() }
+            ?: logList.firstOrNull { it.status == LogEntry.Status.PROCESSING || it.status == LogEntry.Status.QUEUED || it.status == LogEntry.Status.PAUSED }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _interruptedTranscription = MutableStateFlow<String?>(null)

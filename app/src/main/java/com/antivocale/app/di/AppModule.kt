@@ -22,6 +22,7 @@ import com.antivocale.app.ui.appearance.LauncherIconManager
 import java.util.concurrent.TimeUnit
 import com.antivocale.app.data.local.AppDatabase
 import com.antivocale.app.data.local.LogDao
+import com.antivocale.app.data.local.SessionDao
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.util.CrashReporter
 import dagger.Module
@@ -296,6 +297,12 @@ object AppModule {
     @Provides
     fun provideLogDao(database: AppDatabase): LogDao {
         return database.logDao()
+    }
+
+    /** TASK-1037 (GH #190): the resumable-session store rides the same database singleton. */
+    @Provides
+    fun provideSessionDao(database: AppDatabase): SessionDao {
+        return database.sessionDao()
     }
 
     @Provides

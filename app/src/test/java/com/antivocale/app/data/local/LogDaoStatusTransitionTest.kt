@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -172,5 +173,27 @@ class LogDaoStatusTransitionTest {
         dao.failNonTerminal("killed", "Interrupted by app restart", 0L)
 
         assertEquals(1, dao.countInterruptedSince(since = 0L))
+    }
+
+    /**
+     * TASK-1037 (GH #190): a PAUSED row is a live session parked at a
+     * chunk boundary, not lost work. Every non-terminal SQL list must
+     * stay QUEUED/PROCESSING/PENDING: closing a PAUSED row here would
+     * destroy the resume state the session store owns (the row would
+     * render as a dead error while its session rows still exist).
+     */
+    @Test
+    fun `PAUSED rows survive every non-terminal close and stay out of getNonTerminal`() = runBlocking {
+        insert("paused", "PAUSED")
+        insert("queued", "QUEUED")
+
+        assertTrue(dao.getNonTerminal().none { it.taskId == "paused" })
+
+        dao.failAllNonTerminal("Interrupted by app restart")
+        dao.failNonTerminal("paused", "Cancelled", 0L)
+        dao.failNonTerminalForTaskIds(listOf("paused"), "Cancelled")
+
+        assertEquals("PAUSED", dao.getByTaskId("paused")?.status)
+        assertEquals("ERROR", dao.getByTaskId("queued")?.status)
     }
 }

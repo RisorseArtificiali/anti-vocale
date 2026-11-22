@@ -58,6 +58,30 @@ class BackupHistoryCodecTest {
         assertEquals(fullRow, decoded)
     }
 
+    /**
+     * TASK-1037 (GH #190): the archive never carries a status the
+     * importing build cannot parse. A PAUSED row degrades to a partial
+     * ERROR row with its text kept (Status.valueOf on "PAUSED" would
+     * crash the import); the degraded form itself round-trips.
+     */
+    @Test
+    fun `a PAUSED row exports as a partial ERROR row and round-trips`() {
+        val paused = fullRow.copy(status = "PAUSED", isPartial = false)
+
+        val json = BackupHistoryCodec.rowToJson(paused)
+        val decoded = BackupHistoryCodec.rowFromJson(json)
+
+        assertEquals("ERROR", json.getString("status"))
+        assertTrue(json.getBoolean("isPartial"))
+        assertFalse(json.toString().contains("PAUSED"))
+        // The paused export states the honest reason (code review: a null
+        // errorMessage renders as "unknown error" on the importing device).
+        assertEquals("Transcription paused before completion", json.getString("errorMessage"))
+        // Text kept; everything else identical to the original row except
+        // the errorMessage the degradation writes.
+        assertEquals(fullRow.copy(status = "ERROR", errorMessage = "Transcription paused before completion"), decoded)
+    }
+
     @Test
     fun `the NDJSON payload round-trips through read`() {
         val lines = listOf(fullRow, fullRow.copy(id = "row-2", timestamp = 2L))
