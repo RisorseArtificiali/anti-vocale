@@ -210,6 +210,10 @@ On Samsung, the equivalent ("Storage Booster" under Battery and device care) has
 
 In all cases the fix for a wiped model is the same: open the Models tab and download it again. Nothing else in the app is affected; transcripts and settings are stored elsewhere and survive.
 
+### The folder picker shows the WhatsApp Voice Notes folder as empty. Why?
+
+On some Samsung and One UI devices the system folder picker opens the messaging app's media folder but shows it as empty, or refuses it with "This folder can't be used", even when the voice notes are there. This is a One UI quirk: the folder picker's permission propagation sometimes needs a restart to reach app-private media directories. Restarting the phone fixes it; the picker then lists the voice notes normally. The same restart is needed if you granted access and the folder still looks empty.
+
 ## Nightly builds
 
 ### What is the nightly build, and can I install it over my store copy?

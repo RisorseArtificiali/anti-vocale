@@ -71,7 +71,7 @@ Anti-Vocale can transcribe new WhatsApp voice notes the moment they arrive, with
 Setup takes one minute, in **Settings > Voice notes**:
 
 1. Turn on **Voice note transcription** and grant audio access when Android asks. If you declined twice, Android shows no dialog any more; the red hint that appears instead opens the system page where the permission can still be granted.
-2. Pick the WhatsApp Voice Notes folder once through the guided picker. A wrong folder is refused on the spot; you can change or remove it any time from the same card.
+2. Pick the WhatsApp Voice Notes folder once through the guided picker. A wrong folder is refused on the spot; you can change or remove it any time from the same card. On some Samsung or One UI devices the picker may show the folder as empty: restarting the phone fixes it.
 3. Optional: turn on **sender recognition** too, and grant notification access. The Logs row is then labeled with the sender's name.
 
 Two honest rules govern the labels. A name appears only when the note's own notification confirms it, meaning the notification arrived while the feature was on and its reported length matches the audio: names are never guessed. And notes you download manually (with auto-download off) stay unlabeled, because their notification is too old to be trusted. The waiting list of recent notifications lives in memory only and disappears when the feature is off.
