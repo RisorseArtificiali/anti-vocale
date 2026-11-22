@@ -151,6 +151,7 @@ internal class TestSpiOps(
             OP_VOICE_NOTE_WATERMARK_RESET -> resetWatermark(value)
             OP_VOICE_NOTE_SIMULATE -> simulateVoiceNote(value, entry)
             OP_NOTIFY_TEXT -> notifyText(value, entry)
+            OP_DECODE_PROBE -> decodeProbe(value, entry)
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -1009,6 +1010,90 @@ internal class TestSpiOps(
     }
 
     /**
+     * TASK-1037 phase 1, the device proof of the decode-and-discard resume:
+     * decode the file twice (full; then from the offset) and report whether
+     * the offset run's samples are byte-identical to the full decode sliced
+     * at the offset. value = the audio file path (readable by the app's uid;
+     * stage it under files/shared_audio like PROCESS_REQUEST does), entry =
+     * the offset in 16 kHz output samples. The EOS refusal (offset at or past
+     * the decoded length) is itself a probe arm: it proves the
+     * ConversionFailed refusal fires instead of a silent empty stint. Runs
+     * synchronously inside the broadcast: keep the file short (the 2-3 min
+     * clip class); long-file stints belong to phase 3's async ops.
+     */
+    private suspend fun decodeProbe(filePath: String?, offsetRaw: String?): String {
+        if (filePath.isNullOrBlank()) {
+            throw IllegalArgumentException("missing 'value' extra (the audio file path)")
+        }
+        val offset = offsetRaw?.toLongOrNull()
+            ?: throw IllegalArgumentException("missing 'entry' extra (the offset in 16 kHz output samples)")
+        val pre = com.antivocale.app.audio.AudioPreprocessor()
+
+        suspend fun runDecode(startOffset: Long): Triple<String, Long, FloatArray> {
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+            var samples = 0L
+            val kept = ArrayList<FloatArray>()
+            pre.prepareAudioStream(filePath, startOffsetSamples = startOffset).collect { event ->
+                when (event) {
+                    is com.antivocale.app.audio.AudioPreprocessor.StreamEvent.Chunk -> {
+                        val buffer = java.nio.ByteBuffer
+                            .allocate(event.chunk.samples.size * 4)
+                            .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                        event.chunk.samples.forEach { buffer.putFloat(it) }
+                        digest.update(buffer.array())
+                        samples += event.chunk.samples.size
+                        kept += event.chunk.samples
+                    }
+                    is com.antivocale.app.audio.AudioPreprocessor.StreamEvent.Header ->
+                        check(event.header.startOffsetSamples == startOffset) {
+                            "header offset ${event.header.startOffsetSamples} != requested $startOffset"
+                        }
+                }
+            }
+            val flat = FloatArray(samples.toInt())
+            var cursor = 0
+            kept.forEach { chunk ->
+                chunk.forEachIndexed { i, v -> flat[cursor + i] = v }
+                cursor += chunk.size
+            }
+            return Triple(digest.digest().joinToString("") { "%02x".format(it) }, samples, flat)
+        }
+
+        fun sha16k(samples: FloatArray): String {
+            val buffer = java.nio.ByteBuffer.allocate(samples.size * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            samples.forEach { buffer.putFloat(it) }
+            return java.security.MessageDigest.getInstance("SHA-256").digest(buffer.array()).joinToString("") { "%02x".format(it) }
+        }
+
+        val full = runDecode(0L)
+        val probe = try {
+            Result.success(runDecode(offset))
+        } catch (e: com.antivocale.app.audio.AudioPreprocessor.PreprocessingError.ConversionFailed) {
+            Result.failure(e)
+        }
+        val base = org.json.JSONObject()
+            .put("op", OP_DECODE_PROBE)
+            .put("file", filePath)
+            .put("offsetSamples", offset)
+            .put("fullSamples", full.second)
+        if (probe.isFailure) {
+            // The designed EOS refusal, live: the offset sits at or past the
+            // decoded length. Proof arm, not an error path.
+            return base
+                .put("offsetResult", "ConversionFailed: the offset refused past the decoded length, the designed EOS arm")
+                .toString()
+        }
+        val (sha, probeSamples, probeSamplesArray) = probe.getOrThrow()
+        val slice = full.third.copyOfRange(offset.toInt(), (offset + probeSamplesArray.size).toInt())
+        return base
+            .put("offsetRunSamples", probeSamples)
+            .put("offsetRunSha", sha)
+            .put("slicedFullSha", sha16k(slice))
+            .put("match", sha == sha16k(probeSamplesArray) && probeSamplesArray.contentEquals(slice))
+            .toString()
+    }
+
+    /**
      * The whatsapp|whatsapp_business selector the voice-note ops share:
      * null or blank keeps the WhatsApp default, anything else must name a
      * [com.antivocale.app.data.VoiceNoteSource] (case-insensitive; the
@@ -1579,6 +1664,7 @@ internal class TestSpiOps(
          *  notification through the production factory. */
         const val OP_NOTIFY_TEXT = "notify_text"
         const val OP_HELP = "help"
+        const val OP_DECODE_PROBE = "decode_probe"
 
         /** search op rendered-row cap (full count rides beside it). */
         const val SEARCH_ROW_CAP = 20
@@ -1604,8 +1690,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_RAM_TIER, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_HELP)
-
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_RAM_TIER, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_DECODE_PROBE, OP_HELP)
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024
 
