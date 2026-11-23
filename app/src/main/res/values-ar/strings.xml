@@ -1172,6 +1172,10 @@
         <item quantity="other">%1$d عملية تفريغ متوقفة مؤقتًا. افتح التطبيق للاستئناف.</item>
     </plurals>
     <string name="session_resume_action">استئناف</string>
+    <string name="session_pause_action">إيقاف مؤقت</string>
+    <string name="session_paused_label">متوقف مؤقتًا</string>
+    <string name="session_park_cause_native_crash">تمت المقاطعة بسبب انهيار أصلي</string>
+    <string name="session_park_cause_app_restart">تمت المقاطعة بسبب إعادة تشغيل التطبيق</string>
     <plurals name="logs_entries_deleted">
         <item quantity="zero">لا توجد إدخالات محذوفة</item>
         <item quantity="one">تم حذف إدخال واحد</item>

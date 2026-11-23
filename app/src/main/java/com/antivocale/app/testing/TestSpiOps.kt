@@ -110,10 +110,6 @@ internal class TestSpiOps(
      *  Debug receiver passes the real dao; the shared unit fakes answer the
      *  error envelope (the same null-under-fakes story as the params above). */
     private val sessionDao: com.antivocale.app.data.local.SessionDao? = null,
-    /** TASK-1037 phase 3: the orchestrator (session_pause's flag; the
-     *  session_resume dispatch needs only the appContext). Same
-     *  null-under-fakes story. */
-    private val orchestrator: com.antivocale.app.transcription.TranscriptionOrchestrator? = null,
 ) {
     /** TASK-974: the record_delete op runs the shared delete semantics over
      *  the same store+preferences pair every other op uses. */
@@ -163,6 +159,7 @@ internal class TestSpiOps(
             OP_SESSION_STATE -> sessionState()
             OP_SESSION_RESUME -> sessionResume(value)
             OP_SESSION_PAUSE -> sessionPause(value)
+            OP_TRANSCRIBE_FILE -> transcribeFile(value)
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -1101,23 +1098,73 @@ internal class TestSpiOps(
     }
 
     /**
-     * op=session_pause, value=&lt;taskId&gt;: arm the cooperative pause the
-     * pipeline honors at the NEXT chunk boundary (a native decode cannot be
-     * interrupted mid-chunk). The boundary consumes the request, so a stale
-     * arming never parks a later stint. Verify via session_state (state
-     * PAUSED_USER) and the log row (status PAUSED).
+     * op=session_pause, value=&lt;taskId&gt;: dispatches the production
+     * ACTION_PAUSE_TASK control delivery (the same intent the History row
+     * and the notification's Pause button send). The ack says whether the
+     * service start was dispatched; arming is the orchestrator gate's
+     * business inside the service (a stale or unknown id is a logged
+     * no-op). The pause itself lands at the next chunk boundary; verify
+     * via session_state (PAUSED_USER) and the row (PAUSED).
      */
     private suspend fun sessionPause(taskId: String?): String {
-        val orch = orchestrator
-            ?: throw IllegalArgumentException("orchestrator not wired (debug receiver passes it)")
+        val context = appContext
+            ?: throw IllegalArgumentException("pause dispatch needs the app context")
         if (taskId.isNullOrBlank()) {
             throw IllegalArgumentException("missing 'value' extra (the session taskId)")
         }
-        orch.requestSessionPause(taskId)
-        return JSONObject()
+        // TASK-1037 phase 4: the op rides the SAME production delivery the
+        // History row and the notification button use (the control-service
+        // intent), so a device proof exercises the real path; the
+        // orchestrator gate makes a stale or unknown id a logged no-op
+        // inside the service. The start is only restricted when no service
+        // is running (nothing pausable anyway), reported as dispatched
+        // false with the reason instead of failing the broadcast.
+        val intent = com.antivocale.app.service.AudioRequestIntent.pauseTask(context, taskId)
+        var failure: String? = null
+        val dispatched = try {
+            context.startService(intent)
+            true
+        } catch (e: Exception) {
+            failure = e.javaClass.simpleName
+            false
+        }
+        val reply = JSONObject()
             .put("op", OP_SESSION_PAUSE)
             .put("taskId", taskId)
-            .put("requested", true)
+            .put("dispatched", dispatched)
+        failure?.let { reply.put("error", it) }
+        return reply.toString()
+    }
+
+    /**
+     * op=transcribe_file, value=&lt;absolute app-readable path&gt;: the
+     * scripted enqueue instrument. Dispatches a transcription request for a
+     * staged file through the production enqueue path with the share origin
+     * (the session-eligible shape, TASK-1037), so a device proof can start a
+     * real run with no activity, no BAL gate, and no unlock. The task id is
+     * spi-tr-prefixed so scripted runs stay identifiable in History beside
+     * real ones. Errors: missing path, or the path is not a readable file.
+     */
+    private fun transcribeFile(path: String?): String {
+        val context = appContext
+            ?: throw IllegalArgumentException("transcribe dispatch needs the app context")
+        if (path.isNullOrBlank()) {
+            throw IllegalArgumentException("missing 'value' extra (the absolute file path)")
+        }
+        val file = java.io.File(path)
+        if (!file.isFile) {
+            throw IllegalArgumentException("not a file: $path")
+        }
+        val taskId = "spi-tr-${System.currentTimeMillis()}-" +
+            java.util.UUID.randomUUID().toString().substring(0, 8)
+        val intent = com.antivocale.app.service.AudioRequestIntent.make(
+            context, com.antivocale.app.service.InferenceService.SOURCE_SHARE,
+            taskId, file.absolutePath)
+        val outcome = com.antivocale.app.service.InferenceEnqueue.start(context, intent)
+        return JSONObject()
+            .put("op", OP_TRANSCRIBE_FILE)
+            .put("taskId", taskId)
+            .put("outcome", outcome.javaClass.simpleName)
             .toString()
     }
 
@@ -1769,6 +1816,7 @@ internal class TestSpiOps(
         const val OP_SESSION_STATE = "session_state"
         const val OP_SESSION_RESUME = "session_resume"
         const val OP_SESSION_PAUSE = "session_pause"
+        const val OP_TRANSCRIBE_FILE = "transcribe_file"
 
         /** search op rendered-row cap (full count rides beside it). */
         const val SEARCH_ROW_CAP = 20
@@ -1794,7 +1842,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_RAM_TIER, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_DECODE_PROBE, OP_SESSION_STATE, OP_SESSION_RESUME, OP_SESSION_PAUSE, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_RAM_TIER, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_DECODE_PROBE, OP_SESSION_STATE, OP_SESSION_RESUME, OP_SESSION_PAUSE, OP_TRANSCRIBE_FILE, OP_HELP)
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024
 

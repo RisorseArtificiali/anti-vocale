@@ -208,11 +208,14 @@ object SuspendedRunRecovery {
                     batteryLink = true
                 }
                 is SuspendedRunClassifier.Verdict.NativeCrashLineage -> {
-                    causeLine = "Interrupted by a native crash"
+                    // Phase 4 review: these two lines reach the user via the
+                    // paused notification, so they localize like the
+                    // suspension arm above them.
+                    causeLine = context.getString(R.string.session_park_cause_native_crash)
                     batteryLink = false
                 }
                 else -> {
-                    causeLine = "Interrupted by app restart"
+                    causeLine = context.getString(R.string.session_park_cause_app_restart)
                     batteryLink = false
                 }
             }

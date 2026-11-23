@@ -636,6 +636,15 @@ class AudioPreprocessor @Inject constructor() {
             }
         } catch (e: PreprocessingError) {
             throw e
+        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+            // TASK-1037 phase 4 device proof: a downstream consumer throw
+            // (the pause boundary's escape) or a job cancellation must
+            // pass UNWRAPPED: this block's generic arm used to convert
+            // both into ConversionFailed, which swallowed the pause
+            // sentinel and misreported a real cancellation as a decode
+            // failure. Producer-side decode errors arrive as the channel's
+            // close cause and keep their PreprocessingError shape above.
+            throw e
         } catch (e: Exception) {
             throw PreprocessingError.ConversionFailed(e.message ?: "Unknown error")
         } finally {

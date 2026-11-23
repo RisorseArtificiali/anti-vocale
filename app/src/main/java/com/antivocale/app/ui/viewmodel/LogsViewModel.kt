@@ -302,6 +302,15 @@ class LogsViewModel @Inject constructor(
             ?: logList.firstOrNull { it.status == LogEntry.Status.PROCESSING || it.status == LogEntry.Status.QUEUED || it.status == LogEntry.Status.PAUSED }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /**
+     * TASK-1037 phase 4: the task id owning the live, pausable session
+     * stint (the orchestrator's tracker; the serial queue means at most
+     * one). History shows the Pause action on exactly that row; null
+     * while nothing long-form runs, so short transcriptions never offer
+     * a dead button.
+     */
+    val pausableTaskId: StateFlow<String?> = orchestrator.activeSessionTaskIdFlow
+
     private val _interruptedTranscription = MutableStateFlow<String?>(null)
     val interruptedTranscription: StateFlow<String?> = _interruptedTranscription.asStateFlow()
 
@@ -731,7 +740,12 @@ class LogsViewModel @Inject constructor(
         firstPassByRow.remove(id)
         segmentsByRow.remove(id)
         viewModelScope.launch {
+            val entity = logDao.getById(id)
             logDao.deleteById(id)
+            // TASK-1037 phase 4 review: a PAUSED row's session must not
+            // outlive its row (the paused notification would stay posted
+            // with nothing behind it).
+            entity?.let { orchestrator.discardSession(it.taskId, appContext) }
         }
     }
 
@@ -746,6 +760,8 @@ class LogsViewModel @Inject constructor(
         segmentsByRow.clear()
         viewModelScope.launch {
             logDao.deleteAll()
+            // TASK-1037 phase 4 review: the wipe takes the sessions too.
+            orchestrator.discardAllSessions(appContext)
         }
     }
 

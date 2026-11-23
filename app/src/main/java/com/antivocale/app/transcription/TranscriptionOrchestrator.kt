@@ -49,6 +49,8 @@ import com.antivocale.app.service.TranscriptionListener
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.transcription.placeholderAwareString
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -264,15 +266,69 @@ class TranscriptionOrchestrator @Inject constructor(
     private var runIsSessionRun: Boolean = false
 
     /**
+     * TASK-1037 phase 4 review: THIS run was a session CANDIDATE at
+     * dispatch (a probe-eligible long-audio request or any resume), known
+     * before the two-pass fast pass could ever run. The fast pass's
+     * fail-open arm (unreadable container metadata) is exactly a candidate
+     * whose header later engages the session, so its first-pass seed write
+     * must be suppressed by candidacy, not by engagement (which happens
+     * one phase later): a parked session with an armed seed would raise
+     * the interrupted-run dialog beside the paused notification (the
+     * TASK-602 class). Reset beside [runIsSessionRun].
+     */
+    @Volatile
+    private var runIsSessionCandidate: Boolean = false
+
+    /**
      * TASK-1037: the cooperative-pause requests (task ids), honored at the
-     * next chunk boundary of the named session's stint. Phase 4's UI and
-     * the TEST_SPI session_pause op write here. The boundary check CONSUMES
-     * the flag, so a stale request can never park a later stint of the same
-     * task id. Concurrent map because the SPI broadcast and the pipeline's
-     * IO collector run on different threads.
+     * next chunk boundary of the named session's stint. The service's
+     * ACTION_PAUSE_TASK handler writes here via requestSessionPause. The
+     * boundary check CONSUMES the flag, so a stale request can never park
+     * a later stint of the same task id. Concurrent map because the
+     * service's delivery thread and the pipeline's IO collector run on
+     * different threads.
      */
     private val sessionPauseRequested: MutableSet<String> =
         java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap())
+
+    /**
+     * TASK-1037 phase 4 review: the user-cancel markers (task ids). The
+     * service marks a task BEFORE cancelling its job, because
+     * [cancelIfPending] cannot tell the two CancellationException paths
+     * apart by itself (the cancelled job's isActive is false on the user
+     * path too, which made the phase-3 "delete only on user cancel"
+     * branch dead code and let explicitly cancelled work resurrect as a
+     * PAUSED_SYSTEM session). Consumed by [cancelIfPending]; task ids are
+     * unique per run, so a marker whose cancellation never reached the
+     * catch is inert garbage keyed by a dead id.
+     */
+    /** Phase 4 review: see the probe gate (the AMR arithmetic is there). */
+    private val SESSION_PROBE_MIN_BYTES = 1_000_000L
+
+    private val userCancelRequested: MutableSet<String> =
+        java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap())
+
+    /**
+     * TASK-1037 phase 4: the task id owning a pausable session stint right
+     * now (null when none). Set at resume entry and at fresh engage, cleared
+     * at stint end by the pipeline's finally: the boundary checks that
+     * honor a pause exist only while a stint runs, so this is the gate that
+     * keeps a stale Pause tap (between stints, after completion, on a
+     * non-session task) from arming a flag the NEXT stint would park on.
+     * The serial queue means at most one stint. ONE carrier, the
+     * MutableStateFlow: [activeSessionTaskId] is its synchronous read (a
+     * plain nullable String property getter, so any test double sees and
+     * stubs a String, never a flow), [activeSessionTaskIdFlow] the
+     * reactive one.
+     */
+    private val _activeSessionTaskIdFlow = MutableStateFlow<String?>(null)
+    val activeSessionTaskIdFlow: kotlinx.coroutines.flow.StateFlow<String?> =
+        _activeSessionTaskIdFlow.asStateFlow()
+    val activeSessionTaskId: String? get() = _activeSessionTaskIdFlow.value
+
+    private fun setActiveSessionTaskId(taskId: String?) {
+        _activeSessionTaskIdFlow.value = taskId
+    }
 
     /** Per-task timestamp of the last interim Room write (throttle, TASK-340 Fix 2b). */
     private val lastInterimRoomWriteMs = mutableMapOf<String, Long>()
@@ -342,6 +398,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // the seed arming (runs are serialized by runMutex below, so the flag
         // is always THIS run's when read).
         runIsSessionRun = false
+        runIsSessionCandidate = false
         // TASK-699 stage 2: ONE heartbeat span for the whole run, the only
         // one left (the ten former per-stretch spans are stripped; see the
         // LadderRoutingContractTest count). runArmedSeed resets here so the
@@ -454,10 +511,15 @@ class TranscriptionOrchestrator @Inject constructor(
             // (audio, file-backed, session-eligible origin); its result
             // also decides the engage, so the skip and the engage cannot
             // disagree. A probe that fails open (null duration) runs the
-            // first pass as today; the header's own duration still engages
-            // the session mid-pipeline in that unreadable-metadata case.
+            // first pass as today and NEVER engages a session: the header
+            // arm requires the dispatch candidacy this block builds, so
+            // unreadable metadata means no resumable session (the engage
+            // gate and this comment now agree).
             val resumeSession = runCatching { sessionDao.getSession(taskId) }.getOrNull()
             if (resumeSession != null) runIsSessionRun = true
+            // Phase 4 review: candidacy is dispatch knowledge (resume or a
+            // probe-eligible request), set before any pass can write.
+            if (resumeSession != null) runIsSessionCandidate = true
             // The probe's duration value rides down to the TASK-450 gate
             // (efficiency round): a session-candidate request with VAD on
             // would otherwise pay the same container-metadata open twice.
@@ -466,9 +528,19 @@ class TranscriptionOrchestrator @Inject constructor(
                 if (resumeSession == null && requestType == "audio" && !filePath.isNullOrEmpty() &&
                     source != null && source != OpenTranscribeProviderService.SOURCE_OPENTRANSCRIBE
                 ) {
-                    probedDurationSeconds = runCatching {
-                        audioPreprocessor.getAudioDuration(filePath)
-                    }.getOrNull()
+                    // Phase 4 review (efficiency): the container-metadata
+                    // probe costs one retriever open, and the short-file
+                    // majority can never engage a session; the size floor
+                    // skips it for them. 1 MB sits below the smallest
+                    // possible SESSION_MIN_SECONDS file (AMR-NB 4.75 kbit/s
+                    // packs 30 minutes into ~1.05 MB), so nothing eligible
+                    // is misclassified short by the floor.
+                    val probeWorth = java.io.File(filePath).length() >= SESSION_PROBE_MIN_BYTES
+                    if (probeWorth) {
+                        probedDurationSeconds = runCatching {
+                            audioPreprocessor.getAudioDuration(filePath)
+                        }.getOrNull()
+                    }
                     val longEnough = probedDurationSeconds
                         ?.let { it >= AudioDurationPolicy.SESSION_MIN_SECONDS } == true
                     if (longEnough) SessionRunContext(
@@ -478,6 +550,7 @@ class TranscriptionOrchestrator @Inject constructor(
                         senderName = senderName)
                     else null
                 } else null
+            if (sessionRun != null) runIsSessionCandidate = true
             var dualSkip: DualRefinementPolicy.SkipOutcome? = null
             // Simplify review F1: the two-pass skip applies ONLY to resumed
             // stints (definitively pipelined). A fresh-engage candidate that
@@ -2282,8 +2355,15 @@ class TranscriptionOrchestrator @Inject constructor(
         // goes stale and the interruption dialog misfires mid-run.
         runCatching {
             logDao.updateInterimResult(taskId, outcome.text, isPartial = true)
-            runArmedSeed = true
-            preferencesManager.savePartialTranscriptionState(outcome.text)
+            // Phase 4 review: a session CANDIDATE never seeds (the
+            // fail-open fast pass of a candidate whose header later
+            // engages the session would otherwise arm the interrupted-run
+            // dialog for work that parks, the TASK-602 class; the row's
+            // interim text is unaffected).
+            if (!runIsSessionCandidate) {
+                runArmedSeed = true
+                preferencesManager.savePartialTranscriptionState(outcome.text)
+            }
         }
         return FirstPassOutcome(
             text = outcome.text,
@@ -4175,6 +4255,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 state = TranscriptionSessionEntity.STATE_ACTIVE,
                 updatedAtMs = System.currentTimeMillis())
             runCatching { sessionDao.upsertSession(activeSession!!) }
+            // Phase 4: this stint is pausable from its first boundary.
+            setActiveSessionTaskId(taskId)
             Log.i(TAG, "Session resume: taskId=$taskId offset=$prefixEnd samples " +
                 "(${prefillRows.size} prefilled chunks, ${accumulatedText.length} chars)")
         }
@@ -4348,6 +4430,9 @@ class TranscriptionOrchestrator @Inject constructor(
             decodedSeconds = tombstoneEnd / SESSION_SAMPLE_RATE.toDouble()
         }
 
+        // Phase 4: the pause boundary's captured sentinel (see the
+        // boundary site for the escape mechanism).
+        var pauseSentinel: SessionPaused? = null
         try {
             audioPreprocessor.prepareAudioStream(
                 inputPath = filePath,
@@ -4371,8 +4456,9 @@ class TranscriptionOrchestrator @Inject constructor(
                         // BEFORE any chunk decodes, so a kill from the very
                         // first chunk on is recoverable. The probe decided
                         // eligibility from the same metadata; the header is
-                        // the decoded-value authority, so a probe that failed
-                        // open can still engage here.
+                        // the decoded-value authority but can only CONFIRM
+                        // candidacy (the dispatch's sessionRun), never
+                        // create it: a failed probe means no session.
                         if (activeSession == null && sessionRun != null &&
                             event.header.totalDurationSeconds >= AudioDurationPolicy.SESSION_MIN_SECONDS
                         ) {
@@ -4410,6 +4496,9 @@ class TranscriptionOrchestrator @Inject constructor(
                             // the interrupted-run dialog's seed, the exact
                             // TASK-602 class the plan's correction 1 bans).
                             runIsSessionRun = true
+                            // Phase 4: same-site pausable tracking (the
+                            // engage and the gate must not disagree).
+                            setActiveSessionTaskId(taskId)
                             Log.i(TAG, "Session engaged: taskId=$taskId backend=${backend.id} " +
                                 "total=${event.header.totalDurationSeconds}s")
                         }
@@ -4429,11 +4518,23 @@ class TranscriptionOrchestrator @Inject constructor(
                         // processRequestInner, before any error surface.
                         if (activeSession != null && sessionPauseRequested.remove(taskId)) {
                             Log.i(TAG, "Session pause honored at chunk boundary (decoded ${decodedSeconds}s of ${totalDurationSeconds}s)")
-                            throw SessionPaused(
+                            // Phase 4 device proof: the sentinel must NOT be
+                            // thrown directly out of the collect lambda: the
+                            // decode stream's consumer block wraps any
+                            // non-cancellation Exception into
+                            // ConversionFailed (the first device round
+                            // misreported the pause as "Pipeline failed:
+                            // Conversion failed: transcription session
+                            // paused"). Escape with a CancellationException
+                            // (which the stream rethrows unwrapped) and hand
+                            // the real sentinel over through the local; the
+                            // dedicated catch below converts it back.
+                            pauseSentinel = SessionPaused(
                                 accumulatedText = accumulatedText.toString(),
                                 decodedSeconds = decodedSeconds,
                                 totalDurationSeconds = totalDurationSeconds,
                             )
+                            throw CancellationException("session-pause-boundary")
                         }
                         val collected = speakerChunks
                         if (collected != null) {
@@ -4612,6 +4713,14 @@ class TranscriptionOrchestrator @Inject constructor(
             // its ladder runs with the previous tail alone (inside the try so
             // a wedge abort keeps the pipelineFailed shape below).
             popHeldEmpty(nextChunk = null)
+        } catch (e: CancellationException) {
+            // Phase 4: the pause boundary's escape vehicle. A sentinel in
+            // the local means THIS is the cooperative pause: convert back
+            // to the sentinel Result the interception site parks. Without
+            // one it is a real cancellation (job cancel, service stop):
+            // rethrow untouched.
+            pauseSentinel?.let { return Result.failure(it) }
+            throw e
         } catch (e: SessionPaused) {
             // TASK-1037: the parked stint. BEFORE the PreprocessingError and
             // Exception catches (which would turn the pause into
@@ -4628,6 +4737,20 @@ class TranscriptionOrchestrator @Inject constructor(
         } catch (e: Exception) {
             if (heldEmpty != null) blankChunks++
             return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds, processedChunks, failedChunks, blankChunks, context, backend.id, retriedChunks = retriedChunks)
+        } finally {
+            // TASK-1037 phase 4: stint-scoped lifecycle clear, tracker
+            // first and flag second. A Pause tap racing the stint's tail
+            // can at worst be DROPPED (the gate sees the tracker null, or
+            // this finally removes a just-armed flag whose boundary never
+            // came); it can never be carried into the next stint of the
+            // same task id, where it would park at the first boundary.
+            // Covers every pipeline exit: the honored pause (the flag was
+            // consumed at the boundary; both clears are no-ops), the
+            // failure arms, and completion. The post-passes after the try
+            // run with the tracker already null: they have no chunk
+            // boundary, so there is nothing left to pause.
+            setActiveSessionTaskId(null)
+            sessionPauseRequested.remove(taskId)
         }
 
         val combinedResult = accumulatedText.toString()
@@ -4752,6 +4875,14 @@ class TranscriptionOrchestrator @Inject constructor(
     ) {
         runCatching { logDao.updateInterimResult(taskId, paused.accumulatedText, isPartial = true) }
             .onFailure { Log.w(TAG, "Paused-stint text writeback failed for $taskId", it) }
+        // Phase 4 review: the park is a run-terminal arm for this stint
+        // and skips logSuccess/logError (whose clears are unconditional),
+        // so the seed gets the same terminal clear here: a parked session
+        // with an armed seed would raise the interrupted-run dialog
+        // beside the paused notification (runs are serialized; the slot
+        // is this run's, the logError discipline).
+        seedSaveMutex.withLock { preferencesManager.clearPartialTranscriptionState() }
+        lastPartialSaveMs = 0L
         val session = runCatching { sessionDao.getSession(taskId) }.getOrNull()
         if (session == null) {
             Log.w(TAG, "SessionPaused without a session row for $taskId; only the row was parked")
@@ -4768,13 +4899,57 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     /**
-     * TEST_SPI (phase 3's pause arm) and later the phase-4 UI: request the
-     * cooperative pause of a session's stint. Consumed at the next chunk
-     * boundary by [processPipelinedAudio]; the request's removal there means
-     * a stale request can never park a later stint of the same task id.
+     * TASK-1037 phase 4: request the cooperative pause of a session's
+     * stint. Armed only when [activeSessionTaskId] names THIS task (a live
+     * stint with chunk boundaries remaining); every other caller (a tap
+     * between stints, after completion, on a non-session task) gets false
+     * and nothing is armed, so the flag can never ambush a later stint.
+     * The service's ACTION_PAUSE_TASK delivery is the
+     * caller. Consumed at the next chunk boundary by
+     * [processPipelinedAudio]; the pipeline's finally removes any residue
+     * the boundary never reached (the late-tap race).
      */
-    fun requestSessionPause(taskId: String) {
+    /**
+     * TASK-1037 phase 4 review: History's row delete must not orphan a
+     * parked session behind the deleted row (the paused notification
+     * would outlive its data and the Resume tap would silently discard).
+     * Deletes the task's session when present and settles the paused
+     * notification; a no-op for session-less rows.
+     */
+    suspend fun discardSession(taskId: String, context: Context) {
+        runCatching {
+            if (sessionDao.getSession(taskId) != null) {
+                deleteSessionQuietly(taskId, "history-delete")
+            }
+            com.antivocale.app.service.PausedSessionNotifier.post(context, sessionDao)
+        }
+    }
+
+    /** The clear-all arm: every session (parked or live) goes with the
+     *  history wipe, then the notification settles. */
+    suspend fun discardAllSessions(context: Context) {
+        runCatching {
+            (sessionDao.getActiveSessions() + sessionDao.getPausedSessions())
+                .forEach { deleteSessionQuietly(it.taskId, "history-clear") }
+            com.antivocale.app.service.PausedSessionNotifier.post(context, sessionDao)
+        }
+    }
+
+    /**
+     * TASK-1037 phase 4 review: the service marks a task's upcoming
+     * cancellation as USER-initiated (called BEFORE the job cancel) so
+     * [cancelIfPending] deletes the session instead of leaving it ACTIVE
+     * for the cold-start recovery. Cancelled work must not resurrect as a
+     * paused session.
+     */
+    fun markUserCancel(taskId: String) {
+        userCancelRequested.add(taskId)
+    }
+
+    fun requestSessionPause(taskId: String): Boolean {
+        if (activeSessionTaskId != taskId) return false
         sessionPauseRequested.add(taskId)
+        return true
     }
 
     /**
@@ -4891,6 +5066,11 @@ class TranscriptionOrchestrator @Inject constructor(
      * the session rows deleted.
      */
     suspend fun closeSessionAsPartial(taskId: String, reason: String, context: Context? = null) {
+        // Phase 4 review: same terminal seed clear as logError (this arm
+        // also bypasses it; a closed-as-partial session must not leave a
+        // recovery offer behind).
+        seedSaveMutex.withLock { preferencesManager.clearPartialTranscriptionState() }
+        lastPartialSaveMs = 0L
         val text = assembledSessionText(
             runCatching { sessionDao.contiguousPrefixRows(taskId) }.getOrDefault(emptyList()))
         runCatching {
@@ -5321,14 +5501,16 @@ class TranscriptionOrchestrator @Inject constructor(
         context: Context? = null,
     ) {
         lastInterimRoomWriteMs.remove(taskId)
-        // TASK-1037 + code review: delete the session ONLY on user-initiated
-        // cancel (the scope is still active). A scope teardown (service stop,
-        // system kill) also lands here via CancellationException, but deleting
-        // the session would discard all checkpointed chunks that the cold-start
-        // recovery exists to preserve: the violent path would lose strictly
-        // more than the graceful one. Leave the session ACTIVE so
-        // SuspendedRunRecovery parks it as PAUSED_SYSTEM.
-        if (kotlinx.coroutines.currentCoroutineContext().isActive) {
+        // TASK-1037 + code review rounds: delete the session ONLY on a
+        // user-initiated cancel (the service's markUserCancel marker). A
+        // scope teardown (service stop, system kill) also lands here via
+        // CancellationException, but deleting the session there would
+        // discard all checkpointed chunks the cold-start recovery exists
+        // to preserve: the violent path would lose strictly more than the
+        // graceful one. Coroutine activity cannot make the distinction
+        // (the job the service cancels for the user is inactive on this
+        // path too), so the marker is the one signal.
+        if (userCancelRequested.remove(taskId)) {
             deleteSessionQuietly(taskId, "cancel")
         } else {
             Log.i(TAG, "Session left ACTIVE for cold-start recovery (scope teardown, not user cancel)")

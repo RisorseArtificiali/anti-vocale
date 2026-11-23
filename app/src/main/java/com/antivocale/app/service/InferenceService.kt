@@ -72,6 +72,7 @@ class InferenceService : Service(), TranscriptionListener {
         private const val RC_LAUNCH_SETTINGS_ROW = 2
         private const val RC_NAV_PREV = 10
         private const val RC_NAV_NEXT = 11
+        private const val RC_PAUSE_TASK = 12
 
         // TaskId-hash request codes live above the small-constant band: a raw
         // hash can land on a constant's value, and PendingIntent matching
@@ -191,6 +192,17 @@ class InferenceService : Service(), TranscriptionListener {
         const val ACTION_CANCEL_TASK = "com.antivocale.app.CANCEL_TRANSCRIPTION_TASK"
         const val EXTRA_CANCEL_TASK_ID = "cancel_task_id"
 
+        /**
+         * TASK-1037 phase 4: per-task cooperative pause of a live session
+         * stint. A control delivery in the ACTION_CANCEL_TASK family: it
+         * carries no request identity, must never become a fallback
+         * notification, and retires an idle revival. The extra is optional
+         * (the notification's button sends none; the handler then pauses
+         * whichever session stint is live).
+         */
+        const val ACTION_PAUSE_TASK = "com.antivocale.app.PAUSE_TRANSCRIPTION_TASK"
+        const val EXTRA_PAUSE_TASK_ID = "pause_task_id"
+
         // Chunk navigation actions for the in-progress notification (TASK-242).
         // Target the service directly — navigation is stateful (mutates the live cursor the
         // producer also writes to), unlike the stateless copy/share actions in
@@ -208,7 +220,7 @@ class InferenceService : Service(), TranscriptionListener {
          * membership question).
          */
         fun isControlDelivery(intent: Intent): Boolean = intent.action in setOf(
-            ACTION_CANCEL, ACTION_CANCEL_TASK,
+            ACTION_CANCEL, ACTION_CANCEL_TASK, ACTION_PAUSE_TASK,
             ACTION_NAV_PREV, ACTION_NAV_NEXT, ACTION_NAV_LIVE,
         )
 
@@ -445,6 +457,20 @@ class InferenceService : Service(), TranscriptionListener {
                 // (review round: the sibling arms all retire).
                 retireIfIdle()
             }
+            return START_NOT_STICKY
+        }
+
+        // TASK-1037 phase 4: the cooperative-pause delivery. The extra is
+        // optional: the notification's Pause button carries none and the
+        // handler pauses the live stint; a History-row Pause carries the
+        // row's task id and the orchestrator gate rejects a mismatch. The
+        // retire mirrors the nav arms: a Pause tap on a dead-process
+        // notification must not leave the revived service stranded (the
+        // TASK-978 class), and retireIfIdle's idleness re-check spares a
+        // live batch.
+        if (intent?.action == ACTION_PAUSE_TASK) {
+            handlePauseTask(intent.getStringExtra(EXTRA_PAUSE_TASK_ID))
+            retireIfIdle()
             return START_NOT_STICKY
         }
 
@@ -911,6 +937,27 @@ class InferenceService : Service(), TranscriptionListener {
     }
 
     /**
+     * TASK-1037 phase 4: the ACTION_PAUSE_TASK arm. A null id (the
+     * notification's button) targets whichever session stint is live; an
+     * explicit id (the History row) must match it. The orchestrator gate
+     * makes every stale shape (nothing live, wrong task, between stints) a
+     * logged no-op; only a live stint arms the cooperative pause that the
+     * next chunk boundary honors.
+     */
+    private fun handlePauseTask(taskId: String?) {
+        val target = taskId ?: orchestrator.activeSessionTaskId
+        if (target == null) {
+            Log.w(TAG, "Pause delivery with no live session stint; nothing to do")
+            return
+        }
+        if (orchestrator.requestSessionPause(target)) {
+            Log.i(TAG, "Session pause requested for $target (honored at the next chunk boundary)")
+        } else {
+            Log.w(TAG, "Session pause not armed for $target (no live stint for that task)")
+        }
+    }
+
+    /**
      * Per-task cancel (GH #52 follow-up): removes one queued request or cancels
      * the in-flight task job. The drain loop keeps processing the rest of the
      * queue, unlike the batch [handleCancelRequest]. The log row is closed from
@@ -923,6 +970,12 @@ class InferenceService : Service(), TranscriptionListener {
         val isCurrent = taskId == currentTaskId
         if (isCurrent) {
             Log.i(TAG, "Per-task cancel for in-flight $taskId")
+            // TASK-1037 phase 4 review: mark BEFORE the cancel, so the
+            // CancellationException handler deletes the session instead
+            // of leaving it ACTIVE for cold-start recovery (cancelled
+            // work must not resurrect as a paused session; coroutine
+            // activity cannot tell the two paths apart).
+            orchestrator.markUserCancel(taskId)
             currentTaskJob?.cancel()
         } else {
             val waiting = requestQueue.firstOrNull { it.taskId == taskId }
@@ -1501,6 +1554,26 @@ class InferenceService : Service(), TranscriptionListener {
                 cancelPendingIntent
             )
 
+        // TASK-1037 phase 4: Pause rides the active-session stint's
+        // notification (this builder is the pipelined path's; the interim
+        // reposts refresh the button from the live tracker). Cancel stays
+        // the fixed anchor and Pause is second, within the three-action
+        // budget even expanded. The chunk-nav builder deliberately adds no
+        // Pause: its Cancel + Prev + Next already fills the budget, and
+        // the streaming live view is not a session surface. The
+        // isInitialized guard: this builder also runs at onCreate's
+        // promotion, where a reflection-driven test instance may not have
+        // the seam injected yet; production always has it (Hilt), and the
+        // degraded shape is simply no Pause button.
+        val pauseTarget = if (::orchestrator.isInitialized) orchestrator.activeSessionTaskId else null
+        if (pauseTarget != null) {
+            builder.addAction(
+                android.R.drawable.ic_media_pause,
+                getString(R.string.session_pause_action),
+                pausePendingIntent
+            )
+        }
+
         if (bigText != null) {
             builder.setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
         } else {
@@ -1650,6 +1723,14 @@ class InferenceService : Service(), TranscriptionListener {
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
     }
+
+    /**
+     * TASK-1037 phase 4: the active-session notification's Pause, the
+     * extra-less control form ([navPendingIntent] builds exactly it).
+     * Carries no task id on purpose: the handler resolves the live stint,
+     * and the button is only built while one exists (the builder's gate).
+     */
+    private val pausePendingIntent by lazy { navPendingIntent(ACTION_PAUSE_TASK, RC_PAUSE_TASK) }
 
     private fun navPendingIntent(action: String, requestCode: Int) = android.app.PendingIntent.getService(
         this,

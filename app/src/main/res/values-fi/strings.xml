@@ -825,6 +825,10 @@
         <item quantity="other">%1$d transkriptiota on tauolla. Avaa sovellus jatkaaksesi.</item>
     </plurals>
     <string name="session_resume_action">Jatka</string>
+    <string name="session_pause_action">Keskeytä</string>
+    <string name="session_paused_label">Keskeytetty</string>
+    <string name="session_park_cause_native_crash">Keskeyti natiivikaatuminen</string>
+    <string name="session_park_cause_app_restart">Keskeytti sovelluksen uudelleenkäynnistys</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d transkriptio keskeytyi ennen valmistumista: sovelluksen muisti loppui. Kokeile lyhyempää tiedostoa, pienempää mallia tai sulje muut sovellukset. Katso lisätiedot Historiasta.</item>
         <item quantity="other">%1$d transkriptiota keskeytyi ennen valmistumista: sovelluksen muisti loppui. Kokeile lyhyempää tiedostoa, pienempää mallia tai sulje muut sovellukset. Katso lisätiedot Historiasta.</item>

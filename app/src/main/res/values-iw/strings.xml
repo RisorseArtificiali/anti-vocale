@@ -934,6 +934,10 @@
         <item quantity="other">%1$d תמלולים מושהים. פתחו את האפליקציה כדי להמשיך.</item>
     </plurals>
     <string name="session_resume_action">המשך</string>
+    <string name="session_pause_action">השהה</string>
+    <string name="session_paused_label">מושהה</string>
+    <string name="session_park_cause_native_crash">הופסק עקב קריסה מקומית</string>
+    <string name="session_park_cause_app_restart">הופסק עקב הפעלה מחדש של האפליקציה</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d תמלול הופסק לפני שהסתיים: הזיכרון של האפליקציה אזל. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. פרטים בהיסטוריה.</item>
         <item quantity="two">%1$d תמלולים הופסקו לפני שהסתיימו: הזיכרון של האפליקציה אזל. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. פרטים בהיסטוריה.</item>

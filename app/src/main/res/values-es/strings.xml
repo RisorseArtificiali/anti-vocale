@@ -793,6 +793,10 @@
         <item quantity="other">%1$d transcripciones están en pausa. Abre la app para reanudar.</item>
     </plurals>
     <string name="session_resume_action">Reanudar</string>
+    <string name="session_pause_action">Pausar</string>
+    <string name="session_paused_label">En pausa</string>
+    <string name="session_park_cause_native_crash">Interrumpida por un fallo nativo</string>
+    <string name="session_park_cause_app_restart">Interrumpida por el reinicio de la app</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">Se interrumpió %1$d transcripción antes de terminar: a la app se le agotó la memoria. Prueba con un archivo más corto, un modelo más ligero, o cierra otras apps. Consulta el Historial para más detalles.</item>
         <item quantity="other">Se interrumpieron %1$d transcripciones antes de terminar: a la app se le agotó la memoria. Prueba con un archivo más corto, un modelo más ligero, o cierra otras apps. Consulta el Historial para más detalles.</item>

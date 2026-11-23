@@ -356,6 +356,28 @@ private fun cancelTask(context: Context, taskId: String) {
 }
 
 /**
+ * TASK-1037 phase 4: the History Pause action. Same delivery shape as the
+ * notification's button (a control startService on the running service);
+ * the History row names the task, and the orchestrator gate turns a stale
+ * tap into a logged no-op.
+ */
+private fun pauseTask(context: Context, taskId: String) {
+    context.startService(
+        com.antivocale.app.service.AudioRequestIntent.pauseTask(context, taskId))
+}
+
+/**
+ * TASK-1037 phase 4: the History Resume action on a PAUSED row, the same
+ * request shape the paused notification's Resume carries (the service
+ * hydrates everything from the session row). The UI is foreground here, so
+ * the foreground-service start is unrestricted.
+ */
+private fun resumeTask(context: Context, taskId: String) {
+    context.startForegroundService(
+        com.antivocale.app.service.AudioRequestIntent.resumeSession(context, taskId))
+}
+
+/**
  * Shares transcription text via an intent chooser.
  */
 private fun shareTranscription(context: Context, text: String) {
@@ -675,6 +697,19 @@ private fun QueuedStatusLabel() {
     )
 }
 
+/**
+ * TASK-1037 phase 4: the PAUSED row's own label, distinct from the
+ * processing one (the parked run is waiting for the user, not working).
+ */
+@Composable
+private fun PausedStatusLabel() {
+    Text(
+        text = stringResource(R.string.session_paused_label),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.tertiary
+    )
+}
+
 fun buildContextMenuActions(log: LogEntry, canRetranscribe: Boolean): List<ContextMenuAction> {
     val actions = mutableListOf<ContextMenuAction>()
     // In-flight entries (queued, processing or paused) can be cancelled
@@ -889,6 +924,10 @@ fun HistoryTab(
     // and tore down three collectors per recycled row, and one emission
     // recomposed every visible row at once). Passed down as parameters.
     val showLanguageChip by viewModel.languageChipEnabled.collectAsState()
+    // TASK-1037 phase 4: the pausable stint id rides the same hoisting
+    // rule (one tab-wide collector; the serial queue means at most one
+    // pausable row at a time).
+    val pausableTaskId by viewModel.pausableTaskId.collectAsState()
     val reRunLanguages by viewModel.offeredLanguageCodes.collectAsState()
     val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
     val wordTapSeekEnabled by viewModel.wordTapSeek.collectAsState()
@@ -1294,6 +1333,7 @@ fun HistoryTab(
                     LogEntryWithSwipe(
                         log = log,
                         searchQuery = searchQuery,
+                        pausableTaskId = pausableTaskId,
                         isExpandedProvider = { log.taskId in expandedTaskIds },
                         swipeActionMode = swipeActionMode,
                         revealedLogIdProvider = { revealedLogId },
@@ -1676,6 +1716,11 @@ fun LogEntryItem(
     onRetranscribe: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     onCancel: (() -> Unit)? = null,
+    /** TASK-1037 phase 4: the Pause action, non-null only while this row's
+     *  task owns a live pausable session stint. */
+    onPause: (() -> Unit)? = null,
+    /** TASK-1037 phase 4: the Resume action, non-null only on PAUSED rows. */
+    onResume: (() -> Unit)? = null,
     compactActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
     /** TASK-800: the Share… format-picker button; default OFF. */
     advancedShareFormats: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS,
@@ -1838,17 +1883,16 @@ fun LogEntryItem(
                 // Right: Status icon + Relative time
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        // TASK-1037: a PAUSED row renders like PROCESSING
-                        // here (in flight with partial text); the distinct
-                        // paused icon and label are phase 4 with their own
-                        // localized strings.
+                        // TASK-1037 phase 4: PAUSED has its own icon and
+                        // label (parked, waiting for the user), distinct
+                        // from the in-flight hourglass.
                         imageVector = when {
                             log.status == LogEntry.Status.SUCCESS && log.isPartial -> Icons.Default.Warning
                             log.status == LogEntry.Status.SUCCESS -> Icons.Default.CheckCircle
                             log.status == LogEntry.Status.ERROR -> Icons.Default.Error
                             log.status == LogEntry.Status.QUEUED -> Icons.Default.Schedule
-                            log.status == LogEntry.Status.PROCESSING || log.status == LogEntry.Status.PAUSED ->
-                                Icons.Default.HourglassEmpty
+                            log.status == LogEntry.Status.PAUSED -> Icons.Default.Pause
+                            log.status == LogEntry.Status.PROCESSING -> Icons.Default.HourglassEmpty
                             else -> Icons.Default.CheckCircle
                         },
                         contentDescription = when {
@@ -1860,7 +1904,9 @@ fun LogEntryItem(
                                 stringResource(R.string.logs_status_error)
                             log.status == LogEntry.Status.QUEUED ->
                                 stringResource(R.string.logs_status_queued)
-                            log.status == LogEntry.Status.PROCESSING || log.status == LogEntry.Status.PAUSED ->
+                            log.status == LogEntry.Status.PAUSED ->
+                                stringResource(R.string.session_paused_label)
+                            log.status == LogEntry.Status.PROCESSING ->
                                 stringResource(R.string.logs_status_processing)
                             else -> stringResource(R.string.logs_status_success)
                         },
@@ -2488,17 +2534,21 @@ fun LogEntryItem(
                     LogEntry.Status.QUEUED -> {
                         QueuedStatusLabel()
                     }
-                    // TASK-1037: PAUSED rides the PROCESSING arm (interim
-                    // text over the cap); its own label, position line and
-                    // Resume/Discard actions are phase 4.
+                    // TASK-1037 phase 4: PAUSED keeps the PROCESSING body
+                    // (interim text over the cap) but carries its own label
+                    // and the Resume action row below.
                     LogEntry.Status.PROCESSING, LogEntry.Status.PAUSED -> {
                         if (log.result.isNotEmpty()) {
-                            // Interim transcription text during progressive VAD transcription
-                            Text(
-                                text = stringResource(R.string.transcription_started),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            if (log.status == LogEntry.Status.PAUSED) {
+                                PausedStatusLabel()
+                            } else {
+                                // Interim transcription text during progressive VAD transcription
+                                Text(
+                                    text = stringResource(R.string.transcription_started),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                             Spacer(modifier = Modifier.height(4.dp))
                             // TASK-506 /simplify F-A: the interim streaming
                             // result is the exact surface where a repetition
@@ -2512,6 +2562,40 @@ fun LogEntryItem(
                         } else {
                             SkeletonTranscriptionCard()
                             Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        // TASK-1037 phase 4: the batch controls. Pause on a
+                        // pausable in-flight session row; Resume on a parked
+                        // one (the parked row keeps its Cancel affordance:
+                        // it closes the session as partial).
+                        if (onPause != null || onResume != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                onResume?.let { resume ->
+                                    TextButton(onClick = resume) {
+                                        Icon(
+                                            Icons.Default.PlayArrow,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(stringResource(R.string.session_resume_action))
+                                    }
+                                }
+                                onPause?.let { pause ->
+                                    TextButton(onClick = pause) {
+                                        Icon(
+                                            Icons.Default.Pause,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(stringResource(R.string.session_pause_action))
+                                    }
+                                }
+                            }
                         }
                         // PiP button — only on devices that support PiP
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -2619,6 +2703,8 @@ private fun LogEntryWithSwipe(
     minuteTick: Long = 0L,
     onNavigateToSettings: (() -> Unit)? = null,
     onOpenLanguageSetting: (() -> Unit)? = null,
+    /** TASK-1037 phase 4: the live pausable stint's task id (tab-hoisted). */
+    pausableTaskId: String? = null,
 ) {
     val context = LocalContext.current
     // TASK-546/546-AC3/616 + TASK-898: the three tab-wide flags arrive as
@@ -2722,6 +2808,12 @@ private fun LogEntryWithSwipe(
                 playback = playback,
                 onRetranscribe = onRetranscribe,
                 onCancel = { cancelTask(context, log.taskId) },
+                onPause = if (log.taskId == pausableTaskId) {
+                    { pauseTask(context, log.taskId) }
+                } else null,
+                onResume = if (log.status == LogEntry.Status.PAUSED) {
+                    { resumeTask(context, log.taskId) }
+                } else null,
                 onDelete = { onDeleted(log); viewModel.deleteLog(log.id) },
                 compactActions = compactActions,
                 advancedShareFormats = advancedShareFormats,
@@ -2783,6 +2875,12 @@ private fun LogEntryWithSwipe(
                 playback = playback,
                 onRetranscribe = onRetranscribe,
                 onCancel = { cancelTask(context, log.taskId) },
+                onPause = if (log.taskId == pausableTaskId) {
+                    { pauseTask(context, log.taskId) }
+                } else null,
+                onResume = if (log.status == LogEntry.Status.PAUSED) {
+                    { resumeTask(context, log.taskId) }
+                } else null,
                 onDelete = { onDeleted(log); onDeleteLog(log.id) },
                 compactActions = compactActions,
                 advancedShareFormats = advancedShareFormats,

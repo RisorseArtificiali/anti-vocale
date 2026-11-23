@@ -89,6 +89,22 @@ object AudioRequestIntent {
             putExtra(InferenceService.EXTRA_RESUME_SESSION, true)
         }
 
+    /**
+     * TASK-1037 phase 4: the cooperative-pause control request, the ONE
+     * builder of the pause intent (History's row button, the debug SPI op
+     * and the notification's PendingIntent all deliver this shape; the
+     * notification's extra-less variant is [InferenceService]'s own
+     * control-action pending intent). A null task id means "the live
+     * stint" (the service resolves it); an explicit id must match the
+     * live stint or the orchestrator gate refuses. A control delivery:
+     * startService, never the enqueue path.
+     */
+    fun pauseTask(context: Context, taskId: String? = null): Intent =
+        Intent(context, InferenceService::class.java).apply {
+            action = InferenceService.ACTION_PAUSE_TASK
+            taskId?.let { putExtra(InferenceService.EXTRA_PAUSE_TASK_ID, it) }
+        }
+
     private fun make(
         context: Context,
         source: String,

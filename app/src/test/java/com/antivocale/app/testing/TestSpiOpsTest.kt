@@ -562,10 +562,19 @@ class TestSpiOpsTest {
         // help is a known op: it must NOT carry the unknown-op error (device
         // verification 2026-09-03 caught the dispatch bug this pins).
         assertFalse(json.has("error"))
-        assertEquals(listOf("get", "set", "records", "record_delete", "identity_cache", "import", "import_state", "import_cancel", "import_retry", "notify_memory_error", "clipboard", "notifications", "ram_tier", "unload", "voice_note_state", "model_download", "clear_orphaned", "bundle_export", "bundle_import", "model_present", "search", "log", "log_read", "log_delete", "voice_note_watermark_reset", "voice_note_simulate", "notify_text", "decode_probe", "session_state", "session_resume", "session_pause", "help"), json.getJSONArray("ops").optStringList())
+        assertEquals(listOf("get", "set", "records", "record_delete", "identity_cache", "import", "import_state", "import_cancel", "import_retry", "notify_memory_error", "clipboard", "notifications", "ram_tier", "unload", "voice_note_state", "model_download", "clear_orphaned", "bundle_export", "bundle_import", "model_present", "search", "log", "log_read", "log_delete", "voice_note_watermark_reset", "voice_note_simulate", "notify_text", "decode_probe", "session_state", "session_resume", "session_pause", "transcribe_file", "help"), json.getJSONArray("ops").optStringList())
         assertEquals(ops.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))
         assertTrue(json.getString("transcription").contains("com.antivocale.app.PROCESS_REQUEST"))
+    }
+
+    @Test
+    fun `transcribe_file answers the context-required error under the unit fakes`() = runTest {
+        // Pins the dispatch arm and the requireContext-BEFORE-validation
+        // order (the share-activity-free enqueue instrument, TASK-1037).
+        val json = JSONObject(ops.handle(TestSpiOps.OP_TRANSCRIBE_FILE, value = "/tmp/x.opus"))
+        assertTrue(json.has("error"))
+        assertTrue(json.getString("error").contains("context"))
     }
 
     @Test

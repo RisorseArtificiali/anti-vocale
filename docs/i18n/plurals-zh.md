@@ -1,6 +1,6 @@
 # Plural rules for values-zh
 
-Extracted from values/strings.xml (1174 strings, 14 plural keys).
+Extracted from values/strings.xml (1180 strings, 15 plural keys).
 
 CLDR cardinal categories for zh: **other**
 
@@ -13,6 +13,7 @@ Every plural key in the package must supply exactly these quantities:
 - `timeout_minutes`: `other`
 - `performance_stats_samples_count`: `other`
 - `interrupted_runs_text`: `other`
+- `session_paused_notification_count`: `other`
 - `interrupted_runs_oom_text`: `other`
 - `model_info_languages_count`: `other`
 - `model_info_max_audio_seconds`: `other`

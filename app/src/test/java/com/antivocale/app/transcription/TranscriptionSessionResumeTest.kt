@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -86,6 +87,14 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
     private val chunkCount = 6
     private val taskId = "kill-run"
 
+    /** Phase 4 review: the eligibility probe is floor-gated on file size
+     *  (1 MB), so the fixture must be a REAL file above it or the session
+     *  never engages at dispatch and the header arm cannot run either. */
+    private val sessionFile: java.io.File = java.io.File.createTempFile("session40", ".wav").apply {
+        java.io.RandomAccessFile(this, "rw").setLength(1_200_000)
+        deleteOnExit()
+    }
+
     /** The start offset the fake stream was LAST asked to decode from. */
     private var lastStreamOffset = -1L
 
@@ -154,7 +163,7 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         every { preferencesManager.vadEnabled } returns flowOf(false)
         every { preferencesManager.progressiveTranscription } returns flowOf(false)
         every { preferencesManager.speakerLabelsEnabled } returns flowOf(false)
-        every { audioPreprocessor.getAudioDuration("/session.wav") } returns
+        every { audioPreprocessor.getAudioDuration(sessionFile.absolutePath) } returns
             (chunkCount * 10_000).toDouble() // far above the 30-minute threshold
         // Rebuild the orchestrator with the REAL fake session store (the base
         // uses a relaxed mock for the shared suites).
@@ -182,12 +191,12 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
     private fun stubRow(taskId: String) {
         io.mockk.coEvery { logDao.getByTaskId(taskId) } returns com.antivocale.app.data.local.LogEntity(
             id = "id-$taskId", timestamp = 1L, taskId = taskId,
-            type = "AUDIO", status = "PAUSED", filePath = "/session.wav")
+            type = "AUDIO", status = "PAUSED", filePath = sessionFile.absolutePath)
     }
 
     private suspend fun request(id: String = taskId) = orchestrator.processRequest(
         taskId = id, requestType = "audio", prompt = "",
-        filePath = "/session.wav", source = "share", sourcePackage = "org.telegram.messenger",
+        filePath = sessionFile.absolutePath, source = "share", sourcePackage = "org.telegram.messenger",
         queuePosition = 1, queueTotal = 1,
         context = mockk(relaxed = true), cacheDir = java.io.File("/tmp"),
         listener = listener, coroutineScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined),
@@ -210,7 +219,10 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         // recovery writes after a process death (PAUSED_SYSTEM).
         stubStream()
         stubDecode { index ->
-            if (index == 2) orchestrator.requestSessionPause(taskId)
+            if (index == 2) {
+                // Phase 4: the gate must arm for the live stint.
+                assertTrue("a mid-stint pause must arm", orchestrator.requestSessionPause(taskId))
+            }
             Result.success(TranscriptionResult(text = "w$index"))
         }
         val stint1 = request()
@@ -218,6 +230,10 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         val parked = sessionDao.sessions[taskId]
         assertNotNull("the stint must have parked a session", parked)
         assertEquals(TranscriptionSessionEntity.STATE_PAUSED_USER, parked!!.state)
+        // Phase 4: the pipeline's finally cleared the stint tracker with the
+        // park; a Pause tap on the parked row is refused (nothing live), so
+        // the resume cannot be ambushed at its first boundary.
+        assertFalse("a parked stint must not be pausable", orchestrator.requestSessionPause(taskId))
         assertEquals(3, sessionDao.getChunks(taskId).size)
         assertEquals(48000L, sessionDao.contiguousPrefixEnd(taskId))
         sessionDao.upsertSession(parked.copy(state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM))
@@ -232,6 +248,10 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
             48000L, lastStreamOffset)
         // The terminal transition deleted the session rows.
         assertNull(sessionDao.sessions[taskId])
+        // Phase 4: completion clears the tracker too; a late Pause tap on
+        // the finished run arms nothing.
+        assertFalse("a completed session must not be pausable",
+            orchestrator.requestSessionPause(taskId))
         // The no-seed rule: no stint of a session run (fresh-engage or
         // resumed) may write the DataStore partial-transcription seed that
         // feeds the interrupted-run dialog (the plan's correction 1; the
@@ -240,8 +260,43 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
     }
 
     @Test
+    fun `a user-marked cancel deletes the session, a scope teardown leaves it active`() = runTest {
+        // Phase 4 review: coroutine activity cannot distinguish the two
+        // CancellationException paths (the service-cancelled job is inactive
+        // too), so the service's markUserCancel marker is the one signal.
+        // Without it, explicitly cancelled work resurrects as a PAUSED_SYSTEM
+        // session at the next cold start.
+        stubStream()
+        stubRow("user-cancel")
+        sessionDao.upsertSession(TranscriptionSessionEntity(
+            taskId = "user-cancel",
+            filePath = sessionFile.absolutePath, fileSizeBytes = 10L, fileMtimeMs = 42L,
+            backendId = "whisper", modelPath = "/models/whisper",
+            source = "share", state = TranscriptionSessionEntity.STATE_ACTIVE,
+            createdAtMs = 1L, updatedAtMs = 1L,
+        ))
+        orchestrator.markUserCancel("user-cancel")
+        orchestrator.cancelIfPending("user-cancel", errorMessage = "Transcription cancelled", durationMs = 0)
+        assertNull("the user-marked cancel must delete the session",
+            sessionDao.sessions["user-cancel"])
+
+        sessionDao.upsertSession(TranscriptionSessionEntity(
+            taskId = "scope-teardown",
+            filePath = sessionFile.absolutePath, fileSizeBytes = 10L, fileMtimeMs = 42L,
+            backendId = "whisper", modelPath = "/models/whisper",
+            source = "share", state = TranscriptionSessionEntity.STATE_ACTIVE,
+            createdAtMs = 1L, updatedAtMs = 1L,
+        ))
+        orchestrator.cancelIfPending("scope-teardown", errorMessage = "Transcription cancelled", durationMs = 0)
+        assertNotNull("a scope teardown must leave the session ACTIVE for recovery",
+            sessionDao.sessions["scope-teardown"])
+        assertEquals(TranscriptionSessionEntity.STATE_ACTIVE,
+            sessionDao.sessions["scope-teardown"]!!.state)
+    }
+
+    @Test
     fun `a short run engages no session`() = runTest {
-        every { audioPreprocessor.getAudioDuration("/session.wav") } returns 12.0
+        every { audioPreprocessor.getAudioDuration(sessionFile.absolutePath) } returns 12.0
         stubStream()
         val result = request("short-run")
         assertEquals("w0 w1 w2 w3 w4 w5", result.getOrNull())
@@ -254,7 +309,7 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         stubStream()
         val result = orchestrator.processRequest(
             taskId = "tasker-run", requestType = "audio", prompt = "",
-            filePath = "/session.wav", source = null, sourcePackage = null,
+            filePath = sessionFile.absolutePath, source = null, sourcePackage = null,
             queuePosition = 1, queueTotal = 1,
             context = mockk(relaxed = true), cacheDir = java.io.File("/tmp"),
             listener = listener, coroutineScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined),
@@ -269,7 +324,7 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         stubRow("refused")
         sessionDao.upsertSession(TranscriptionSessionEntity(
             taskId = "refused",
-            filePath = "/session.wav", fileSizeBytes = 10L, fileMtimeMs = 42L,
+            filePath = sessionFile.absolutePath, fileSizeBytes = 10L, fileMtimeMs = 42L,
             backendId = "whisper", modelPath = "/models/whisper",
             source = "share", state = TranscriptionSessionEntity.STATE_PAUSED_USER,
             createdAtMs = 1L, updatedAtMs = 1L,
@@ -325,7 +380,8 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         }
         sessionDao.upsertSession(TranscriptionSessionEntity(
             taskId = "completing",
-            filePath = "/session.wav", fileSizeBytes = 0L, fileMtimeMs = 0L,
+            filePath = sessionFile.absolutePath,
+            fileSizeBytes = sessionFile.length(), fileMtimeMs = sessionFile.lastModified(),
             backendId = "whisper", modelPath = "/models/whisper",
             source = "share", state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM,
             totalOutputSamples = cursor,

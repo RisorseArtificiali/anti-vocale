@@ -894,6 +894,10 @@
         <item quantity="other">%1$d ट्रांसक्रिप्शन रुके हुए हैं। जारी रखने के लिए ऐप खोलें।</item>
     </plurals>
     <string name="session_resume_action">फिर से शुरू करें</string>
+    <string name="session_pause_action">रोकें</string>
+    <string name="session_paused_label">रुका हुआ</string>
+    <string name="session_park_cause_native_crash">नेटिव क्रैश के कारण बाधित</string>
+    <string name="session_park_cause_app_restart">ऐप पुनः आरंभ होने से बाधित</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d ट्रांसक्रिप्शन पूरा होने से पहले बाधित हुआ: ऐप की मेमोरी खत्म हो गई। छोटी फ़ाइल, छोटा मॉडल आज़माएँ या दूसरे ऐप बंद करें। विवरण के लिए इतिहास देखें।</item>
         <item quantity="other">%1$d ट्रांसक्रिप्शन पूरा होने से पहले बाधित हुए: ऐप की मेमोरी खत्म हो गई। छोटी फ़ाइल, छोटा मॉडल आज़माएँ या दूसरे ऐप बंद करें। विवरण के लिए इतिहास देखें।</item>

@@ -973,6 +973,10 @@
         <item quantity="other">%1$d transcriptions are paused. Open the app to resume.</item>
     </plurals>
     <string name="session_resume_action">Resume</string>
+    <string name="session_pause_action">Pause</string>
+    <string name="session_paused_label">Paused</string>
+    <string name="session_park_cause_native_crash">Interrupted by a native crash</string>
+    <string name="session_park_cause_app_restart">Interrupted by app restart</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d transcription was interrupted before finishing: the app ran out of memory. Try a shorter file, a smaller model, or close other apps. Check History for details.</item>
         <item quantity="other">%1$d transcriptions were interrupted before finishing: the app ran out of memory. Try a shorter file, a smaller model, or close other apps. Check History for details.</item>

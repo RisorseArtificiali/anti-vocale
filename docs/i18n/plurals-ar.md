@@ -1,6 +1,6 @@
 # Plural rules for values-ar
 
-Extracted from values/strings.xml (1174 strings, 14 plural keys).
+Extracted from values/strings.xml (1180 strings, 15 plural keys).
 
 CLDR cardinal categories for ar: **zero, one, two, few, many, other**
 
@@ -13,6 +13,7 @@ Every plural key in the package must supply exactly these quantities:
 - `timeout_minutes`: `zero`, `one`, `two`, `few`, `many`, `other`
 - `performance_stats_samples_count`: `zero`, `one`, `two`, `few`, `many`, `other`
 - `interrupted_runs_text`: `zero`, `one`, `two`, `few`, `many`, `other`
+- `session_paused_notification_count`: `zero`, `one`, `two`, `few`, `many`, `other`
 - `interrupted_runs_oom_text`: `zero`, `one`, `two`, `few`, `many`, `other`
 - `model_info_languages_count`: `zero`, `one`, `two`, `few`, `many`, `other`
 - `model_info_max_audio_seconds`: `zero`, `one`, `two`, `few`, `many`, `other`

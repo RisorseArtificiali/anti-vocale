@@ -1,6 +1,6 @@
 # Plural rules for values-fi
 
-Extracted from values/strings.xml (1174 strings, 14 plural keys).
+Extracted from values/strings.xml (1180 strings, 15 plural keys).
 
 CLDR cardinal categories for fi: **one, other**
 
@@ -13,6 +13,7 @@ Every plural key in the package must supply exactly these quantities:
 - `timeout_minutes`: `one`, `other`
 - `performance_stats_samples_count`: `one`, `other`
 - `interrupted_runs_text`: `one`, `other`
+- `session_paused_notification_count`: `one`, `other`
 - `interrupted_runs_oom_text`: `one`, `other`
 - `model_info_languages_count`: `one`, `other`
 - `model_info_max_audio_seconds`: `one`, `other`

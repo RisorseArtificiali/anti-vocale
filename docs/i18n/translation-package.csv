@@ -789,6 +789,12 @@ benchmark_provider_label,Provider,plain,
 benchmark_provider_value,%1$s,formatted,keep verbatim: ['%1$s']
 transcription_interrupted_title,Transcription was interrupted,plain,
 interrupted_runs_title,Interrupted transcriptions,plain,
+session_paused_notification_text,Paused at %1$s of %2$s,formatted,"keep verbatim: ['%1$s', '%2$s']"
+session_resume_action,Resume,plain,
+session_pause_action,Pause,plain,
+session_paused_label,Paused,plain,
+session_park_cause_native_crash,Interrupted by a native crash,plain,
+session_park_cause_app_restart,Interrupted by app restart,plain,
 interrupted_run_notifications_title,Interrupted run notifications,plain,
 interrupted_run_notifications_description,Show a notification when runs interrupted by an app restart are closed at the next start.,plain,
 action_dismiss,Dismiss,plain,
@@ -1187,6 +1193,8 @@ performance_stats_samples_count [one],%1$d sample,plural,supply only the quantit
 performance_stats_samples_count [other],%1$d samples,plural,supply only the quantities the locale table lists
 interrupted_runs_text [one],%1$d transcription was interrupted before finishing. Check History for details.,plural,supply only the quantities the locale table lists
 interrupted_runs_text [other],%1$d transcriptions were interrupted before finishing. Check History for details.,plural,supply only the quantities the locale table lists
+session_paused_notification_count [one],%1$d transcription is paused. Open the app to resume.,plural,supply only the quantities the locale table lists
+session_paused_notification_count [other],%1$d transcriptions are paused. Open the app to resume.,plural,supply only the quantities the locale table lists
 interrupted_runs_oom_text [one],"%1$d transcription was interrupted before finishing: the app ran out of memory. Try a shorter file, a smaller model, or close other apps. Check History for details.",plural,supply only the quantities the locale table lists
 interrupted_runs_oom_text [other],"%1$d transcriptions were interrupted before finishing: the app ran out of memory. Try a shorter file, a smaller model, or close other apps. Check History for details.",plural,supply only the quantities the locale table lists
 model_info_languages_count [one],%d language,plural,supply only the quantities the locale table lists

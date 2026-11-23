@@ -952,6 +952,10 @@
         <item quantity="other">%1$d transcripties zijn gepauzeerd. Open de app om te hervatten.</item>
     </plurals>
     <string name="session_resume_action">Hervatten</string>
+    <string name="session_pause_action">Pauzeren</string>
+    <string name="session_paused_label">Gepauzeerd</string>
+    <string name="session_park_cause_native_crash">Onderbroken door een native crash</string>
+    <string name="session_park_cause_app_restart">Onderbroken door app-herstart</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d transcriptie werd onderbroken voor hij af was: het geheugen van de app raakte op. Probeer een korter bestand, een kleiner model, of sluit andere apps. Zie Geschiedenis voor details.</item>
         <item quantity="other">%1$d transcripties werden onderbroken voor ze af waren: het geheugen van de app raakte op. Probeer een korter bestand, een kleiner model, of sluit andere apps. Zie Geschiedenis voor details.</item>

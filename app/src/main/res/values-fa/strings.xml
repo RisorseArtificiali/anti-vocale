@@ -1116,6 +1116,10 @@
         <item quantity="other">%1$d پیاده‌سازی صدا متوقف است. برای ادامه برنامه را باز کنید.</item>
     </plurals>
     <string name="session_resume_action">ادامه</string>
+    <string name="session_pause_action">توقف</string>
+    <string name="session_paused_label">متوقف شده</string>
+    <string name="session_park_cause_native_crash">به دلیل کرش نیتیو قطع شد</string>
+    <string name="session_park_cause_app_restart">به دلیل راه‌اندازی مجدد برنامه قطع شد</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d رونویسی پیش از تمام شدن متوقف شد: حافظه برنامه تمام شد. فایل کوتاه‌تر یا مدل کوچک‌تری امتحان کنید یا برنامه‌های دیگر را ببندید. جزئیات در تاریخچه.</item>
         <item quantity="other">%1$d رونویسی پیش از تمام شدن متوقف شدند: حافظه برنامه تمام شد. فایل کوتاه‌تر یا مدل کوچک‌تری امتحان کنید یا برنامه‌های دیگر را ببندید. جزئیات در تاریخچه.</item>

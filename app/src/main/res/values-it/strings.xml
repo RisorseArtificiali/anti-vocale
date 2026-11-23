@@ -1117,6 +1117,10 @@
         <item quantity="other">%1$d trascrizioni sono in pausa. Apri l\'app per riprendere.</item>
     </plurals>
     <string name="session_resume_action">Riprendi</string>
+    <string name="session_pause_action">Pausa</string>
+    <string name="session_paused_label">In pausa</string>
+    <string name="session_park_cause_native_crash">Interrotta da un crash nativo</string>
+    <string name="session_park_cause_app_restart">Interrotta dal riavvio dell app</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d trascrizione è stata interrotta prima di finire: memoria esaurita. Prova un file piu\' corto, un modello piu\' piccolo, o chiudi altre app. Dettagli nella Cronologia.</item>
         <item quantity="other">%1$d trascrizioni sono state interrotte prima di finire: memoria esaurita. Prova un file piu\' corto, un modello piu\' piccolo, o chiudi altre app. Dettagli nella Cronologia.</item>

@@ -793,6 +793,10 @@
         <item quantity="other">%1$d transcriptions sont en pause. Ouvrez l\'app pour reprendre.</item>
     </plurals>
     <string name="session_resume_action">Reprendre</string>
+    <string name="session_pause_action">Mettre en pause</string>
+    <string name="session_paused_label">En pause</string>
+    <string name="session_park_cause_native_crash">Interrompue par un crash natif</string>
+    <string name="session_park_cause_app_restart">Interrompue par le redémarrage de l app</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d transcription a été interrompue avant de se terminer : l\'application a manqué de mémoire. Essayez un fichier plus court, un modèle plus léger, ou fermez d\'autres applications. Détails dans l\'Historique.</item>
         <item quantity="other">%1$d transcriptions ont été interrompues avant de se terminer : l\'application a manqué de mémoire. Essayez un fichier plus court, un modèle plus léger, ou fermez d\'autres applications. Détails dans l\'Historique.</item>

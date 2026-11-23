@@ -926,6 +926,10 @@
         <item quantity="other">%1$d распознаваний на паузе. Откройте приложение, чтобы продолжить.</item>
     </plurals>
     <string name="session_resume_action">Продолжить</string>
+    <string name="session_pause_action">Пауза</string>
+    <string name="session_paused_label">Приостановлено</string>
+    <string name="session_park_cause_native_crash">Прервано из-за сбоя нативного кода</string>
+    <string name="session_park_cause_app_restart">Прервано перезапуском приложения</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d распознавание было прервано до завершения: в приложении закончилась память. Попробуйте более короткий файл, модель меньшего размера или закройте другие приложения. Подробности в Истории.</item>
         <item quantity="few">%1$d распознавания были прерваны до завершения: в приложении закончилась память. Попробуйте более короткий файл, модель меньшего размера или закройте другие приложения. Подробности в Истории.</item>

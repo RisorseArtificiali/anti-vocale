@@ -944,6 +944,10 @@
         <item quantity="other">%1$d transkrypcji jest wstrzymanych. Otwórz aplikację, aby wznowić.</item>
     </plurals>
     <string name="session_resume_action">Wznów</string>
+    <string name="session_pause_action">Wstrzymaj</string>
+    <string name="session_paused_label">Wstrzymano</string>
+    <string name="session_park_cause_native_crash">Przerwane przez awarię natywną</string>
+    <string name="session_park_cause_app_restart">Przerwane przez ponowne uruchomienie aplikacji</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">Przerwano %1$d transkrypcję przed zakończeniem: w aplikacji zabrakło pamięci. Spróbuj krótszego pliku, mniejszego modelu albo zamknij inne aplikacje. Szczegóły w Historii.</item>
         <item quantity="few">Przerwano %1$d transkrypcje przed zakończeniem: w aplikacji zabrakło pamięci. Spróbuj krótszego pliku, mniejszego modelu albo zamknij inne aplikacje. Szczegóły w Historii.</item>

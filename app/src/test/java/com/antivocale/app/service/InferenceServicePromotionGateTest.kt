@@ -191,4 +191,84 @@ class InferenceServicePromotionGateTest {
             flow.value = false
         }
     }
+
+    // ---- TASK-1037 phase 4: the ACTION_PAUSE_TASK control delivery ----
+
+    @Test
+    fun `a pause delivery with a task id arms only through the orchestrator gate`() {
+        val service = Robolectric.buildService(InferenceService::class.java).create().get()
+        val orchestrator = mockk<TranscriptionOrchestrator>(relaxed = true)
+        every { orchestrator.requestSessionPause("pause-1") } returns true
+        inject(service, "orchestrator", orchestrator)
+
+        service.onStartCommand(
+            Intent(service, InferenceService::class.java)
+                .setAction(InferenceService.ACTION_PAUSE_TASK)
+                .putExtra(InferenceService.EXTRA_PAUSE_TASK_ID, "pause-1"),
+            0, 1)
+
+        io.mockk.verify(exactly = 1) { orchestrator.requestSessionPause("pause-1") }
+        assertTrue(
+            "a control delivery must not become a fallback notification",
+            fallbackNotifications(service).isEmpty(),
+        )
+        assertEquals("the pause arms nothing in the queue", 0, pendingCountOf(service))
+    }
+
+    @Test
+    fun `a pause delivery with no id pauses the tracker's live stint`() {
+        val service = Robolectric.buildService(InferenceService::class.java).create().get()
+        val orchestrator = mockk<TranscriptionOrchestrator>(relaxed = true)
+        every { orchestrator.activeSessionTaskId } returns "live-stint"
+        every { orchestrator.requestSessionPause("live-stint") } returns true
+        inject(service, "orchestrator", orchestrator)
+
+        // The notification button's shape: action set, no extra.
+        service.onStartCommand(
+            Intent(service, InferenceService::class.java)
+                .setAction(InferenceService.ACTION_PAUSE_TASK),
+            0, 1)
+
+        io.mockk.verify(exactly = 1) { orchestrator.requestSessionPause("live-stint") }
+    }
+
+    @Test
+    fun `a pause delivery for an unknown task is a logged no-op that still retires`() {
+        val service = Robolectric.buildService(InferenceService::class.java).create().get()
+        val orchestrator = mockk<TranscriptionOrchestrator>(relaxed = true)
+        every { orchestrator.requestSessionPause(any()) } returns false
+        inject(service, "orchestrator", orchestrator)
+
+        service.onStartCommand(
+            Intent(service, InferenceService::class.java)
+                .setAction(InferenceService.ACTION_PAUSE_TASK)
+                .putExtra(InferenceService.EXTRA_PAUSE_TASK_ID, "stale-id"),
+            0, 1)
+
+        io.mockk.verify(exactly = 1) { orchestrator.requestSessionPause("stale-id") }
+        assertTrue(
+            "an idle pause must not leave the revived service stranded",
+            Shadows.shadowOf(service).isStoppedBySelf,
+        )
+    }
+
+    @Test
+    fun `a failed promotion does not preserve a pause delivery (control classification)`() {
+        val service = Robolectric.buildService(InferenceService::class.java).create().get()
+        service.foregroundPromotion = { throw SecurityException("simulated FGS restriction") }
+        val orchestrator = mockk<TranscriptionOrchestrator>(relaxed = true)
+        every { orchestrator.activeSessionTaskId } returns "live-stint"
+        inject(service, "orchestrator", orchestrator)
+
+        service.onStartCommand(
+            Intent(service, InferenceService::class.java)
+                .setAction(InferenceService.ACTION_PAUSE_TASK),
+            0, 1)
+
+        assertFalse(
+            "a pause must not become a fallback notification (it carries no request identity)",
+            fallbackNotifications(service).isNotEmpty(),
+        )
+        assertTrue("the empty service must stop itself", Shadows.shadowOf(service).isStoppedBySelf)
+    }
 }

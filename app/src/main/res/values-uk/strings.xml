@@ -946,6 +946,10 @@
         <item quantity="other">%1$d розпізнавань на паузі. Відкрийте застосунок, щоб продовжити.</item>
     </plurals>
     <string name="session_resume_action">Продовжити</string>
+    <string name="session_pause_action">Пауза</string>
+    <string name="session_paused_label">Призупинено</string>
+    <string name="session_park_cause_native_crash">Перервано через збій нативного коду</string>
+    <string name="session_park_cause_app_restart">Перервано перезапуском застосунку</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d розшифровку перервано до завершення: у додатку закінчилася пам\'ять. Спробуйте коротший файл, меншу модель або закрийте інші додатки. Подробиці в Історії.</item>
         <item quantity="few">%1$d розшифровки перервано до завершення: у додатку закінчилася пам\'ять. Спробуйте коротший файл, меншу модель або закрийте інші додатки. Подробиці в Історії.</item>
