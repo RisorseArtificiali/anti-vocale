@@ -924,6 +924,12 @@
         <item quantity="one">%1$d metin çıkarma tamamlanmadan kesildi. Ayrıntılar için Kayıtlar\'a bakın.</item>
         <item quantity="other">%1$d metin çıkarma tamamlanmadan kesildi. Ayrıntılar için Kayıtlar\'a bakın.</item>
     </plurals>
+    <string name="session_paused_notification_text">%2$s içinden %1$s konumunda duraklatıldı</string>
+    <plurals name="session_paused_notification_count">
+        <item quantity="one">%1$d transkription duraklatıldı. Devam etmek için uygulamayı açın.</item>
+        <item quantity="other">%1$d transkription duraklatıldı. Devam etmek için uygulamayı açın.</item>
+    </plurals>
+    <string name="session_resume_action">Devam et</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d metin çıkarma tamamlanmadan kesildi: uygulamanın belleği tükendi. Daha kısa bir dosya, daha küçük bir model deneyin veya diğer uygulamaları kapatın. Ayrıntılar için Kayıtlar\'a bakın.</item>
         <item quantity="other">%1$d metin çıkarma tamamlanmadan kesildi: uygulamanın belleği tükendi. Daha kısa bir dosya, daha küçük bir model deneyin veya diğer uygulamaları kapatın. Ayrıntılar için Kayıtlar\'a bakın.</item>

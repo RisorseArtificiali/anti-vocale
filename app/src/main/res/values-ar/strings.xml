@@ -1162,6 +1162,16 @@
         <item quantity="many">تمت مقاطعة %1$d عملية نسخ قبل اكتمالها. راجع السجل للاطلاع على التفاصيل.</item>
         <item quantity="other">تمت مقاطعة %1$d عملية نسخ قبل اكتمالها. راجع السجل للاطلاع على التفاصيل.</item>
     </plurals>
+    <string name="session_paused_notification_text">متوقف مؤقتًا عند %1$s من %2$s</string>
+    <plurals name="session_paused_notification_count">
+        <item quantity="zero">لا توجد عمليات تفريغ متوقفة مؤقتًا.</item>
+        <item quantity="one">عملية تفريغ واحدة متوقفة مؤقتًا. افتح التطبيق للاستئناف.</item>
+        <item quantity="two">عمليتا تفريغ متوقفتان مؤقتًا. افتح التطبيق للاستئناف.</item>
+        <item quantity="few">%1$d عمليات تفريغ متوقفة مؤقتًا. افتح التطبيق للاستئناف.</item>
+        <item quantity="many">%1$d عملية تفريغ متوقفة مؤقتًا. افتح التطبيق للاستئناف.</item>
+        <item quantity="other">%1$d عملية تفريغ متوقفة مؤقتًا. افتح التطبيق للاستئناف.</item>
+    </plurals>
+    <string name="session_resume_action">استئناف</string>
     <plurals name="logs_entries_deleted">
         <item quantity="zero">لا توجد إدخالات محذوفة</item>
         <item quantity="one">تم حذف إدخال واحد</item>

@@ -35,6 +35,8 @@ class BridgeApplication : Application(), Configuration.Provider {
     @Inject lateinit var externalModelStore: com.antivocale.app.data.ExternalModelStore
     @Inject lateinit var externalImportRepairer: com.antivocale.app.data.ExternalImportRepairer
     @Inject lateinit var logDao: com.antivocale.app.data.local.LogDao
+    /** TASK-1037: the session store the cold-start park and the cleanup exemption read. */
+    @Inject lateinit var sessionDao: com.antivocale.app.data.local.SessionDao
     @Inject lateinit var scheduledFolderStore: com.antivocale.app.data.ScheduledFolderStore
     @Inject lateinit var voiceNoteDetectionCoordinators: com.antivocale.app.data.VoiceNoteDetectionCoordinators
     @Inject lateinit var biasingVocabSupplement: com.antivocale.app.data.download.BiasingVocabSupplement
@@ -77,8 +79,18 @@ class BridgeApplication : Application(), Configuration.Provider {
         // ordering note above stays true in both orders (the sweep guards
         // per row), so the move to the application scope is behavior-neutral.
         applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            // TASK-1037: the sweep must not delete a live session's source
+            // file (the session table IS the live set; the parked-session
+            // Resume action would die on a missing file).
+            val exempt = runCatching {
+                sessionDao.getLiveSourcePaths().toSet()
+            }.getOrElse { e ->
+                android.util.Log.w("BridgeApplication", "session source read failed; cleanup unexempted", e)
+                emptySet()
+            }
             runCatching {
-                com.antivocale.app.util.SharedAudioHandler.cleanupOldFiles(this@BridgeApplication)
+                com.antivocale.app.util.SharedAudioHandler.cleanupOldFiles(
+                    this@BridgeApplication, exemptPaths = exempt)
             }.onFailure { e ->
                 android.util.Log.w("BridgeApplication", "shared_audio cleanup failed", e)
             }
@@ -349,7 +361,7 @@ class BridgeApplication : Application(), Configuration.Provider {
             runCatching {
                 com.antivocale.app.service.SuspendedRunRecovery
                     .closeInterruptedRuns(
-                        this@BridgeApplication, logDao, wasOOMCrash,
+                        this@BridgeApplication, logDao, sessionDao, wasOOMCrash,
                         // TASK-684: the user preference gates the generic
                         // class's summary notification (suspended always
                         // notifies). The one-shot getter reads DataStore

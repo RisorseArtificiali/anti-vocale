@@ -383,8 +383,10 @@ class OpenTranscribeProviderService : Service() {
          */
         const val NOTIFICATION_ID = 1011
 
-        /** The API's source label for rows and logs; never "share", so no share UX applies. */
-        private const val SOURCE_OPENTRANSCRIBE = "opentranscribe"
+        /** The API's source label for rows and logs; never "share", so no share UX applies.
+         *  TASK-1037: internal so the session-eligibility gate (the
+         *  orchestrator) excludes this origin by the same token, not a copy. */
+        internal const val SOURCE_OPENTRANSCRIBE = "opentranscribe"
 
         private const val SPOOL_BUFFER_BYTES = 64 * 1024
     }

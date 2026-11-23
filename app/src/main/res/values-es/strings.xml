@@ -787,6 +787,12 @@
         <item quantity="one">Se interrumpió %1$d transcripción antes de terminar. Consulta el Historial para más detalles.</item>
         <item quantity="other">Se interrumpieron %1$d transcripciones antes de terminar. Consulta el Historial para más detalles.</item>
     </plurals>
+    <string name="session_paused_notification_text">En pausa en %1$s de %2$s</string>
+    <plurals name="session_paused_notification_count">
+        <item quantity="one">%1$d transcripción está en pausa. Abre la app para reanudar.</item>
+        <item quantity="other">%1$d transcripciones están en pausa. Abre la app para reanudar.</item>
+    </plurals>
+    <string name="session_resume_action">Reanudar</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">Se interrumpió %1$d transcripción antes de terminar: a la app se le agotó la memoria. Prueba con un archivo más corto, un modelo más ligero, o cierra otras apps. Consulta el Historial para más detalles.</item>
         <item quantity="other">Se interrumpieron %1$d transcripciones antes de terminar: a la app se le agotó la memoria. Prueba con un archivo más corto, un modelo más ligero, o cierra otras apps. Consulta el Historial para más detalles.</item>

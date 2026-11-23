@@ -73,6 +73,22 @@ object AudioRequestIntent {
         requestType = TaskerRequestReceiver.REQUEST_TYPE_SUBTITLE_IMPORT,
         sourcePackage = sourcePackage)
 
+    /**
+     * TASK-1037 (GH #190) phase 3: the session-resume arm. Carries ONLY the
+     * task id and the resume flag: the service reads everything else from
+     * the session row (the plan's resume-request shape), so the intent
+     * cannot disagree with persisted state, and it rides the API 31+
+     * trampoline fallback unchanged (the full-extras forwarding of
+     * [TaskerTrampolineActivity]). The session row's frozen identity decides
+     * eligibility; [InferenceService] validates it before any work starts.
+     */
+    fun resumeSession(context: Context, taskId: String): Intent =
+        Intent(context, InferenceService::class.java).apply {
+            putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
+            putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
+            putExtra(InferenceService.EXTRA_RESUME_SESSION, true)
+        }
+
     private fun make(
         context: Context,
         source: String,

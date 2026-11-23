@@ -57,6 +57,9 @@ class TestSpiReceiver : BroadcastReceiver() {
     @Inject lateinit var logDao: com.antivocale.app.data.local.LogDao
     // TASK-912: the voice_note_simulate op drives the auto-transcriber.
     @Inject lateinit var voiceNoteAutoTranscriber: com.antivocale.app.data.VoiceNoteAutoTranscriber
+    // TASK-1037: the session ops (state reads the store; pause drives the flag).
+    @Inject lateinit var sessionDao: com.antivocale.app.data.local.SessionDao
+    @Inject lateinit var orchestrator: com.antivocale.app.transcription.TranscriptionOrchestrator
     // TASK-984: op=import dispatches on the process-lifetime scope instead of
     // holding the broadcast window for a multi-minute download (two am_kills
     // at ~300s were the evidence; see TestSpiOps' asyncImportScope KDoc).
@@ -330,7 +333,11 @@ class TestSpiReceiver : BroadcastReceiver() {
                 CoroutineScope(appScope.coroutineContext + Dispatchers.IO)
             } else {
                 null
-            })
+            },
+            // TASK-1037: the session ops read the store and drive the pause flag
+            // (named: they follow asyncImportOutcome in the constructor).
+            sessionDao = sessionDao,
+            orchestrator = orchestrator)
         val key = intent.getStringExtra(EXTRA_KEY)
         val value = intent.getStringExtra(EXTRA_VALUE)
         val entry = intent.getStringExtra(EXTRA_ENTRY)

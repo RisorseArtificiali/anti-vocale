@@ -74,6 +74,18 @@ object AudioDurationPolicy {
     /** Advisory dialog threshold, above 30 minutes. */
     const val WARN_THRESHOLD_SECONDS = 1800L
 
+    /**
+     * TASK-1037 (GH #190): the resumable-session engage threshold. Only a
+     * pipelined run at least this long creates a transcription session
+     * (shorter files re-run faster than a resume would save); the plan's
+     * recommendation, equal to the warn threshold, so the runs that get
+     * the "this will take a while" dialog are exactly the runs that can
+     * now be paused and resumed. Raising the streaming valve (phase 6)
+     * does not move this: sessions are about surviving kills, and a
+     * 40-minute run is already worth checkpointing.
+     */
+    const val SESSION_MIN_SECONDS = WARN_THRESHOLD_SECONDS
+
     /** The usePipeline rule, single source: streaming needs VAD off AND a
      *  chunking backend; everything else decodes whole-file PCM. */
     fun decodePathFor(vadEnabled: Boolean, maxChunkDurationSeconds: Int?): DecodePath =

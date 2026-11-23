@@ -38,6 +38,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
         const val ACTION_DISMISS_CHOICE = "com.antivocale.app.DISMISS_CHOICE"
         /** TASK-684 (GH #109): one-tap re-run from the suspension notification. */
         const val ACTION_RERUN_SUSPENDED = "com.antivocale.app.RERUN_SUSPENDED"
+        /**
+         * TASK-1037 (GH #190): the paused session's Resume action. Forwards
+         * [com.antivocale.app.service.AudioRequestIntent.resumeSession]'s
+         * shape (task id + flag only) through [com.antivocale.app.service.InferenceEnqueue];
+         * the session row's frozen identity is validated in the service drain.
+         */
+        const val ACTION_RESUME_SESSION = "com.antivocale.app.RESUME_SESSION"
         const val EXTRA_TRANSCRIPTION_TEXT = "transcription_text"
         const val EXTRA_SOURCE_PACKAGE = "source_package"
         const val ACTION_PAGE_PREV = "com.antivocale.app.PAGE_PREV"
@@ -57,6 +64,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             ACTION_USE_SUBTITLES -> handleSubtitleChoice(context, intent, requestType = TaskerRequestReceiver.REQUEST_TYPE_SUBTITLES)
             ACTION_DISMISS_CHOICE -> handleDismissChoice(context, intent)
             ACTION_RERUN_SUSPENDED -> handleRerunSuspended(context, intent)
+            ACTION_RESUME_SESSION -> handleResumeSession(context, intent)
             ACTION_TRANSCRIBE_AUDIO -> handleSubtitleChoice(context, intent, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
             ACTION_PAGE_PREV, ACTION_PAGE_NEXT -> handlePageAction(context, intent)
             else -> Log.d(TAG, "Unknown action: ${intent.action}")
@@ -126,6 +134,45 @@ class NotificationActionReceiver : BroadcastReceiver() {
     }
 
     /**
+     * TASK-1037 (GH #190): the paused notification's Resume action. The tap
+     * is user-initiated (the FGS exemption the sibling arms rely on); a
+     * still-restricted start survives on the trampoline notification. The
+     * notification itself is cleared by the service drain when the resume is
+     * actually taken (a failed enqueue leaves it standing, which is the
+     * honest state: the session is still paused).
+     */
+    private fun handleResumeSession(context: Context, intent: Intent) {
+        val taskId = intent.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)
+        if (taskId.isNullOrBlank()) {
+            Log.w(TAG, "Session resume without a task id; nothing to do")
+            return
+        }
+        dispatchServiceIntent(
+            context, com.antivocale.app.service.AudioRequestIntent.resumeSession(context, taskId),
+            "Session resume (taskId=$taskId)")
+    }
+
+    /**
+     * The shared [com.antivocale.app.service.InferenceEnqueue.start] outcome
+     * ladder (the simplify round: the resume arm and the suspension re-run
+     * arm carried verbatim copies). A failed enqueue is LOUD: the user
+     * explicitly tapped an action, so a Log.e-only branch would drop the
+     * request exactly as silently as the failure mode the Outcome gate
+     * exists to expose.
+     */
+    private fun dispatchServiceIntent(context: Context, serviceIntent: Intent, label: String) {
+        when (com.antivocale.app.service.InferenceEnqueue.start(context, serviceIntent)) {
+            com.antivocale.app.service.InferenceEnqueue.Outcome.Started,
+            com.antivocale.app.service.InferenceEnqueue.Outcome.FallbackNotificationPosted ->
+                Log.i(TAG, "$label enqueued")
+            is com.antivocale.app.service.InferenceEnqueue.Outcome.Failed -> {
+                Log.e(TAG, "$label enqueue FAILED: request lost")
+                Toast.makeText(context, context.getString(R.string.transcription_failed), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    /**
      * TASK-684 (GH #109): the suspension notification's one-tap re-run.
      * Re-enqueues the suspended run's audio through [InferenceEnqueue] with a
      * FRESH task id under the ACTIVE backend (the Logs-tab retranscribe
@@ -161,15 +208,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 putExtra(InferenceService.EXTRA_SENDER_NAME, it)
             }
         }
-        when (com.antivocale.app.service.InferenceEnqueue.start(context, serviceIntent)) {
-            com.antivocale.app.service.InferenceEnqueue.Outcome.Started,
-            com.antivocale.app.service.InferenceEnqueue.Outcome.FallbackNotificationPosted ->
-                Log.i(TAG, "Suspension re-run enqueued (file=$filePath)")
-            is com.antivocale.app.service.InferenceEnqueue.Outcome.Failed -> {
-                Log.e(TAG, "Suspension re-run enqueue FAILED: request lost")
-                Toast.makeText(context, context.getString(R.string.transcription_failed), Toast.LENGTH_LONG).show()
-            }
-        }
+        dispatchServiceIntent(context, serviceIntent, "Suspension re-run (file=$filePath)")
     }
 
     /**

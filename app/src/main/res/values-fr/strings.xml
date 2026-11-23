@@ -787,6 +787,12 @@
         <item quantity="one">%1$d transcription a été interrompue avant de se terminer. Détails dans l\'Historique.</item>
         <item quantity="other">%1$d transcriptions ont été interrompues avant de se terminer. Détails dans l\'Historique.</item>
     </plurals>
+    <string name="session_paused_notification_text">En pause à %1$s sur %2$s</string>
+    <plurals name="session_paused_notification_count">
+        <item quantity="one">%1$d transcription est en pause. Ouvrez l\'app pour reprendre.</item>
+        <item quantity="other">%1$d transcriptions sont en pause. Ouvrez l\'app pour reprendre.</item>
+    </plurals>
+    <string name="session_resume_action">Reprendre</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d transcription a été interrompue avant de se terminer : l\'application a manqué de mémoire. Essayez un fichier plus court, un modèle plus léger, ou fermez d\'autres applications. Détails dans l\'Historique.</item>
         <item quantity="other">%1$d transcriptions ont été interrompues avant de se terminer : l\'application a manqué de mémoire. Essayez un fichier plus court, un modèle plus léger, ou fermez d\'autres applications. Détails dans l\'Historique.</item>

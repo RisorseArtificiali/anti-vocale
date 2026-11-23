@@ -57,6 +57,8 @@ class InferenceService : Service(), TranscriptionListener {
     @Inject lateinit var orchestrator: TranscriptionOrchestrator
     @Inject lateinit var backendManager: TranscriptionBackendManager
     @Inject lateinit var logDao: LogDao
+    /** TASK-1037: settles the paused notification as sessions leave the paused set. */
+    @Inject lateinit var sessionDao: com.antivocale.app.data.local.SessionDao
     @Inject lateinit var shareShortcutManager: ShareShortcutManager
 
     companion object {
@@ -113,6 +115,14 @@ class InferenceService : Service(), TranscriptionListener {
         /** TASK-842: the intake content hash, from the interactive guard's
          *  share flow; rides the row so FUTURE intakes can match it. */
         const val EXTRA_CONTENT_HASH = "content_hash"
+
+        /**
+         * TASK-1037 (GH #190) phase 3: the resume marker. With it set the
+         * intent carries only a task id ([TaskerRequestReceiver.EXTRA_TASK_ID]);
+         * the drain hydrates every other field from the transcription-session
+         * row and validates its frozen identity BEFORE any work starts.
+         */
+        const val EXTRA_RESUME_SESSION = "resume_session"
         const val SOURCE_SHARE = "share"
 
         /** TASK-500: the History browse FAB; not a share request. */
@@ -298,7 +308,13 @@ class InferenceService : Service(), TranscriptionListener {
         val contentHash: String? = null,
         /** TASK-889: the cold-start sweep origin (suppresses the per-note
          *  SUCCESS result notification; the digest covers the burst). */
-        val catchup: Boolean = false
+        val catchup: Boolean = false,
+        /** TASK-1037: a session-resume request. The placeholder fields are
+         *  meaningless; the drain hydrates them from the session row
+         *  ([TranscriptionOrchestrator.prepareSessionResume]) before the
+         *  run starts. No logQueued call happens for such a request (the
+         *  row exists in PAUSED). */
+        val resumeSession: Boolean = false
     )
 
     // ---- Android Lifecycle ----
@@ -447,6 +463,35 @@ class InferenceService : Service(), TranscriptionListener {
             return START_NOT_STICKY
         }
 
+        // TASK-1037: the resume arm, BEFORE the normal parse (its intent
+        // carries no file path; a fall-through would build a null-path
+        // request). The inFlightTaskIds guard makes a double tap idempotent
+        // (the plan's resume-request shape). No logQueued: the row already
+        // exists in PAUSED; markProcessing's extended SQL re-promotes it
+        // when the stint starts.
+        if (intent?.getBooleanExtra(EXTRA_RESUME_SESSION, false) == true) {
+            val resumeTaskId = intent.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)
+            if (resumeTaskId.isNullOrBlank()) {
+                Log.w(TAG, "Resume delivery without a task id; nothing to do")
+                retireIfIdle()
+                return START_NOT_STICKY
+            }
+            // Simplify round: the same enqueue bookkeeping as the normal arm
+            // (dedup guard, queue add, counter); the resume-specific parts
+            // (no logQueued, the drain-time hydration) stay in their arms.
+            if (enqueueRequest(PendingRequest(
+                    taskId = resumeTaskId,
+                    requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO,
+                    prompt = "",
+                    filePath = null,
+                    resumeSession = true,
+                ), label = "Session resume enqueued")
+            ) {
+                processQueue()
+            }
+            return START_NOT_STICKY
+        }
+
         val filePath = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)
 
         val request = PendingRequest(
@@ -471,15 +516,10 @@ class InferenceService : Service(), TranscriptionListener {
         // queued case (a request with the same taskId is waiting) and the in-flight case (a
         // request with the same taskId is currently being processed). `inFlightTaskIds.add`
         // returns false when the id is already present — atomic against the drain loop's remove.
-        if (!inFlightTaskIds.add(request.taskId)) {
-            Log.w(TAG, "Duplicate taskId dropped (already queued or processing): ${request.taskId}")
-            processQueue()
+        if (!enqueueRequest(request)) {
             return START_NOT_STICKY
         }
-
-        requestQueue.add(request)
-        val queueSize = pendingCount.incrementAndGet()
-        Log.i(TAG, "Request enqueued: ${request.taskId}, source=${request.source}, sourcePackage=${request.sourcePackage}, filePath=$filePath")
+        val queueSize = pendingCount.get()
 
         // GH #51: make the request visible in the Logs tab from enqueue time.
         // processRequest's markProcessing promotes the entry once work starts.
@@ -576,6 +616,28 @@ class InferenceService : Service(), TranscriptionListener {
 
     // ---- Queue Management ----
 
+    /**
+     * TASK-1037 simplify round: the ONE enqueue bookkeeping sequence (dedup
+     * guard, queue add, pending counter, the enqueue log), shared by the
+     * normal intake arm and the resume arm. Returns false when the task id
+     * was already queued or in flight (the duplicate is dropped and the
+     * drain re-kicked, exactly the old inline behavior; the plan's
+     * double-tap idempotence). The caller owns everything arm-specific
+     * (logQueued, the queue-size hint, the drain-time resume hydration).
+     */
+    private fun enqueueRequest(request: PendingRequest, label: String = "Request enqueued"): Boolean {
+        if (!inFlightTaskIds.add(request.taskId)) {
+            Log.w(TAG, "Duplicate taskId dropped (already queued or processing): ${request.taskId}")
+            processQueue()
+            return false
+        }
+        requestQueue.add(request)
+        pendingCount.incrementAndGet()
+        Log.i(TAG, "$label: ${request.taskId}, source=${request.source}, " +
+            "sourcePackage=${request.sourcePackage}, filePath=${request.filePath}")
+        return true
+    }
+
     private fun processQueue() {
         currentProcessingJob = serviceScope.launch {
             // The atomic gate, not a check-then-act on _isTranscribing: the
@@ -611,8 +673,60 @@ class InferenceService : Service(), TranscriptionListener {
                 if (preferencesManager.freezeProtectionEnabled.first()) silentKeepalive.start()
 
                 while (requestQueue.isNotEmpty()) {
-                    val request = requestQueue.poll() ?: continue
+                    var request = requestQueue.poll() ?: continue
                     pendingCount.decrementAndGet()
+
+                    // TASK-1037: the resume hydration, BEFORE the task's
+                    // bookkeeping so a refused resume never claims a drain
+                    // slot. The plan's resume-request shape: the intent
+                    // carried only the task id; the session row supplies
+                    // everything else, so the request cannot disagree with
+                    // persisted state. The id is released on every skip path
+                    // (the per-task finally below only covers taken runs).
+                    if (request.resumeSession) {
+                        // Simplify round: the notification settle is the
+                        // orchestrator's one entry point (the service never
+                        // touches the session store directly), shared by the
+                        // taken and refused arms; the NoSession drop pays
+                        // nothing.
+                        suspend fun settlePausedNotification() {
+                            runCatching { orchestrator.settlePausedNotification(applicationContext) }
+                        }
+                        when (val plan = orchestrator.prepareSessionResume(
+                            request.taskId, applicationContext)) {
+                            is TranscriptionOrchestrator.SessionResumePlan.Ready -> {
+                                request = request.copy(
+                                    filePath = plan.filePath,
+                                    prompt = plan.prompt,
+                                    source = plan.source,
+                                    sourcePackage = plan.sourcePackage,
+                                    senderName = plan.senderName,
+                                    backendOverride = plan.backendOverride,
+                                    languageOverride = plan.languageOverride,
+                                )
+                                // The requester record must carry the HYDRATED
+                                // source: a stale null-source entry would let the
+                                // success path broadcast a world-visible Tasker
+                                // reply for an in-app-origin session (the
+                                // TASK-274(f) exfiltration shape).
+                                requesterByTask[request.taskId] = request
+                                settlePausedNotification()
+                                Log.i(TAG, "Resume hydrated: ${request.taskId} file=${request.filePath} backend=${request.backendOverride}")
+                            }
+                            is TranscriptionOrchestrator.SessionResumePlan.Closed -> {
+                                Log.w(TAG, "Resume refused for ${request.taskId}: ${plan.reason}")
+                                settlePausedNotification()
+                                inFlightTaskIds.remove(request.taskId)
+                                continue
+                            }
+                            TranscriptionOrchestrator.SessionResumePlan.NoSession -> {
+                                Log.i(TAG, "Resume dropped for ${request.taskId}: no session (already terminal)")
+                                inFlightTaskIds.remove(request.taskId)
+                                continue
+                            }
+                        }
+                    }
+
                     currentIndex++
                     currentTaskId = request.taskId
 
@@ -670,6 +784,8 @@ class InferenceService : Service(), TranscriptionListener {
                                     backendOverride = request.backendOverride,
                                     languageOverride = request.languageOverride,
                                     trackIndex = request.trackIndex,
+                                    // TASK-1037: part of a session's frozen identity.
+                                    senderName = request.senderName,
                                     queuePosition = currentIndex,
                                     queueTotal = totalInBatch,
                                     context = applicationContext,
@@ -809,8 +925,18 @@ class InferenceService : Service(), TranscriptionListener {
             Log.i(TAG, "Per-task cancel for in-flight $taskId")
             currentTaskJob?.cancel()
         } else {
-            val removed = requestQueue.removeIf { it.taskId == taskId }
+            val waiting = requestQueue.firstOrNull { it.taskId == taskId }
+            val removed = waiting != null && requestQueue.removeIf { it.taskId == taskId }
             if (!removed) {
+                // Code review: a PAUSED History row's Cancel lands here (the
+                // session is neither in-flight nor queued). cancelSessionTask
+                // is a safe probe: it no-ops when no session exists for the
+                // id, and closeSessionAsPartial handles the row update
+                // (ERROR isPartial with text kept), the session-row cleanup,
+                // and the paused-notification settle.
+                serviceScope.launch {
+                    runCatching { orchestrator.cancelSessionTask(taskId, applicationContext) }
+                }
                 Log.i(TAG, "Per-task cancel for unknown/finished $taskId; nothing to do")
                 // TASK-978 review: a control delivery that revived a dead
                 // process lands here with an empty queue. The delivery
@@ -825,6 +951,24 @@ class InferenceService : Service(), TranscriptionListener {
             pendingCount.decrementAndGet()
             inFlightTaskIds.remove(taskId)
             Log.i(TAG, "Per-task cancel removed queued $taskId")
+            // TASK-1037: a cancelled queued RESUME leaves the session
+            // parked (only the dispatch was cancelled, not the session):
+            // restore its notification, which the dispatch path had
+            // cleared. A cancelled parked SESSION (History Cancel on a
+            // PAUSED row) closes as partial with its assembled text kept
+            // (the state machine's Cancel arm; failNonTerminal below
+            // deliberately cannot touch a PAUSED row). Both go through the
+            // orchestrator's entry points (the simplify round: the service
+            // probed the session store directly here).
+            if (waiting.resumeSession) {
+                serviceScope.launch {
+                    runCatching { orchestrator.settlePausedNotification(applicationContext) }
+                }
+            } else {
+                serviceScope.launch {
+                    runCatching { orchestrator.cancelSessionTask(taskId, applicationContext) }
+                }
+            }
             // The nav-notification restore after the delivery promotion
             // lives in onStartCommand itself (signature-forced repost),
             // which covers this arm: a queued cancel changes nothing the

@@ -36,6 +36,7 @@ class SuspendedRunRecoveryTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private lateinit var db: AppDatabase
     private lateinit var dao: LogDao
+    private lateinit var sessionDao: com.antivocale.app.data.local.SessionDao
 
     @Before
     fun setUp() {
@@ -43,6 +44,7 @@ class SuspendedRunRecoveryTest {
             .allowMainThreadQueries()
             .build()
         dao = db.logDao()
+        sessionDao = db.sessionDao()
     }
 
     @After
@@ -83,7 +85,7 @@ class SuspendedRunRecoveryTest {
         death(ApplicationExitInfo.REASON_SIGNALED,
             System.currentTimeMillis() + 10 * SuspendedRunClassifier.SUSPENDED_MIN_GAP_MS)
 
-        SuspendedRunRecovery.closeInterruptedRuns(context, dao, wasOOMCrash = false)
+        SuspendedRunRecovery.closeInterruptedRuns(context, dao, sessionDao, wasOOMCrash = false)
 
         val suspended = dao.getByTaskId("run-1")!!
         assertEquals("ERROR", suspended.status)
@@ -116,7 +118,7 @@ class SuspendedRunRecoveryTest {
         death(ApplicationExitInfo.REASON_SIGNALED,
             System.currentTimeMillis() + RunHeartbeat.TICK_MS)
 
-        SuspendedRunRecovery.closeInterruptedRuns(context, dao, wasOOMCrash = false)
+        SuspendedRunRecovery.closeInterruptedRuns(context, dao, sessionDao, wasOOMCrash = false)
 
         // Alive when killed: honest generic close, no suspension claim, no
         // suspension notification, no marker. The generic class DOES get its
@@ -139,7 +141,7 @@ class SuspendedRunRecoveryTest {
             System.currentTimeMillis() + RunHeartbeat.TICK_MS)
 
         SuspendedRunRecovery.closeInterruptedRuns(
-            context, dao, wasOOMCrash = false, notifyGenericInterrupted = false)
+            context, dao, sessionDao, wasOOMCrash = false, notifyGenericInterrupted = false)
 
         // The opt-out silences only the summary: every row still closes.
         val row = dao.getByTaskId("run-1")!!
@@ -155,7 +157,7 @@ class SuspendedRunRecoveryTest {
         death(ApplicationExitInfo.REASON_SIGNALED,
             System.currentTimeMillis() + 10 * SuspendedRunClassifier.SUSPENDED_MIN_GAP_MS)
 
-        SuspendedRunRecovery.closeInterruptedRuns(context, dao, wasOOMCrash = false)
+        SuspendedRunRecovery.closeInterruptedRuns(context, dao, sessionDao, wasOOMCrash = false)
 
         val row = dao.getByTaskId("run-1")!!
         assertEquals("ERROR", row.status)
@@ -169,7 +171,7 @@ class SuspendedRunRecoveryTest {
         death(ApplicationExitInfo.REASON_LOW_MEMORY,
             System.currentTimeMillis() + 10 * SuspendedRunClassifier.SUSPENDED_MIN_GAP_MS)
 
-        SuspendedRunRecovery.closeInterruptedRuns(context, dao, wasOOMCrash = true)
+        SuspendedRunRecovery.closeInterruptedRuns(context, dao, sessionDao, wasOOMCrash = true)
 
         // NativeCrashDetector's lineage wins: the OOM advice, not a suspension.
         val row = dao.getByTaskId("run-1")!!
@@ -180,11 +182,52 @@ class SuspendedRunRecoveryTest {
 
     @Test
     fun `a clean cold start with no orphans posts nothing and touches nothing`() = runBlocking {
-        SuspendedRunRecovery.closeInterruptedRuns(context, dao, wasOOMCrash = false)
+        SuspendedRunRecovery.closeInterruptedRuns(context, dao, sessionDao, wasOOMCrash = false)
         assertEquals(0, dao.getNonTerminal().size)
         assertNull("no suspension notification may be posted", shadowNotificationManager()
             .getNotification(SuspendedRunRecovery.NOTIFICATION_ID))
         assertNull("an empty batch posts no summary", shadowNotificationManager()
             .getNotification(SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID))
+    }
+
+    /**
+     * TASK-1037 (GH #190) phase 3: a row owning an ACTIVE session is PARKED,
+     * not closed: the session becomes PAUSED_SYSTEM, the row becomes PAUSED
+     * (which the generic sweep then skips), the crash counter counts the
+     * native-crash verdict, and the paused notification carries the Resume
+     * action instead of the suspension notice.
+     */
+    @Test
+    fun `a session row is parked PAUSED_SYSTEM with the verdict and survives the sweep`() = runBlocking {
+        insert("sess-1", "PROCESSING")
+        insert("plain", "PROCESSING")
+        sessionDao.upsertSession(com.antivocale.app.data.local.TranscriptionSessionEntity(
+            taskId = "sess-1",
+            filePath = "/shared_audio/long.wav", fileSizeBytes = 1L, fileMtimeMs = 1L,
+            backendId = "whisper", modelPath = "/models/whisper",
+            source = "share", state = com.antivocale.app.data.local.TranscriptionSessionEntity.STATE_ACTIVE,
+            createdAtMs = 1L, updatedAtMs = 1L,
+        ))
+        RunHeartbeat.touch(context, "sess-1")
+        death(ApplicationExitInfo.REASON_CRASH_NATIVE,
+            System.currentTimeMillis() + 10 * SuspendedRunClassifier.SUSPENDED_MIN_GAP_MS)
+
+        SuspendedRunRecovery.closeInterruptedRuns(context, dao, sessionDao, wasOOMCrash = false)
+
+        // The session row: parked, verdict recorded, the crash counter armed.
+        val parked = sessionDao.getSession("sess-1")!!
+        assertEquals(com.antivocale.app.data.local.TranscriptionSessionEntity.STATE_PAUSED_SYSTEM,
+            parked.state)
+        assertEquals(1, parked.crashAtOffsetCount)
+        // The log row: PAUSED with the cause, not ERROR.
+        val row = dao.getByTaskId("sess-1")!!
+        assertEquals("PAUSED", row.status)
+        assertNotNull(row.errorMessage)
+        // The generic sweep closed the plain row and skipped the parked one.
+        assertEquals("ERROR", dao.getByTaskId("plain")?.status)
+        // The paused notification carries the Resume action (one paused session).
+        val paused = shadowNotificationManager()
+            .getNotification(ResultNotificationFactory.PAUSED_SESSION_NOTIFICATION_ID)
+        assertNotNull(paused)
     }
 }

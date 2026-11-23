@@ -1111,6 +1111,12 @@
         <item quantity="one">%1$d trascrizione è stata interrotta prima di finire. Dettagli nella Cronologia.</item>
         <item quantity="other">%1$d trascrizioni sono state interrotte prima di finire. Dettagli nella Cronologia.</item>
     </plurals>
+    <string name="session_paused_notification_text">In pausa a %1$s di %2$s</string>
+    <plurals name="session_paused_notification_count">
+        <item quantity="one">%1$d trascrizione è in pausa. Apri l\'app per riprendere.</item>
+        <item quantity="other">%1$d trascrizioni sono in pausa. Apri l\'app per riprendere.</item>
+    </plurals>
+    <string name="session_resume_action">Riprendi</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d trascrizione è stata interrotta prima di finire: memoria esaurita. Prova un file piu\' corto, un modello piu\' piccolo, o chiudi altre app. Dettagli nella Cronologia.</item>
         <item quantity="other">%1$d trascrizioni sono state interrotte prima di finire: memoria esaurita. Prova un file piu\' corto, un modello piu\' piccolo, o chiudi altre app. Dettagli nella Cronologia.</item>

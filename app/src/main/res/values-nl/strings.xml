@@ -946,6 +946,12 @@
         <item quantity="one">%1$d transcriptie werd onderbroken voor hij af was. Zie Geschiedenis voor details.</item>
         <item quantity="other">%1$d transcripties werden onderbroken voor ze af waren. Zie Geschiedenis voor details.</item>
     </plurals>
+    <string name="session_paused_notification_text">Gepauzeerd op %1$s van %2$s</string>
+    <plurals name="session_paused_notification_count">
+        <item quantity="one">%1$d transcriptie is gepauzeerd. Open de app om te hervatten.</item>
+        <item quantity="other">%1$d transcripties zijn gepauzeerd. Open de app om te hervatten.</item>
+    </plurals>
+    <string name="session_resume_action">Hervatten</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d transcriptie werd onderbroken voor hij af was: het geheugen van de app raakte op. Probeer een korter bestand, een kleiner model, of sluit andere apps. Zie Geschiedenis voor details.</item>
         <item quantity="other">%1$d transcripties werden onderbroken voor ze af waren: het geheugen van de app raakte op. Probeer een korter bestand, een kleiner model, of sluit andere apps. Zie Geschiedenis voor details.</item>

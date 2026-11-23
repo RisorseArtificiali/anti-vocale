@@ -1110,6 +1110,12 @@
         <item quantity="one">%1$d رونویسی پیش از تمام شدن متوقف شد. جزئیات در تاریخچه.</item>
         <item quantity="other">%1$d رونویسی پیش از تمام شدن متوقف شدند. جزئیات در تاریخچه.</item>
     </plurals>
+    <string name="session_paused_notification_text">متوقف شده در %1$s از %2$s</string>
+    <plurals name="session_paused_notification_count">
+        <item quantity="one">%1$d پیاده‌سازی صدا متوقف است. برای ادامه برنامه را باز کنید.</item>
+        <item quantity="other">%1$d پیاده‌سازی صدا متوقف است. برای ادامه برنامه را باز کنید.</item>
+    </plurals>
+    <string name="session_resume_action">ادامه</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d رونویسی پیش از تمام شدن متوقف شد: حافظه برنامه تمام شد. فایل کوتاه‌تر یا مدل کوچک‌تری امتحان کنید یا برنامه‌های دیگر را ببندید. جزئیات در تاریخچه.</item>
         <item quantity="other">%1$d رونویسی پیش از تمام شدن متوقف شدند: حافظه برنامه تمام شد. فایل کوتاه‌تر یا مدل کوچک‌تری امتحان کنید یا برنامه‌های دیگر را ببندید. جزئیات در تاریخچه.</item>

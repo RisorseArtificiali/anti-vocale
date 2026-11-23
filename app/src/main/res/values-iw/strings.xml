@@ -927,6 +927,13 @@
         <item quantity="two">%1$d תמלולים הופסקו לפני שהסתיימו. פרטים בהיסטוריה.</item>
         <item quantity="other">%1$d תמלולים הופסקו לפני שהסתיימו. פרטים בהיסטוריה.</item>
     </plurals>
+    <string name="session_paused_notification_text">מושהה ב-%1$s מתוך %2$s</string>
+    <plurals name="session_paused_notification_count">
+        <item quantity="one">תמלול אחד מושהה. פתחו את האפליקציה כדי להמשיך.</item>
+        <item quantity="two">שני תמלולים מושהים. פתחו את האפליקציה כדי להמשיך.</item>
+        <item quantity="other">%1$d תמלולים מושהים. פתחו את האפליקציה כדי להמשיך.</item>
+    </plurals>
+    <string name="session_resume_action">המשך</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d תמלול הופסק לפני שהסתיים: הזיכרון של האפליקציה אזל. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. פרטים בהיסטוריה.</item>
         <item quantity="two">%1$d תמלולים הופסקו לפני שהסתיימו: הזיכרון של האפליקציה אזל. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. פרטים בהיסטוריה.</item>

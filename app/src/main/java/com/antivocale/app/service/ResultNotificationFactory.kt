@@ -19,6 +19,7 @@ import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.receiver.NotificationActionReceiver
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.util.AppInfoUtils
+import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.util.TranscriptSignature
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.LanguageNames
@@ -266,14 +267,6 @@ class ResultNotificationFactory(private val context: Context) {
             context, RC_SUSPENSION_RERUN, rerunIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val battery = PendingIntent.getActivity(
-            context, RC_SUSPENSION_BATTERY,
-            Intent(
-                android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                android.net.Uri.parse("package:" + context.packageName)
-            ),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
         return NotificationCompat.Builder(context, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
             .setContentTitle(context.getString(R.string.suspension_notification_title))
             .setContentText(text)
@@ -297,10 +290,73 @@ class ResultNotificationFactory(private val context: Context) {
             .addAction(
                 android.R.drawable.ic_menu_manage,
                 context.getString(R.string.battery_exemption_action),
-                battery
+                batteryExemptionPendingIntent()
             )
             .build()
     }
+
+    /**
+     * TASK-1037 (GH #190) phase 3: the parked session's notice, "Paused at X
+     * of Y". One session paused renders the position with a Resume action;
+     * several paused render the count (the table itself decides; see
+     * [PausedSessionNotifier]). [causeLine] and [batteryLink] carry the
+     * system-pause verdict when the park came from a process death: the
+     * freezer class names its cause (the localized suspension text, reused)
+     * and keeps the battery-exemption deep link of the suspension
+     * notification.
+     */
+    fun pausedSessionNotification(
+        positionText: String,
+        causeLine: String?,
+        resumeTaskId: String?,
+        batteryLink: Boolean,
+    ): Notification {
+        val body = if (causeLine.isNullOrBlank()) positionText
+        else "$positionText\n$causeLine"
+        val builder = NotificationCompat.Builder(context, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
+            .setContentTitle(context.getString(R.string.app_name))
+            .setContentText(positionText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setSmallIcon(android.R.drawable.ic_media_pause)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(plainLaunchPendingIntent())
+            .setAutoCancel(true)
+        if (resumeTaskId != null) {
+            val resumeIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+                action = NotificationActionReceiver.ACTION_RESUME_SESSION
+                putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, resumeTaskId)
+            }
+            builder.addAction(
+                android.R.drawable.ic_media_play,
+                context.getString(R.string.session_resume_action),
+                PendingIntent.getBroadcast(
+                    context, RC_SESSION_RESUME, resumeIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE),
+            )
+        }
+        if (batteryLink) {
+            builder.addAction(
+                android.R.drawable.ic_menu_manage,
+                context.getString(R.string.battery_exemption_action),
+                batteryExemptionPendingIntent(),
+            )
+        }
+        return builder.build()
+    }
+
+    /**
+     * The battery-exemption deep link, ONE construction (the simplify
+     * round: the suspension notification and the paused notification built
+     * identical copies; same intent shape stays one PendingIntent record,
+     * the TASK-625 rule this class documents).
+     */
+    private fun batteryExemptionPendingIntent(): PendingIntent = PendingIntent.getActivity(
+        context, RC_SUSPENSION_BATTERY,
+        Intent(
+            android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+            android.net.Uri.parse("package:" + context.packageName)),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
 
     /** The plain app launch both error surfaces default to. */
     private fun plainLaunchPendingIntent(): PendingIntent = PendingIntent.getActivity(
@@ -729,6 +785,8 @@ class ResultNotificationFactory(private val context: Context) {
         // FLAG_UPDATE_CURRENT replaces its intents on re-post.
         private const val RC_SUSPENSION_RERUN = 3
         private const val RC_SUSPENSION_BATTERY = 4
+        /** TASK-1037: the paused notification's Resume action request code. */
+        private const val RC_SESSION_RESUME = 5
 
         /** Preview truncation for the non-pageable oversized path, unchanged from the previous implementations. */
         const val CHAR_PREVIEW_LIMIT = 100
@@ -764,15 +822,29 @@ class ResultNotificationFactory(private val context: Context) {
          *   generic interrupted-runs summary)
          * - 2504: WipedImportRepairReceiver.NOTIFICATION_ID (TASK-963 wiped-import
          *   recovery notice)
+         * - 2505: ResultNotificationFactory.PAUSED_SESSION_NOTIFICATION_ID
+         *   (TASK-1037 phase 3: the parked session's "Paused at X of Y"
+         *   notice; self-replacing, at most one live at a time)
          * - 2601..2603: RESULT_CATCHUP_DIGEST_ID_BASE..+RANGE (TASK-889
          *   cold-start burst digest, one id per voice-note source; 2601
          *   was the voice-note offer slot until the offer mode was
          *   removed, TASK-272, then reclaimed here; 2603 joined with the
          *   TASK-966 watched-folder source)
-         * New fixed ids or bands go under the base; 2301..2400 and 2505..2999
+         * New fixed ids or bands go under the base; 2301..2400 and 2506..2999
          * are free headroom.
          */
         const val RESULT_NOTIFICATION_ID_BASE = 3000
+
+        /**
+         * TASK-1037 (GH #190) phase 3: the parked session's notification
+         * (the next free fixed id under the base, per the table above).
+         * Self-replacing: a park re-posts over the previous content, a
+         * settle (resume started, session closed) clears it when no paused
+         * session remains or re-renders the remaining one. Owned by
+         * [PausedSessionNotifier], which reads the session table (the live
+         * set by construction) to decide the shape.
+         */
+        const val PAUSED_SESSION_NOTIFICATION_ID = 2505
 
         /**
          * TASK-889: the catch-up burst digest band, inside the
@@ -802,5 +874,94 @@ class ResultNotificationFactory(private val context: Context) {
         private val idCounter = AtomicInteger(RESULT_NOTIFICATION_ID_BASE)
 
         fun nextNotificationId(): Int = idCounter.getAndIncrement()
+    }
+}
+
+/**
+ * TASK-1037 (GH #190) phase 3: the ONE owner of the paused-session
+ * notification (id [ResultNotificationFactory.PAUSED_SESSION_NOTIFICATION_ID],
+ * the reserved-range contract's 2505 slot). Both park sites post through
+ * [post] (the cold-start recovery for system pauses with their verdict
+ * causes, the orchestrator's boundary park for cooperative pauses), and
+ * every removal path settles through [settle] (a resume dispatch, a session
+ * completion, a close-as-partial, a cancel): the session table IS the live
+ * set, so the notification's content is derived from it every time and can
+ * never disagree with the state underneath.
+ *
+ * Exactly one paused session renders the position with a Resume action;
+ * several paused render the count and open the app (History holds the rows).
+ */
+object PausedSessionNotifier {
+
+    private const val TAG = "PausedSessionNotifier"
+
+    /** A system-pause cause rendered on the notification, with its battery link. */
+    data class PausedCause(val causeLine: String?, val batteryLink: Boolean)
+
+    /** Formats a 16 kHz sample count as the human position ("1:12:00"). */
+    private fun formatSamples(samples: Long?): String =
+        com.antivocale.app.util.formatProcessingTime(
+            ((samples ?: 0L) * 1000L) / TranscriptionOrchestrator.SESSION_SAMPLE_RATE)
+
+    /**
+     * Posts (or clears) the notification from the session table's current
+     * state. [causes] optionally keys a parked task id to its system-pause
+     * verdict (cause line + battery link); a cooperative pause carries none.
+     * The ONE entry point (the simplify round dropped the settle alias: a
+     * second name for the same derivation could drift).
+     */
+    suspend fun post(
+        context: android.content.Context,
+        sessionDao: com.antivocale.app.data.local.SessionDao,
+        causes: Map<String, PausedCause> = emptyMap(),
+    ) {
+        val paused = runCatching { sessionDao.getPausedSessions() }.getOrElse { e ->
+            Log.w(TAG, "Paused-session read failed; notification left alone", e)
+            return
+        }
+        val manager = context.getSystemService(android.app.NotificationManager::class.java)
+        if (paused.isEmpty()) {
+            manager.cancel(ResultNotificationFactory.PAUSED_SESSION_NOTIFICATION_ID)
+            return
+        }
+        val notification = runCatching {
+            val factory = ResultNotificationFactory(context)
+            if (paused.size == 1) {
+                val session = paused.first()
+                val cause = causes[session.taskId]
+                // The position is the contiguous prefix end (the store's
+                // proven coverage); the total is the recorded actual when
+                // known, else the position itself (honest floor: never show
+                // a total smaller than what was decoded).
+                val position = runCatching { sessionDao.contiguousPrefixEnd(session.taskId) }
+                    .getOrDefault(0L)
+                val total = session.totalOutputSamples?.let { maxOf(it, position) } ?: position
+                val text = context.getString(
+                    R.string.session_paused_notification_text,
+                    formatSamples(position),
+                    formatSamples(total),
+                )
+                factory.pausedSessionNotification(
+                    positionText = text,
+                    causeLine = cause?.causeLine,
+                    resumeTaskId = session.taskId,
+                    batteryLink = cause?.batteryLink == true,
+                )
+            } else {
+                val count = paused.size
+                factory.alertNotification(
+                    title = context.getString(R.string.app_name),
+                    text = context.resources.getQuantityString(
+                        R.plurals.session_paused_notification_count, count, count),
+                    priority = androidx.core.app.NotificationCompat.PRIORITY_DEFAULT,
+                )
+            }
+        }.getOrElse { e ->
+            Log.w(TAG, "Paused-session notification build failed", e)
+            return
+        }
+        runCatching {
+            manager.notify(ResultNotificationFactory.PAUSED_SESSION_NOTIFICATION_ID, notification)
+        }.onFailure { Log.w(TAG, "Paused-session notification post failed", it) }
     }
 }

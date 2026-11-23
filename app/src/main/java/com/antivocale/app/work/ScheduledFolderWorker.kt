@@ -56,6 +56,8 @@ class ScheduledFolderWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted params: WorkerParameters,
     private val store: ScheduledFolderStore,
+    /** TASK-1037: the live-session sources the share-dir sweep must exempt. */
+    private val sessionDao: com.antivocale.app.data.local.SessionDao,
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
@@ -160,7 +162,11 @@ class ScheduledFolderWorker @AssistedInject constructor(
             // In the background-only regime weeks can pass without an app
             // open, and the share-dir cleanup runs only at process start:
             // the scan tail owns its copies' hygiene.
-            runCatching { SharedAudioHandler.cleanupOldFiles(applicationContext) }
+            runCatching {
+                val exempt = runCatching { sessionDao.getLiveSourcePaths().toSet() }
+                    .getOrDefault(emptySet())
+                SharedAudioHandler.cleanupOldFiles(applicationContext, exemptPaths = exempt)
+            }
             Log.i(
                 TAG,
                 "Scanned $treeUriString${if (scanNow) " (manual)" else ""}: " +

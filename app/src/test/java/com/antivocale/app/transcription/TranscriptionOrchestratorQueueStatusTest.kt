@@ -39,6 +39,11 @@ class TranscriptionOrchestratorQueueStatusTest {
             // TASK-670: never reached here (logQueued only), same rule.
             speakerIdentityStore = com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
                 java.nio.file.Files.createTempDirectory("speaker-ids").toFile()),
+            // TASK-1037: relaxed session store (logQueued-only here); null
+            // getSession or logQueued's resume skip would eat the insert.
+            sessionDao = io.mockk.mockk<com.antivocale.app.data.local.SessionDao>(relaxed = true) {
+                io.mockk.coEvery { getSession(any()) } returns null
+            },
         )
 
     @Test

@@ -65,6 +65,10 @@ class MemoryMarginWarningTest {
             // reach the naming pass.
             com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
                 java.nio.file.Files.createTempDirectory("speaker-ids").toFile()),
+            // TASK-1037: relaxed session store (no session path in these tests).
+            io.mockk.mockk<com.antivocale.app.data.local.SessionDao>(relaxed = true) {
+                io.mockk.coEvery { getSession(any()) } returns null
+            },
         )
     }
 

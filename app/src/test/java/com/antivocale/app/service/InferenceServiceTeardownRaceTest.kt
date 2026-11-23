@@ -198,7 +198,8 @@ class InferenceServiceTeardownRaceTest {
             orchestrator.processRequest(
                 any(), any(), any(), any(), any(), any(), any(), any(),
                 // TASK-546 AC3: languageOverride joined the signature.
-                any(), any(), any(), any(), any(), any(), any(),
+                // TASK-1037: senderName (frozen identity) joined after it.
+                any(), any(), any(), any(), any(), any(), any(), any(),
             )
         } coAnswers {
             val listener = args.filterIsInstance<TranscriptionListener>().first()

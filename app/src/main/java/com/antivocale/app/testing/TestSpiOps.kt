@@ -106,6 +106,14 @@ internal class TestSpiOps(
     private val asyncImportOutcome: (String) -> Unit = { line ->
         android.util.Log.i(SPI_LOG_TAG, line)
     },
+    /** TASK-1037 phase 3: the resumable-session store (session_state op).
+     *  Debug receiver passes the real dao; the shared unit fakes answer the
+     *  error envelope (the same null-under-fakes story as the params above). */
+    private val sessionDao: com.antivocale.app.data.local.SessionDao? = null,
+    /** TASK-1037 phase 3: the orchestrator (session_pause's flag; the
+     *  session_resume dispatch needs only the appContext). Same
+     *  null-under-fakes story. */
+    private val orchestrator: com.antivocale.app.transcription.TranscriptionOrchestrator? = null,
 ) {
     /** TASK-974: the record_delete op runs the shared delete semantics over
      *  the same store+preferences pair every other op uses. */
@@ -152,6 +160,9 @@ internal class TestSpiOps(
             OP_VOICE_NOTE_SIMULATE -> simulateVoiceNote(value, entry)
             OP_NOTIFY_TEXT -> notifyText(value, entry)
             OP_DECODE_PROBE -> decodeProbe(value, entry)
+            OP_SESSION_STATE -> sessionState()
+            OP_SESSION_RESUME -> sessionResume(value)
+            OP_SESSION_PAUSE -> sessionPause(value)
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -1021,6 +1032,95 @@ internal class TestSpiOps(
      * synchronously inside the broadcast: keep the file short (the 2-3 min
      * clip class); long-file stints belong to phase 3's async ops.
      */
+    // ---- TASK-1037 phase 3: the resumable-session ops ----
+
+    /**
+     * op=session_state: the session table (the live set by construction) with
+     * each session's frozen identity, progress and counters, plus the store's
+     * contiguous-prefix offset and chunk count. The device-proof read: an
+     * am-kill mid-run must leave an ACTIVE row whose prefix end matches the
+     * last checkpoint, and a cold start must leave it PAUSED_SYSTEM.
+     */
+    private suspend fun sessionState(): String {
+        val dao = sessionDao
+            ?: throw IllegalArgumentException("session store not wired (debug receiver passes the dao)")
+        val sessions = JSONArray()
+        for (session in dao.getActiveSessions() + dao.getPausedSessions()) {
+            val prefixEnd = runCatching { dao.contiguousPrefixEnd(session.taskId) }.getOrDefault(0L)
+            val chunkCount = runCatching { dao.getChunks(session.taskId).size }.getOrDefault(0)
+            sessions.put(JSONObject()
+                .put("taskId", session.taskId)
+                .put("state", session.state)
+                .put("filePath", session.filePath)
+                .put("fileSizeBytes", session.fileSizeBytes)
+                .put("fileMtimeMs", session.fileMtimeMs)
+                .put("backendId", session.backendId)
+                .put("modelPath", session.modelPath)
+                .put("languagePin", session.languagePin ?: JSONObject.NULL)
+                .put("source", session.source)
+                .put("sourcePackage", session.sourcePackage ?: JSONObject.NULL)
+                .put("senderName", session.senderName ?: JSONObject.NULL)
+                .put("totalOutputSamples", session.totalOutputSamples ?: JSONObject.NULL)
+                .put("accumulatedComputeMs", session.accumulatedComputeMs)
+                .put("failedChunkCount", session.failedChunkCount)
+                .put("blankChunkCount", session.blankChunkCount)
+                .put("retriedChunkCount", session.retriedChunkCount)
+                .put("crashAtOffsetCount", session.crashAtOffsetCount)
+                .put("prefixEnd", prefixEnd)
+                .put("chunkCount", chunkCount)
+                .put("createdAtMs", session.createdAtMs)
+                .put("updatedAtMs", session.updatedAtMs))
+        }
+        return JSONObject()
+            .put("op", OP_SESSION_STATE)
+            .put("sessions", sessions)
+            .put("count", sessions.length())
+            .toString()
+    }
+
+    /**
+     * op=session_resume, value=&lt;taskId&gt;: dispatch a resume through the
+     * production path ([AudioRequestIntent.resumeSession] + [InferenceEnqueue]),
+     * the same shape the paused notification's Resume action rides. The ack
+     * says whether the start succeeded; the drain's validation (fingerprint,
+     * frozen model) is observed via the log row and session_state.
+     */
+    private suspend fun sessionResume(taskId: String?): String {
+        val context = appContext
+            ?: throw IllegalArgumentException("resume dispatch needs the app context")
+        if (taskId.isNullOrBlank()) {
+            throw IllegalArgumentException("missing 'value' extra (the session taskId)")
+        }
+        val outcome = com.antivocale.app.service.InferenceEnqueue.start(
+            context, com.antivocale.app.service.AudioRequestIntent.resumeSession(context, taskId))
+        return JSONObject()
+            .put("op", OP_SESSION_RESUME)
+            .put("taskId", taskId)
+            .put("outcome", outcome.javaClass.simpleName)
+            .toString()
+    }
+
+    /**
+     * op=session_pause, value=&lt;taskId&gt;: arm the cooperative pause the
+     * pipeline honors at the NEXT chunk boundary (a native decode cannot be
+     * interrupted mid-chunk). The boundary consumes the request, so a stale
+     * arming never parks a later stint. Verify via session_state (state
+     * PAUSED_USER) and the log row (status PAUSED).
+     */
+    private suspend fun sessionPause(taskId: String?): String {
+        val orch = orchestrator
+            ?: throw IllegalArgumentException("orchestrator not wired (debug receiver passes it)")
+        if (taskId.isNullOrBlank()) {
+            throw IllegalArgumentException("missing 'value' extra (the session taskId)")
+        }
+        orch.requestSessionPause(taskId)
+        return JSONObject()
+            .put("op", OP_SESSION_PAUSE)
+            .put("taskId", taskId)
+            .put("requested", true)
+            .toString()
+    }
+
     private suspend fun decodeProbe(filePath: String?, offsetRaw: String?): String {
         if (filePath.isNullOrBlank()) {
             throw IllegalArgumentException("missing 'value' extra (the audio file path)")
@@ -1665,6 +1765,10 @@ internal class TestSpiOps(
         const val OP_NOTIFY_TEXT = "notify_text"
         const val OP_HELP = "help"
         const val OP_DECODE_PROBE = "decode_probe"
+        /** TASK-1037 phase 3: the resumable-session ops (read / resume / pause). */
+        const val OP_SESSION_STATE = "session_state"
+        const val OP_SESSION_RESUME = "session_resume"
+        const val OP_SESSION_PAUSE = "session_pause"
 
         /** search op rendered-row cap (full count rides beside it). */
         const val SEARCH_ROW_CAP = 20
@@ -1690,7 +1794,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_RAM_TIER, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_DECODE_PROBE, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_RAM_TIER, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_DECODE_PROBE, OP_SESSION_STATE, OP_SESSION_RESUME, OP_SESSION_PAUSE, OP_HELP)
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024
 

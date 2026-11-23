@@ -49,6 +49,8 @@ class ReservedNotificationIdContractTest {
         assertTrue(SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID < base)
         // TASK-963: the wiped-import recovery notice.
         assertTrue(com.antivocale.app.receiver.WipedImportRepairNotifications.NOTIFICATION_ID < base)
+        // TASK-1037: the parked session's "Paused at X of Y" notice.
+        assertTrue(ResultNotificationFactory.PAUSED_SESSION_NOTIFICATION_ID < base)
         assertTrue(TranscriptionOrchestrator.MEMORY_MARGIN_WARNING_ID < base)
         assertTrue(com.antivocale.app.util.MemoryKillStartupCheck.NOTIFICATION_ID < base)
         assertTrue(SubtitleChoiceTimeoutWorker.NOTIFICATION_ID < base)
@@ -113,6 +115,9 @@ class ReservedNotificationIdContractTest {
             "catchup-digest-band" to (ResultNotificationFactory.RESULT_CATCHUP_DIGEST_ID_BASE until
                 ResultNotificationFactory.RESULT_CATCHUP_DIGEST_ID_BASE +
                 ResultNotificationFactory.RESULT_CATCHUP_DIGEST_ID_RANGE),
+            // TASK-1037: the parked session's notice (self-replacing, 2505).
+            "paused-session-fixed" to (ResultNotificationFactory.PAUSED_SESSION_NOTIFICATION_ID..
+                ResultNotificationFactory.PAUSED_SESSION_NOTIFICATION_ID),
         )
         for (i in intervals.indices) for (j in i + 1 until intervals.size) {
             val (nameA, a) = intervals[i]

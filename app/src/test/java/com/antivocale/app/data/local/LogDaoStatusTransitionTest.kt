@@ -196,4 +196,35 @@ class LogDaoStatusTransitionTest {
         assertEquals("PAUSED", dao.getByTaskId("paused")?.status)
         assertEquals("ERROR", dao.getByTaskId("queued")?.status)
     }
+
+    /**
+     * TASK-1037 phase 3: PAUSED is in promoteToProcessing's list (a session
+     * resume re-enters PROCESSING through the same promotion), while the two
+     * new column-scoped writes stay PAUSED-guarded like every other close.
+     */
+    @Test
+    fun `promoteToProcessing re-promotes a PAUSED row and the park-close writes are guarded`() = runBlocking {
+        insert("resumed", "PAUSED")
+        insert("process", "PROCESSING")
+        insert("done", "SUCCESS")
+
+        dao.promoteToProcessing("resumed")
+        assertEquals("PROCESSING", dao.getByTaskId("resumed")?.status)
+
+        dao.parkProcessingAsPaused("resumed", errorMessage = null)
+        assertEquals("PAUSED", dao.getByTaskId("resumed")?.status)
+
+        // The park only touches PROCESSING rows: the terminal row stays.
+        dao.parkProcessingAsPaused("done", errorMessage = "paused")
+        assertEquals("SUCCESS", dao.getByTaskId("done")?.status)
+
+        dao.closePausedAsError("resumed", "Resume refused: reason")
+        val closed = dao.getByTaskId("resumed")!!
+        assertEquals("ERROR", closed.status)
+        assertEquals("Resume refused: reason", closed.errorMessage)
+        assertTrue(closed.isPartial)
+        // The close only touches PAUSED rows.
+        dao.closePausedAsError("process", "nope")
+        assertEquals("PROCESSING", dao.getByTaskId("process")?.status)
+    }
 }

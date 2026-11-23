@@ -888,6 +888,12 @@
         <item quantity="one">%1$d ट्रांसक्रिप्शन पूरा होने से पहले बाधित हुआ। विवरण के लिए इतिहास देखें।</item>
         <item quantity="other">%1$d ट्रांसक्रिप्शन पूरा होने से पहले बाधित हुए। विवरण के लिए इतिहास देखें।</item>
     </plurals>
+    <string name="session_paused_notification_text">%2$s में से %1$s पर रुका हुआ</string>
+    <plurals name="session_paused_notification_count">
+        <item quantity="one">%1$d ट्रांसक्रिप्शन रुका हुआ है। जारी रखने के लिए ऐप खोलें।</item>
+        <item quantity="other">%1$d ट्रांसक्रिप्शन रुके हुए हैं। जारी रखने के लिए ऐप खोलें।</item>
+    </plurals>
+    <string name="session_resume_action">फिर से शुरू करें</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d ट्रांसक्रिप्शन पूरा होने से पहले बाधित हुआ: ऐप की मेमोरी खत्म हो गई। छोटी फ़ाइल, छोटा मॉडल आज़माएँ या दूसरे ऐप बंद करें। विवरण के लिए इतिहास देखें।</item>
         <item quantity="other">%1$d ट्रांसक्रिप्शन पूरा होने से पहले बाधित हुए: ऐप की मेमोरी खत्म हो गई। छोटी फ़ाइल, छोटा मॉडल आज़माएँ या दूसरे ऐप बंद करें। विवरण के लिए इतिहास देखें।</item>

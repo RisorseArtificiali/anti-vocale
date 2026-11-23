@@ -95,6 +95,12 @@ abstract class TranscriptionOrchestratorTestBase {
                 java.io.File.createTempFile("speaker-ids", null).let { file ->
                     file.delete(); file.mkdirs(); file
                 }),
+            // TASK-1037: the session store. getSession must answer null:
+            // a relaxed mock would fabricate a non-null child mock and every
+            // run would read as a resume.
+            io.mockk.mockk<com.antivocale.app.data.local.SessionDao>(relaxed = true) {
+                io.mockk.coEvery { getSession(any()) } returns null
+            },
         )
 
         // Default the opt-in memory protection to off in tests so it does not interfere with

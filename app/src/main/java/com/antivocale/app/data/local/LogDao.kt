@@ -175,9 +175,36 @@ interface LogDao {
     // including the legacy "PENDING" spelling written before the QUEUED/PROCESSING
     // split; Kotlin callers must not keep their own copy.
 
-    /** Promotes a row to PROCESSING when work starts; terminal rows (and absent rows) are untouched. */
-    @Query("UPDATE logs SET status = 'PROCESSING' WHERE taskId = :taskId AND status IN ('QUEUED', 'PROCESSING', 'PENDING')")
+    /**
+     * Promotes a row to PROCESSING when work starts; terminal rows (and
+     * absent rows) are untouched. TASK-1037: PAUSED is in the list because a
+     * session resume re-enters PROCESSING through the same promotion the
+     * fresh run used (the state machine's "QUEUED then PROCESSING" row);
+     * every CLOSE below still deliberately excludes it (a parked row is
+     * live work, not lost work).
+     */
+    @Query("UPDATE logs SET status = 'PROCESSING' WHERE taskId = :taskId AND status IN ('QUEUED', 'PROCESSING', 'PENDING', 'PAUSED')")
     suspend fun promoteToProcessing(taskId: String)
+
+    /**
+     * TASK-1037 (GH #190): parks a PROCESSING row as PAUSED when a session
+     * stint ends without completing (a cooperative pause honored at a chunk
+     * boundary, or the cold-start recovery finding an ACTIVE session row
+     * after a process death). Column-scoped (the TASK-390 rule): it cannot
+     * resurrect a row another path just closed.
+     */
+    @Query("UPDATE logs SET status = 'PAUSED', errorMessage = :errorMessage WHERE taskId = :taskId AND status = 'PROCESSING'")
+    suspend fun parkProcessingAsPaused(taskId: String, errorMessage: String?)
+
+    /**
+     * TASK-1037 (GH #190): the state machine's close-as-partial arm for a
+     * parked row (resume refused on a fingerprint/model mismatch, or the
+     * user cancelling a paused run): ERROR with the assembled text kept and
+     * isPartial forced, so the History row says what happened and what
+     * survived. Guarded to PAUSED: every other close keeps its own arms.
+     */
+    @Query("UPDATE logs SET status = 'ERROR', errorMessage = :errorMessage, isPartial = 1 WHERE taskId = :taskId AND status = 'PAUSED'")
+    suspend fun closePausedAsError(taskId: String, errorMessage: String)
 
     /** Fails a single non-terminal row (cancellation / interruption paths). */
     @Query("UPDATE logs SET status = 'ERROR', errorMessage = :errorMessage, durationMs = :durationMs WHERE taskId = :taskId AND status IN ('QUEUED', 'PROCESSING', 'PENDING')")

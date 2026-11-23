@@ -938,6 +938,14 @@
         <item quantity="many">%1$d розшифровок перервано до завершення. Подробиці в Історії.</item>
         <item quantity="other">%1$d розшифровок перервано до завершення. Подробиці в Історії.</item>
     </plurals>
+    <string name="session_paused_notification_text">Пауза на %1$s з %2$s</string>
+    <plurals name="session_paused_notification_count">
+        <item quantity="one">%1$d розпізнавання на паузі. Відкрийте застосунок, щоб продовжити.</item>
+        <item quantity="few">%1$d розпізнавання на паузі. Відкрийте застосунок, щоб продовжити.</item>
+        <item quantity="many">%1$d розпізнавань на паузі. Відкрийте застосунок, щоб продовжити.</item>
+        <item quantity="other">%1$d розпізнавань на паузі. Відкрийте застосунок, щоб продовжити.</item>
+    </plurals>
+    <string name="session_resume_action">Продовжити</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d розшифровку перервано до завершення: у додатку закінчилася пам\'ять. Спробуйте коротший файл, меншу модель або закрийте інші додатки. Подробиці в Історії.</item>
         <item quantity="few">%1$d розшифровки перервано до завершення: у додатку закінчилася пам\'ять. Спробуйте коротший файл, меншу модель або закрийте інші додатки. Подробиці в Історії.</item>

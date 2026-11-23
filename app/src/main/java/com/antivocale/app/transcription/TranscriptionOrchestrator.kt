@@ -35,11 +35,16 @@ import com.antivocale.app.data.local.FailureContext
 import com.antivocale.app.data.local.FailureContextJson
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.ProcessingContextConverter
+import com.antivocale.app.data.local.SessionChunkEntity
+import com.antivocale.app.data.local.SessionDao
 import com.antivocale.app.data.local.TimedSegmentsConverter
+import com.antivocale.app.data.local.TranscriptionSessionEntity
 import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
 import com.antivocale.app.service.ExtractionService
 import com.antivocale.app.service.InferenceService
+import com.antivocale.app.service.OpenTranscribeProviderService
+import com.antivocale.app.service.PausedSessionNotifier
 import com.antivocale.app.service.TranscriptionListener
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.transcription.placeholderAwareString
@@ -81,6 +86,9 @@ class TranscriptionOrchestrator @Inject constructor(
     // TASK-670 (GH #83): the enrolled-voiceprint store read at diarization
     // time, only when the speakerIdEnabled privacy gate is on.
     private val speakerIdentityStore: SpeakerIdentityStore,
+    // TASK-1037 (GH #190) phase 3: the resumable-session store the pipeline
+    // checkpoints into and the resume path rehydrates from.
+    private val sessionDao: SessionDao,
 ) {
     companion object {
         private const val TAG = "TranscriptionOrchestrator"
@@ -97,6 +105,20 @@ class TranscriptionOrchestrator @Inject constructor(
         // the trade we take (d6a49e0 had measured the 2-permit wall-clock win).
         private const val MAX_CONCURRENT_CHUNKS = 1
         private const val PARTIAL_SAVE_INTERVAL_MS = 5000L
+        /**
+         * TASK-1037: the crash-loop guard's threshold. The counter counts
+         * consecutive native-crash deaths without a landing checkpoint; the
+         * SECOND one at the same offset proves the chunk is engine-poisoned
+         * and the resume skips it (a tombstone row records the failed range).
+         */
+        private const val CRASH_LOOP_SKIP_THRESHOLD = 2
+        /**
+         * 16 kHz, the pipeline's canonical output-sample rate (the
+         * AudioPreprocessor target's seam; the simplify round made it the
+         * ONE literal the new session sites use, PausedSessionNotifier
+         * included).
+         */
+        internal const val SESSION_SAMPLE_RATE = 16000
         /** TASK-520: map -> reduce recursion budget; partials shrink hard per level. */
         private const val MAX_SUMMARY_LEVELS = 3
 
@@ -227,6 +249,31 @@ class TranscriptionOrchestrator @Inject constructor(
     @Volatile
     private var runArmedSeed: Boolean = false
 
+    /**
+     * TASK-1037: THIS run carries a transcription session (a fresh run that
+     * engaged one mid-pipeline, or any resumed stint). Set at the engage and
+     * resume sites, reset at [processRequest] entry beside [runArmedSeed],
+     * and read by [updateInterimResult] to keep the run's hands off the
+     * DataStore partial-transcription seed: the seed feeds the
+     * interrupted-run dialog, a parked session has its own resume surface,
+     * and a session text riding that slot would surface a false
+     * "was interrupted" recovery offer for work that is merely paused (the
+     * TASK-602 class the plan's correction 1 names).
+     */
+    @Volatile
+    private var runIsSessionRun: Boolean = false
+
+    /**
+     * TASK-1037: the cooperative-pause requests (task ids), honored at the
+     * next chunk boundary of the named session's stint. Phase 4's UI and
+     * the TEST_SPI session_pause op write here. The boundary check CONSUMES
+     * the flag, so a stale request can never park a later stint of the same
+     * task id. Concurrent map because the SPI broadcast and the pipeline's
+     * IO collector run on different threads.
+     */
+    private val sessionPauseRequested: MutableSet<String> =
+        java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap())
+
     /** Per-task timestamp of the last interim Room write (throttle, TASK-340 Fix 2b). */
     private val lastInterimRoomWriteMs = mutableMapOf<String, Long>()
 
@@ -277,6 +324,12 @@ class TranscriptionOrchestrator @Inject constructor(
          */
         languageOverride: String? = null,
         trackIndex: Int = -1,
+        /**
+         * TASK-1037: the matched voice-note sender (share flow), part of a
+         * session's frozen identity; default null keeps every other caller
+         * unchanged.
+         */
+        senderName: String? = null,
         queuePosition: Int,
         queueTotal: Int,
         context: Context,
@@ -285,6 +338,10 @@ class TranscriptionOrchestrator @Inject constructor(
         coroutineScope: CoroutineScope
     ): Result<String> {
         runArmedSeed = false
+        // TASK-1037: the session-run disarm resets with the same lifetime as
+        // the seed arming (runs are serialized by runMutex below, so the flag
+        // is always THIS run's when read).
+        runIsSessionRun = false
         // TASK-699 stage 2: ONE heartbeat span for the whole run, the only
         // one left (the ten former per-stretch spans are stripped; see the
         // LadderRoutingContractTest count). runArmedSeed resets here so the
@@ -298,8 +355,8 @@ class TranscriptionOrchestrator @Inject constructor(
             withSeedHeartbeat {
                 processRequestInner(
                     taskId, requestType, prompt, filePath, source, sourcePackage,
-                    backendOverride, languageOverride, trackIndex, queuePosition,
-                    queueTotal, context, cacheDir, listener, coroutineScope)
+                    backendOverride, languageOverride, trackIndex, senderName,
+                    queuePosition, queueTotal, context, cacheDir, listener, coroutineScope)
             }
         }
     }
@@ -314,6 +371,7 @@ class TranscriptionOrchestrator @Inject constructor(
         backendOverride: String?,
         languageOverride: String?,
         trackIndex: Int,
+        senderName: String?,
         queuePosition: Int,
         queueTotal: Int,
         context: Context,
@@ -384,8 +442,53 @@ class TranscriptionOrchestrator @Inject constructor(
             // (eligibility, load, streaming pass) degrades to the normal
             // single-model run; phase 1 may never break a request.
             // F1/F3 tokens land here when phase 1 attempted but degraded.
+            //
+            // TASK-1037 (GH #190): session runs take NO first pass, on the
+            // initial stint and on every resume. The first pass would park
+            // its own whole-file text on the row (phase-2 partials are
+            // suppressed under it, so the parked row could no longer show
+            // the session's checkpointed text), and a resumed stint's
+            // backendOverride disqualifies it anyway, which would silently
+            // drop the refinement relationship at the second stint. The
+            // duration probe pays one metadata open only for candidates
+            // (audio, file-backed, session-eligible origin); its result
+            // also decides the engage, so the skip and the engage cannot
+            // disagree. A probe that fails open (null duration) runs the
+            // first pass as today; the header's own duration still engages
+            // the session mid-pipeline in that unreadable-metadata case.
+            val resumeSession = runCatching { sessionDao.getSession(taskId) }.getOrNull()
+            if (resumeSession != null) runIsSessionRun = true
+            // The probe's duration value rides down to the TASK-450 gate
+            // (efficiency round): a session-candidate request with VAD on
+            // would otherwise pay the same container-metadata open twice.
+            var probedDurationSeconds: Double? = null
+            val sessionRun: SessionRunContext? =
+                if (resumeSession == null && requestType == "audio" && !filePath.isNullOrEmpty() &&
+                    source != null && source != OpenTranscribeProviderService.SOURCE_OPENTRANSCRIBE
+                ) {
+                    probedDurationSeconds = runCatching {
+                        audioPreprocessor.getAudioDuration(filePath)
+                    }.getOrNull()
+                    val longEnough = probedDurationSeconds
+                        ?.let { it >= AudioDurationPolicy.SESSION_MIN_SECONDS } == true
+                    if (longEnough) SessionRunContext(
+                        languagePin = resolvedLanguagePin(context, languageOverride),
+                        source = source,
+                        sourcePackage = sourcePackage,
+                        senderName = senderName)
+                    else null
+                } else null
             var dualSkip: DualRefinementPolicy.SkipOutcome? = null
-            val fastFirstPass = runCatching {
+            // Simplify review F1: the two-pass skip applies ONLY to resumed
+            // stints (definitively pipelined). A fresh-engage candidate that
+            // ends up on the VAD path (Gemma, Canary, VAD toggle on) keeps
+            // its first pass and speaker labels: no session is engaged there
+            // and the skips' rationale (parked text, partial timeline)
+            // does not apply.
+            val fastFirstPass = if (resumeSession != null) {
+                Log.i(TAG, "Resumed session stint (TASK-1037): two-pass first pass skipped")
+                null
+            } else runCatching {
                 runRefinementFirstPass(
                     taskId = taskId, requestType = requestType, backendOverride = backendOverride,
                     languageOverride = languageOverride,
@@ -499,8 +602,30 @@ class TranscriptionOrchestrator @Inject constructor(
                 preferencesManager.speakerLabelsEnabled.first()
             }.getOrDefault(false)
 
-            val result = when (requestType) {
-                "audio" -> if (f4LoadFailure != null) {
+            // TASK-1037: the resume arm's ONE chunk-store read, shared by the
+            // completeness decision below and the pipeline's prefill (the
+            // run owns this task id and the runMutex serializes writers, so
+            // a dispatch-time read is exactly what the pipeline would read
+            // moments later; the checkpoint sink only writes after it).
+            val resumePrefixRows = if (resumeSession != null)
+                runCatching { sessionDao.contiguousPrefixRows(taskId) }.getOrDefault(emptyList())
+            else emptyList()
+
+            val result = when {
+                // TASK-1037: a resumed session whose chunk store already
+                // covers the whole file is a stint that died during the
+                // post-passes (the COMPLETING state): skip the decode
+                // entirely, rebuild the result from the chunk rows and let
+                // the post-pass chain below rerun exactly once at this true
+                // end (the plan's "resume skips decode and reruns
+                // post-passes" state row). Completeness is derived from the
+                // DATA (prefix end vs the actual total recorded at the
+                // COMPLETING transition), never from the state string the
+                // cold-start recovery already rewrote to PAUSED_SYSTEM.
+                resumeSession != null && resumeSession.totalOutputSamples
+                    ?.let { total -> (resumePrefixRows.lastOrNull()?.endSample ?: 0L) >= total } == true ->
+                    completedSessionFromStore(taskId, resumeSession, resumePrefixRows)
+                requestType == "audio" -> if (f4LoadFailure != null) {
                     recoverFirstPass(fastFirstPass!!, f4LoadFailure,
                         DualRefinementPolicy.SKIP_REFINE_LOAD_FAILED)
                 } else {
@@ -520,12 +645,30 @@ class TranscriptionOrchestrator @Inject constructor(
                         // TASK-681: the override must reach the LAN-offload
                         // arm too (its language is a request field).
                         languageOverride = languageOverride,
-                        collectSamples = if (collectSpeakers) {
+                        // TASK-1037: the session identity (fresh or resumed)
+                        // rides to the pipeline with the dispatch-time prefix
+                        // rows (the one chunk-store read; a session run also
+                        // never collects a speaker timeline: a resumed stint
+                        // holds only the tail, so labels could never survive
+                        // a pause; labels are skipped for sessions outright,
+                        // the reason logged at the collector site).
+                        resumeSession = resumeSession,
+                        resumePrefixRows = resumePrefixRows,
+                        sessionRun = sessionRun,
+                        probedDurationSeconds = probedDurationSeconds,
+                        // Simplify review F1: speaker labels skip applies ONLY
+                        // to resumed stints. A fresh-engage run keeps the
+                        // collector (the whole timeline IS in RAM on the
+                        // first stint); only a resumed stint cannot hold it.
+                        collectSamples = if (collectSpeakers && resumeSession == null) {
                             { chunks, rate ->
                                 diarizationChunks = chunks
                                 diarizationSampleRate = rate
                             }
                         } else {
+                            if (collectSpeakers && resumeSession != null) {
+                                Log.i(TAG, "Speaker labels skipped: resumed stint (TASK-1037); a partial timeline cannot diarize")
+                            }
                             null
                         },
                     )
@@ -537,14 +680,34 @@ class TranscriptionOrchestrator @Inject constructor(
                                 refinementFoldSuccess(fastFirstPass, refined)
                             },
                             onFailure = { failure ->
-                                // Design F5: deliver through the same funnel.
-                                recoverFirstPass(fastFirstPass, failure,
-                                    DualRefinementPolicy.SKIP_REFINE_INFERENCE_FAILED)
+                                if (failure is SessionPaused) {
+                                    // Code review: the sentinel must pass
+                                    // THROUGH the fold unrecovered; letting
+                                    // recoverFirstPass convert it to a
+                                    // first-pass SUCCESS would delete the
+                                    // session and lose the pause.
+                                    Result.failure(failure)
+                                } else {
+                                    // Design F5: deliver through the same funnel.
+                                    recoverFirstPass(fastFirstPass, failure,
+                                        DualRefinementPolicy.SKIP_REFINE_INFERENCE_FAILED)
+                                }
                             },
                         )
                     }
                 }
                 else -> processTextRequest(prompt)
+            }
+
+            // TASK-1037: the parked-stint sentinel exits HERE, at one site
+            // ahead of every error surface (the fold below is the
+            // false-error path the plan's risk table pins by test: no
+            // logError row, no error notification, no Tasker reply, no
+            // silent-model demotion). The parking writes land inside
+            // [parkSessionAtBoundary].
+            (result.exceptionOrNull() as? SessionPaused)?.let { paused ->
+                parkSessionAtBoundary(taskId, paused, context)
+                return Result.failure(paused)
             }
 
             val duration = System.currentTimeMillis() - startTime
@@ -766,7 +929,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
         } catch (e: CancellationException) {
             val duration = System.currentTimeMillis() - startTime
-            cancelIfPending(taskId, "Transcription cancelled", durationMs = 0)
+            cancelIfPending(taskId, "Transcription cancelled", durationMs = 0, context = context)
             throw e
         } catch (e: OutOfMemoryError) {
             // TASK-396: OOM is an Error, not an Exception; without this catch it
@@ -2725,6 +2888,26 @@ class TranscriptionOrchestrator @Inject constructor(
          *  LAN-offload arm (its language is a request field, not engine
          *  config; local backends keep resolving it at load time). */
         languageOverride: String? = null,
+        /** TASK-1037: a resumed stint's frozen session row (null = fresh
+         *  run). Forces the pipelined path regardless of the current VAD
+         *  toggle (the checkpointed chunks live on the pipeline's output-
+         *  sample timeline; a VAD whole-file stint cannot resume an offset)
+         *  and reaches the pipeline's prefill and checkpoint sink. */
+        resumeSession: TranscriptionSessionEntity? = null,
+        /** TASK-1037: the dispatch-time contiguous-prefix rows for
+         *  [resumeSession] (the ONE chunk-store read of a resume request;
+         *  the simplify round removed the pipeline's second read). */
+        resumePrefixRows: List<SessionChunkEntity> = emptyList(),
+        /** TASK-1037: the frozen identity for a fresh run's would-be
+         *  session; non-null only when the request is session-eligible
+         *  (long audio, in-app origin). Consumed at the pipeline's header
+         *  event, where the decoded duration decides whether a session
+         *  engages at all. */
+        sessionRun: SessionRunContext? = null,
+        /** TASK-1037 (efficiency round): the session-eligibility probe's
+         *  duration value when it ran, reused by the TASK-450 gate below so
+         *  a session-candidate request pays one metadata open, not two. */
+        probedDurationSeconds: Double? = null,
     ): Result<TranscriptionResult> {
         if (filePath.isNullOrEmpty()) {
             return Result.failure(IllegalArgumentException("No file path provided"))
@@ -2891,7 +3074,8 @@ class TranscriptionOrchestrator @Inject constructor(
         val canStreamWithoutVad = !backend.requiresVadAlignedChunking && maxChunkDuration != null
         val fellBackFromVad = vadEnabled && canStreamWithoutVad &&
             AudioDurationPolicy.shouldFallBackToStreaming(
-                audioPreprocessor.getAudioDuration(filePath),
+                // TASK-1037: reuse the session probe's open when it ran.
+                probedDurationSeconds ?: audioPreprocessor.getAudioDuration(filePath),
                 AudioDurationPolicy.ceilingSeconds(
                     AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM,
                     MemoryReadings.availableRamBytes(context),
@@ -2901,7 +3085,17 @@ class TranscriptionOrchestrator @Inject constructor(
             Log.i(TAG, "TASK-450: file exceeds this device's VAD-path ceiling; streaming without silence stripping (backend=${backend.id})")
         }
         val effectiveVad = vadEnabled && !fellBackFromVad
-        val pipelineChunkSeconds = AudioDurationPolicy.streamingChunkSeconds(effectiveVad, maxChunkDuration)
+        // TASK-1037: a resumed stint ALWAYS rides the pipeline, whatever the
+        // VAD toggle says today: the session's checkpointed chunks live on
+        // the pipeline's contiguous output-sample timeline, which a VAD
+        // whole-file stint cannot resume. A toggle flipped on between stints
+        // is reported honestly through streamedWithoutVad (this run really
+        // is streaming without silence stripping) instead of silently
+        // re-decoding the file on a path the session store cannot resume.
+        val resumeForcedStreaming = resumeSession != null && effectiveVad
+        val pipelineVad = if (resumeSession != null) false else effectiveVad
+        val pipelineChunkSeconds = AudioDurationPolicy.streamingChunkSeconds(pipelineVad, maxChunkDuration)
+        val streamedWithoutVadForRun = fellBackFromVad || resumeForcedStreaming
 
         val totalStartMs = System.currentTimeMillis()
 
@@ -2911,7 +3105,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 filePath = filePath,
                 backend = backend,
                 maxChunkDurationSeconds = pipelineChunkSeconds,
-                streamedWithoutVad = fellBackFromVad,
+                streamedWithoutVad = streamedWithoutVadForRun,
                 context = context,
                 coroutineScope = coroutineScope,
                 listener = listener,
@@ -2919,6 +3113,13 @@ class TranscriptionOrchestrator @Inject constructor(
                 progressiveEnabled = progressiveEnabled,
                 earlyPreviewActive = earlyPreviewActive,
                 emitInterim = emitInterim,
+                // TASK-1037: the session identity (a frozen resume row, or
+                // the would-be session for an eligible fresh run). Null on
+                // every non-session run: the sink no-ops and the engage
+                // never fires.
+                resumeSession = resumeSession,
+                resumePrefixRows = resumePrefixRows,
+                sessionRun = sessionRun,
                 // GH #83: the pipeline is the DEFAULT contiguous path
                 // (Parakeet); without this the collector only reached
                 // the whole-file branch and every default run skipped
@@ -3828,6 +4029,20 @@ class TranscriptionOrchestrator @Inject constructor(
          *  from the same accumulated decoded seconds, so the timelines
          *  match by construction. */
         collectSamples: ((List<FloatArray>, Int) -> Unit)? = null,
+        /** TASK-1037 (GH #190) phase 3: a resumed stint's frozen session row,
+         *  or null on a fresh run. Non-null arms the checkpoint sink, seeds
+         *  the accumulator from the chunk rows (the prefill), and starts the
+         *  decode at the store's contiguous-prefix end via phase 1's
+         *  startOffsetSamples. */
+        resumeSession: TranscriptionSessionEntity? = null,
+        /** TASK-1037: the resume request's ONE chunk-store read (the
+         *  dispatch-time contiguous-prefix rows), reused as the prefill so
+         *  the pipeline does not read the table again. */
+        resumePrefixRows: List<SessionChunkEntity> = emptyList(),
+        /** TASK-1037: the frozen identity for a fresh run's would-be session
+         *  (null when ineligible); consumed at the header event, where the
+         *  decoded duration decides whether a session engages. */
+        sessionRun: SessionRunContext? = null,
     ): Result<TranscriptionResult> {
         val resolvedPrompt = resolvePrompt(prompt)
         // TASK-597: the streaming path's sample retention has no memory
@@ -3906,6 +4121,64 @@ class TranscriptionOrchestrator @Inject constructor(
         var heldEmpty: HeldEmptyChunk? = null
         var retriedChunks = 0
 
+        // ---- TASK-1037 (GH #190) phase 3: the resumable-session state ----
+        // One nullable row reference is the whole switch: null (every short
+        // run, and every ineligible origin) keeps this function on its
+        // former path; a row turns the delivery helper into the checkpoint
+        // sink, seeds the accumulators from the store (the prefill), and
+        // starts the decode at the contiguous-prefix end via phase 1's
+        // startOffsetSamples.
+        var activeSession: TranscriptionSessionEntity? = resumeSession
+        if (activeSession != null) runIsSessionRun = true
+        // The global sample cursor: seeded with the resume offset so cue
+        // times are global by construction (the plan's "nearly free"
+        // stitching: seeding decodedSeconds makes the cues global without
+        // any join arithmetic) and advanced per chunk below. decodedSeconds
+        // above stays the global seconds view of the same cursor.
+        var decodedSamplesGlobal = 0L
+        // THIS stint's own decoded audio, the calibration dividend: a
+        // resumed stint must never divide its compute time by the whole
+        // file's audio (the per-stint calibration rule).
+        var stintDecodedSamples = 0L
+        val sessionBaseComputeMs = resumeSession?.accumulatedComputeMs ?: 0L
+        // The prefix rows the resumed stint prefills from (empty on a fresh
+        // run). Passed DOWN from the dispatch site: ONE chunk-store read per
+        // resume request feeds the completeness decision, the prefill content
+        // and the offset (the walk rule lives once, in
+        // [SessionDao.contiguousPrefixRows]; the simplify round removed the
+        // orchestrator's second copy and the duplicate read it caused).
+        var resumeOffsetSamples = 0L
+        if (resumeSession != null) {
+            val prefillRows = resumePrefixRows
+            val prefixEnd = prefillRows.lastOrNull()?.endSample ?: 0L
+            resumeOffsetSamples = prefixEnd
+            prefillRows.forEach { row ->
+                val text = row.text.trim()
+                if (text.isNotEmpty()) {
+                    if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
+                    accumulatedText.append(text)
+                }
+                row.cuesJson?.let { segments.addAll(TimedSegmentsConverter.fromJson(it)) }
+                row.confidence?.let { minConfidence = aggregateConfidence(minConfidence, it.toFloat()) }
+                if (detectedLang == null) detectedLang = row.detectedLanguage
+            }
+            processedChunks += prefillRows.size
+            failedChunks += resumeSession.failedChunkCount
+            blankChunks += resumeSession.blankChunkCount
+            retriedChunks += resumeSession.retriedChunkCount
+            decodedSamplesGlobal = prefixEnd
+            decodedSeconds = prefixEnd / SESSION_SAMPLE_RATE.toDouble()
+            // The state machine's "PAUSED_* + Resume -> ACTIVE": re-entering
+            // work rewrites the row state before any chunk decodes, so a
+            // death during THIS stint is classifiable as in-flight again.
+            activeSession = resumeSession.copy(
+                state = TranscriptionSessionEntity.STATE_ACTIVE,
+                updatedAtMs = System.currentTimeMillis())
+            runCatching { sessionDao.upsertSession(activeSession!!) }
+            Log.i(TAG, "Session resume: taskId=$taskId offset=$prefixEnd samples " +
+                "(${prefillRows.size} prefilled chunks, ${accumulatedText.length} chars)")
+        }
+
         /**
          * The one delivery of a decoded non-blank chunk into the stream
          * state (TASK-673's pipeline arm of the offline partials contract;
@@ -3921,6 +4194,8 @@ class TranscriptionOrchestrator @Inject constructor(
             chunkIndex: Int,
             startMs: Long,
             endMs: Long,
+            startSample: Long,
+            endSample: Long,
             interimSubText: String?,
         ) {
             val trimmed = tr.text.trim()
@@ -3932,7 +4207,49 @@ class TranscriptionOrchestrator @Inject constructor(
             // accumulated decoded seconds is exact; if VAD ever runs on
             // this stream, the chunks arrive silence-STRIPPED and this site
             // must learn anchors before its cues can stay on the timeline.
-            segments.addAll(cuesForChunk(tr.tokens, trimmed, startMs, endMs))
+            val chunkCues = cuesForChunk(tr.tokens, trimmed, startMs, endMs)
+            segments.addAll(chunkCues)
+            // TASK-1037: the checkpoint sink. One chunk-row insert IS the
+            // checkpoint (the resume offset is the contiguous prefix's end,
+            // so text and offset cannot drift apart); the session upsert
+            // rides the counters and compute time so a death right after
+            // this line loses nothing the resume would need. The crash-at-
+            // offset counter RESETS on any checkpointed chunk: progress at
+            // the offset proves the offset is not engine-poisoned (the
+            // counter counts consecutive deaths without a landing chunk,
+            // which is exactly "deaths at the same contiguousPrefixEnd").
+            val session = activeSession
+            if (session != null) {
+                runCatching {
+                    sessionDao.insertChunk(SessionChunkEntity(
+                        taskId = taskId,
+                        startSample = startSample,
+                        endSample = endSample,
+                        text = trimmed,
+                        cuesJson = chunkCues.takeIf { it.isNotEmpty() }
+                            ?.let { TimedSegmentsConverter.toJson(it) },
+                        confidence = tr.confidence?.toDouble(),
+                        detectedLanguage = tr.detectedLanguage,
+                    ))
+                    val now = System.currentTimeMillis()
+                    sessionDao.upsertSession(session.copy(
+                        state = TranscriptionSessionEntity.STATE_ACTIVE,
+                        totalOutputSamples = session.totalOutputSamples ?: endSample,
+                        accumulatedComputeMs = sessionBaseComputeMs + (now - pipelineStartMs),
+                        failedChunkCount = failedChunks,
+                        blankChunkCount = blankChunks,
+                        retriedChunkCount = retriedChunks,
+                        crashAtOffsetCount = 0,
+                        updatedAtMs = now,
+                    ).also { activeSession = it })
+                }.onFailure {
+                    if (it is kotlinx.coroutines.CancellationException) throw it
+                    // A failed checkpoint degrades to today's behavior (the
+                    // chunk is in memory; the final result is unaffected; a
+                    // later resume simply re-decodes this chunk's range).
+                    Log.w(TAG, "Session checkpoint failed for chunk starting at $startSample", it)
+                }
+            }
             updateInterimResult(taskId, accumulatedText.toString(), writeRow = emitInterim)
             if (interimSubText != null && progressiveEnabled && emitInterim) {
                 listener.onInterimResult(
@@ -3971,7 +4288,7 @@ class TranscriptionOrchestrator @Inject constructor(
             }
             val tr = outcome?.getOrNull()
             if (tr != null) {
-                deliverDecodedChunk(tr, held.index, held.startMs, held.endMs, interimSubText = null)
+                deliverDecodedChunk(tr, held.index, held.startMs, held.endMs, held.startSample, held.endSample, interimSubText = null)
                 minConfidence = aggregateConfidence(minConfidence, tr.confidence)
                 if (detectedLang == null) detectedLang = tr.detectedLanguage
                 Log.i(TAG, "Pipeline chunk ${held.index + 1} recovered by the empty-chunk ladder (${tr.text.trim().length} chars)")
@@ -3987,6 +4304,50 @@ class TranscriptionOrchestrator @Inject constructor(
         val availableRamBytes = runCatching {
             MemoryReadings.availableRamBytes(context)
         }.getOrNull()
+
+        // TASK-1037: the crash-loop guard, BEFORE the decode call because its
+        // outcome IS the decode's start offset. Two consecutive native-crash
+        // deaths WITHOUT a landing chunk (the counter's meaning: the recovery
+        // pass increments on a native-crash verdict, the checkpoint sink
+        // resets on progress) mean the chunk at the current prefix end kills
+        // the engine every time (the issue #26 NNAPI class). Skip that chunk's
+        // range: a tombstone chunk row (empty text, counted as failed) records
+        // the skip, keeps the contiguous-prefix walk intact, and the decode
+        // starts past it. The skip is chunk-cap-sized, the same range the
+        // stint that kept crashing would have fed the engine.
+        if ((resumeSession?.crashAtOffsetCount ?: 0) >= CRASH_LOOP_SKIP_THRESHOLD) {
+            val chunkSamples = maxChunkDurationSeconds.toLong() * SESSION_SAMPLE_RATE
+            val totalSamples = runCatching { audioPreprocessor.getAudioDuration(filePath) }
+                .getOrNull()?.let { (it * SESSION_SAMPLE_RATE).toLong() }
+                ?: resumeSession!!.totalOutputSamples
+                ?: Long.MAX_VALUE
+            val remaining = (totalSamples - resumeOffsetSamples).coerceAtLeast(0L)
+            val skipSamples = minOf(chunkSamples, remaining)
+            val tombstoneEnd = resumeOffsetSamples + skipSamples
+            runCatching {
+                sessionDao.insertChunk(SessionChunkEntity(
+                    taskId = taskId,
+                    startSample = resumeOffsetSamples,
+                    endSample = tombstoneEnd,
+                    text = "",
+                ))
+                activeSession = activeSession!!.copy(
+                    failedChunkCount = activeSession!!.failedChunkCount + 1,
+                    crashAtOffsetCount = 0,
+                    updatedAtMs = System.currentTimeMillis(),
+                )
+                sessionDao.upsertSession(activeSession!!)
+            }.onFailure {
+                if (it is kotlinx.coroutines.CancellationException) throw it
+                Log.w(TAG, "Crash-loop tombstone write failed; decoding from the crash offset anyway", it)
+            }
+            Log.w(TAG, "Crash-loop guard: skipping engine-poisoned chunk at $resumeOffsetSamples " +
+                "($skipSamples samples, tombstone written); decode resumes at $tombstoneEnd")
+            resumeOffsetSamples = tombstoneEnd
+            decodedSamplesGlobal = tombstoneEnd
+            decodedSeconds = tombstoneEnd / SESSION_SAMPLE_RATE.toDouble()
+        }
+
         try {
             audioPreprocessor.prepareAudioStream(
                 inputPath = filePath,
@@ -3994,13 +4355,64 @@ class TranscriptionOrchestrator @Inject constructor(
                 context = context,
                 enableVad = false,
                 availableRamBytes = availableRamBytes,
-                maxHeapBytes = MemoryReadings.maxHeapBytes()
+                maxHeapBytes = MemoryReadings.maxHeapBytes(),
+                // TASK-1037: the resume offset (0 on every non-session run).
+                startOffsetSamples = resumeOffsetSamples
             ).collect { event ->
                 when (event) {
                     is AudioPreprocessor.StreamEvent.Header -> {
                         totalDurationSeconds = event.header.totalDurationSeconds
                         expectedChunkCount = event.header.expectedChunkCount
                         updateAudioDuration(taskId, event.header.totalDurationSeconds)
+                        // TASK-1037: the session ENGAGE (fresh runs only; a
+                        // resumed stint has its row already). A pipelined run
+                        // at least SESSION_MIN_SECONDS long, from an eligible
+                        // origin, freezes its identity into a session row
+                        // BEFORE any chunk decodes, so a kill from the very
+                        // first chunk on is recoverable. The probe decided
+                        // eligibility from the same metadata; the header is
+                        // the decoded-value authority, so a probe that failed
+                        // open can still engage here.
+                        if (activeSession == null && sessionRun != null &&
+                            event.header.totalDurationSeconds >= AudioDurationPolicy.SESSION_MIN_SECONDS
+                        ) {
+                            val now = System.currentTimeMillis()
+                            val file = java.io.File(filePath)
+                            activeSession = TranscriptionSessionEntity(
+                                taskId = taskId,
+                                filePath = filePath,
+                                fileSizeBytes = runCatching { file.length() }.getOrDefault(0L),
+                                fileMtimeMs = runCatching { file.lastModified() }.getOrDefault(0L),
+                                backendId = backend.id,
+                                modelPath = modelPathForBackend(backend.id),
+                                languagePin = sessionRun.languagePin,
+                                // Simplify review F2: freeze the RESOLVED
+                                // prompt at the engage, so a resumed stint
+                                // runs under the first stint's prompt, never
+                                // the current settings prompt (the frozen-
+                                // identity invariant the plan demands).
+                                prompt = resolvePrompt(prompt),
+                                source = sessionRun.source ?: "",
+                                sourcePackage = sessionRun.sourcePackage,
+                                senderName = sessionRun.senderName,
+                                state = TranscriptionSessionEntity.STATE_ACTIVE,
+                                totalOutputSamples =
+                                    (event.header.totalDurationSeconds * SESSION_SAMPLE_RATE).toLong()
+                                        .takeIf { it > 0L },
+                                accumulatedComputeMs = 0,
+                                createdAtMs = now,
+                                updatedAtMs = now,
+                            )
+                            runCatching { sessionDao.upsertSession(activeSession!!) }
+                            // The seed disarm flips HERE, not only at resume
+                            // entry (simplify round: the fresh-engage path
+                            // missed it, so a first-stint session run armed
+                            // the interrupted-run dialog's seed, the exact
+                            // TASK-602 class the plan's correction 1 bans).
+                            runIsSessionRun = true
+                            Log.i(TAG, "Session engaged: taskId=$taskId backend=${backend.id} " +
+                                "total=${event.header.totalDurationSeconds}s")
+                        }
                         Log.i(TAG, if (expectedChunkCount > 0)
                             "Pipeline: expecting $expectedChunkCount chunks, ${event.header.totalDurationSeconds}s"
                         else
@@ -4008,6 +4420,21 @@ class TranscriptionOrchestrator @Inject constructor(
                     }
                     is AudioPreprocessor.StreamEvent.Chunk -> {
                         val chunk = event.chunk
+                        // TASK-1037: the cooperative-pause boundary. A native
+                        // decode cannot be interrupted, so the flag is
+                        // honored BETWEEN chunks (phase 4's UI shows
+                        // "Pausing..." until the in-flight chunk lands; the
+                        // TEST_SPI op in phase 3 writes the same flag). The
+                        // sentinel is consumed at ONE site in
+                        // processRequestInner, before any error surface.
+                        if (activeSession != null && sessionPauseRequested.remove(taskId)) {
+                            Log.i(TAG, "Session pause honored at chunk boundary (decoded ${decodedSeconds}s of ${totalDurationSeconds}s)")
+                            throw SessionPaused(
+                                accumulatedText = accumulatedText.toString(),
+                                decodedSeconds = decodedSeconds,
+                                totalDurationSeconds = totalDurationSeconds,
+                            )
+                        }
                         val collected = speakerChunks
                         if (collected != null) {
                             // TASK-728 runtime guard: null the collection at
@@ -4027,11 +4454,25 @@ class TranscriptionOrchestrator @Inject constructor(
                             }
                         }
                         processedChunks++
+                        // TASK-1037: the sample cursor advances first (the
+                        // chunk's range), then the seconds view derives from
+                        // it, so cue times and checkpoint sample offsets are
+                        // two views of one counter and cannot drift.
+                        val chunkStartSample = decodedSamplesGlobal
                         val chunkStartMs = (decodedSeconds * 1000).toLong()
-                        decodedSeconds += chunk.samples.size.toDouble() / chunk.sampleRate
+                        decodedSamplesGlobal += chunk.samples.size.toLong()
+                        stintDecodedSamples += chunk.samples.size.toLong()
+                        decodedSeconds = decodedSamplesGlobal.toDouble() / chunk.sampleRate
                         val chunkEndMs = (decodedSeconds * 1000).toLong()
+                        val chunkEndSample = decodedSamplesGlobal
                         val chunkReceiveMs = System.currentTimeMillis() - pipelineStartMs
-                        if (chunk.chunkIndex == 0) {
+                        // TASK-1037: the chunk-0 logic keys on the GLOBAL
+                        // offset being zero, not the stint-local index: a
+                        // resumed stint's chunk 0 is mid-file (the early
+                        // preview would regress the row's accumulated text
+                        // to a tail fragment, and the TTFT line would lie).
+                        val isGlobalChunkZero = chunk.chunkIndex == 0 && chunkStartSample == 0L
+                        if (isGlobalChunkZero) {
                             firstChunkDecodeMs = chunkReceiveMs
                             firstChunkInferStartMs = System.currentTimeMillis()
                             Log.i(TAG, "PERF: pipeline first chunk decoded in ${firstChunkDecodeMs}ms")
@@ -4057,7 +4498,7 @@ class TranscriptionOrchestrator @Inject constructor(
                         // a chunk and nothing below renumbers. The real
                         // chunk 0 delivery replaces every surface the
                         // preview touches.
-                        if (chunk.chunkIndex == 0) {
+                        if (isGlobalChunkZero) {
                             EarlyPreviewPolicy.previewSeconds(
                                 enabled = earlyPreviewActive,
                                 pipelineChunkSeconds = maxChunkDurationSeconds,
@@ -4100,7 +4541,7 @@ class TranscriptionOrchestrator @Inject constructor(
                         chunkResult.fold(
                             onSuccess = { tr ->
                                 if (tr.text.isNotBlank()) {
-                                    deliverDecodedChunk(tr, chunk.chunkIndex, chunkStartMs, chunkEndMs, chunkLabel)
+                                    deliverDecodedChunk(tr, chunk.chunkIndex, chunkStartMs, chunkEndMs, chunkStartSample, chunkEndSample, chunkLabel)
                                 } else if (emptyChunkRecoveryEnabled && chunk.samples.isNotEmpty()) {
                                     // TASK-664: hold the empty chunk one
                                     // stream event; its ladder runs once the
@@ -4115,7 +4556,9 @@ class TranscriptionOrchestrator @Inject constructor(
                                         sampleRate = chunk.sampleRate,
                                         startMs = chunkStartMs,
                                         endMs = chunkEndMs,
-                                        index = chunk.chunkIndex)
+                                        index = chunk.chunkIndex,
+                                        startSample = chunkStartSample,
+                                        endSample = chunkEndSample)
                                 } else {
                                     blankChunks++
                                 }
@@ -4135,7 +4578,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                     onSuccess = { tr ->
                                         Log.i(TAG, "Pipeline chunk ${chunk.chunkIndex} retry succeeded")
                                         if (tr.text.isNotBlank()) {
-                                            deliverDecodedChunk(tr, chunk.chunkIndex, chunkStartMs, chunkEndMs, "$chunkLabel (retry)")
+                                            deliverDecodedChunk(tr, chunk.chunkIndex, chunkStartMs, chunkEndMs, chunkStartSample, chunkEndSample, "$chunkLabel (retry)")
                                         } else {
                                             blankChunks++
                                         }
@@ -4150,7 +4593,7 @@ class TranscriptionOrchestrator @Inject constructor(
                             }
                         )
 
-                        if (chunk.chunkIndex == 0 && accumulatedText.isNotEmpty()) {
+                        if (isGlobalChunkZero && accumulatedText.isNotEmpty()) {
                             val ttft = System.currentTimeMillis() - firstChunkInferStartMs
                             Log.i(TAG, "PERF: pipeline time-to-first-text = ${System.currentTimeMillis() - pipelineStartMs}ms (decode=${firstChunkDecodeMs}ms + infer=${ttft}ms)")
                             if (!progressiveEnabled) {
@@ -4169,6 +4612,14 @@ class TranscriptionOrchestrator @Inject constructor(
             // its ladder runs with the previous tail alone (inside the try so
             // a wedge abort keeps the pipelineFailed shape below).
             popHeldEmpty(nextChunk = null)
+        } catch (e: SessionPaused) {
+            // TASK-1037: the parked stint. BEFORE the PreprocessingError and
+            // Exception catches (which would turn the pause into
+            // pipelineFailed): no salvaged-text failure writeback (the
+            // sentinel's text reaches the row through the park site), no
+            // failure context, no calibration. The session rows stay exactly
+            // as the last checkpoint left them.
+            return Result.failure(e)
         } catch (e: PreprocessingError) {
             // TASK-664: a stream cut short leaves a held chunk that ran no
             // ladder; it counts as the blank it is.
@@ -4187,7 +4638,34 @@ class TranscriptionOrchestrator @Inject constructor(
             totalDurationSeconds = decodedSeconds
             updateAudioDuration(taskId, decodedSeconds)
         }
-        recordCalibration(context, backend, totalDurationSeconds.toInt(), chunkProcessingStartTime)
+        // TASK-1037: per-stint calibration AND the COMPLETING transition. The
+        // calibration divides THIS stint's compute time by THIS stint's audio
+        // (never the whole file's audio by one stint's wall time, the
+        // calibration-poisoning gap; a fresh session stint decoded the whole
+        // file so its number is unchanged). COMPLETING is entered when the
+        // last chunk is checkpointed and the post-passes begin: a death
+        // during them parks the session, and the resume derives
+        // "nothing left to decode" from totalOutputSamples having been
+        // rewritten to the ACTUAL decoded total here (the prefix end equals
+        // it exactly, so the derivation survives the recovery's state
+        // rewrite and any metadata drift).
+        if (activeSession != null) {
+            val now = System.currentTimeMillis()
+            runCatching {
+                activeSession = activeSession!!.copy(
+                    state = TranscriptionSessionEntity.STATE_COMPLETING,
+                    totalOutputSamples = decodedSamplesGlobal.takeIf { it > 0L }
+                        ?: activeSession!!.totalOutputSamples,
+                    accumulatedComputeMs = sessionBaseComputeMs + (now - pipelineStartMs),
+                    updatedAtMs = now,
+                )
+                sessionDao.upsertSession(activeSession!!)
+            }.onFailure {
+                if (it is kotlinx.coroutines.CancellationException) throw it
+                Log.w(TAG, "Session COMPLETING transition write failed", it)
+            }
+        }
+        recordCalibration(context, backend, (stintDecodedSamples / SESSION_SAMPLE_RATE.toDouble()).toInt(), chunkProcessingStartTime)
 
         val totalMs = System.currentTimeMillis() - pipelineStartMs
         Log.i(TAG, "PERF: pipeline total ${totalMs}ms for ${totalDurationSeconds}s audio, $processedChunks chunks (expected $expectedChunkCount), backend=${backend.id}, ttft_decode=${firstChunkDecodeMs}ms")
@@ -4252,6 +4730,230 @@ class TranscriptionOrchestrator @Inject constructor(
                 )
             ))
         }
+    }
+
+    // ---- TASK-1037: resumable-session surface ----
+
+    /**
+     * The park site for a stint that honored the cooperative-pause flag at a
+     * chunk boundary (the [SessionPaused] sentinel's ONE consumer, reached
+     * before every error surface in [processRequestInner]). Writes the
+     * assembled text onto the row unthrottled (the boundary write inside the
+     * sink may be up to one throttle window stale), flips the session to
+     * PAUSED_USER and the row to PAUSED, and posts the paused notification.
+     * A kill between the sentinel and this write is harmless: the session
+     * row is still ACTIVE and the cold-start recovery parks it as
+     * PAUSED_SYSTEM, the same observable state.
+     */
+    private suspend fun parkSessionAtBoundary(
+        taskId: String,
+        paused: SessionPaused,
+        context: Context,
+    ) {
+        runCatching { logDao.updateInterimResult(taskId, paused.accumulatedText, isPartial = true) }
+            .onFailure { Log.w(TAG, "Paused-stint text writeback failed for $taskId", it) }
+        val session = runCatching { sessionDao.getSession(taskId) }.getOrNull()
+        if (session == null) {
+            Log.w(TAG, "SessionPaused without a session row for $taskId; only the row was parked")
+        } else {
+            runCatching {
+                sessionDao.upsertSession(session.copy(
+                    state = TranscriptionSessionEntity.STATE_PAUSED_USER,
+                    updatedAtMs = System.currentTimeMillis()))
+            }.onFailure { Log.w(TAG, "Session PAUSED_USER write failed for $taskId", it) }
+            runCatching { logDao.parkProcessingAsPaused(taskId, errorMessage = null) }
+                .onFailure { Log.w(TAG, "Row park write failed for $taskId", it) }
+        }
+        runCatching { PausedSessionNotifier.post(context, sessionDao) }
+    }
+
+    /**
+     * TEST_SPI (phase 3's pause arm) and later the phase-4 UI: request the
+     * cooperative pause of a session's stint. Consumed at the next chunk
+     * boundary by [processPipelinedAudio]; the request's removal there means
+     * a stale request can never park a later stint of the same task id.
+     */
+    fun requestSessionPause(taskId: String) {
+        sessionPauseRequested.add(taskId)
+    }
+
+    /**
+     * Settles the paused notification from the session table's current state
+     * (re-renders the remaining paused session, clears the notification when
+     * none is left). The service's ONE entry point for the notification
+     * (the simplify round: it reached for the session store directly at two
+     * sites, beside the orchestrator-owned cancel arm).
+     */
+    suspend fun settlePausedNotification(context: Context) {
+        runCatching { PausedSessionNotifier.post(context, sessionDao) }
+    }
+
+    /**
+     * The service's cancel-of-paused arm: closes the session as partial with
+     * its assembled text kept (the state machine's Cancel row) when the task
+     * owns one, a no-op otherwise. One entry point so the service never
+     * probes the session store itself.
+     */
+    suspend fun cancelSessionTask(taskId: String, context: Context) {
+        val ownsSession = runCatching { sessionDao.getSession(taskId) != null }.getOrDefault(false)
+        if (!ownsSession) return
+        runCatching { closeSessionAsPartial(taskId, "Cancelled", context) }
+            .onFailure { Log.w(TAG, "Session close on cancel failed for $taskId", it) }
+    }
+
+    /**
+     * The resume arm's gate, called by the service drain BEFORE any work
+     * starts on a resume request. Validates the frozen identity against the
+     * world (file fingerprint, model path) and answers either the fields the
+     * request needs (the intent itself carried only the task id) or a close:
+     * a mismatch closes the session as partial ERROR with the stated reason
+     * (the plan's resume-refusal row), because stitching stints transcribed
+     * under different conditions would produce a mixed-model transcript (the
+     * TASK-545 misattribution class).
+     *
+     * Notably the language pin is NOT validated but RESTORED: the frozen pin
+     * becomes the resumed stint's request override, so the engine hears what
+     * the frozen stint heard regardless of a Settings change in between.
+     */
+    suspend fun prepareSessionResume(taskId: String, context: Context): SessionResumePlan {
+        val session = runCatching { sessionDao.getSession(taskId) }.getOrNull()
+            ?: return SessionResumePlan.NoSession
+        // The History row must exist: deleting a row does not touch session
+        // rows (no LogEntity column, per the plan's data model), so a parked
+        // session whose row the user deleted has no surface to deliver to.
+        val row = runCatching { logDao.getByTaskId(taskId) }.getOrNull()
+        if (row == null) {
+            Log.w(TAG, "Resume refused for $taskId: the History row was deleted; session discarded")
+            deleteSessionQuietly(taskId, "resume-no-row")
+            return SessionResumePlan.NoSession
+        }
+        val file = File(session.filePath)
+        if (!file.exists()) {
+            // One literal per refusal (simplify round): the row write and the
+            // plan's answer must carry the same stated reason, verbatim.
+            val reason = "Resume refused: the source audio file is gone"
+            closeSessionAsPartial(taskId, reason, context)
+            return SessionResumePlan.Closed(reason)
+        }
+        if (file.length() != session.fileSizeBytes || file.lastModified() != session.fileMtimeMs) {
+            val reason = "Resume refused: the source audio file changed since the session was paused"
+            closeSessionAsPartial(taskId, reason, context)
+            return SessionResumePlan.Closed(reason)
+        }
+        // The frozen model: the CURRENT saved path for the frozen backend id
+        // must be the frozen path AND the file must exist. A variant switch,
+        // a heal to a sibling, or a deleted model all refuse (resuming under
+        // a different model is out of the plan's scope by design).
+        val currentModelPath = runCatching { modelPathForBackend(session.backendId) }.getOrDefault("")
+        if (currentModelPath.isBlank() || currentModelPath != session.modelPath ||
+            !File(session.modelPath).exists()
+        ) {
+            val reason = "Resume refused: the session's model is no longer available at its frozen path"
+            closeSessionAsPartial(taskId, reason, context)
+            return SessionResumePlan.Closed(reason)
+        }
+        return SessionResumePlan.Ready(
+            filePath = session.filePath,
+            prompt = session.prompt,
+            source = session.source.takeIf { it.isNotBlank() },
+            sourcePackage = session.sourcePackage,
+            senderName = session.senderName,
+            backendOverride = session.backendId,
+            languageOverride = session.languagePin,
+        )
+    }
+
+    /**
+     * The assembled text of a session's contiguous-prefix rows, the ONE
+     * derivation (the simplify round collapsed the close-arm and
+     * completing-arm copies). Prefix rows, never all rows: stale
+     * non-contiguous rows from an older stint's different chunk boundaries
+     * must never double-count text.
+     */
+    private fun assembledSessionText(rows: List<SessionChunkEntity>): String =
+        rows.mapNotNull { it.text.trim().takeIf { t -> t.isNotEmpty() } }.joinToString(" ")
+
+    /**
+     * The one terminal session-cleanup write shared by every close site
+     * (success, error, cancel, close-as-partial): contained, and a no-op
+     * DELETE when the task never owned a session.
+     */
+    private suspend fun deleteSessionQuietly(taskId: String, site: String) {
+        runCatching { sessionDao.deleteSession(taskId) }
+            .onFailure { Log.w(TAG, "Session cleanup failed at $site for $taskId", it) }
+    }
+
+    /**
+     * The one close-as-partial writer (the state machine's refusal arm and
+     * the service's cancel-of-paused arm share it): the assembled text from
+     * the chunk rows (the row's interim column can be one throttle window
+     * stale), the row closed as ERROR isPartial with the stated reason, and
+     * the session rows deleted.
+     */
+    suspend fun closeSessionAsPartial(taskId: String, reason: String, context: Context? = null) {
+        val text = assembledSessionText(
+            runCatching { sessionDao.contiguousPrefixRows(taskId) }.getOrDefault(emptyList()))
+        runCatching {
+            if (text.isNotEmpty()) logDao.updateInterimResult(taskId, text, isPartial = true)
+            logDao.closePausedAsError(taskId, reason)
+        }.onFailure { Log.w(TAG, "Close-as-partial row write failed for $taskId", it) }
+        deleteSessionQuietly(taskId, "close-as-partial")
+        if (context != null) {
+            runCatching { PausedSessionNotifier.post(context, sessionDao) }
+        }
+        Log.w(TAG, "Session closed as partial: taskId=$taskId reason=$reason")
+    }
+
+    /**
+     * The completing-session resume: rebuild the full [TranscriptionResult]
+     * from the dispatch-time prefix rows and run ONLY the pipeline-tail
+     * generative pass (the same shape processAudioRequest's pipeline arm
+     * ends with); the shared post-pass chain (collapse, punctuation,
+     * summary) runs once at this true end in processRequestInner, exactly as
+     * it would have on the stint that died during the post-passes. The decode
+     * path string honestly says "pipeline": whether the frozen stint was the
+     * TASK-450 fallback is not recorded in the session row, and the claim it
+     * would make (streamedWithoutVad) stays false rather than asserted.
+     */
+    private suspend fun completedSessionFromStore(
+        taskId: String,
+        session: TranscriptionSessionEntity,
+        prefixRows: List<SessionChunkEntity>,
+    ): Result<TranscriptionResult> {
+        val backend = backendManager.getActiveBackend()
+            ?: return Result.failure(IllegalStateException(
+                "No active backend for the completing-session resume of $taskId"))
+        val chunks = prefixRows
+        val text = assembledSessionText(chunks)
+        val cues = chunks.flatMap { chunk ->
+            chunk.cuesJson?.let { TimedSegmentsConverter.fromJson(it) } ?: emptyList()
+        }
+        var confidence: Float? = null
+        for (chunk in chunks) {
+            chunk.confidence?.let { confidence = aggregateConfidence(confidence, it.toFloat()) }
+        }
+        val language = chunks.firstOrNull { it.detectedLanguage != null }?.detectedLanguage
+        val plan = ChunkPromptPolicy.plan(backend.id, resolvePrompt(session.prompt))
+        Log.i(TAG, "Completing-session resume: taskId=$taskId ${chunks.size} chunks, " +
+            "${text.length} chars from the store; decode skipped, post-passes rerun")
+        return applyFinalGenerativePass(backend, plan.finalPass, Result.success(TranscriptionResult(
+            text = text,
+            confidence = confidence,
+            detectedLanguage = language,
+            isPartial = session.failedChunkCount > 0,
+            failedChunkCount = session.failedChunkCount,
+            segments = cues,
+            processing = ProcessingContext(
+                backendId = backend.id,
+                decodePath = "pipeline",
+                totalChunks = chunks.size,
+                failedChunks = session.failedChunkCount.takeIf { it > 0 },
+                blankChunks = session.blankChunkCount.takeIf { it > 0 },
+                retriedChunks = session.retriedChunkCount.takeIf { it > 0 },
+                transcribedSeconds = session.totalOutputSamples
+                    ?.takeIf { it > 0 }?.let { it / SESSION_SAMPLE_RATE.toDouble() },
+            ),
+        )))
     }
 
     // ---- Progress Timer ----
@@ -4456,6 +5158,19 @@ class TranscriptionOrchestrator @Inject constructor(
         // inserted while the (async) sweep still runs would be closed as
         // interrupted underneath its own transcription.
         StartupSweepGate.await()
+        // TASK-1037: the logQueued skip for resume. A task id that owns a
+        // session is a RESUME by construction (fresh ids are minted per
+        // request): the row already exists in PAUSED, so a fresh QUEUED
+        // insert would duplicate (or, on a PK conflict, clobber) it. The
+        // service's resume arm does not call logQueued at all; this guard
+        // makes the skip structural for ANY caller. The queued-looking
+        // render the fresh arm provides is instead the PAUSED row itself,
+        // and markProcessing's extended SQL flips it back to PROCESSING
+        // when the stint starts.
+        if (runCatching { sessionDao.getSession(taskId) }.getOrNull() != null) {
+            Log.i(TAG, "logQueued skipped: taskId=$taskId owns a transcription session (resume re-entry)")
+            return
+        }
         logDao.insert(
             LogEntry(
                 taskId = taskId,
@@ -4545,6 +5260,11 @@ class TranscriptionOrchestrator @Inject constructor(
         seedSaveMutex.withLock { preferencesManager.clearPartialTranscriptionState() }
         lastPartialSaveMs = 0L
         lastInterimRoomWriteMs.remove(taskId)
+        // TASK-1037: terminal transition of the state machine ("COMPLETING +
+        // logSuccess -> session rows deleted"). Unconditional and no-op when
+        // no session exists, so every success arm (including non-session
+        // paths) is covered without a session-specific branch.
+        deleteSessionQuietly(taskId, "success")
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(
             status = LogEntry.Status.SUCCESS, result = result, durationMs = durationMs,
@@ -4572,6 +5292,12 @@ class TranscriptionOrchestrator @Inject constructor(
         seedSaveMutex.withLock { preferencesManager.clearPartialTranscriptionState() }
         lastPartialSaveMs = 0L
         lastInterimRoomWriteMs.remove(taskId)
+        // TASK-1037: the close-as-partial arm of the state machine ("any +
+        // error -> session rows deleted, assembled text kept as partial").
+        // Unconditional no-op without a session; every error arm (including
+        // the one that fired on a session stint's real failure) cleans up,
+        // so no orphan session can outlive its row.
+        deleteSessionQuietly(taskId, "error")
         val entity = logDao.getByTaskId(taskId) ?: return
         // TASK-568: durationMs on an ERROR row is the decoded-at-failure
         // seconds written by the streaming catches (updateFailureDecodedMs),
@@ -4585,8 +5311,31 @@ class TranscriptionOrchestrator @Inject constructor(
         ).toEntity())
     }
 
-    internal suspend fun cancelIfPending(taskId: String, errorMessage: String, durationMs: Long) {
+    internal suspend fun cancelIfPending(
+        taskId: String,
+        errorMessage: String,
+        durationMs: Long,
+        /** TASK-1037: needed only to settle the paused notification when the
+         *  cancelled run owned a session; the Open Transcribe arms pass null
+         *  (they can never own one: that origin is session-ineligible). */
+        context: Context? = null,
+    ) {
         lastInterimRoomWriteMs.remove(taskId)
+        // TASK-1037 + code review: delete the session ONLY on user-initiated
+        // cancel (the scope is still active). A scope teardown (service stop,
+        // system kill) also lands here via CancellationException, but deleting
+        // the session would discard all checkpointed chunks that the cold-start
+        // recovery exists to preserve: the violent path would lose strictly
+        // more than the graceful one. Leave the session ACTIVE so
+        // SuspendedRunRecovery parks it as PAUSED_SYSTEM.
+        if (kotlinx.coroutines.currentCoroutineContext().isActive) {
+            deleteSessionQuietly(taskId, "cancel")
+        } else {
+            Log.i(TAG, "Session left ACTIVE for cold-start recovery (scope teardown, not user cancel)")
+        }
+        if (context != null) {
+            runCatching { com.antivocale.app.service.PausedSessionNotifier.post(context, sessionDao) }
+        }
         logDao.failNonTerminal(taskId, errorMessage, durationMs)
     }
 
@@ -4626,6 +5375,14 @@ class TranscriptionOrchestrator @Inject constructor(
         if (writeRow) {
             logDao.updateInterimResult(taskId, accumulatedText, isPartial = true)
         }
+
+        // TASK-1037: NO seed arming for session runs. The DataStore seed
+        // feeds the interrupted-run dialog; a parked session has its own
+        // resume surface, and a session's text riding that slot would offer
+        // crash recovery for work that is merely paused (the TASK-602 class).
+        // Engagement happens at the pipeline's header event, before the first
+        // interim write of the run, so no seed write can precede the flag.
+        if (runIsSessionRun) return
 
         if (now - lastPartialSaveMs >= PARTIAL_SAVE_INTERVAL_MS) {
             lastPartialSaveMs = now
@@ -4806,7 +5563,10 @@ class TranscriptionOrchestrator @Inject constructor(
      * TASK-664: a pipeline chunk whose first decode was EMPTY, held until the
      * next stream event so the ladder can borrow its head as neighbor overlap
      * (the stream hands chunks over one at a time). [previousSamples] is the
-     * chunk's actual previous neighbor, captured at hold time.
+     * chunk's actual previous neighbor, captured at hold time. TASK-1037:
+     * the sample range rides along so the checkpoint sink (which lives in
+     * the one delivery helper) can write a row for a ladder-RECOVERED held
+     * chunk at its true global position.
      */
     private data class HeldEmptyChunk(
         val previousSamples: FloatArray?,
@@ -4815,7 +5575,66 @@ class TranscriptionOrchestrator @Inject constructor(
         val startMs: Long,
         val endMs: Long,
         val index: Int,
+        val startSample: Long,
+        val endSample: Long,
     )
+
+    /**
+     * TASK-1037: a session stint that parked at a chunk boundary (the
+     * cooperative-pause flag honored between chunks). NOT an error: it rides
+     * [Result.failure] only because the pipeline's contract is
+     * Result-shaped, and [processRequestInner] intercepts it at one site
+     * BEFORE any error surface (no logError, no listener.onError, no Tasker
+     * reply, no demotion), parks the session and the row, and returns. The
+     * stint never returns success, so every post-pass (punctuation, summary,
+     * the final generative pass) still runs exactly once, at the true end
+     * of the resumed run.
+     */
+    internal class SessionPaused(
+        val accumulatedText: String,
+        val decodedSeconds: Double,
+        val totalDurationSeconds: Double,
+    ) : IllegalStateException("transcription session paused at a chunk boundary")
+
+    /**
+     * TASK-1037: the frozen identity of a fresh run's would-be session,
+     * computed once in [processRequestInner] (where source, sender and the
+     * resolved language pin live) and consumed at the pipeline's header
+     * event, where the decoded duration decides whether a session engages
+     * at all. Null on every ineligible request (short audio, Tasker and
+     * Open Transcribe origins, non-audio types).
+     */
+    private data class SessionRunContext(
+        val languagePin: String,
+        val source: String?,
+        val sourcePackage: String?,
+        val senderName: String?,
+    )
+
+    /**
+     * TASK-1037: what [prepareSessionResume] decided, and everything the
+     * service needs to hydrate the queued resume request from the session
+     * row (so the intent cannot disagree with persisted state; the resume
+     * intent itself carries only the task id and a flag).
+     */
+    sealed interface SessionResumePlan {
+        /** The session is resumable; these fields replace the placeholder request's. */
+        data class Ready(
+            val filePath: String,
+            val prompt: String,
+            val source: String?,
+            val sourcePackage: String?,
+            val senderName: String?,
+            val backendOverride: String,
+            val languageOverride: String?,
+        ) : SessionResumePlan
+
+        /** The session cannot resume; it is ALREADY closed as partial with the stated reason. */
+        data class Closed(val reason: String) : SessionResumePlan
+
+        /** No session for this task id (never existed, or already terminal): a no-op. */
+        data object NoSession : SessionResumePlan
+    }
 
     /**
      * TASK-622: the progressive path's no-text terminal state (all segments

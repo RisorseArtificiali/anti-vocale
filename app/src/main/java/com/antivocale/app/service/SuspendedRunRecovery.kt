@@ -9,6 +9,7 @@ import com.antivocale.app.data.local.FailureContext
 import com.antivocale.app.data.local.FailureContextJson
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.LogEntity
+import com.antivocale.app.data.local.TranscriptionSessionEntity
 import com.antivocale.app.util.NativeCrashDetector
 import com.antivocale.app.util.formatProcessingTime
 
@@ -139,10 +140,22 @@ object SuspendedRunRecovery {
      * Order matters: the suspension marker writes first (non-terminal rows
      * only), then the generic sweep closes whatever is left, so the two can
      * never disagree on a row.
+     *
+     * TASK-1037 (GH #190) phase 3: BEFORE the suspension arm and the generic
+     * sweep, every ACTIVE/COMPLETING session row is parked: the session
+     * becomes PAUSED_SYSTEM (the classifier still runs, its verdict naming
+     * the cause and driving the crash-loop counter), the log row becomes
+     * PAUSED, and the paused notification carries the Resume action. The
+     * generic sweep cannot touch a PAUSED row (its SQL list excludes it, the
+     * phase-2 pin), and the suspension arm below must skip the parked task
+     * id: the paused notification REPLACES the suspension notification for a
+     * session run (same honest cause, plus the resume path a bare re-run
+     * would not have).
      */
     suspend fun closeInterruptedRuns(
         context: Context,
         logDao: LogDao,
+        sessionDao: com.antivocale.app.data.local.SessionDao,
         wasOOMCrash: Boolean,
         notifyGenericInterrupted: Boolean = true,
     ) {
@@ -172,35 +185,92 @@ object SuspendedRunRecovery {
             )
         )
 
+        // TASK-1037: the session park, BEFORE the suspension arm and the
+        // generic sweep. The crash-at-offset counter counts native-crash
+        // deaths WITHOUT an intervening checkpoint (the checkpoint sink
+        // resets it on progress), which is exactly "deaths at the same
+        // contiguousPrefixEnd": the second one trips the resume's
+        // engine-poisoned-chunk skip.
+        val parkedTaskIds = mutableSetOf<String>()
+        val pausedCauses = mutableMapOf<String, PausedSessionNotifier.PausedCause>()
+        val activeSessions = runCatching { sessionDao.getActiveSessions() }.getOrElse { e ->
+            Log.w(TAG, "Active-session read failed; no sessions parked", e)
+            emptyList()
+        }
+        for (session in activeSessions) {
+            val causeLine: String?
+            val batteryLink: Boolean
+            when (val v = verdict) {
+                is SuspendedRunClassifier.Verdict.Suspended -> {
+                    causeLine = context.getString(
+                        R.string.suspension_notification_text,
+                        formatProcessingTime(v.atLeastMs))
+                    batteryLink = true
+                }
+                is SuspendedRunClassifier.Verdict.NativeCrashLineage -> {
+                    causeLine = "Interrupted by a native crash"
+                    batteryLink = false
+                }
+                else -> {
+                    causeLine = "Interrupted by app restart"
+                    batteryLink = false
+                }
+            }
+            val crashed = verdict is SuspendedRunClassifier.Verdict.NativeCrashLineage
+            runCatching {
+                sessionDao.upsertSession(session.copy(
+                    state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM,
+                    crashAtOffsetCount =
+                        if (crashed) session.crashAtOffsetCount + 1 else session.crashAtOffsetCount,
+                    updatedAtMs = System.currentTimeMillis(),
+                ))
+                logDao.parkProcessingAsPaused(session.taskId, errorMessage = causeLine)
+            }.onFailure { e ->
+                Log.w(TAG, "Failed to park session ${session.taskId}", e)
+            }
+            parkedTaskIds.add(session.taskId)
+            pausedCauses[session.taskId] = PausedSessionNotifier.PausedCause(causeLine, batteryLink)
+            Log.i(TAG, "Session ${session.taskId} parked as PAUSED_SYSTEM " +
+                "(verdict=$verdict, crashAtOffsetCount=" +
+                "${if (crashed) session.crashAtOffsetCount + 1 else session.crashAtOffsetCount})")
+        }
+
         when (val v = verdict) {
             is SuspendedRunClassifier.Verdict.Suspended -> {
-                val row = rows.firstOrNull { it.taskId == v.taskId }
-                if (row == null) {
-                    Log.w(TAG, "Suspended verdict for ${v.taskId} but no row found; generic sweep applies")
+                // TASK-1037: a session row was already parked above; the
+                // paused notification (with the same verdict cause and the
+                // battery link) replaces the suspension notice here.
+                if (parkedTaskIds.contains(v.taskId)) {
+                    Log.i(TAG, "Suspended verdict for ${v.taskId} owns a session; the paused notification replaces the suspension notice")
                 } else {
-                    val message = context.getString(
-                        R.string.suspension_notification_text, formatProcessingTime(v.atLeastMs))
-                    runCatching {
-                        logDao.markSuspendedBySystem(
-                            taskId = row.taskId,
-                            errorMessage = message,
-                            failureContext = FailureContextJson.toJson(
-                                FailureContext(errorClass = SUSPENDED_ERROR_CLASS, suspendedMs = v.atLeastMs)),
-                        )
-                    }.onFailure { Log.w(TAG, "Failed to mark suspended row ${row.taskId}", it) }
-                    Log.i(TAG, "Run ${row.taskId} closed as suspended " +
-                        "(atLeastMs=${v.atLeastMs}, exitReason=${exit?.reason}, gapEvidence=heartbeat-to-death)")
-                    // TASK-684 review: the Retry action re-runs row.filePath;
-                    // a >24h reopen loses the file to shared_audio's 24h
-                    // cleanup (which runs before this sweep). Offer the
-                    // notification with the honest label but drop the doomed
-                    // Retry action when the file is already gone.
-                    val fileAlive = row.filePath?.let { java.io.File(it).exists() } == true
-                    postSuspensionNotification(context, row, message, retryFileAlive = fileAlive)
-                    if (!fileAlive) {
-                        Log.i(TAG, "Retry dropped: $row.filePath no longer exists (shared_audio 24h cleanup)")
+                    val row = rows.firstOrNull { it.taskId == v.taskId }
+                    if (row == null) {
+                        Log.w(TAG, "Suspended verdict for ${v.taskId} but no row found; generic sweep applies")
+                    } else {
+                        val message = context.getString(
+                            R.string.suspension_notification_text, formatProcessingTime(v.atLeastMs))
+                        runCatching {
+                            logDao.markSuspendedBySystem(
+                                taskId = row.taskId,
+                                errorMessage = message,
+                                failureContext = FailureContextJson.toJson(
+                                    FailureContext(errorClass = SUSPENDED_ERROR_CLASS, suspendedMs = v.atLeastMs)),
+                            )
+                        }.onFailure { Log.w(TAG, "Failed to mark suspended row ${row.taskId}", it) }
+                        Log.i(TAG, "Run ${row.taskId} closed as suspended " +
+                            "(atLeastMs=${v.atLeastMs}, exitReason=${exit?.reason}, gapEvidence=heartbeat-to-death)")
+                        // TASK-684 review: the Retry action re-runs row.filePath;
+                        // a >24h reopen loses the file to shared_audio's 24h
+                        // cleanup (which runs before this sweep). Offer the
+                        // notification with the honest label but drop the doomed
+                        // Retry action when the file is already gone.
+                        val fileAlive = row.filePath?.let { java.io.File(it).exists() } == true
+                        postSuspensionNotification(context, row, message, retryFileAlive = fileAlive)
+                        if (!fileAlive) {
+                            Log.i(TAG, "Retry dropped: $row.filePath no longer exists (shared_audio 24h cleanup)")
+                        }
                     }
-                }
+                    }
             }
             else -> Log.i(TAG, "Process-death close verdict=$verdict (generic interrupted sweep applies)")
         }
@@ -228,6 +298,13 @@ object SuspendedRunRecovery {
                 ResultNotificationFactory(context).interruptedRunsNotification(genericCount, wasOOMCrash)
             }
         }
+
+        // TASK-1037: the parked sessions' notification, AFTER the sweep (the
+        // table state is final). Causes carry the verdict; post itself
+        // cancels when nothing is paused, a no-op for every non-session cold
+        // start (the simplify round removed the redundant pre-read of the
+        // same set).
+        PausedSessionNotifier.post(context, sessionDao, pausedCauses)
 
         // Single-use evidence: the heartbeat describes a dead run and must not
         // survive into this process's own lifetime.

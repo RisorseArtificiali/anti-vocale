@@ -396,7 +396,22 @@ object SharedAudioHandler {
         runCatching { File(path).delete() }
     }
 
-    fun cleanupOldFiles(context: Context, maxAgeMs: Long = 24 * 60 * 60 * 1000L) {
+    /**
+     * Cleans up old shared audio files to save storage.
+     * Call periodically (e.g., on app start).
+     *
+     * @param context Application context
+     * @param maxAgeMs Maximum age in milliseconds (default: 24 hours)
+     * @param exemptPaths Absolute paths a sweep must never delete:
+     *   TASK-1037 passes every live transcription session's source file, or
+     *   a parked session's audio would be deleted out from under its Resume
+     *   action (the dead-Retry lesson of TASK-684, this time preventive).
+     */
+    fun cleanupOldFiles(
+        context: Context,
+        maxAgeMs: Long = 24 * 60 * 60 * 1000L,
+        exemptPaths: Set<String> = emptySet(),
+    ) {
         try {
             val outputDir = File(context.filesDir, SHARED_AUDIO_DIR)
             if (!outputDir.exists()) return
@@ -405,6 +420,10 @@ object SharedAudioHandler {
             var cleaned = 0
 
             outputDir.listFiles()?.forEach { file ->
+                if (file.absolutePath in exemptPaths) {
+                    Log.d(TAG, "Cleanup skipped (live session source): ${file.name}")
+                    return@forEach
+                }
                 if (now - file.lastModified() > maxAgeMs) {
                     if (file.delete()) {
                         cleaned++

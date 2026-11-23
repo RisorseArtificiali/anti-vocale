@@ -138,4 +138,22 @@ class SessionDaoTest {
         assertEquals(1, dao.getChunks("t2").size)
         assertEquals(100L, dao.contiguousPrefixEnd("t2"))
     }
+
+    /**
+     * TASK-1037 phase 3: the paused-notification's input (every parked
+     * session, either flavor) and the cleanup-exemption's input (every live
+     * session's source file; the table IS the live set).
+     */
+    @Test
+    fun `getPausedSessions returns only parked states and getLiveSourcePaths every row`() = runBlocking {
+        dao.upsertSession(session("active", state = TranscriptionSessionEntity.STATE_ACTIVE))
+        dao.upsertSession(session("completing", state = TranscriptionSessionEntity.STATE_COMPLETING))
+        dao.upsertSession(session("paused-user", state = TranscriptionSessionEntity.STATE_PAUSED_USER))
+        dao.upsertSession(session("paused-sys", state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM))
+
+        val paused = dao.getPausedSessions().map { it.taskId }.toSet()
+        assertEquals(setOf("paused-user", "paused-sys"), paused)
+        val paths = dao.getLiveSourcePaths().toSet()
+        assertEquals(setOf("/data/shared_audio/note.m4a"), paths)
+    }
 }

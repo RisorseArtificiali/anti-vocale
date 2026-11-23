@@ -819,6 +819,12 @@
         <item quantity="one">%1$d transkriptio keskeytyi ennen valmistumista. Katso lisätiedot Historiasta.</item>
         <item quantity="other">%1$d transkriptiota keskeytyi ennen valmistumista. Katso lisätiedot Historiasta.</item>
     </plurals>
+    <string name="session_paused_notification_text">Tauolla kohdassa %1$s / %2$s</string>
+    <plurals name="session_paused_notification_count">
+        <item quantity="one">%1$d transkriptio on tauolla. Avaa sovellus jatkaaksesi.</item>
+        <item quantity="other">%1$d transkriptiota on tauolla. Avaa sovellus jatkaaksesi.</item>
+    </plurals>
+    <string name="session_resume_action">Jatka</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d transkriptio keskeytyi ennen valmistumista: sovelluksen muisti loppui. Kokeile lyhyempää tiedostoa, pienempää mallia tai sulje muut sovellukset. Katso lisätiedot Historiasta.</item>
         <item quantity="other">%1$d transkriptiota keskeytyi ennen valmistumista: sovelluksen muisti loppui. Kokeile lyhyempää tiedostoa, pienempää mallia tai sulje muut sovellukset. Katso lisätiedot Historiasta.</item>
