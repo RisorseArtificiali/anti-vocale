@@ -939,6 +939,12 @@
         <item quantity="other">%1$d розшифровок перервано до завершення. Подробиці в Історії.</item>
     </plurals>
     <string name="session_paused_notification_text">Пауза на %1$s з %2$s</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="one">Залишилася близько %1$d хвилини</item>
+        <item quantity="few">Залишилося близько %1$d хвилин</item>
+        <item quantity="many">Залишилося близько %1$d хвилин</item>
+        <item quantity="other">Залишилося близько %1$d хвилин</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="one">%1$d розпізнавання на паузі. Відкрийте застосунок, щоб продовжити.</item>
         <item quantity="few">%1$d розпізнавання на паузі. Відкрийте застосунок, щоб продовжити.</item>

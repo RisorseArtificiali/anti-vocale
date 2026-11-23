@@ -936,11 +936,24 @@ object PausedSessionNotifier {
                 val position = runCatching { sessionDao.contiguousPrefixEnd(session.taskId) }
                     .getOrDefault(0L)
                 val total = session.totalOutputSamples?.let { maxOf(it, position) } ?: position
-                val text = context.getString(
+                val positionText = context.getString(
                     R.string.session_paused_notification_text,
                     formatSamples(position),
                     formatSamples(total),
                 )
+                // Phase 5: the coarse remaining-time estimate rides the
+                // same text block (the resuming user's decision input);
+                // null (nothing derived yet) renders the plain position.
+                val text = com.antivocale.app.transcription.SessionProgress
+                    .remainingMinutes(
+                        prefixEndSamples = position,
+                        totalSamples = total,
+                        accumulatedComputeMs = session.accumulatedComputeMs)
+                    ?.let { minutes ->
+                        positionText + "\n" + context.resources.getQuantityString(
+                            R.plurals.session_paused_remaining_minutes, minutes.toInt(), minutes)
+                    }
+                    ?: positionText
                 factory.pausedSessionNotification(
                     positionText = text,
                     causeLine = cause?.causeLine,

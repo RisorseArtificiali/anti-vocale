@@ -968,6 +968,10 @@
         <item quantity="other">%1$d transcriptions were interrupted before finishing. Check History for details.</item>
     </plurals>
     <string name="session_paused_notification_text">Paused at %1$s of %2$s</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="one">About %1$d min left</item>
+        <item quantity="other">About %1$d min left</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="one">%1$d transcription is paused. Open the app to resume.</item>
         <item quantity="other">%1$d transcriptions are paused. Open the app to resume.</item>

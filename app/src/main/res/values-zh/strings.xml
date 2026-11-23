@@ -1162,6 +1162,9 @@
         <item quantity="other">有 %1$d 次转写在完成前被中断。详情请查看历史记录。</item>
     </plurals>
     <string name="session_paused_notification_text">已暂停于 %1$s，共 %2$s</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="other">剩余约 %1$d 分钟</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="other">%1$d 个转录已暂停。打开应用即可继续。</item>
     </plurals>

@@ -500,11 +500,13 @@ class TranscriptionOrchestrator @Inject constructor(
             // single-model run; phase 1 may never break a request.
             // F1/F3 tokens land here when phase 1 attempted but degraded.
             //
-            // TASK-1037 (GH #190): session runs take NO first pass, on the
-            // initial stint and on every resume. The first pass would park
-            // its own whole-file text on the row (phase-2 partials are
-            // suppressed under it, so the parked row could no longer show
-            // the session's checkpointed text), and a resumed stint's
+            // TASK-1037 (GH #190): RESUMED stints take NO first pass (the
+            // simplify F1 rule; a fresh-engage candidate KEEPS it: the
+            // VAD path relies on it for speaker labels). The first pass
+            // would park its own whole-file text on the row (phase-2
+            // partials are suppressed under it, so the parked row could
+            // no longer show the session's checkpointed text), and a
+            // resumed stint's
             // backendOverride disqualifies it anyway, which would silently
             // drop the refinement relationship at the second stint. The
             // duration probe pays one metadata open only for candidates

@@ -820,6 +820,10 @@
         <item quantity="other">%1$d transkriptiota keskeytyi ennen valmistumista. Katso lisätiedot Historiasta.</item>
     </plurals>
     <string name="session_paused_notification_text">Tauolla kohdassa %1$s / %2$s</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="one">Noin %1$d min jäljellä</item>
+        <item quantity="other">Noin %1$d min jäljellä</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="one">%1$d transkriptio on tauolla. Avaa sovellus jatkaaksesi.</item>
         <item quantity="other">%1$d transkriptiota on tauolla. Avaa sovellus jatkaaksesi.</item>

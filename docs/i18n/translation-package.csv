@@ -1193,6 +1193,8 @@ performance_stats_samples_count [one],%1$d sample,plural,supply only the quantit
 performance_stats_samples_count [other],%1$d samples,plural,supply only the quantities the locale table lists
 interrupted_runs_text [one],%1$d transcription was interrupted before finishing. Check History for details.,plural,supply only the quantities the locale table lists
 interrupted_runs_text [other],%1$d transcriptions were interrupted before finishing. Check History for details.,plural,supply only the quantities the locale table lists
+session_paused_remaining_minutes [one],About %1$d min left,plural,supply only the quantities the locale table lists
+session_paused_remaining_minutes [other],About %1$d min left,plural,supply only the quantities the locale table lists
 session_paused_notification_count [one],%1$d transcription is paused. Open the app to resume.,plural,supply only the quantities the locale table lists
 session_paused_notification_count [other],%1$d transcriptions are paused. Open the app to resume.,plural,supply only the quantities the locale table lists
 interrupted_runs_oom_text [one],"%1$d transcription was interrupted before finishing: the app ran out of memory. Try a shorter file, a smaller model, or close other apps. Check History for details.",plural,supply only the quantities the locale table lists

@@ -57,8 +57,6 @@ class InferenceService : Service(), TranscriptionListener {
     @Inject lateinit var orchestrator: TranscriptionOrchestrator
     @Inject lateinit var backendManager: TranscriptionBackendManager
     @Inject lateinit var logDao: LogDao
-    /** TASK-1037: settles the paused notification as sessions leave the paused set. */
-    @Inject lateinit var sessionDao: com.antivocale.app.data.local.SessionDao
     @Inject lateinit var shareShortcutManager: ShareShortcutManager
 
     companion object {
@@ -925,6 +923,13 @@ class InferenceService : Service(), TranscriptionListener {
 
     private fun handleCancelRequest() {
         Log.i(TAG, "Cancel request received")
+        // Phase 4 review round 2: the batch cancel is a USER cancel for
+        // the in-flight task too; without the marker cancelIfPending
+        // would class it as a scope teardown and leave its session
+        // ACTIVE for cold-start recovery (cancelled work resurrecting
+        // as PAUSED_SYSTEM, the exact class the marker closed for the
+        // per-task arm).
+        currentTaskId?.let { orchestrator.markUserCancel(it) }
         currentProcessingJob?.cancel()
         failQueuedLogs("Cancelled")
         requestQueue.clear()

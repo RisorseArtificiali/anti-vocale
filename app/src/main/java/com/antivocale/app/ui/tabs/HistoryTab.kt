@@ -373,8 +373,14 @@ private fun pauseTask(context: Context, taskId: String) {
  * the foreground-service start is unrestricted.
  */
 private fun resumeTask(context: Context, taskId: String) {
-    context.startForegroundService(
-        com.antivocale.app.service.AudioRequestIntent.resumeSession(context, taskId))
+    // Review round 2: the ONE enqueue path (the repo rule for every
+    // transcription origin); a restricted or failed start keeps the row
+    // PAUSED, which is the honest visible outcome.
+    when (com.antivocale.app.service.InferenceEnqueue.start(
+            context, com.antivocale.app.service.AudioRequestIntent.resumeSession(context, taskId))) {
+        is com.antivocale.app.service.InferenceEnqueue.Outcome.Started -> Unit
+        else -> android.util.Log.w("HistoryTab", "Session resume dispatch did not start for $taskId")
+    }
 }
 
 /**

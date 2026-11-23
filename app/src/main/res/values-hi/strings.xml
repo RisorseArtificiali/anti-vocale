@@ -889,6 +889,10 @@
         <item quantity="other">%1$d ट्रांसक्रिप्शन पूरा होने से पहले बाधित हुए। विवरण के लिए इतिहास देखें।</item>
     </plurals>
     <string name="session_paused_notification_text">%2$s में से %1$s पर रुका हुआ</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="one">लगभग %1$d मिनट शेष</item>
+        <item quantity="other">लगभग %1$d मिनट शेष</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="one">%1$d ट्रांसक्रिप्शन रुका हुआ है। जारी रखने के लिए ऐप खोलें।</item>
         <item quantity="other">%1$d ट्रांसक्रिप्शन रुके हुए हैं। जारी रखने के लिए ऐप खोलें।</item>

@@ -220,6 +220,7 @@ object SuspendedRunRecovery {
                 }
             }
             val crashed = verdict is SuspendedRunClassifier.Verdict.NativeCrashLineage
+            var parked = false
             runCatching {
                 sessionDao.upsertSession(session.copy(
                     state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM,
@@ -228,14 +229,20 @@ object SuspendedRunRecovery {
                     updatedAtMs = System.currentTimeMillis(),
                 ))
                 logDao.parkProcessingAsPaused(session.taskId, errorMessage = causeLine)
+                parked = true
             }.onFailure { e ->
                 Log.w(TAG, "Failed to park session ${session.taskId}", e)
             }
-            parkedTaskIds.add(session.taskId)
-            pausedCauses[session.taskId] = PausedSessionNotifier.PausedCause(causeLine, batteryLink)
-            Log.i(TAG, "Session ${session.taskId} parked as PAUSED_SYSTEM " +
-                "(verdict=$verdict, crashAtOffsetCount=" +
-                "${if (crashed) session.crashAtOffsetCount + 1 else session.crashAtOffsetCount})")
+            // Review round 2: bookkeeping only on successful writes; a
+            // partially-parked task must fall through to the suspension
+            // arm below instead of being skipped on a false belief.
+            if (parked) {
+                parkedTaskIds.add(session.taskId)
+                pausedCauses[session.taskId] = PausedSessionNotifier.PausedCause(causeLine, batteryLink)
+                Log.i(TAG, "Session ${session.taskId} parked as PAUSED_SYSTEM " +
+                    "(verdict=$verdict, crashAtOffsetCount=" +
+                    "${if (crashed) session.crashAtOffsetCount + 1 else session.crashAtOffsetCount})")
+            }
         }
 
         when (val v = verdict) {

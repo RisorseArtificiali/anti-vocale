@@ -947,6 +947,10 @@
         <item quantity="other">%1$d transcripties werden onderbroken voor ze af waren. Zie Geschiedenis voor details.</item>
     </plurals>
     <string name="session_paused_notification_text">Gepauzeerd op %1$s van %2$s</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="one">Nog ca. %1$d min</item>
+        <item quantity="other">Nog ca. %1$d min</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="one">%1$d transcriptie is gepauzeerd. Open de app om te hervatten.</item>
         <item quantity="other">%1$d transcripties zijn gepauzeerd. Open de app om te hervatten.</item>

@@ -890,6 +890,10 @@
         <item quantity="other">%1$d Transkriptionen wurden vor dem Abschluss unterbrochen. Details im Verlauf.</item>
     </plurals>
     <string name="session_paused_notification_text">Angehalten bei %1$s von %2$s</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="one">Noch ca. %1$d Min.</item>
+        <item quantity="other">Noch ca. %1$d Min.</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="one">%1$d Aufnahme ist pausiert. App öffnen, um fortzufahren.</item>
         <item quantity="other">%1$d Aufnahmen sind pausiert. App öffnen, um fortzufahren.</item>

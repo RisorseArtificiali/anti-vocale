@@ -788,6 +788,10 @@
         <item quantity="other">%1$d transcriptions ont été interrompues avant de se terminer. Détails dans l\'Historique.</item>
     </plurals>
     <string name="session_paused_notification_text">En pause à %1$s sur %2$s</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="one">Environ %1$d min restante</item>
+        <item quantity="other">Environ %1$d min restantes</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="one">%1$d transcription est en pause. Ouvrez l\'app pour reprendre.</item>
         <item quantity="other">%1$d transcriptions sont en pause. Ouvrez l\'app pour reprendre.</item>

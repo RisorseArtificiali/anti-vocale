@@ -919,6 +919,12 @@
         <item quantity="other">%1$d распознаваний было прервано до завершения. Подробности в Истории.</item>
     </plurals>
     <string name="session_paused_notification_text">Пауза на %1$s из %2$s</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="one">Осталась около %1$d минуты</item>
+        <item quantity="few">Осталось около %1$d минут</item>
+        <item quantity="many">Осталось около %1$d минут</item>
+        <item quantity="other">Осталось около %1$d минут</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="one">%1$d распознавание на паузе. Откройте приложение, чтобы продолжить.</item>
         <item quantity="few">%1$d распознавания на паузе. Откройте приложение, чтобы продолжить.</item>

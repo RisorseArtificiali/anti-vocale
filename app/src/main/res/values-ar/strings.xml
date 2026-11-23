@@ -1163,6 +1163,14 @@
         <item quantity="other">تمت مقاطعة %1$d عملية نسخ قبل اكتمالها. راجع السجل للاطلاع على التفاصيل.</item>
     </plurals>
     <string name="session_paused_notification_text">متوقف مؤقتًا عند %1$s من %2$s</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="zero">لا يوجد وقت متبقٍ تقريبًا</item>
+        <item quantity="one">تبقى حوالي دقيقة واحدة</item>
+        <item quantity="two">تبقى حوالي دقيقتين</item>
+        <item quantity="few">تبقى حوالي %1$d دقائق</item>
+        <item quantity="many">تبقى حوالي %1$d دقيقة</item>
+        <item quantity="other">تبقى حوالي %1$d دقيقة</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="zero">لا توجد عمليات تفريغ متوقفة مؤقتًا.</item>
         <item quantity="one">عملية تفريغ واحدة متوقفة مؤقتًا. افتح التطبيق للاستئناف.</item>

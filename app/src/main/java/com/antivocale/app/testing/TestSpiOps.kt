@@ -1065,6 +1065,14 @@ internal class TestSpiOps(
                 .put("crashAtOffsetCount", session.crashAtOffsetCount)
                 .put("prefixEnd", prefixEnd)
                 .put("chunkCount", chunkCount)
+                // Phase 5: the same derivation the paused notification
+                // renders (the device convergence check reads this).
+                .put("remainingMinutes",
+                    com.antivocale.app.transcription.SessionProgress.remainingMinutes(
+                        prefixEndSamples = prefixEnd,
+                        totalSamples = session.totalOutputSamples,
+                        accumulatedComputeMs = session.accumulatedComputeMs)
+                        ?: JSONObject.NULL)
                 .put("createdAtMs", session.createdAtMs)
                 .put("updatedAtMs", session.updatedAtMs))
         }

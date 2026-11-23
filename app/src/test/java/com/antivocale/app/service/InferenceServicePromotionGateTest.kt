@@ -233,6 +233,23 @@ class InferenceServicePromotionGateTest {
     }
 
     @Test
+    fun `the batch cancel marks the in-flight task's session for deletion`() {
+        val service = Robolectric.buildService(InferenceService::class.java).create().get()
+        val orchestrator = mockk<TranscriptionOrchestrator>(relaxed = true)
+        inject(service, "orchestrator", orchestrator)
+        // An in-flight task exists (the drain's currentTaskId).
+        val f = InferenceService::class.java.getDeclaredField("currentTaskId")
+        f.isAccessible = true
+        f.set(service, "session-task")
+
+        service.onStartCommand(
+            Intent(service, InferenceService::class.java).setAction(InferenceService.ACTION_CANCEL),
+            0, 1)
+
+        io.mockk.verify(exactly = 1) { orchestrator.markUserCancel("session-task") }
+    }
+
+    @Test
     fun `a pause delivery for an unknown task is a logged no-op that still retires`() {
         val service = Robolectric.buildService(InferenceService::class.java).create().get()
         val orchestrator = mockk<TranscriptionOrchestrator>(relaxed = true)

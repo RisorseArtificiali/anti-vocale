@@ -925,6 +925,10 @@
         <item quantity="other">%1$d metin çıkarma tamamlanmadan kesildi. Ayrıntılar için Kayıtlar\'a bakın.</item>
     </plurals>
     <string name="session_paused_notification_text">%2$s içinden %1$s konumunda duraklatıldı</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="one">Yaklaşık %1$d dk kaldı</item>
+        <item quantity="other">Yaklaşık %1$d dk kaldı</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="one">%1$d transkription duraklatıldı. Devam etmek için uygulamayı açın.</item>
         <item quantity="other">%1$d transkription duraklatıldı. Devam etmek için uygulamayı açın.</item>

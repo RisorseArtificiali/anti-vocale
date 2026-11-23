@@ -1111,6 +1111,10 @@
         <item quantity="other">%1$d رونویسی پیش از تمام شدن متوقف شدند. جزئیات در تاریخچه.</item>
     </plurals>
     <string name="session_paused_notification_text">متوقف شده در %1$s از %2$s</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="one">حدود %1$d دقیقه باقی مانده</item>
+        <item quantity="other">حدود %1$d دقیقه باقی مانده</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="one">%1$d پیاده‌سازی صدا متوقف است. برای ادامه برنامه را باز کنید.</item>
         <item quantity="other">%1$d پیاده‌سازی صدا متوقف است. برای ادامه برنامه را باز کنید.</item>

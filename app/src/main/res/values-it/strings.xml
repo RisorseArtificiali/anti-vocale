@@ -1112,6 +1112,10 @@
         <item quantity="other">%1$d trascrizioni sono state interrotte prima di finire. Dettagli nella Cronologia.</item>
     </plurals>
     <string name="session_paused_notification_text">In pausa a %1$s di %2$s</string>
+    <plurals name="session_paused_remaining_minutes">
+        <item quantity="one">Circa %1$d minuto rimanente</item>
+        <item quantity="other">Circa %1$d minuti rimanenti</item>
+    </plurals>
     <plurals name="session_paused_notification_count">
         <item quantity="one">%1$d trascrizione è in pausa. Apri l\'app per riprendere.</item>
         <item quantity="other">%1$d trascrizioni sono in pausa. Apri l\'app per riprendere.</item>
