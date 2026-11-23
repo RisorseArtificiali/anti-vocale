@@ -12,10 +12,10 @@ class AudioDurationPolicyTest {
     private val denom = 3L * 64 * 1024L
 
     @Test
-    fun `streaming ceiling is the 2h valve regardless of memory`() {
-        assertEquals(7200L, AudioDurationPolicy.ceilingSeconds(
+    fun `streaming ceiling is the session-capable valve regardless of memory`() {
+        assertEquals(com.antivocale.app.audio.AudioDurationPolicy.STREAMING_MAX_SECONDS, AudioDurationPolicy.ceilingSeconds(
             AudioDurationPolicy.DecodePath.STREAMING, 1L shl 30, 256L * 1024 * 1024))
-        assertEquals(7200L, AudioDurationPolicy.ceilingSeconds(
+        assertEquals(com.antivocale.app.audio.AudioDurationPolicy.STREAMING_MAX_SECONDS, AudioDurationPolicy.ceilingSeconds(
             AudioDurationPolicy.DecodePath.STREAMING, null, null))
     }
 
@@ -46,8 +46,12 @@ class AudioDurationPolicyTest {
         val tiny = AudioDurationPolicy.ceilingSeconds(
             AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM, 128L shl 20, 128L shl 20)
         assertEquals(AudioDurationPolicy.VAD_MIN_SECONDS, tiny)
+        // The clamp binds only when the memory budget exceeds it: with
+        // the 4h ceiling, the old 4GiB heap fixture computes ~10922s
+        // (below the clamp), so the heap doubles to make the budget
+        // ~21845s and prove the clamp still caps.
         val huge = AudioDurationPolicy.ceilingSeconds(
-            AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM, 32L shl 30, 4L shl 30)
+            AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM, 32L shl 30, 8L shl 30)
         assertEquals(AudioDurationPolicy.VAD_MAX_SECONDS, huge)
     }
 
@@ -77,7 +81,7 @@ class AudioDurationPolicyTest {
 
     @Test
     fun `warn decision truth table`() {
-        val ceiling = 7200L
+        val ceiling = com.antivocale.app.audio.AudioDurationPolicy.STREAMING_MAX_SECONDS
         val est = 1000f / 15f   // Parakeet cold: 45 min audio -> ~3 min estimate
         // below threshold: no dialog
         assertFalse(AudioDurationPolicy.warnDecision(1700L, ceiling, est, true).showDialog)
@@ -91,7 +95,8 @@ class AudioDurationPolicyTest {
         // headless: never a dialog
         assertFalse(AudioDurationPolicy.warnDecision(2700L, ceiling, est, false).showDialog)
         // above ceiling: NO dialog (the pre-read refusal carries the message)
-        assertFalse(AudioDurationPolicy.warnDecision(8000L, ceiling, est, true).showDialog)
+        assertFalse(AudioDurationPolicy.warnDecision(
+            ceiling + 600L, ceiling, est, true).showDialog)
     }
 
     @Test
@@ -115,7 +120,7 @@ class AudioDurationPolicyTest {
     fun `estimate rounds up to the minute`() {
         // 31 min audio at RTF 15 => 124s = 2.07 min -> 3
         assertEquals(3L, AudioDurationPolicy.warnDecision(
-            1860L, 7200L, 1000f / 15f, true).estimateMinutes)
+            1860L, com.antivocale.app.audio.AudioDurationPolicy.STREAMING_MAX_SECONDS, 1000f / 15f, true).estimateMinutes)
     }
 
     @Test
@@ -129,11 +134,12 @@ class AudioDurationPolicyTest {
         assertFalse(AudioDurationPolicy.shouldFallBackToStreaming(660.0, 660L))
         // above the streaming valve the fallback would just re-refuse: keep the
         // whole-file refusal and its message
-        assertFalse(AudioDurationPolicy.shouldFallBackToStreaming(7300.0, 660L))
+        assertFalse(AudioDurationPolicy.shouldFallBackToStreaming(14500.0, 660L))
         // unreadable metadata: whole-file path, post-decode backstop still guards
         assertFalse(AudioDurationPolicy.shouldFallBackToStreaming(0.0, 660L))
         // the exact streaming valve is accepted (inclusive)
-        assertTrue(AudioDurationPolicy.shouldFallBackToStreaming(7200.0, 660L))
+        assertTrue(AudioDurationPolicy.shouldFallBackToStreaming(
+            AudioDurationPolicy.STREAMING_MAX_SECONDS.toDouble(), 660L))
     }
 
     /** TASK-728: the runtime retention guard's budget, the crash device's shape. */

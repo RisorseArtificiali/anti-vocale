@@ -9,14 +9,29 @@ package com.antivocale.app.audio
  */
 object AudioDurationPolicy {
 
-    /** Streaming path: practical valve, not a memory constraint. */
-    const val STREAMING_MAX_SECONDS = 7200L
+    /**
+     * TASK-1037 (GH #190) phase 6: the session-capable ceiling, lifted
+     * from the old 2h valve now that resumable sessions survive kills.
+     * The heaviest history row (text plus segment timings) measured
+     * ~31.4 KB for 8 minutes of audio on the 11-22 spike, ~3.9 KB per
+     * minute: 4h projects ~0.95 MB, safely under the 2 MB
+     * CursorWindow Room reads a row into; 6h (~1.4 MB) sits borderline
+     * and 12h (~2.8 MB) would break the read. Still a practical valve,
+     * not a memory constraint: the streaming decode is chunked, and
+     * every run at or above the session engage threshold checkpoints
+     * and resumes (the one exception is the engage's free-space floor
+     * on a nearly-full disk, where the run proceeds uncheckpointed).
+     */
+    const val SESSION_MAX_SECONDS = 4 * 3600L
+
+    /** Streaming path: the session-capable ceiling (see [SESSION_MAX_SECONDS]). */
+    const val STREAMING_MAX_SECONDS = SESSION_MAX_SECONDS
 
     /** Whole-file path clamp floor; also the fail-open value. */
     const val VAD_MIN_SECONDS = 600L
 
-    /** Whole-file path clamp ceiling (same 2h as streaming, reached only with a huge heap). */
-    const val VAD_MAX_SECONDS = 7200L
+    /** Whole-file path clamp ceiling (the same ceiling as streaming, reached only with a huge heap). */
+    const val VAD_MAX_SECONDS = SESSION_MAX_SECONDS
 
     /** 16kHz mono FloatArray bytes per second of audio. */
     const val PCM_BYTES_PER_SECOND = 64 * 1024L

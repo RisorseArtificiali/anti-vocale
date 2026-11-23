@@ -252,7 +252,7 @@
     <string name="error_native">Beim Transkribieren ist ein interner Fehler aufgetreten. Falls das öfter passiert, versuche ein anderes Modell.</string>
     <string name="error_not_initialized">Kein Modell geladen. Öffne den Tab \"Modell\", um eines herunterzuladen oder auszuwählen.</string>
     <string name="error_model_unavailable">Das ausgewählte Modell ist nicht mehr verfügbar. Öffne den Tab \"Modell\" und wähle ein anderes.</string>
-    <string name="error_audio_too_long_streaming">Audio länger als 2 Stunden wird nicht unterstützt.</string>
+    <string name="error_audio_too_long_streaming">Audio länger als 4 Stunden wird nicht unterstützt.</string>
     <string name="error_audio_too_long_whole_file">Dieses Audio überschreitet das Limit von %1$d Minuten, das dieses Gerät in einem Durchlauf verarbeiten kann (das Limit hängt vom verfügbaren Arbeitsspeicher ab). Verwende für lange Aufnahmen ein Modell, das die App automatisch aufteilt, mit deaktiviertem VAD.</string>
     <string name="error_file_too_large">Audiodateien über 2 GB werden nicht unterstützt.</string>
     <string name="error_file_not_found">Audiodatei nicht gefunden</string>
@@ -903,6 +903,7 @@
     <string name="session_paused_label">Pausiert</string>
     <string name="session_park_cause_native_crash">Durch einen nativen Absturz unterbrochen</string>
     <string name="session_park_cause_app_restart">Durch App-Neustart unterbrochen</string>
+    <string name="session_expired_reason">Abgelaufen</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d Transkription wurde vor dem Abschluss unterbrochen: der App ging der Speicher aus. Versuche es mit einer kürzeren Datei, einem kleineren Modell, oder schließe andere Apps. Details im Verlauf.</item>
         <item quantity="other">%1$d Transkriptionen wurden vor dem Abschluss unterbrochen: der App ging der Speicher aus. Versuche es mit einer kürzeren Datei, einem kleineren Modell, oder schließe andere Apps. Details im Verlauf.</item>

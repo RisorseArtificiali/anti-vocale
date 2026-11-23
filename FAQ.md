@@ -4,7 +4,7 @@ Questions that come up frequently, mostly collected from real [issue reports](ht
 
 ## Can it transcribe calls or meetings?
 
-Yes, if you have the recording: share the audio file with the app (your recorder's share button, or History > pick a file). Recordings longer than a model's own limit are split and stitched automatically; the streaming path accepts up to two hours. If a long run fails partway, the transcript produced so far is kept and shown on the entry. The result exports as subtitles (SRT, VTT) or timestamped text, with sentence-level timing on streaming models. The app does not record calls itself.
+Yes, if you have the recording: share the audio file with the app (your recorder's share button, or History > pick a file). Recordings longer than a model's own limit are split and stitched automatically; the streaming path accepts up to four hours, and runs of 30 minutes or more are batch sessions you can pause from the notification or History and resume later (a crashed or killed app resumes the same way, keeping everything already transcribed). If a long run fails partway, the transcript produced so far is kept and shown on the entry. The result exports as subtitles (SRT, VTT) or timestamped text, with sentence-level timing on streaming models. The app does not record calls itself.
 
 ## Models and their limits
 
@@ -29,11 +29,11 @@ The Parakeet limit is not arbitrary: the model's attention has a hard 5000-frame
 
 Every "any length" in the table above means *the app does the splitting for you in software*: no model itself handles arbitrary length in one pass. The two "no known limit" rows are models with no measured cap and no app-side splitting.
 
-The absolute ceilings ([#73](https://github.com/RisorseArtificiali/anti-vocale/issues/73)): 2 hours for the streaming decode path, and files above 2GB are refused. With VAD enabled the whole audio is decoded into memory at once, so the maximum length depends on your device's memory (typically 10 to 25 minutes); the error message tells you the exact limit on your device. Turn VAD off for long recordings, or use a model the app chunks automatically.
+The absolute ceilings ([#73](https://github.com/RisorseArtificiali/anti-vocale/issues/73)): 4 hours for the streaming decode path, and files above 2GB are refused. With VAD enabled the whole audio is decoded into memory at once, so the maximum length depends on your device's memory (typically 10 to 25 minutes); the error message tells you the exact limit on your device. Turn VAD off for long recordings, or use a model the app chunks automatically.
 
 ### Why does the app say "Audio exceeds 11 minute limit on this path"?
 
-The number is your phone's, not a fixed app limit. The message appears on the **Strip Silence (VAD)** path: with VAD enabled the whole recording is decoded into memory at once, so the maximum length is derived from how much memory your device has (typically 10 to 25 minutes, and the message always states your exact limit). For models the app chunks, this switch now happens automatically: a recording longer than the VAD limit is streamed instead, and the result notification notes "Without silence stripping" when it happened. The message still appears for recordings above 2 hours, and for models that need the VAD. To keep silence stripping on long recordings with those models, turn off **Settings → Strip Silence (VAD)**. If you remember an old fixed "10 minute limit", that limit no longer exists; this message is its honest, per-device replacement.
+The number is your phone's, not a fixed app limit. The message appears on the **Strip Silence (VAD)** path: with VAD enabled the whole recording is decoded into memory at once, so the maximum length is derived from how much memory your device has (typically 10 to 25 minutes, and the message always states your exact limit). For models the app chunks, this switch now happens automatically: a recording longer than the VAD limit is streamed instead, and the result notification notes "Without silence stripping" when it happened. The message still appears for recordings above 4 hours, and for models that need the VAD. To keep silence stripping on long recordings with those models, turn off **Settings → Strip Silence (VAD)**. If you remember an old fixed "10 minute limit", that limit no longer exists; this message is its honest, per-device replacement.
 
 ### Why did my transcription stop while the app was in the background?
 

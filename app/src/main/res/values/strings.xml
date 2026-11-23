@@ -275,7 +275,7 @@
     <string name="error_native">An internal error occurred during transcription. If this persists, try a different model.</string>
     <string name="error_not_initialized">No model is loaded. Open the Model tab to download or select one.</string>
     <string name="error_model_unavailable">The selected model is no longer available. Open the Model tab and select another one.</string>
-    <string name="error_audio_too_long_streaming">Audio longer than 2 hours is not supported.</string>
+    <string name="error_audio_too_long_streaming">Audio longer than 4 hours is not supported.</string>
     <string name="error_audio_too_long_whole_file">This audio is longer than the %1$d minute limit this device can process in a single pass (the limit depends on available memory). For long recordings use a model the app splits automatically, with VAD off.</string>
     <string name="error_file_too_large">Audio files larger than 2GB are not supported.</string>
     <string name="error_file_not_found">Audio file not found</string>
@@ -981,6 +981,7 @@
     <string name="session_paused_label">Paused</string>
     <string name="session_park_cause_native_crash">Interrupted by a native crash</string>
     <string name="session_park_cause_app_restart">Interrupted by app restart</string>
+    <string name="session_expired_reason">Expired</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d transcription was interrupted before finishing: the app ran out of memory. Try a shorter file, a smaller model, or close other apps. Check History for details.</item>
         <item quantity="other">%1$d transcriptions were interrupted before finishing: the app ran out of memory. Try a shorter file, a smaller model, or close other apps. Check History for details.</item>

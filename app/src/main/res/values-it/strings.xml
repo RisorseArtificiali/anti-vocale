@@ -270,7 +270,7 @@
     <string name="error_native">Si è verificato un errore interno durante la trascrizione. Se persiste, prova un modello diverso.</string>
     <string name="error_not_initialized">Nessun modello caricato. Apri la scheda Modello per scaricarne o selezionarne uno.</string>
     <string name="error_model_unavailable">Il modello selezionato non è più disponibile. Apri la scheda Modello e selezionane un altro.</string>
-    <string name="error_audio_too_long_streaming">Gli audio più lunghi di 2 ore non sono supportati.</string>
+    <string name="error_audio_too_long_streaming">Gli audio più lunghi di 4 ore non sono supportati.</string>
     <string name="error_audio_too_long_whole_file">Questo audio supera il limite di %1$d minuti che questo dispositivo può elaborare in una sola passata (il limite dipende dalla memoria disponibile). Per le registrazioni lunghe usa un modello che l\'app suddivide automaticamente, con VAD spento.</string>
     <string name="error_file_too_large">I file audio oltre 2 GB non sono supportati.</string>
     <string name="error_file_not_found">File audio non trovato</string>
@@ -1125,6 +1125,7 @@
     <string name="session_paused_label">In pausa</string>
     <string name="session_park_cause_native_crash">Interrotta da un crash nativo</string>
     <string name="session_park_cause_app_restart">Interrotta dal riavvio dell app</string>
+    <string name="session_expired_reason">Scaduta</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d trascrizione è stata interrotta prima di finire: memoria esaurita. Prova un file piu\' corto, un modello piu\' piccolo, o chiudi altre app. Dettagli nella Cronologia.</item>
         <item quantity="other">%1$d trascrizioni sono state interrotte prima di finire: memoria esaurita. Prova un file piu\' corto, un modello piu\' piccolo, o chiudi altre app. Dettagli nella Cronologia.</item>

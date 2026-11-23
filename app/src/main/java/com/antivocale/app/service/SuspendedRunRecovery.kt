@@ -118,6 +118,9 @@ object SuspendedRunRecovery {
 
     private const val TAG = "SuspendedRunRecovery"
 
+    /** Phase 6: 30 days of parked life before the expiry sweep closes a session. */
+    private const val PAUSED_SESSION_EXPIRY_MS = 30L * 24 * 60 * 60 * 1000
+
     /**
      * Fixed id below the result allocator's 3000 base (reserved-range
      * contract, see [ResultNotificationFactory]): a later suspension replaces
@@ -191,6 +194,28 @@ object SuspendedRunRecovery {
         // resets it on progress), which is exactly "deaths at the same
         // contiguousPrefixEnd": the second one trips the resume's
         // engine-poisoned-chunk skip.
+        // TASK-1037 phase 6: the paused-session expiry. A session left
+        // parked for a month has outlived any realistic resume intent;
+        // its source may be gone and its chunks are pure residue, so the
+        // row closes as a partial keeping the text it last wrote (no
+        // chunk-fold refresh: unlike Cancel, the text stays whatever the
+        // last throttled interim write left) and the session rows go.
+        // Write order is the canonical close-as-partial sequence (row
+        // first, delete second): a failure between the two leaves the
+        // row closed and the session retryable next cold start, never a
+        // PAUSED row with a dead Resume action.
+        runCatching {
+            val cutoff = System.currentTimeMillis() - PAUSED_SESSION_EXPIRY_MS
+            for (session in sessionDao.getPausedSessions()) {
+                if (session.updatedAtMs < cutoff) {
+                    logDao.closePausedAsError(
+                        session.taskId, context.getString(R.string.session_expired_reason))
+                    sessionDao.deleteSession(session.taskId)
+                    Log.i(TAG, "Expired paused session ${session.taskId} closed as partial")
+                }
+            }
+        }.onFailure { e -> Log.w(TAG, "Paused-session expiry sweep failed", e) }
+
         val parkedTaskIds = mutableSetOf<String>()
         val pausedCauses = mutableMapOf<String, PausedSessionNotifier.PausedCause>()
         val activeSessions = runCatching { sessionDao.getActiveSessions() }.getOrElse { e ->

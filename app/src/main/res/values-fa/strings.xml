@@ -270,7 +270,7 @@
     <string name="error_native">هنگام رونویسی خطای داخلی رخ داد. اگر ادامه داشت، مدل دیگری را امتحان کنید.</string>
     <string name="error_not_initialized">هیچ مدلی بارگذاری نشده است. برای دانلود یا انتخاب مدل، زبانه مدل را باز کنید.</string>
     <string name="error_model_unavailable">مدل انتخاب‌شده دیگر در دسترس نیست. زبانه مدل را باز کنید و مدل دیگری انتخاب کنید.</string>
-    <string name="error_audio_too_long_streaming">صداهای بلندتر از 2 ساعت پشتیبانی نمی‌شوند.</string>
+    <string name="error_audio_too_long_streaming">صدای طولانی‌تر از 4 ساعت پشتیبانی نمی‌شود.</string>
     <string name="error_audio_too_long_whole_file">این صدا از سقف %1$d دقیقه‌ای که این دستگاه در یک مرحله می‌تواند پردازش کند بلندتر است (سقف به حافظه در دسترس بستگی دارد). برای ضبط‌های طولانی از مدلی استفاده کنید که برنامه صدا را خودکار بخش می‌کند، با VAD خاموش.</string>
     <string name="error_file_too_large">فایل‌های صوتی بزرگ‌تر از 2GB پشتیبانی نمی‌شوند.</string>
     <string name="error_file_not_found">فایل صوتی پیدا نشد</string>
@@ -1124,6 +1124,7 @@
     <string name="session_paused_label">متوقف شده</string>
     <string name="session_park_cause_native_crash">به دلیل کرش نیتیو قطع شد</string>
     <string name="session_park_cause_app_restart">به دلیل راه‌اندازی مجدد برنامه قطع شد</string>
+    <string name="session_expired_reason">منقضی شده</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d رونویسی پیش از تمام شدن متوقف شد: حافظه برنامه تمام شد. فایل کوتاه‌تر یا مدل کوچک‌تری امتحان کنید یا برنامه‌های دیگر را ببندید. جزئیات در تاریخچه.</item>
         <item quantity="other">%1$d رونویسی پیش از تمام شدن متوقف شدند: حافظه برنامه تمام شد. فایل کوتاه‌تر یا مدل کوچک‌تری امتحان کنید یا برنامه‌های دیگر را ببندید. جزئیات در تاریخچه.</item>

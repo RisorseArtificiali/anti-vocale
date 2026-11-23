@@ -231,7 +231,7 @@
     <string name="error_native">حدث خطأ داخلي أثناء النسخ. إذا استمر الخطأ، جرّب نموذجًا مختلفًا.</string>
     <string name="error_not_initialized">لم يتم تحميل أي نموذج. افتح تبويب النموذج لتنزيل نموذج أو اختياره.</string>
     <string name="error_model_unavailable">النموذج المحدد لم يعد متاحًا. افتح تبويب النموذج واختر نموذجًا آخر.</string>
-    <string name="error_audio_too_long_streaming">لا يتم دعم الصوت الأطول من ساعتين.</string>
+    <string name="error_audio_too_long_streaming">الصوت الأطول من 4 ساعات غير مدعوم.</string>
     <string name="error_audio_too_long_whole_file">هذا الصوت أطول من الحد البالغ %1$d دقيقة الذي يستطيع هذا الجهاز معالجته في دفعة واحدة (يعتمد الحد على الذاكرة المتاحة). للتسجيلات الطويلة استخدم نموذجًا يقسّمه التطبيق تلقائيًا، مع إيقاف VAD.</string>
     <string name="error_file_too_large">لا يتم دعم ملفات الصوت التي يزيد حجمها عن 2GB.</string>
     <string name="error_file_not_found">لم يتم العثور على ملف الصوت</string>
@@ -1184,6 +1184,7 @@
     <string name="session_paused_label">متوقف مؤقتًا</string>
     <string name="session_park_cause_native_crash">تمت المقاطعة بسبب انهيار أصلي</string>
     <string name="session_park_cause_app_restart">تمت المقاطعة بسبب إعادة تشغيل التطبيق</string>
+    <string name="session_expired_reason">منتهية الصلاحية</string>
     <plurals name="logs_entries_deleted">
         <item quantity="zero">لا توجد إدخالات محذوفة</item>
         <item quantity="one">تم حذف إدخال واحد</item>

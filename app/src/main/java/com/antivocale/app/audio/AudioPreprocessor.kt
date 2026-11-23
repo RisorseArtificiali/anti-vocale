@@ -47,7 +47,7 @@ class AudioPreprocessor @Inject constructor() {
 
         /** Sanity bound for the granule read: durations past one day are
          *  garbage (capture-pattern false positive, corrupt page); the app's
-         *  own ceilings top out at two hours. */
+         *  own ceilings top out at four hours. */
         internal const val MAX_SANE_GRANULE_SECONDS = 86400.0
 
         /**

@@ -276,7 +276,7 @@
     <string name="error_native">Er trad een interne fout op tijdens de transcriptie. Blijft dit gebeuren, probeer dan een ander model.</string>
     <string name="error_not_initialized">Er is geen model geladen. Open het tabblad Modellen om er een te downloaden of te selecteren.</string>
     <string name="error_model_unavailable">Het geselecteerde model is niet meer beschikbaar. Open het tabblad Modellen en kies een ander.</string>
-    <string name="error_audio_too_long_streaming">Audio langer dan 2 uur wordt niet ondersteund.</string>
+    <string name="error_audio_too_long_streaming">Audio langer dan 4 uur wordt niet ondersteund.</string>
     <string name="error_audio_too_long_whole_file">Deze audio is langer dan de limiet van %1$d minuten die dit apparaat in één keer kan verwerken (de limiet hangt af van het beschikbare geheugen). Gebruik voor lange opnames een model waarvan de app de audio automatisch splitst, met VAD uit.</string>
     <string name="error_file_too_large">Audiobestanden groter dan 2 GB worden niet ondersteund.</string>
     <string name="error_file_not_found">Audiobestand niet gevonden</string>
@@ -960,6 +960,7 @@
     <string name="session_paused_label">Gepauzeerd</string>
     <string name="session_park_cause_native_crash">Onderbroken door een native crash</string>
     <string name="session_park_cause_app_restart">Onderbroken door app-herstart</string>
+    <string name="session_expired_reason">Verlopen</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d transcriptie werd onderbroken voor hij af was: het geheugen van de app raakte op. Probeer een korter bestand, een kleiner model, of sluit andere apps. Zie Geschiedenis voor details.</item>
         <item quantity="other">%1$d transcripties werden onderbroken voor ze af waren: het geheugen van de app raakte op. Probeer een korter bestand, een kleiner model, of sluit andere apps. Zie Geschiedenis voor details.</item>

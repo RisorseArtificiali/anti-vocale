@@ -16,7 +16,7 @@ Anti-Vocale receives shared audio files (from WhatsApp, Telegram, etc.), transcr
 
 It also plugs into the messengers themselves: new WhatsApp voice notes can transcribe themselves the moment they arrive, and clients like Forkgram can hand their voice messages to Anti-Vocale as their built-in offline transcriber.
 
-It works on recorded calls and meetings too, at any length: recordings beyond a model's limit are split and stitched automatically (up to two hours on the streaming path), a failed long run keeps the transcript it already produced, and results export as subtitles (SRT, VTT) or timestamped text. An optional speaker-labels setting marks who said what in a conversation, rendering SPEAKER turns in results and exports. And it keeps working on phones whose aggressive vendor customizations freeze or kill background work: a protection toggle holds transcription open under Oppo, Realme, OnePlus and Vivo battery managers.
+It works on recorded calls and meetings too, at any length: recordings beyond a model's limit are split and stitched automatically (up to four hours on the streaming path), long runs are batch operations you can pause and resume if the app or the phone dies partway, a failed long run keeps the transcript it already produced, and results export as subtitles (SRT, VTT) or timestamped text. An optional speaker-labels setting marks who said what in a conversation, rendering SPEAKER turns in results and exports. And it keeps working on phones whose aggressive vendor customizations freeze or kill background work: a protection toggle holds transcription open under Oppo, Realme, OnePlus and Vivo battery managers.
 
 ## Why this app exists
 
@@ -56,7 +56,7 @@ Measured by us, not declared by vendors: the per-language error rates of every m
 - **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, Parakeet TDT, Qwen3-ASR, GigaAM v3, Nemotron 3.5 (streaming), or import your own
 - **Custom model import** - Bring any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice, Canary, Moonshine, Dolphin) from a folder or HuggingFace URL, no app update needed; one-tap validated entries live in the community catalog, and only models matching a supported family's layout import ([docs](docs/external-models.md#what-import-is-for-and-what-it-does-not-promise))
 - **Full user manual** - Getting started, choosing a model, troubleshooting and FAQ, in 8 languages ([user guide](docs/user-guide/))
-- **Any audio length** - Long inputs are automatically split and stitched; practical ceilings are declared up front (2 hours on the streaming path, memory-dependent with VAD enabled) (see the [FAQ](FAQ.md))
+- **Any audio length** - Long inputs are automatically split and stitched; practical ceilings are declared up front (4 hours on the streaming path, memory-dependent with VAD enabled), and runs past 30 minutes become pausable, resumable sessions with a remaining-time estimate (see the [FAQ](FAQ.md))
 - **Declared limits before download** - Each model card states its audio-length capability up front, so big downloads are informed choices
 - **Fits-your-device labels** - Model cards also state how their memory footprint fits your phone's RAM tier, so heavy models are an informed choice too; nothing is hidden, you can always install anyway
 - **Suggested for your phone** - A filter in the Models tab that picks the models your device runs comfortably, ordered by your language and measured quality; advisory only, one tap shows everything again

@@ -243,7 +243,7 @@
     <string name="error_native">Transkription aikana tapahtui sisäinen virhe. Jos virhe toistuu, kokeile toista mallia.</string>
     <string name="error_not_initialized">Mallia ei ole ladattu. Avaa Mallit-välilehti ja lataa tai valitse malli.</string>
     <string name="error_model_unavailable">Valittua mallia ei ole enää saatavilla. Avaa Mallit-välilehti ja valitse toinen malli.</string>
-    <string name="error_audio_too_long_streaming">Yli 2 tunnin mittaista ääntä ei tueta.</string>
+    <string name="error_audio_too_long_streaming">Yli 4 tunnin ääntä ei tueta.</string>
     <string name="error_audio_too_long_whole_file">Tämä ääni on pidempi kuin %1$d minuutin raja, jonka tämä laite voi käsitellä kerralla (raja riippuu käytettävissä olevasta muistista). Käytä pitkissä tallenteissa mallia, jonka sovellus jakaa automaattisesti osiin, VAD pois päältä.</string>
     <string name="error_file_too_large">Yli 2 Gt:n kokoisia äänitiedostoja ei tueta.</string>
     <string name="error_file_not_found">Äänitiedostoa ei löytynyt</string>
@@ -833,6 +833,7 @@
     <string name="session_paused_label">Keskeytetty</string>
     <string name="session_park_cause_native_crash">Keskeyti natiivikaatuminen</string>
     <string name="session_park_cause_app_restart">Keskeytti sovelluksen uudelleenkäynnistys</string>
+    <string name="session_expired_reason">Vanhentunut</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d transkriptio keskeytyi ennen valmistumista: sovelluksen muisti loppui. Kokeile lyhyempää tiedostoa, pienempää mallia tai sulje muut sovellukset. Katso lisätiedot Historiasta.</item>
         <item quantity="other">%1$d transkriptiota keskeytyi ennen valmistumista: sovelluksen muisti loppui. Kokeile lyhyempää tiedostoa, pienempää mallia tai sulje muut sovellukset. Katso lisätiedot Historiasta.</item>

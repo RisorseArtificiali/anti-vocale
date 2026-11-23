@@ -261,7 +261,7 @@
     <string name="error_native">Во время распознавания произошла внутренняя ошибка. Если это повторяется, попробуйте другую модель.</string>
     <string name="error_not_initialized">Модель не загружена. Откройте вкладку «Модель», чтобы скачать или выбрать модель.</string>
     <string name="error_model_unavailable">Выбранная модель больше недоступна. Откройте вкладку «Модель» и выберите другую.</string>
-    <string name="error_audio_too_long_streaming">Аудио длиннее 2 часов не поддерживается.</string>
+    <string name="error_audio_too_long_streaming">Аудио длиннее 4 часов не поддерживается.</string>
     <string name="error_audio_too_long_whole_file">Это аудио превышает предел в %1$d минут, который это устройство может обработать за один проход (предел зависит от доступной памяти). Для длинных записей используйте модель, которую приложение разбивает автоматически, при выключенном VAD.</string>
     <string name="error_file_too_large">Аудиофайлы больше 2 ГБ не поддерживаются.</string>
     <string name="error_file_not_found">Аудиофайл не найден</string>
@@ -936,6 +936,7 @@
     <string name="session_paused_label">Приостановлено</string>
     <string name="session_park_cause_native_crash">Прервано из-за сбоя нативного кода</string>
     <string name="session_park_cause_app_restart">Прервано перезапуском приложения</string>
+    <string name="session_expired_reason">Истекла</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d распознавание было прервано до завершения: в приложении закончилась память. Попробуйте более короткий файл, модель меньшего размера или закройте другие приложения. Подробности в Истории.</item>
         <item quantity="few">%1$d распознавания были прерваны до завершения: в приложении закончилась память. Попробуйте более короткий файл, модель меньшего размера или закройте другие приложения. Подробности в Истории.</item>

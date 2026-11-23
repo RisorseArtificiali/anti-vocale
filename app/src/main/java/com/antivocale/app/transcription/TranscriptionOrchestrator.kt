@@ -326,6 +326,34 @@ class TranscriptionOrchestrator @Inject constructor(
         _activeSessionTaskIdFlow.asStateFlow()
     val activeSessionTaskId: String? get() = _activeSessionTaskIdFlow.value
 
+    /** Phase 6: 50 MB of headroom over the ~0.95 MB worst-row projection. */
+    private val SESSION_ENGAGE_FREE_FLOOR_BYTES = 50L * 1024 * 1024
+
+    /**
+     * TASK-1037 phase 6: the engage's free-space floor. A session run
+     * writes its chunk rows and a final history row measured around
+     * 1.2 MB at the 4h ceiling; on a nearly-full disk the honest
+     * degradation is NO session (the transcription still runs; resume
+     * is simply not offered) rather than a refusal or a mid-run disk
+     * failure losing the whole batch. Unreadable stats fail OPEN
+     * (engage), the policy's standing convention.
+     */
+    private fun sessionStoreHasFreeSpace(context: Context): Boolean {
+        val free = runCatching {
+            // The name twin of AppDatabase's builder literal; any name
+            // resolves to the same databases/ parent, so a drift cannot
+            // change the measured directory.
+            val dbDir = context.getDatabasePath("anti_vocale_database").parentFile
+                ?: return true
+            android.os.StatFs(dbDir.absolutePath).availableBytes
+        }.getOrNull() ?: return true
+        // A non-positive answer is an unreadable stat, not an empty disk
+        // (the JVM unit doubles return 0 for unstubbed framework reads):
+        // fail open, the standing convention.
+        if (free <= 0L) return true
+        return free >= SESSION_ENGAGE_FREE_FLOOR_BYTES
+    }
+
     private fun setActiveSessionTaskId(taskId: String?) {
         _activeSessionTaskIdFlow.value = taskId
     }
@@ -4128,10 +4156,10 @@ class TranscriptionOrchestrator @Inject constructor(
     ): Result<TranscriptionResult> {
         val resolvedPrompt = resolvePrompt(prompt)
         // TASK-597: the streaming path's sample retention has no memory
-        // budget (the valve is a flat 7200s while the whole-file arm gates
+        // budget (the valve is a flat 14400s while the whole-file arm gates
         // on min(ram/4, heap/2)); with speaker labels on, every decoded
         // chunk is pinned for the whole run (64KiB/s: 115MB at 30min,
-        // 460MB at 2h) and applySpeakerLabels' merge allocates a second
+        // ~920MB at 4h) and applySpeakerLabels' merge allocates a second
         // copy. Apply the SAME budget: estimate the retention cost from
         // the source duration, and if it exceeds the memory-derived
         // ceiling, disable collection (labels skipped, the reason logged
@@ -4462,7 +4490,8 @@ class TranscriptionOrchestrator @Inject constructor(
                         // candidacy (the dispatch's sessionRun), never
                         // create it: a failed probe means no session.
                         if (activeSession == null && sessionRun != null &&
-                            event.header.totalDurationSeconds >= AudioDurationPolicy.SESSION_MIN_SECONDS
+                            event.header.totalDurationSeconds >= AudioDurationPolicy.SESSION_MIN_SECONDS &&
+                            sessionStoreHasFreeSpace(context)
                         ) {
                             val now = System.currentTimeMillis()
                             val file = java.io.File(filePath)

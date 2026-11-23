@@ -272,7 +272,7 @@
     <string name="error_native">אירעה שגיאה פנימית במהלך התמלול. אם זה חוזר, נסה מודל אחר.</string>
     <string name="error_not_initialized">לא נטען מודל. פתח את הלשונית מודלים כדי להוריד או לבחור אחד.</string>
     <string name="error_model_unavailable">המודל שנבחר אינו זמין יותר. פתח את הלשונית מודלים ובחר מודל אחר.</string>
-    <string name="error_audio_too_long_streaming">אודיו שאורכו מעל שעתיים אינו נתמך.</string>
+    <string name="error_audio_too_long_streaming">אודיו ארוך מ-4 שעות אינו נתמך.</string>
     <string name="error_audio_too_long_whole_file">האודיו הזה ארוך ממגבלת %1$d הדקות שהמכשיר מסוגל לעבד בהעברה אחת (המגבלה תלויה בזיכרון הזמין). להקלטות ארוכות השתמש במודל שהאפליקציה מפצלת איתו אוטומטית, כש-VAD כבוי.</string>
     <string name="error_file_too_large">קובצי אודיו גדולים מ-2GB אינם נתמכים.</string>
     <string name="error_file_not_found">קובץ האודיו לא נמצא</string>
@@ -943,6 +943,7 @@
     <string name="session_paused_label">מושהה</string>
     <string name="session_park_cause_native_crash">הופסק עקב קריסה מקומית</string>
     <string name="session_park_cause_app_restart">הופסק עקב הפעלה מחדש של האפליקציה</string>
+    <string name="session_expired_reason">פג תוקף</string>
     <plurals name="interrupted_runs_oom_text">
         <item quantity="one">%1$d תמלול הופסק לפני שהסתיים: הזיכרון של האפליקציה אזל. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. פרטים בהיסטוריה.</item>
         <item quantity="two">%1$d תמלולים הופסקו לפני שהסתיימו: הזיכרון של האפליקציה אזל. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. פרטים בהיסטוריה.</item>
