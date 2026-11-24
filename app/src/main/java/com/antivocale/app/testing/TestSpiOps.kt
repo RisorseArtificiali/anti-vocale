@@ -156,6 +156,8 @@ internal class TestSpiOps(
             OP_VOICE_NOTE_SIMULATE -> simulateVoiceNote(value, entry)
             OP_NOTIFY_TEXT -> notifyText(value, entry)
             OP_DECODE_PROBE -> decodeProbe(value, entry)
+            OP_DECODE_PROBE2 -> decodeProbeAsync(value, entry)
+            OP_DECODE_PROBE2_STATE -> decodeProbeStateOp()
             OP_SESSION_STATE -> sessionState()
             OP_SESSION_RESUME -> sessionResume(value)
             OP_SESSION_PAUSE -> sessionPause(value)
@@ -1176,6 +1178,75 @@ internal class TestSpiOps(
             .toString()
     }
 
+    /** TASK-1037 device investigation: the async long-file decode probe's
+     *  one-slot state (the last dispatch wins; a fresh dispatch while
+     *  running is refused exactly like the import lanes). */
+    private val decodeProbeState = java.util.concurrent.atomic.AtomicReference(
+        """{"op":"decode_probe2_state","running":false,"everRan":false}""")
+
+    /**
+     * op=decode_probe2, value=&lt;file path&gt;, entry=&lt;offset samples&gt;:
+     * the ASYNC long-file decode probe (the 3h-truncation instrument).
+     * The sync decode_probe holds the broadcast window and an am_kill at
+     * ~300s would eat a multi-hour decode; this arm dispatches the same
+     * decode on the async scope and answers immediately. Poll
+     * decode_probe2_state: on completion it carries deliveredSamples,
+     * expectedSamples (the header total) and the earlyEos verdict
+     * (delivered + tolerance &lt; expected). Everything also lands on the
+     * TestSpi logcat channel.
+     */
+    private fun decodeProbeAsync(filePath: String?, offsetRaw: String?): String {
+        val context = appContext
+            ?: throw IllegalArgumentException("probe dispatch needs the app context")
+        val scope = asyncImportScope
+            ?: throw IllegalArgumentException("probe dispatch needs the async scope (debug receiver passes it)")
+        if (filePath.isNullOrBlank()) {
+            throw IllegalArgumentException("missing 'value' extra (the audio file path)")
+        }
+        val offset = offsetRaw?.toLongOrNull()
+            ?: throw IllegalArgumentException("missing 'entry' extra (the offset in 16 kHz output samples)")
+        if (decodeProbeState.get().contains("\"running\":true")) {
+            throw IllegalArgumentException("a decode probe is already running")
+        }
+        val started = ack(OP_DECODE_PROBE2) {
+            put("dispatched", true); put("file", filePath); put("offsetSamples", offset)
+        }
+        decodeProbeState.set("""{"op":"decode_probe2_state","running":true,"everRan":true,"file":"$filePath","offsetSamples":$offset}""")
+        scope.launch {
+            var delivered = 0L
+            var expected: Long? = null
+            var failure: String? = null
+            try {
+                com.antivocale.app.audio.AudioPreprocessor()
+                    .prepareAudioStream(filePath, startOffsetSamples = offset)
+                    .collect { event ->
+                        when (event) {
+                            is com.antivocale.app.audio.AudioPreprocessor.StreamEvent.Header ->
+                                expected = (event.header.totalDurationSeconds * 16000).toLong()
+                            is com.antivocale.app.audio.AudioPreprocessor.StreamEvent.Chunk ->
+                                delivered += event.chunk.samples.size
+                        }
+                    }
+            } catch (e: Exception) {
+                failure = "${e.javaClass.simpleName}: ${e.message}"
+            }
+            val exp = expected
+            val earlyEos = exp != null && exp - delivered > 60L * 16000
+            val body = buildString {
+                append("""{"op":"decode_probe2_state","running":false,"everRan":true,"file":"$filePath","""")
+                append(""""offsetSamples":$offset,"deliveredSamples":$delivered,""")
+                append(""""expectedSamples":${exp ?: "null"},"earlyEos":$earlyEos""")
+                if (failure != null) append(""","error":"${failure.replace('"', '\'')}"""")
+                append("}")
+            }
+            decodeProbeState.set(body)
+            asyncImportOutcome(body)
+        }
+        return started
+    }
+
+    private fun decodeProbeStateOp(): String = decodeProbeState.get()
+
     private suspend fun decodeProbe(filePath: String?, offsetRaw: String?): String {
         if (filePath.isNullOrBlank()) {
             throw IllegalArgumentException("missing 'value' extra (the audio file path)")
@@ -1820,6 +1891,9 @@ internal class TestSpiOps(
         const val OP_NOTIFY_TEXT = "notify_text"
         const val OP_HELP = "help"
         const val OP_DECODE_PROBE = "decode_probe"
+        /** TASK-1037 device investigation: the async long-file probe + its state op. */
+        const val OP_DECODE_PROBE2 = "decode_probe2"
+        const val OP_DECODE_PROBE2_STATE = "decode_probe2_state"
         /** TASK-1037 phase 3: the resumable-session ops (read / resume / pause). */
         const val OP_SESSION_STATE = "session_state"
         const val OP_SESSION_RESUME = "session_resume"
@@ -1850,7 +1924,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_RAM_TIER, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_DECODE_PROBE, OP_SESSION_STATE, OP_SESSION_RESUME, OP_SESSION_PAUSE, OP_TRANSCRIBE_FILE, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_RAM_TIER, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_DECODE_PROBE, OP_DECODE_PROBE2, OP_DECODE_PROBE2_STATE, OP_SESSION_STATE, OP_SESSION_RESUME, OP_SESSION_PAUSE, OP_TRANSCRIBE_FILE, OP_HELP)
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024
 
