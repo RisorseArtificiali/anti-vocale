@@ -1178,11 +1178,7 @@ internal class TestSpiOps(
             .toString()
     }
 
-    /** TASK-1037 device investigation: the async long-file decode probe's
-     *  one-slot state (the last dispatch wins; a fresh dispatch while
-     *  running is refused exactly like the import lanes). */
-    private val decodeProbeState = java.util.concurrent.atomic.AtomicReference(
-        """{"op":"decode_probe2_state","running":false,"everRan":false}""")
+
 
     /**
      * op=decode_probe2, value=&lt;file path&gt;, entry=&lt;offset samples&gt;:
@@ -1893,6 +1889,14 @@ internal class TestSpiOps(
         const val OP_DECODE_PROBE = "decode_probe"
         /** TASK-1037 device investigation: the async long-file probe + its state op. */
         const val OP_DECODE_PROBE2 = "decode_probe2"
+
+        /** TASK-1037 device investigation: the async long-file decode
+         *  probe's one-slot state. COMPANION, not an instance field: the
+         *  receiver builds a fresh TestSpiOps per broadcast, so an
+         *  instance field handed every poll a fresh initial value (the
+         *  live RMX3853 lesson: dispatched:true, everRan:false). */
+        private val decodeProbeState = java.util.concurrent.atomic.AtomicReference(
+            """{"op":"decode_probe2_state","running":false,"everRan":false}""")
         const val OP_DECODE_PROBE2_STATE = "decode_probe2_state"
         /** TASK-1037 phase 3: the resumable-session ops (read / resume / pause). */
         const val OP_SESSION_STATE = "session_state"
