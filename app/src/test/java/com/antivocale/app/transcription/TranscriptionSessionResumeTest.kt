@@ -83,8 +83,16 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
     private val sessionDao = FakeSessionDao()
     private lateinit var backend: TranscriptionBackend
 
-    private val chunkSamples = 16000
-    private val chunkCount = 6
+    // Phase 6 device-leg finding: the fixture must be HONEST (header
+    // total == decoded amount). The old 1s chunks under a 2400s header
+    // encoded exactly the silent-truncation class the 3h device proof
+    // caught (a 79% shortfall completing SUCCESS); the early-EOS guard
+    // now parks such a run. Six 400s chunks cover the 2400s header
+    // exactly; ONE shared FloatArray keeps the fixture at ~25 MB.
+    private val chunkSeconds = 40L
+    private val chunkSamples = 16000L * chunkSeconds
+    private val chunkCount = 60
+    private val sharedChunkSamples: FloatArray = FloatArray(chunkSamples.toInt())
     private val taskId = "kill-run"
 
     /** Phase 4 review: the eligibility probe is floor-gated on file size
@@ -98,7 +106,10 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
     /** The start offset the fake stream was LAST asked to decode from. */
     private var lastStreamOffset = -1L
 
-    private fun chunkAt(index: Int) = FloatArray(chunkSamples) { index.toFloat() }
+    private fun chunkAt(index: Int): FloatArray {
+        sharedChunkSamples.fill(index.toFloat())
+        return sharedChunkSamples
+    }
 
     private fun stubStream() {
         every {
@@ -153,7 +164,7 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
 
     /** The cues a token-less chunk of word i contributes (the positional cue). */
     private fun expectedCue(index: Int) =
-        TimedSegment(startMs = index * 1000L, endMs = (index + 1) * 1000L, text = "w$index")
+        TimedSegment(startMs = index * chunkSeconds * 1000L, endMs = (index + 1) * chunkSeconds * 1000L, text = "w$index")
 
     @Before
     override fun baseSetUp() {
@@ -207,7 +218,8 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         // Baseline: one uninterrupted run of the whole file.
         stubStream()
         val baseline = request("uninterrupted")
-        assertEquals("w0 w1 w2 w3 w4 w5", baseline.getOrNull())
+        val fullText = (0 until chunkCount).joinToString(" ") { "w$it" }
+        assertEquals(fullText, baseline.getOrNull())
         val baselineText = baseline.getOrNull()
         val baselineCues = lastSegments
         assertEquals((0 until chunkCount).map { expectedCue(it) }, baselineCues)
@@ -235,7 +247,7 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         // the resume cannot be ambushed at its first boundary.
         assertFalse("a parked stint must not be pausable", orchestrator.requestSessionPause(taskId))
         assertEquals(3, sessionDao.getChunks(taskId).size)
-        assertEquals(48000L, sessionDao.contiguousPrefixEnd(taskId))
+        assertEquals(3 * chunkSamples, sessionDao.contiguousPrefixEnd(taskId))
         sessionDao.upsertSession(parked.copy(state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM))
 
         // Resume: the store drives everything; output must equal baseline.
@@ -245,7 +257,7 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         assertEquals(baselineText, resumed.getOrNull())
         assertEquals(baselineCues, lastSegments)
         assertEquals("the resumed decode must start at the store's prefix end",
-            48000L, lastStreamOffset)
+            3 * chunkSamples, lastStreamOffset)
         // The terminal transition deleted the session rows.
         assertNull(sessionDao.sessions[taskId])
         // Phase 4: completion clears the tracker too; a late Pause tap on
@@ -295,11 +307,83 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
     }
 
     @Test
+    fun `a decode that ends far short of the header parks instead of reporting success`() = runTest {
+        // The 3h device-leg class: the header promises 2400s, the stream
+        // delivers 3 of 6 chunks then EOS. The early-EOS guard must park
+        // (text kept, resumable), never complete SUCCESS at 50%.
+        stubStream()
+        every { audioPreprocessor.prepareAudioStream(
+            any(), any(), any(), any(), any(), any(), any(), any(), any()) } answers {
+            val offset = arg<Long>(8)
+            flow {
+                lastStreamOffset = offset
+                emit(AudioPreprocessor.StreamEvent.Header(AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000,
+                    totalDurationSeconds = 2400.0,
+                    expectedChunkCount = 6,
+                    startOffsetSamples = offset,
+                )))
+                val firstKept = (offset / chunkSamples).toInt()
+                // TRUNCATION: deliver only 3 chunks from the offset
+                for (i in firstKept until firstKept + 3) {
+                    emit(AudioPreprocessor.StreamEvent.Chunk(AudioPreprocessor.StreamChunk(
+                        samples = chunkAt(i),
+                        sampleRate = 16000,
+                        chunkIndex = i - firstKept,
+                        isLast = i == firstKept + 2,
+                    )))
+                }
+            }
+        }
+        stubDecode { index -> Result.success(TranscriptionResult(text = "w$index")) }
+        stubRow(taskId)
+        val result = request()
+        assertTrue("the truncated run parks, not succeeds", result.isFailure)
+        val parked = sessionDao.sessions[taskId]
+        assertNotNull(parked)
+        assertEquals(TranscriptionSessionEntity.STATE_PAUSED_USER, parked!!.state)
+        assertEquals("3 chunks checkpointed", 3, sessionDao.getChunks(taskId).size)
+        io.mockk.coVerify(atLeast = 1) { logDao.parkProcessingAsPaused(taskId, any()) }
+    }
+
+    @Test
+    fun `a decode shortfall within the drift tolerance completes success`() = runTest {
+        // A 60s shortfall (tag drift / resampler fuzz) must not park: the
+        // guard's tolerance band. Header 2400s, delivered 2340s.
+        stubStream()
+        every { audioPreprocessor.prepareAudioStream(
+            any(), any(), any(), any(), any(), any(), any(), any(), any()) } answers {
+            flow {
+                emit(AudioPreprocessor.StreamEvent.Header(AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000,
+                    totalDurationSeconds = 2400.0,
+                    expectedChunkCount = 6,
+                    startOffsetSamples = 0L,
+                )))
+                // 59 of the 60 full chunks = 2360s of 2400s: 40s short,
+                // inside the 60s tolerance (the tag-drift class).
+                for (i in 0 until chunkCount - 1) {
+                    emit(AudioPreprocessor.StreamEvent.Chunk(AudioPreprocessor.StreamChunk(
+                        samples = chunkAt(i),
+                        sampleRate = 16000,
+                        chunkIndex = i,
+                        isLast = i == chunkCount - 2,
+                    )))
+                }
+            }
+        }
+        stubDecode { index -> Result.success(TranscriptionResult(text = "w$index")) }
+        val result = request("tolerated-drift")
+        assertEquals((0 until chunkCount - 1).joinToString(" ") { "w$it" }, result.getOrNull())
+        assertNull("no session survives the completed run", sessionDao.sessions["tolerated-drift"])
+    }
+
+    @Test
     fun `a short run engages no session`() = runTest {
         every { audioPreprocessor.getAudioDuration(sessionFile.absolutePath) } returns 12.0
         stubStream()
         val result = request("short-run")
-        assertEquals("w0 w1 w2 w3 w4 w5", result.getOrNull())
+        assertEquals((0 until chunkCount).joinToString(" ") { "w$it" }, result.getOrNull())
         assertTrue(sessionDao.sessions.isEmpty())
     }
 
@@ -388,7 +472,7 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
             createdAtMs = 1L, updatedAtMs = 1L,
         ))
         val result = request("completing")
-        assertEquals("w0 w1 w2 w3 w4 w5", result.getOrNull())
+        assertEquals((0 until chunkCount).joinToString(" ") { "w$it" }, result.getOrNull())
         assertEquals((0 until chunkCount).map { expectedCue(it) }, lastSegments)
         assertEquals("no decode may run for a completing resume", -1L, lastStreamOffset)
         assertNull(sessionDao.sessions["completing"])

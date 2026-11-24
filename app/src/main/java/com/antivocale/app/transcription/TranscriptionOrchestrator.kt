@@ -329,6 +329,10 @@ class TranscriptionOrchestrator @Inject constructor(
     /** Phase 6: 50 MB of headroom over the ~0.95 MB worst-row projection. */
     private val SESSION_ENGAGE_FREE_FLOOR_BYTES = 50L * 1024 * 1024
 
+    /** Phase 6 device-leg: 60 s of tolerated decode shortfall (tag drift
+     *  plus resampler fuzz) before the early-EOS guard parks the session. */
+    private val DECODE_SHORTFALL_TOLERANCE_SAMPLES = 60L * SESSION_SAMPLE_RATE
+
     /**
      * TASK-1037 phase 6: the engage's free-space floor. A session run
      * writes its chunk rows and a final history row measured around
@@ -4744,6 +4748,33 @@ class TranscriptionOrchestrator @Inject constructor(
             // its ladder runs with the previous tail alone (inside the try so
             // a wedge abort keeps the pipelineFailed shape below).
             popHeldEmpty(nextChunk = null)
+
+            // TASK-1037 phase 6 device-leg finding: the decode may END
+            // EARLY on very long files (the 3h05 proof's resumed stint
+            // delivered ~41.6M of 178M samples and the old code completed
+            // SUCCESS with 23% of the file). A session run whose decode
+            // falls short of the recorded total by more than the drift
+            // tolerance PARKS for resume instead: the text is kept, the
+            // position line is honest, and a repeated truncation is a
+            // visible paused loop the user can cancel, never silent loss.
+            // The tolerance covers metadata-tag drift (the TASK-449
+            // class) and resampler tail fuzz; drift beyond it now parks
+            // too, a deliberate stance change for SESSION runs only (a
+            // pausable session claiming 40 minutes owes 40 minutes).
+            if (activeSession != null) {
+                val expectedTotal = activeSession!!.totalOutputSamples
+                if (expectedTotal != null &&
+                    expectedTotal - decodedSamplesGlobal > DECODE_SHORTFALL_TOLERANCE_SAMPLES) {
+                    Log.e(TAG, "Session decode ended early: decoded $decodedSamplesGlobal of " +
+                        "$expectedTotal samples (${decodedSamplesGlobal / SESSION_SAMPLE_RATE}s of " +
+                        "${expectedTotal / SESSION_SAMPLE_RATE}s); parking for resume, not success")
+                    throw SessionPaused(
+                        accumulatedText = accumulatedText.toString(),
+                        decodedSeconds = decodedSeconds,
+                        totalDurationSeconds = totalDurationSeconds,
+                    )
+                }
+            }
         } catch (e: CancellationException) {
             // Phase 4: the pause boundary's escape vehicle. A sentinel in
             // the local means THIS is the cooperative pause: convert back
@@ -5479,6 +5510,10 @@ class TranscriptionOrchestrator @Inject constructor(
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(
             status = LogEntry.Status.SUCCESS, result = result, durationMs = durationMs,
+            // Phase 6 device-leg finding: a parked row's cause line must
+            // not survive its own completion (the 3h proof's SUCCESS row
+            // carried "Interrupted by app restart").
+            errorMessage = null,
             isPartial = isPartial, failedChunkCount = failedChunkCount,
             rawTranscript = rawTranscript,
             summary = summary,
