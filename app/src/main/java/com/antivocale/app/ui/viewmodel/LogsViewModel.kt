@@ -689,18 +689,20 @@ class LogsViewModel @Inject constructor(
             proceed()
             return
         }
-        // TASK-1042: mirror the TASK-597 pipeline gate upfront. The budget
-        // and the retention need share AudioDurationPolicy's units (bytes):
-        // labels at risk when the timeline (64KiB/s) exceeds
-        // min(ram/4, heap/2) AND the user collects labels. The pipeline's
-        // own runtime guard stays the single enforcement.
+        // TASK-1042: mirror the TASK-597 pipeline gate upfront, with the
+        // SAME predicate the pipeline uses: duration above
+        // ceilingSeconds(WHOLE_FILE_PCM) (the retention budget divided by
+        // the 3 PCM peak copies, 600s floor). A hand-rolled
+        // budget-vs-timeline product would be 3x more permissive and warn
+        // too late on small-heap devices (review finding 1). The
+        // pipeline's own runtime guard stays the single enforcement.
         val speakerLabelsAtRisk =
             preferencesManager.speakerLabelsEnabled.first() &&
                 duration > 0 &&
-                duration.toLong() * AudioDurationPolicy.PCM_BYTES_PER_SECOND >
-                    AudioDurationPolicy.retentionBudgetBytes(
-                        MemoryReadings.availableRamBytes(context),
-                        MemoryReadings.maxHeapBytes())
+                duration.toLong() > AudioDurationPolicy.ceilingSeconds(
+                    AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM,
+                    MemoryReadings.availableRamBytes(context),
+                    MemoryReadings.maxHeapBytes())
         val previous = _pendingLongAudioWarning.value
         val declineChain: (() -> Unit)? = onDecline?.let { decline ->
             {
