@@ -2,6 +2,31 @@
 
 This guide explains how to configure Tasker to use Anti-Vocale for on-device text generation and audio transcription.
 
+## Two ways to transcribe audio
+
+- **Watched folder (recommended for recordings).** Anti-Vocale watches a folder you grant it and transcribes every audio file that lands there, on its own. Tasker only needs to put the recording into the folder and read the saved transcript back. No intents, no staging, no automation toggle. Device-verified end to end; see *Recipe: audio through a watched folder* below.
+- **Intent API.** For text generation, per-request prompts and task ids, and flows that want the reply broadcast. Needs the automation toggle and staged files; see *Intent Protocol* below.
+
+## Recipe: audio through a watched folder
+
+Anti-Vocale's generic watched-folder source transcribes any non-hidden audio file (`.opus .ogg .oga .m4a .aac .mp3 .amr .3gp .3gpp .wav .flac`) that arrives in a folder you grant. Configure once in the app:
+
+1. **Settings > Voice notes > Watched folder**: pick the folder (any named folder works; Signal users typically pick `Music/Signal`). Enable its detection toggle.
+2. **Settings > Export > Auto-Save to Folder**: pick an output folder for the transcripts. Each transcription writes the complete transcript as `transcript_<date>_<time>_<first-words>.txt` there.
+
+Tasker side, two actions and no intents:
+
+1. **Get the recording into the folder.** Tasker's *Record Audio* action, or a *Copy File* / *Run Shell* move into the watched folder. The arrival itself is the trigger; Anti-Vocale detects the completed write.
+2. **Read the transcript back.** A *Read File* action on the newest `transcript_*.txt` in the auto-save folder, then *Set Clipboard*. Tasker needs its own storage access (All Files Access) to read that folder. The saved file is the complete transcript, byte-identical to what the History row holds, never the notification preview.
+
+Verified behavior and honest limitations (measured on a Realme RMX3853, ColorOS):
+
+- One file arrival produces exactly one transcription; nothing double-runs.
+- With Anti-Vocale in the foreground (or within seconds of leaving it) the transcription starts immediately, no interaction.
+- With the app in the background, Android's background-start restriction applies: the app posts a "Tap to start transcription" notification and the preserved request starts on that one tap. Nothing is lost while it waits.
+- On aggressive OEMs a file arriving while the app is frozen or its folder watch died is missed, and this source has no catch-up sweep: notes that arrived meanwhile do not transcribe. Opening the app re-arms the watch for future arrivals. If your recordings must never be missed, keep the app's battery optimization exempted and the phone unlocked during recording sessions, or drive transcription through the intent API instead.
+- The watched-folder origin never emits the Tasker reply broadcast and never auto-copies to the clipboard: both are deliberate (a background transcription must not overwrite your clipboard, and a world-readable broadcast carrying the transcript is an exfiltration surface). The auto-save file is the read path.
+
 ## External automation toggle
 
 The automation receivers (`PROCESS_REQUEST` and `PRELOAD_MODEL`) answer only after you enable them once in the app: **Settings > Advanced > External automation (Tasker)**. The toggle is **off by default**. While it is off, every request is rejected with the error `External automation is disabled. Enable it in Settings > Advanced > External automation.` and nothing is run; flipping the toggle on restores the behavior this guide describes.
@@ -48,8 +73,8 @@ Audio requests have a second constraint: `file_path` must point inside the app's
 
 ### Staging audio files
 
-The app only reads `file_path` values inside its private staging directory
-(`/data/data/com.antivocale.app.debug/files/shared_audio/`; its cache directory is also accepted). This is deliberate: the app cannot read `/sdcard` paths, so a broadcast pointing there always fails. Ways to place a file in the staging directory:
+The intent API only reads `file_path` values inside its private staging directory
+(`/data/data/com.antivocale.app.debug/files/shared_audio/`; its cache directory is also accepted). This is deliberate: the app cannot read `/sdcard` paths, so a broadcast pointing there always fails. For hands-off recording flows the watched folder above avoids staging entirely. Ways to place a file in the staging directory:
 
 - Share the file to Anti-Vocale from any app: the app copies it into the
   staging directory itself and transcribes it.
@@ -162,6 +187,8 @@ Transcribe a voice recording to text.
 
 ### Use Case
 Automatically transcribe incoming WhatsApp voice messages.
+
+**Superseded for most users by the app's native voice-note watch**: Anti-Vocale watches the WhatsApp Voice Notes folder itself (Settings > Voice notes) with no root, no shell and no intents, and it resolves the sender name from notifications. The profile below remains for setups where the native watch is unavailable.
 
 ### Tasker Configuration
 
@@ -314,4 +341,4 @@ adb logcat -s TaskerRequestReceiver InferenceService
 
 ---
 
-*Last Updated: 2026-09-25*
+*Last Updated: 2026-11-24*
