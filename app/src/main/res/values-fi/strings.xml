@@ -257,6 +257,7 @@
     <string name="dialog_long_audio_title">Pitkä ääni</string>
     <string name="dialog_long_audio_message">Tämän äänen kesto on %1$d minuuttia. %2$s-mallilla siihen kuluu noin %3$d minuuttia. Saat ilmoituksen, kun se on valmis.</string>
     <string name="dialog_long_audio_roughly">Karkea arvio: laite ei ole vielä kalibroinut valittua mallia.</string>
+    <string name="dialog_long_audio_labels_at_risk">Puhujien tunnisteet voivat keskeytyä kesken tällä laitteella: muistia ei riitä täydelliseen aikajanaan.</string>
     <string name="dialog_long_audio_continue">Jatka</string>
     <string name="dialog_long_audio_cancel">Peruuta</string>
     <string name="native_crash_model_warning">Sovellus sulkeutui odottamattomasti edellisen transkription aikana. Jos tämä tapahtui mallia ladattaessa, tiedosto voi olla vioittunut. Lataa se uudelleen Mallit-välilehdeltä.</string>

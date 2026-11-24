@@ -20,6 +20,10 @@ fun LongAudioWarningDialog(
     estimateMinutes: Long,
     isRough: Boolean,
     modelDisplayName: String,
+    /** TASK-1042: the retention budget cannot hold the label timeline for
+     *  this duration; the dialog says so upfront (the runtime guard stays
+     *  the single enforcement). */
+    speakerLabelsAtRisk: Boolean = false,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -33,6 +37,10 @@ fun LongAudioWarningDialog(
                     durationMinutes, modelDisplayName, estimateMinutes))
                 if (isRough) {
                     Text(stringResource(R.string.dialog_long_audio_roughly),
+                        style = MaterialTheme.typography.bodySmall)
+                }
+                if (speakerLabelsAtRisk) {
+                    Text(stringResource(R.string.dialog_long_audio_labels_at_risk),
                         style = MaterialTheme.typography.bodySmall)
                 }
             }

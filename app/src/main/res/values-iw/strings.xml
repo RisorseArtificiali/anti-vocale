@@ -286,6 +286,7 @@
     <string name="dialog_long_audio_title">אודיו ארוך</string>
     <string name="dialog_long_audio_message">משך האודיו הזה %1$d דקות. עם %2$s זה ייקח כ-%3$d דקות. תקבל התראה כשזה יסתיים.</string>
     <string name="dialog_long_audio_roughly">הערכה גסה: המכשיר עדיין מכייל את עצמו למודל שנבחר.</string>
+    <string name="dialog_long_audio_labels_at_risk">ייתכן שתוויות הדוברים יופסקו באמצע במכשיר זה: אין מספיק זכרון לציר הזמן המלא.</string>
     <string name="dialog_long_audio_continue">המשך</string>
     <string name="dialog_long_audio_cancel">ביטול</string>
     <string name="native_crash_model_warning">האפליקציה נסגרה באופן בלתי צפוי במהלך התמלול האחרון. אם זה קרה בזמן טעינת מודל, ייתכן שהקובץ פגום. נסה להוריד אותו מחדש מהלשונית מודלים.</string>

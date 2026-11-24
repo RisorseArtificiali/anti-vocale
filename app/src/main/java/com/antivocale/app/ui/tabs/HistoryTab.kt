@@ -979,6 +979,7 @@ fun HistoryTab(
             estimateMinutes = warning.estimateMinutes,
             isRough = warning.isRough,
             modelDisplayName = warning.modelDisplayName,
+            speakerLabelsAtRisk = warning.speakerLabelsAtRisk,
             onConfirm = { viewModel.confirmLongAudioWarning() },
             onCancel = { viewModel.cancelLongAudioWarning() }
         )

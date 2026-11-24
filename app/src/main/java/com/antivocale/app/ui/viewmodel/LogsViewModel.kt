@@ -219,6 +219,11 @@ class LogsViewModel @Inject constructor(
         val estimateMinutes: Long,
         val isRough: Boolean,
         val modelDisplayName: String,
+        /** TASK-1042: the device's retention budget cannot hold the label
+         *  timeline for this duration (the TASK-597/TASK-728 gate will drop
+         *  labels partway); the dialog says so upfront. False when labels
+         *  are disabled, the fit is fine, or the run never collects. */
+        val speakerLabelsAtRisk: Boolean = false,
         val onConfirm: () -> Unit,
         /** Decline (TASK-934): reclaims what the arming side staged. The
          *  retranscribe arm passes null (its file is the row's original). */
@@ -684,6 +689,18 @@ class LogsViewModel @Inject constructor(
             proceed()
             return
         }
+        // TASK-1042: mirror the TASK-597 pipeline gate upfront. The budget
+        // and the retention need share AudioDurationPolicy's units (bytes):
+        // labels at risk when the timeline (64KiB/s) exceeds
+        // min(ram/4, heap/2) AND the user collects labels. The pipeline's
+        // own runtime guard stays the single enforcement.
+        val speakerLabelsAtRisk =
+            preferencesManager.speakerLabelsEnabled.first() &&
+                duration > 0 &&
+                duration.toLong() * AudioDurationPolicy.PCM_BYTES_PER_SECOND >
+                    AudioDurationPolicy.retentionBudgetBytes(
+                        MemoryReadings.availableRamBytes(context),
+                        MemoryReadings.maxHeapBytes())
         val previous = _pendingLongAudioWarning.value
         val declineChain: (() -> Unit)? = onDecline?.let { decline ->
             {
@@ -694,6 +711,7 @@ class LogsViewModel @Inject constructor(
         _pendingLongAudioWarning.value = LongAudioWarning(
             durationMinutes = decision.durationMinutes.toInt(),
             estimateMinutes = decision.estimateMinutes,
+            speakerLabelsAtRisk = speakerLabelsAtRisk,
             isRough = decision.isRough,
             modelDisplayName = backendId?.let { displayNameFor(it, context) } ?: "",
             onConfirm = {

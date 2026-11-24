@@ -284,6 +284,7 @@
     <string name="dialog_long_audio_title">صدای طولانی</string>
     <string name="dialog_long_audio_message">این صدا %1$d دقیقه است. با %2$s حدود %3$d دقیقه طول می‌کشد. وقتی آماده شد اعلان دریافت می‌کنید.</string>
     <string name="dialog_long_audio_roughly">تخمین تقریبی: این دستگاه هنوز برای مدل انتخاب‌شده در حال کالیبره شدن است.</string>
+    <string name="dialog_long_audio_labels_at_risk">برچسب‌های گوینده ممکن است در نیمه راه روی این دستگاه قطع شوند: حافظه برای کامل زمان‌خط کافی نیست.</string>
     <string name="dialog_long_audio_continue">ادامه</string>
     <string name="dialog_long_audio_cancel">لغو</string>
     <string name="native_crash_model_warning">برنامه در آخرین رونویسی به‌طور غیرمنتظره بسته شد. اگر هنگام بارگذاری مدل اتفاق افتاده باشد، ممکن است فایل خراب باشد. دانلود دوباره آن را از زبانه مدل امتحان کنید.</string>

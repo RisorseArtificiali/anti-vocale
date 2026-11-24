@@ -289,6 +289,7 @@
     <string name="dialog_long_audio_title">Long audio</string>
     <string name="dialog_long_audio_message">This audio lasts %1$d minutes. With %2$s it will take about %3$d minutes. You will get a notification when it is done.</string>
     <string name="dialog_long_audio_roughly">Rough estimate: this device is still calibrating for the selected model.</string>
+    <string name="dialog_long_audio_labels_at_risk">Speaker labels may be dropped partway on this device: not enough memory for the full timeline.</string>
     <string name="dialog_long_audio_continue">Continue</string>
     <string name="dialog_long_audio_cancel">Cancel</string>
     <string name="native_crash_model_warning">The app closed unexpectedly during the last transcription. If this happened while loading a model, the file may be corrupt. Try re-downloading it from the Model tab.</string>

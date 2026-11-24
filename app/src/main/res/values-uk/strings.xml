@@ -293,6 +293,7 @@
     <string name="dialog_long_audio_title">Довге аудіо</string>
     <string name="dialog_long_audio_message">Це аудіо триває %1$d хвилин. З %2$s обробка займе близько %3$d хвилин. Після завершення ви отримаєте сповіщення.</string>
     <string name="dialog_long_audio_roughly">Приблизна оцінка: пристрій ще калібрується для вибраної моделі.</string>
+    <string name="dialog_long_audio_labels_at_risk">Мітки говорячого можуть обрватися на півдорозі на цьому пристрої: недостатньо памяті для повної шкали.</string>
     <string name="dialog_long_audio_continue">Продовжити</string>
     <string name="dialog_long_audio_cancel">Скасувати</string>
     <string name="native_crash_model_warning">Додаток несподівано закрився під час останньої розшифровки. Якщо це сталося під час завантаження моделі, файл може бути пошкоджений. Спробуйте завантажити його знову на вкладці «Модель».</string>

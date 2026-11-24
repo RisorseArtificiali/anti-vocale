@@ -284,6 +284,7 @@
     <string name="dialog_long_audio_title">Audio lungo</string>
     <string name="dialog_long_audio_message">Questo audio dura %1$d minuti. Con %2$s serviranno circa %3$d minuti. Riceverai una notifica quando sarà pronto.</string>
     <string name="dialog_long_audio_roughly">Stima approssimativa: il dispositivo sta ancora calibrando il modello selezionato.</string>
+    <string name="dialog_long_audio_labels_at_risk">Le etichette parlante potrebbero interrompersi a metà su questo dispositivo: memoria insufficiente per la timeline completa.</string>
     <string name="dialog_long_audio_continue">Continua</string>
     <string name="dialog_long_audio_cancel">Annulla</string>
     <string name="native_crash_model_warning">L\'app si è chiusa in modo imprevisto durante l\'ultima trascrizione. Se è successo durante il caricamento di un modello, il file potrebbe essere danneggiato. Prova a scaricarlo di nuovo dalla scheda Modello.</string>

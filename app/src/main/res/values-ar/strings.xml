@@ -245,6 +245,7 @@
     <string name="dialog_long_audio_title">صوت طويل</string>
     <string name="dialog_long_audio_message">مدة هذا الصوت %1$d دقيقة. مع %2$s سيستغرق الأمر نحو %3$d دقيقة. ستصلك إشعار عند الانتهاء.</string>
     <string name="dialog_long_audio_roughly">تقدير تقريبي: لا يزال هذا الجهاز قيد المعايرة للنموذج المحدد.</string>
+    <string name="dialog_long_audio_labels_at_risk">قد تتوقف تسميات المتحدثين في منتصف الطريق على هذا الجهاز: ذاكرة غير كافية للخط الزمني الكامل.</string>
     <string name="dialog_long_audio_continue">متابعة</string>
     <string name="dialog_long_audio_cancel">إلغاء</string>
     <string name="native_crash_model_warning">أُغلق التطبيق بشكل غير متوقع أثناء النسخ الأخير. إذا حدث ذلك أثناء تحميل نموذج، فقد يكون الملف تالفًا. جرّب إعادة تنزيله من تبويب النموذج.</string>

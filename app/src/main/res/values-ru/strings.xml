@@ -275,6 +275,7 @@
     <string name="dialog_long_audio_title">Длинное аудио</string>
     <string name="dialog_long_audio_message">Это аудио длится %1$d минут. С %2$s обработка займёт около %3$d минут. По завершении вы получите уведомление.</string>
     <string name="dialog_long_audio_roughly">Приблизительная оценка: устройство ещё калибруется для выбранной модели.</string>
+    <string name="dialog_long_audio_labels_at_risk">Метки говорящего могут оборваться на полпути на этом устройстве: недостаточно памяти для полной шкалы.</string>
     <string name="dialog_long_audio_continue">Продолжить</string>
     <string name="dialog_long_audio_cancel">Отмена</string>
     <string name="native_crash_model_warning">Приложение неожиданно закрылось во время последнего распознавания. Если это произошло при загрузке модели, файл может быть повреждён. Попробуйте скачать его заново на вкладке «Модель».</string>

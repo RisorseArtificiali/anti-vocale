@@ -290,6 +290,7 @@
     <string name="dialog_long_audio_title">Lange audio</string>
     <string name="dialog_long_audio_message">Deze audio duurt %1$d minuten. Met %2$s duurt het ongeveer %3$d minuten. Je krijgt een melding zodra hij klaar is.</string>
     <string name="dialog_long_audio_roughly">Ruwe schatting: dit apparaat is nog aan het kalibreren voor het gekozen model.</string>
+    <string name="dialog_long_audio_labels_at_risk">Sprekerlabels kunnen op dit apparaat halverwege vervallen: onvoldoende geheugen voor de volledige tijdlijn.</string>
     <string name="dialog_long_audio_continue">Doorgaan</string>
     <string name="dialog_long_audio_cancel">Annuleren</string>
     <string name="native_crash_model_warning">De app is onverwacht gesloten tijdens de laatste transcriptie. Gebeurde dit tijdens het laden van een model, dan kan het bestand beschadigd zijn. Download het opnieuw via het tabblad Modellen.</string>

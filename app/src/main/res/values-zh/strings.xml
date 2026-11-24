@@ -245,6 +245,7 @@
     <string name="dialog_long_audio_title">长音频</string>
     <string name="dialog_long_audio_message">此音频时长 %1$d 分钟。使用 %2$s 约需 %3$d 分钟。完成后会收到通知。</string>
     <string name="dialog_long_audio_roughly">仅为粗略估计：此设备仍在针对所选模型进行校准。</string>
+    <string name="dialog_long_audio_labels_at_risk">在此设备上，说话人标签可能中途丢失：内存不足以容纳完整时间线。</string>
     <string name="dialog_long_audio_continue">继续</string>
     <string name="dialog_long_audio_cancel">取消</string>
     <string name="native_crash_model_warning">上次转写期间应用意外关闭。如果发生在加载模型时，文件可能已损坏。请在“模型”标签页重新下载。</string>
