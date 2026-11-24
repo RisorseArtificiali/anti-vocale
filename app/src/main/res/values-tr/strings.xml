@@ -937,6 +937,7 @@
     <string name="session_resume_action">Devam et</string>
     <string name="session_pause_action">Duraklat</string>
     <string name="session_paused_label">Duraklatıldı</string>
+    <string name="history_origin_timestamp">Orijinal mesaj: %1$s</string>
     <string name="session_park_cause_native_crash">Yerel bir çökme nedeniyle kesildi</string>
     <string name="session_park_cause_app_restart">Uygulama yeniden başlatıldığı için kesildi</string>
     <string name="session_expired_reason">Süresi doldu</string>

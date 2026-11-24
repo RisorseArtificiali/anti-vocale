@@ -2006,6 +2006,22 @@ fun LogEntryItem(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // TASK-1040: the ORIGINAL message moment, when the source
+                // carried one (distinct from the transcription time the
+                // collapsed relative label shows). Hidden when null: the
+                // value is never fabricated.
+                log.originTimestampMs?.let { originMs ->
+                    val originTime = remember(originMs, context) {
+                        formatFullTimestamp(originMs, context)
+                    }
+                    Text(
+                        text = stringResource(R.string.history_origin_timestamp, originTime),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
                 // GH #83/TASK-599: when the cues carry speaker labels, every
                 // surface of this row's text uses the turn-annotated form,
                 // the same rendering the exports produce; the wrapper passes

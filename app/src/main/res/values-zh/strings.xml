@@ -1172,6 +1172,7 @@
     <string name="session_resume_action">继续</string>
     <string name="session_pause_action">暂停</string>
     <string name="session_paused_label">已暂停</string>
+    <string name="history_origin_timestamp">原始消息：%1$s</string>
     <string name="session_park_cause_native_crash">因原生代码崩溃而中断</string>
     <string name="session_park_cause_app_restart">因应用重启而中断</string>
     <string name="session_expired_reason">已过期</string>

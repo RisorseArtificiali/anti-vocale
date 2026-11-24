@@ -980,6 +980,7 @@
     <string name="session_resume_action">Resume</string>
     <string name="session_pause_action">Pause</string>
     <string name="session_paused_label">Paused</string>
+    <string name="history_origin_timestamp">Original message: %1$s</string>
     <string name="session_park_cause_native_crash">Interrupted by a native crash</string>
     <string name="session_park_cause_app_restart">Interrupted by app restart</string>
     <string name="session_expired_reason">Expired</string>

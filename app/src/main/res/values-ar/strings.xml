@@ -1183,6 +1183,7 @@
     <string name="session_resume_action">استئناف</string>
     <string name="session_pause_action">إيقاف مؤقت</string>
     <string name="session_paused_label">متوقف مؤقتًا</string>
+    <string name="history_origin_timestamp">الرسالة الأصلية: %1$s</string>
     <string name="session_park_cause_native_crash">تمت المقاطعة بسبب انهيار أصلي</string>
     <string name="session_park_cause_app_restart">تمت المقاطعة بسبب إعادة تشغيل التطبيق</string>
     <string name="session_expired_reason">منتهية الصلاحية</string>

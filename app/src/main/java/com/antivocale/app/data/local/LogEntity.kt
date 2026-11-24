@@ -84,6 +84,16 @@ data class LogEntity(
      * the renderer, not here. False/absent on every ordinary row.
      */
     val switchedToSibling: Boolean = false,
+    /**
+     * TASK-1040 (Bruno Musiu's feedback): when the ORIGINAL voice message
+     * was sent/recorded, captured at intake from the source before any
+     * staging copy exists (the provider's last-modified for shares, the
+     * detection stamp for auto-detected voice notes). Null when the source
+     * exposes no honest moment (freshly staged Tasker/API files, legacy
+     * rows): never fabricated, never the transcription time, and never
+     * the staging copy's mtime (that is the copy time, not the message's).
+     */
+    val originTimestampMs: Long? = null,
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -120,6 +130,7 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     saveFailureReason = saveFailureReason,
     contentHash = contentHash,
     switchedToSibling = switchedToSibling,
+    originTimestampMs = originTimestampMs,
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -153,4 +164,5 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     saveFailureReason = saveFailureReason,
     contentHash = contentHash,
     switchedToSibling = switchedToSibling,
+    originTimestampMs = originTimestampMs,
 )

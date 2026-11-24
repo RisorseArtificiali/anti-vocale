@@ -1,0 +1,392 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 18,
+    "identityHash": "c43fd9728d86966c52a07f93a149be6b",
+    "entities": [
+      {
+        "tableName": "logs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `taskId` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `prompt` TEXT NOT NULL, `result` TEXT NOT NULL, `errorMessage` TEXT, `durationMs` INTEGER NOT NULL, `filePath` TEXT, `audioDurationSeconds` REAL NOT NULL, `sourcePackageName` TEXT, `senderName` TEXT, `isPartial` INTEGER NOT NULL, `failedChunkCount` INTEGER NOT NULL, `modelName` TEXT, `rawTranscript` TEXT, `summary` TEXT, `summarySkipReason` TEXT, `segments` TEXT, `failureContext` TEXT, `processingContext` TEXT, `firstPassTranscript` TEXT, `detectedLanguage` TEXT, `languagePin` TEXT, `savedFolderName` TEXT, `savedFileName` TEXT, `saveFailureReason` TEXT, `contentHash` TEXT, `switchedToSibling` INTEGER NOT NULL, `originTimestampMs` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "taskId",
+            "columnName": "taskId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prompt",
+            "columnName": "prompt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "result",
+            "columnName": "result",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "errorMessage",
+            "columnName": "errorMessage",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "durationMs",
+            "columnName": "durationMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "filePath",
+            "columnName": "filePath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "audioDurationSeconds",
+            "columnName": "audioDurationSeconds",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourcePackageName",
+            "columnName": "sourcePackageName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "senderName",
+            "columnName": "senderName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isPartial",
+            "columnName": "isPartial",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "failedChunkCount",
+            "columnName": "failedChunkCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modelName",
+            "columnName": "modelName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rawTranscript",
+            "columnName": "rawTranscript",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "summary",
+            "columnName": "summary",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "summarySkipReason",
+            "columnName": "summarySkipReason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "segments",
+            "columnName": "segments",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "failureContext",
+            "columnName": "failureContext",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "processingContext",
+            "columnName": "processingContext",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "firstPassTranscript",
+            "columnName": "firstPassTranscript",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "detectedLanguage",
+            "columnName": "detectedLanguage",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "languagePin",
+            "columnName": "languagePin",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "savedFolderName",
+            "columnName": "savedFolderName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "savedFileName",
+            "columnName": "savedFileName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "saveFailureReason",
+            "columnName": "saveFailureReason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "contentHash",
+            "columnName": "contentHash",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "switchedToSibling",
+            "columnName": "switchedToSibling",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originTimestampMs",
+            "columnName": "originTimestampMs",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_logs_timestamp",
+            "unique": false,
+            "columnNames": [
+              "timestamp"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_logs_timestamp` ON `${TABLE_NAME}` (`timestamp`)"
+          },
+          {
+            "name": "index_logs_contentHash",
+            "unique": false,
+            "columnNames": [
+              "contentHash"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_logs_contentHash` ON `${TABLE_NAME}` (`contentHash`)"
+          }
+        ]
+      },
+      {
+        "tableName": "transcription_sessions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`taskId` TEXT NOT NULL, `filePath` TEXT NOT NULL, `fileSizeBytes` INTEGER NOT NULL, `fileMtimeMs` INTEGER NOT NULL, `backendId` TEXT NOT NULL, `modelPath` TEXT NOT NULL, `languagePin` TEXT, `prompt` TEXT NOT NULL, `source` TEXT NOT NULL, `sourcePackage` TEXT, `senderName` TEXT, `state` TEXT NOT NULL, `totalOutputSamples` INTEGER, `accumulatedComputeMs` INTEGER NOT NULL, `failedChunkCount` INTEGER NOT NULL, `blankChunkCount` INTEGER NOT NULL, `retriedChunkCount` INTEGER NOT NULL, `crashAtOffsetCount` INTEGER NOT NULL, `createdAtMs` INTEGER NOT NULL, `updatedAtMs` INTEGER NOT NULL, PRIMARY KEY(`taskId`))",
+        "fields": [
+          {
+            "fieldPath": "taskId",
+            "columnName": "taskId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "filePath",
+            "columnName": "filePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileSizeBytes",
+            "columnName": "fileSizeBytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileMtimeMs",
+            "columnName": "fileMtimeMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "backendId",
+            "columnName": "backendId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modelPath",
+            "columnName": "modelPath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "languagePin",
+            "columnName": "languagePin",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "prompt",
+            "columnName": "prompt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourcePackage",
+            "columnName": "sourcePackage",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "senderName",
+            "columnName": "senderName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalOutputSamples",
+            "columnName": "totalOutputSamples",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "accumulatedComputeMs",
+            "columnName": "accumulatedComputeMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "failedChunkCount",
+            "columnName": "failedChunkCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "blankChunkCount",
+            "columnName": "blankChunkCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retriedChunkCount",
+            "columnName": "retriedChunkCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "crashAtOffsetCount",
+            "columnName": "crashAtOffsetCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtMs",
+            "columnName": "updatedAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "taskId"
+          ]
+        }
+      },
+      {
+        "tableName": "session_chunks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`taskId` TEXT NOT NULL, `startSample` INTEGER NOT NULL, `endSample` INTEGER NOT NULL, `text` TEXT NOT NULL, `cuesJson` TEXT, `confidence` REAL, `detectedLanguage` TEXT, PRIMARY KEY(`taskId`, `startSample`))",
+        "fields": [
+          {
+            "fieldPath": "taskId",
+            "columnName": "taskId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startSample",
+            "columnName": "startSample",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endSample",
+            "columnName": "endSample",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "text",
+            "columnName": "text",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cuesJson",
+            "columnName": "cuesJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "confidence",
+            "columnName": "confidence",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "detectedLanguage",
+            "columnName": "detectedLanguage",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "taskId",
+            "startSample"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c43fd9728d86966c52a07f93a149be6b')"
+    ]
+  }
+}

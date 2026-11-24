@@ -5451,6 +5451,9 @@ class TranscriptionOrchestrator @Inject constructor(
         /** TASK-842: the intake content hash (the interactive guard's
          *  lookup key); null on every legacy/non-interactive producer. */
         contentHash: String? = null,
+        /** TASK-1040: the ORIGINAL message moment from the source (null
+         *  when the source has none); onto the row, never fabricated. */
+        originTimestampMs: Long? = null,
     ) {
         // TASK-899: the startup-sweep gate lives HERE, at the single insert
         // point this KDoc names, so no future caller can forget it: a row
@@ -5479,7 +5482,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 filePath = filePath,
                 sourcePackageName = sourcePackageName,
                 senderName = senderName,
-                contentHash = contentHash
+                contentHash = contentHash,
+                originTimestampMs = originTimestampMs
             ).toEntity()
         )
     }

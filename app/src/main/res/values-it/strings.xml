@@ -1124,6 +1124,7 @@
     <string name="session_resume_action">Riprendi</string>
     <string name="session_pause_action">Pausa</string>
     <string name="session_paused_label">In pausa</string>
+    <string name="history_origin_timestamp">Messaggio originale: %1$s</string>
     <string name="session_park_cause_native_crash">Interrotta da un crash nativo</string>
     <string name="session_park_cause_app_restart">Interrotta dal riavvio dell app</string>
     <string name="session_expired_reason">Scaduta</string>

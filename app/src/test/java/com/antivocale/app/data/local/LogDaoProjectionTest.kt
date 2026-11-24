@@ -91,6 +91,8 @@ class LogDaoProjectionTest {
             saveFailureReason = "fixture",
             // TASK-842: the guard's column rides the same non-null rule.
             contentHash = "abc123",
+            // TASK-1040: same rule for the original-message moment.
+            originTimestampMs = 1_789_999_000_000L,
         )
         dao.insert(full)
 

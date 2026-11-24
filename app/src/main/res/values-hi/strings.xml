@@ -901,6 +901,7 @@
     <string name="session_resume_action">फिर से शुरू करें</string>
     <string name="session_pause_action">रोकें</string>
     <string name="session_paused_label">रुका हुआ</string>
+    <string name="history_origin_timestamp">मूल संदेश: %1$s</string>
     <string name="session_park_cause_native_crash">नेटिव क्रैश के कारण बाधित</string>
     <string name="session_park_cause_app_restart">ऐप पुनः आरंभ होने से बाधित</string>
     <string name="session_expired_reason">समाप्त</string>

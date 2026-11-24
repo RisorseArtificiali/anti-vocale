@@ -1123,6 +1123,7 @@
     <string name="session_resume_action">ادامه</string>
     <string name="session_pause_action">توقف</string>
     <string name="session_paused_label">متوقف شده</string>
+    <string name="history_origin_timestamp">پیام اصلی: %1$s</string>
     <string name="session_park_cause_native_crash">به دلیل کرش نیتیو قطع شد</string>
     <string name="session_park_cause_app_restart">به دلیل راه‌اندازی مجدد برنامه قطع شد</string>
     <string name="session_expired_reason">منقضی شده</string>

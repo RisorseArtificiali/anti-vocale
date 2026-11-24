@@ -800,6 +800,7 @@
     <string name="session_resume_action">Reprendre</string>
     <string name="session_pause_action">Mettre en pause</string>
     <string name="session_paused_label">En pause</string>
+    <string name="history_origin_timestamp">Message d\'origine : %1$s</string>
     <string name="session_park_cause_native_crash">Interrompue par un crash natif</string>
     <string name="session_park_cause_app_restart">Interrompue par le redémarrage de l app</string>
     <string name="session_expired_reason">Expirée</string>

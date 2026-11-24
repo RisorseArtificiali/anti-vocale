@@ -40,6 +40,9 @@ object TranscriptFileSaver {
         segments: List<TimedSegment>,
         failedChunkCount: Int,
         sourcePackage: String? = null,
+        /** TASK-1040: the original message moment; stamps the filename in
+         *  place of the save time when the source carried one. */
+        originTimestampMs: Long? = null,
         /** TASK-647: the AI-disclaimer signature for the exported file; blank = off. */
         signature: String = "",
         signaturePosition: String = "append",
@@ -55,7 +58,8 @@ object TranscriptFileSaver {
         // The "first words" preview must come from the transcript: the
         // formatted payload opens with timestamps ("WEBVTT", "00:00:01")
         // and names the file after the clock instead of the words.
-        return save(context, Uri.parse(treeUriString), decision.format, content, sourcePackage, transcript)
+        return save(context, Uri.parse(treeUriString), decision.format, content, sourcePackage, transcript,
+            originTimestampMs = originTimestampMs)
     }
 
     /**
@@ -164,6 +168,7 @@ object TranscriptFileSaver {
         text: String,
         sourcePackage: String?,
         namePreview: String,
+        originTimestampMs: Long? = null,
     ): SaveResult {
         return try {
             val tree = DocumentFile.fromTreeUri(context, treeUri) ?: run {
@@ -174,7 +179,8 @@ object TranscriptFileSaver {
                 Log.w(TAG, "Tree uri not writable (permission revoked?): $treeUri")
                 return SaveResult.Failed(SaveResult.FAIL_NOT_WRITABLE)
             }
-            val timestamp = SimpleDateFormat("yyyy-MM-dd_HHmm", Locale.US).format(Date())
+            val timestamp = SimpleDateFormat("yyyy-MM-dd_HHmm", Locale.US)
+                .format(Date(originTimestampMs ?: System.currentTimeMillis()))
             val source = sourcePackage?.substringAfterLast('.')?.replace(".", "_") ?: "transcript"
             // Filename: {source}_{date}_{first words}.{ext}, sortable by source then date.
             val preview = namePreview.take(30).replace(Regex("[^\\w -]"), "").trim()

@@ -85,7 +85,7 @@ interface LogDao {
      */
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason, contentHash, switchedToSibling FROM logs ORDER BY timestamp DESC LIMIT 500")
+        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason, contentHash, switchedToSibling, originTimestampMs FROM logs ORDER BY timestamp DESC LIMIT 500")
     fun getAll(): Flow<List<LogEntity>>
 
     // TASK-613: RAW query, ESCAPE-clause-aware. Room interfaces cannot give a
@@ -98,7 +98,7 @@ interface LogDao {
     // "%" matching the newest 500 rows regardless of the query).
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason, contentHash, switchedToSibling FROM logs WHERE result LIKE '%' || :query || '%' ESCAPE '\\' " +
+        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason, contentHash, switchedToSibling, originTimestampMs FROM logs WHERE result LIKE '%' || :query || '%' ESCAPE '\\' " +
         "ORDER BY timestamp DESC LIMIT 500")
     fun searchAllRaw(query: String): Flow<List<LogEntity>>
 
@@ -154,7 +154,7 @@ interface LogDao {
      *  their null defaults; the partial-entity column list is compile-checked). */
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason, contentHash, switchedToSibling FROM logs WHERE id = :id LIMIT 1")
+        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin, savedFolderName, savedFileName, saveFailureReason, contentHash, switchedToSibling, originTimestampMs FROM logs WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): LogEntity?
 
     /** TASK-912: the SPI log_delete sweep (marker parameterized; the SPI owns the literal). */

@@ -942,6 +942,7 @@
     <string name="session_resume_action">המשך</string>
     <string name="session_pause_action">השהה</string>
     <string name="session_paused_label">מושהה</string>
+    <string name="history_origin_timestamp">הודעה מקורית: %1$s</string>
     <string name="session_park_cause_native_crash">הופסק עקב קריסה מקומית</string>
     <string name="session_park_cause_app_restart">הופסק עקב הפעלה מחדש של האפליקציה</string>
     <string name="session_expired_reason">פג תוקף</string>

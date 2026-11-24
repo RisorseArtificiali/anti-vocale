@@ -953,6 +953,7 @@
     <string name="session_resume_action">Wznów</string>
     <string name="session_pause_action">Wstrzymaj</string>
     <string name="session_paused_label">Wstrzymano</string>
+    <string name="history_origin_timestamp">Oryginalna wiadomość: %1$s</string>
     <string name="session_park_cause_native_crash">Przerwane przez awarię natywną</string>
     <string name="session_park_cause_app_restart">Przerwane przez ponowne uruchomienie aplikacji</string>
     <string name="session_expired_reason">Wygasła</string>

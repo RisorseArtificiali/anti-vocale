@@ -832,6 +832,7 @@
     <string name="session_resume_action">Jatka</string>
     <string name="session_pause_action">Keskeytä</string>
     <string name="session_paused_label">Keskeytetty</string>
+    <string name="history_origin_timestamp">Alkuperäinen viesti: %1$s</string>
     <string name="session_park_cause_native_crash">Keskeyti natiivikaatuminen</string>
     <string name="session_park_cause_app_restart">Keskeytti sovelluksen uudelleenkäynnistys</string>
     <string name="session_expired_reason">Vanhentunut</string>

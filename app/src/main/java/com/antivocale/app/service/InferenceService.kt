@@ -114,6 +114,8 @@ class InferenceService : Service(), TranscriptionListener {
         /** TASK-842: the intake content hash, from the interactive guard's
          *  share flow; rides the row so FUTURE intakes can match it. */
         const val EXTRA_CONTENT_HASH = "content_hash"
+        /** TASK-1040: the original-message moment (see LogEntity's twin). */
+        const val EXTRA_ORIGIN_TIMESTAMP_MS = "origin_timestamp_ms"
 
         /**
          * TASK-1037 (GH #190) phase 3: the resume marker. With it set the
@@ -319,6 +321,10 @@ class InferenceService : Service(), TranscriptionListener {
         /** TASK-889: the cold-start sweep origin (suppresses the per-note
          *  SUCCESS result notification; the digest covers the burst). */
         val catchup: Boolean = false,
+        /** TASK-1040: the ORIGINAL message moment (null when the source
+         *  has none); onto the row at enqueue, into the auto-save filename
+         *  at completion. */
+        val originTimestampMs: Long? = null,
         /** TASK-1037: a session-resume request. The placeholder fields are
          *  meaningless; the drain hydrates them from the session row
          *  ([TranscriptionOrchestrator.prepareSessionResume]) before the
@@ -532,7 +538,14 @@ class InferenceService : Service(), TranscriptionListener {
             languageOverride = intent?.getStringExtra(EXTRA_LANGUAGE_OVERRIDE),
             trackIndex = intent?.getIntExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, -1) ?: -1,
             contentHash = intent?.getStringExtra(EXTRA_CONTENT_HASH),
-            catchup = intent?.getBooleanExtra(EXTRA_CATCHUP, false) ?: false
+            catchup = intent?.getBooleanExtra(EXTRA_CATCHUP, false) ?: false,
+            // TASK-1040: the extra cannot express null, so 0 is the
+            // absent sentinel (never a legal epoch): the guard is the
+            // raw-extra-to-request decode boundary. (The second ?. is
+            // load-bearing: intent's nullability flows through the
+            // safe-call, making the Long nullable before takeIf.)
+            originTimestampMs = intent?.getLongExtra(EXTRA_ORIGIN_TIMESTAMP_MS, 0L)
+                ?.takeIf { it > 0L },
         )
         rememberRequester(request)
 
@@ -559,6 +572,7 @@ class InferenceService : Service(), TranscriptionListener {
                     sourcePackageName = request.sourcePackage,
                     senderName = request.senderName,
                     contentHash = request.contentHash,
+                    originTimestampMs = request.originTimestampMs,
                 )
             }.onFailure { Log.w(TAG, "Failed to log queued request ${request.taskId}", it) }
         }
@@ -1342,7 +1356,7 @@ class InferenceService : Service(), TranscriptionListener {
                 // exactly as before.
                 val saveResult =
                     if (isShareRequest || !isPartial) {
-                        saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
+                        saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount, request?.originTimestampMs)
                     } else {
                         TranscriptFileSaver.SaveResult.NotConfigured
                     }
@@ -1508,7 +1522,10 @@ class InferenceService : Service(), TranscriptionListener {
         text: String,
         sourcePackage: String?,
         segments: List<TimedSegment>,
-        failedChunkCount: Int
+        failedChunkCount: Int,
+        /** TASK-1040: stamps the auto-save filename with the original
+         *  message moment when the source carried one. */
+        originTimestampMs: Long? = null,
     ): TranscriptFileSaver.SaveResult {
         return withContext(Dispatchers.IO) {
             // ONE resolution: two reads could pair a fresh signature text
@@ -1520,6 +1537,7 @@ class InferenceService : Service(), TranscriptionListener {
                 preferencesManager.outputFolderUri.first(),
                 preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
+                originTimestampMs = originTimestampMs,
                 signature = sig.text,
                 signaturePosition = sig.position,
             )

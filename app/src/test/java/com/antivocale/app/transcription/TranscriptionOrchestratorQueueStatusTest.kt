@@ -70,6 +70,30 @@ class TranscriptionOrchestratorQueueStatusTest {
     }
 
     @Test
+    fun `logQueued carries the origin timestamp through to the row`() = runTest {
+        // TASK-1040: the original-message moment rides the insert verbatim;
+        // absent input stays null (never the enqueue time, never the
+        // staged copy's time).
+        val logDao = mockk<LogDao>(relaxed = true)
+        val orchestrator = orchestrator(logDao)
+
+        orchestrator.logQueued(
+            taskId = "task-origin",
+            requestType = "audio",
+            filePath = "/tmp/a.wav",
+            originTimestampMs = 1_789_999_000_000L,
+        )
+        orchestrator.logQueued(taskId = "task-no-origin", requestType = "audio")
+
+        val inserts = mutableListOf<com.antivocale.app.data.local.LogEntity>()
+        coVerify(exactly = 2) { logDao.insert(capture(inserts)) }
+        val originRow = inserts.first { it.taskId == "task-origin" }
+        assertEquals(1_789_999_000_000L, originRow.originTimestampMs)
+        val noOriginRow = inserts.first { it.taskId == "task-no-origin" }
+        assertNull(noOriginRow.originTimestampMs)
+    }
+
+    @Test
     fun `logQueued maps subtitles to AUDIO and everything else to TEXT`() = runTest {
         val logDao = mockk<LogDao>(relaxed = true)
         val orchestrator = orchestrator(logDao)

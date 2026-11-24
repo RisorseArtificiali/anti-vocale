@@ -49,6 +49,8 @@ class BackupHistoryCodecTest {
         contentHash = "deadbeef00",
         // TASK-904/913: same rule; the codec shipped without it once.
         switchedToSibling = true,
+        // TASK-1040: same rule for the original-message moment.
+        originTimestampMs = 1_789_999_000_000L,
     )
 
     @Test

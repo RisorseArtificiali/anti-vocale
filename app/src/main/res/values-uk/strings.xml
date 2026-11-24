@@ -955,6 +955,7 @@
     <string name="session_resume_action">Продовжити</string>
     <string name="session_pause_action">Пауза</string>
     <string name="session_paused_label">Призупинено</string>
+    <string name="history_origin_timestamp">Оригінальне повідомлення: %1$s</string>
     <string name="session_park_cause_native_crash">Перервано через збій нативного коду</string>
     <string name="session_park_cause_app_restart">Перервано перезапуском застосунку</string>
     <string name="session_expired_reason">Прострочено</string>

@@ -296,6 +296,7 @@ class ShareReceiverActivity : ComponentActivity() {
             val localPath: String,
             val backendOverride: String?,
             val contentHash: String,
+            val originTimestampMs: Long? = null,
         ) : PendingDialog
 
         /** ShareExternal family chooser: pick one imported model. */
@@ -304,6 +305,7 @@ class ShareReceiverActivity : ComponentActivity() {
             val localPath: String,
             val records: List<ExternalModelRecord>,
             val contentHash: String?,
+            val originTimestampMs: Long? = null,
         ) : PendingDialog
     }
 
@@ -598,21 +600,29 @@ class ShareReceiverActivity : ComponentActivity() {
             // so the row carries it for FUTURE intakes).
             val contentHash = duplicateGuard.hashOnIo(localPath)
 
+            // TASK-1040: the ORIGINAL message moment from the provider,
+            // read while the URI grant is held (before anything could
+            // mistake the staged copy's time for it; null when the
+            // provider exposes no last-modified).
+            val originTimestampMs = withContext(Dispatchers.IO) {
+                com.antivocale.app.util.SourceTimestamps.lastModifiedOrNull(applicationContext, uri)
+            }
+
             // External-family share target: the sentinel must become a concrete external:<id>
             // BEFORE any consumer (subtitle branch, timeout worker, service intent) sees it.
             if (backendOverride == EXTERNAL_FAMILY_BACKEND_ID) {
                 showExternalModelChooser(
-                    taskId, localPath, externalModelStore, contentHash)
+                    taskId, localPath, externalModelStore, contentHash, originTimestampMs)
                 return@launchShareFlow
             }
 
             if (contentHash != null &&
-                offerDuplicateDialogIfNeeded(taskId, localPath, backendOverride, contentHash)
+                offerDuplicateDialogIfNeeded(taskId, localPath, backendOverride, contentHash, originTimestampMs)
             ) {
                 return@launchShareFlow  // the dialog owns the request from here
             }
 
-            dispatch(taskId, localPath, backendOverride, contentHash)
+            dispatch(taskId, localPath, backendOverride, contentHash, originTimestampMs)
         }
     }
 
@@ -629,6 +639,7 @@ class ShareReceiverActivity : ComponentActivity() {
         localPath: String,
         store: com.antivocale.app.data.ExternalModelStore,
         contentHash: String? = null,
+        originTimestampMs: Long? = null,
     ) {
         // The copy runs on the app scope and can outlive this Activity: a
         // recreation (or the recreation guard's finish()) between copy and
@@ -658,7 +669,7 @@ class ShareReceiverActivity : ComponentActivity() {
         }
 
         ensureDialogSurface()
-        pendingDialogs.add(PendingDialog.ExternalChooser(taskId, localPath, records, contentHash))
+        pendingDialogs.add(PendingDialog.ExternalChooser(taskId, localPath, records, contentHash, originTimestampMs))
     }
 
     /** The subtitle probe branch plus the default ASR path, shared by every
@@ -669,6 +680,7 @@ class ShareReceiverActivity : ComponentActivity() {
         localPath: String,
         backendOverride: String?,
         contentHash: String? = null,
+        originTimestampMs: Long? = null,
     ) {
         // TASK-517: the subtitle probe (MediaExtractor on potentially
         // GB-scale videos) and the preference reads inside offerIfTracks
@@ -681,7 +693,8 @@ class ShareReceiverActivity : ComponentActivity() {
                 source = InferenceService.SOURCE_SHARE,
                 sourcePackage = sourcePackage,
                 backendOverride = backendOverride,
-                contentHash = contentHash)
+                contentHash = contentHash,
+                originTimestampMs = originTimestampMs)
         }
 
         // GH #18: the decode probe gates only the ASR path; subtitle-only
@@ -729,7 +742,8 @@ class ShareReceiverActivity : ComponentActivity() {
             sourcePackage = sourcePackage,
             backendOverride = backendOverride,
             senderName = senderName,
-            contentHash = contentHash)
+            contentHash = contentHash,
+            originTimestampMs = originTimestampMs)
 
         // F6: unified enqueue (trampoline fallback on the API 31+
         // restriction). The Failed branch is the no-signal case (e.g.
@@ -756,6 +770,7 @@ class ShareReceiverActivity : ComponentActivity() {
         localPath: String,
         backendOverride: String?,
         contentHash: String,
+        originTimestampMs: Long? = null,
     ): Boolean {
         if (isFinishing || isDestroyed) return false
         val hit = duplicateGuard
@@ -777,6 +792,7 @@ class ShareReceiverActivity : ComponentActivity() {
                 localPath = localPath,
                 backendOverride = backendOverride,
                 contentHash = contentHash,
+                originTimestampMs = originTimestampMs,
             )
         )
         return true
@@ -813,7 +829,7 @@ class ShareReceiverActivity : ComponentActivity() {
     private fun onDuplicateReprocess(entry: PendingDialog.Duplicate) {
         removePendingDialog(entry)
         launchShareFlow {
-            dispatch(entry.taskId, entry.localPath, entry.backendOverride, entry.contentHash)
+            dispatch(entry.taskId, entry.localPath, entry.backendOverride, entry.contentHash, entry.originTimestampMs)
         }
     }
 
@@ -823,11 +839,11 @@ class ShareReceiverActivity : ComponentActivity() {
         Log.i(TAG, "External model chosen via share chooser: ${chosen.backendId}")
         launchShareFlow {
             if (entry.contentHash != null &&
-                offerDuplicateDialogIfNeeded(entry.taskId, entry.localPath, chosen.backendId, entry.contentHash)
+                offerDuplicateDialogIfNeeded(entry.taskId, entry.localPath, chosen.backendId, entry.contentHash, entry.originTimestampMs)
             ) {
                 return@launchShareFlow  // the dialog owns the request from here
             }
-            dispatch(entry.taskId, entry.localPath, chosen.backendId, entry.contentHash)
+            dispatch(entry.taskId, entry.localPath, chosen.backendId, entry.contentHash, entry.originTimestampMs)
         }
     }
 

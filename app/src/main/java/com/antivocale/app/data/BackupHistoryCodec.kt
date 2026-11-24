@@ -185,6 +185,9 @@ object BackupHistoryCodec {
             // review caught it missing here); same backwards-compat story: a
             // missing key on import reads false.
             .put("switchedToSibling", row.switchedToSibling)
+            // TASK-1040's column joins after the format shipped; a missing
+            // key on import reads null (backwards compatible, no version bump).
+            .put("originTimestampMs", row.originTimestampMs ?: JSONObject.NULL)
     }
 
     /** The inverse: a missing key reads the entity's own default (never a silent 0-vs-null swap). */
@@ -219,5 +222,6 @@ object BackupHistoryCodec {
         saveFailureReason = if (o.isNull("saveFailureReason")) null else o.optString("saveFailureReason"),
         contentHash = if (o.isNull("contentHash")) null else o.optString("contentHash"),
         switchedToSibling = o.optBoolean("switchedToSibling", false),
+        originTimestampMs = if (o.isNull("originTimestampMs")) null else o.optLong("originTimestampMs"),
     )
 }

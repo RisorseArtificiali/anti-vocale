@@ -47,6 +47,11 @@ object AudioRequestIntent {
         /** TASK-889: the request came from the cold-start catch-up sweep
          *  (the per-note result notification is suppressed for it). */
         catchup: Boolean = false,
+        /** TASK-1040: the ORIGINAL message moment, captured at intake from
+         *  the source (the provider's last-modified for shares, the
+         *  detection stamp for voice notes). Null when the source has no
+         *  honest moment; never the staging copy's time. */
+        originTimestampMs: Long? = null,
     ): Intent = make(
         context, source, taskId, filePath,
         requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO,
@@ -54,7 +59,8 @@ object AudioRequestIntent {
         senderName = senderName,
         contentHash = contentHash,
         backendOverride = backendOverride,
-        catchup = catchup)
+        catchup = catchup,
+        originTimestampMs = originTimestampMs)
 
     /**
      * Review F1: the subtitle-import arm as its OWN entry point. An open
@@ -116,6 +122,7 @@ object AudioRequestIntent {
         contentHash: String? = null,
         backendOverride: String? = null,
         catchup: Boolean = false,
+        originTimestampMs: Long? = null,
     ): Intent = Intent(context, InferenceService::class.java).apply {
         putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, requestType)
         putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
@@ -128,5 +135,6 @@ object AudioRequestIntent {
         contentHash?.let { putExtra(InferenceService.EXTRA_CONTENT_HASH, it) }
         backendOverride?.let { putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, it) }
         if (catchup) putExtra(InferenceService.EXTRA_CATCHUP, true)
+        originTimestampMs?.let { putExtra(InferenceService.EXTRA_ORIGIN_TIMESTAMP_MS, it) }
     }
 }

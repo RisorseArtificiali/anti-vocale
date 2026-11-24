@@ -902,6 +902,7 @@
     <string name="session_resume_action">Fortsetzen</string>
     <string name="session_pause_action">Pausieren</string>
     <string name="session_paused_label">Pausiert</string>
+    <string name="history_origin_timestamp">Originalnachricht: %1$s</string>
     <string name="session_park_cause_native_crash">Durch einen nativen Absturz unterbrochen</string>
     <string name="session_park_cause_app_restart">Durch App-Neustart unterbrochen</string>
     <string name="session_expired_reason">Abgelaufen</string>

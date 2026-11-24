@@ -959,6 +959,7 @@
     <string name="session_resume_action">Hervatten</string>
     <string name="session_pause_action">Pauzeren</string>
     <string name="session_paused_label">Gepauzeerd</string>
+    <string name="history_origin_timestamp">Origineel bericht: %1$s</string>
     <string name="session_park_cause_native_crash">Onderbroken door een native crash</string>
     <string name="session_park_cause_app_restart">Onderbroken door app-herstart</string>
     <string name="session_expired_reason">Verlopen</string>

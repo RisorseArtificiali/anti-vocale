@@ -128,6 +128,10 @@ data class LogEntry(
     /** TASK-909/904: the load retried on a sibling variant and succeeded;
      *  the History row carries the localized note. */
     val switchedToSibling: Boolean = false,
+    /** TASK-1040: when the ORIGINAL voice message was sent/recorded, when
+     *  the source exposed an honest moment (see LogEntity's twin); null on
+     *  rows whose source has none. */
+    val originTimestampMs: Long? = null,
 ) {
     enum class Type { TEXT, AUDIO }
 
@@ -495,6 +499,10 @@ class LogsViewModel @Inject constructor(
             // the hit's row (the transcript text must not linger in the
             // pending state).
             val contentHash = duplicateGuard.hashOnIo(localPath)
+            // TASK-1040: the provider's last-modified, read while the URI
+            // grant is held (null when the provider exposes none).
+            val originTimestampMs =
+                com.antivocale.app.util.SourceTimestamps.lastModifiedOrNull(appContext, uri)
             if (contentHash != null) {
                 val hit = duplicateGuard.lookup(appContext, orchestrator, contentHash)
                 if (hit != null) {
@@ -511,7 +519,8 @@ class LogsViewModel @Inject constructor(
                             localPath = localPath,
                             continueRequest = {
                                 continueBrowseIntake(
-                                    appContext, localPath, localizedContext, contentHash)
+                                    appContext, localPath, localizedContext, contentHash,
+                                    originTimestampMs)
                             },
                             resolved = dialogResolved,
                         )
@@ -533,7 +542,8 @@ class LogsViewModel @Inject constructor(
                 }
             }
 
-            continueBrowseIntake(appContext, localPath, localizedContext, contentHash)
+            continueBrowseIntake(appContext, localPath, localizedContext, contentHash,
+                originTimestampMs)
         }
     }
 
@@ -601,6 +611,7 @@ class LogsViewModel @Inject constructor(
         localPath: String,
         localizedContext: Context,
         contentHash: String?,
+        originTimestampMs: Long? = null,
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             // F5: the shared probe+offer; when a choice prompt is posted it
@@ -610,7 +621,8 @@ class LogsViewModel @Inject constructor(
                     source = InferenceService.SOURCE_BROWSE,
                     sourcePackage = null,
                     backendOverride = null,
-                    contentHash = contentHash)) {
+                    contentHash = contentHash,
+                    originTimestampMs = originTimestampMs)) {
                 return@launch
             }
 
@@ -626,7 +638,9 @@ class LogsViewModel @Inject constructor(
                     ?: preferencesManager.transcriptionBackend.first(),
                 localPath,
                 localizedContext,
-                proceed = { enqueueBrowse(appContext, localPath, localizedContext, contentHash) },
+                proceed = {
+                    enqueueBrowse(appContext, localPath, localizedContext, contentHash,
+                        originTimestampMs) },
                 // TASK-934: declining the advisory orphans the staged copy
                 // (nothing enqueues), so the browse arm reclaims it. A
                 // displaced earlier advisory chains its own reclaim (its
@@ -730,11 +744,13 @@ class LogsViewModel @Inject constructor(
         localPath: String,
         localizedContext: Context,
         contentHash: String? = null,
+        originTimestampMs: Long? = null,
     ) {
         val intent = AudioRequestIntent.make(
             appContext, InferenceService.SOURCE_BROWSE,
             UUID.randomUUID().toString(), localPath,
-            contentHash = contentHash)
+            contentHash = contentHash,
+            originTimestampMs = originTimestampMs)
         // F2: the unified enqueue owns the API 31+ restriction handling;
         // a restricted start posts the trampoline notification that
         // preserves the request instead of dropping it.
@@ -1165,6 +1181,11 @@ class LogsViewModel @Inject constructor(
             // row is a new task; without this the label is one-shot).
             originalEntry.senderName?.let {
                 putExtra(InferenceService.EXTRA_SENDER_NAME, it)
+            }
+            // TASK-1040: the original-message moment is user-visible
+            // lineage like the sender label; a re-run must not lose it.
+            originalEntry.originTimestampMs?.let {
+                putExtra(InferenceService.EXTRA_ORIGIN_TIMESTAMP_MS, it)
             }
         }
         // F2: unified enqueue; a restricted start rides the fallback

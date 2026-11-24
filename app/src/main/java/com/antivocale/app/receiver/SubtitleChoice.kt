@@ -45,13 +45,14 @@ object SubtitleChoice {
         sourcePackage: String?,
         backendOverride: String?,
         contentHash: String? = null,
+        originTimestampMs: Long? = null,
     ) {
         // TASK-515: one read feeds both the disclosure text and the worker
         // delay, so the notification can never promise a different timeout
         // than the one scheduled (the old constant could drift from the text).
         val timeout = timeoutMinutes(context)
-        postChoiceNotification(context, taskId, localPath, track, source, sourcePackage, backendOverride, timeout, contentHash)
-        enqueueTimeoutWorker(context, taskId, localPath, source, sourcePackage, backendOverride, timeout, contentHash)
+        postChoiceNotification(context, taskId, localPath, track, source, sourcePackage, backendOverride, timeout, contentHash, originTimestampMs)
+        enqueueTimeoutWorker(context, taskId, localPath, source, sourcePackage, backendOverride, timeout, contentHash, originTimestampMs)
     }
 
     /** The user preference, falling back to the default on any read failure
@@ -96,6 +97,8 @@ object SubtitleChoice {
         /** TASK-842: the intake content hash, onto both arms' requests so
          *  their rows stay matchable by the duplicate guard. */
         contentHash: String? = null,
+        /** TASK-1040: the original-message moment, onto both arms' rows. */
+        originTimestampMs: Long? = null,
     ): Boolean {
         if (!com.antivocale.app.util.SharedAudioHandler.isVideoFile(localPath)) return false
         val tracks = try {
@@ -114,6 +117,7 @@ object SubtitleChoice {
             sourcePackage,
             backendOverride,
             contentHash,
+            originTimestampMs,
         )
         return true
     }
@@ -164,6 +168,7 @@ object SubtitleChoice {
         backendOverride: String?,
         timeoutMinutes: Int,
         contentHash: String? = null,
+        originTimestampMs: Long? = null,
     ) {
         AppNotificationChannel.TRANSCRIPTION_RESULT.create(context)
 
@@ -179,6 +184,7 @@ object SubtitleChoice {
             putExtra(InferenceService.EXTRA_SOURCE, source)
             backendOverride?.let { putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, it) }
             contentHash?.let { putExtra(InferenceService.EXTRA_CONTENT_HASH, it) }
+            originTimestampMs?.let { putExtra(InferenceService.EXTRA_ORIGIN_TIMESTAMP_MS, it) }
         }
 
         fun choiceAction(action: String): PendingIntent {
@@ -267,6 +273,7 @@ object SubtitleChoice {
         backendOverride: String?,
         timeoutMinutes: Int,
         contentHash: String? = null,
+        originTimestampMs: Long? = null,
     ) {
         val request = OneTimeWorkRequestBuilder<SubtitleChoiceTimeoutWorker>()
             .setInitialDelay(timeoutMinutes.toLong(), TimeUnit.MINUTES)
@@ -278,6 +285,7 @@ object SubtitleChoice {
                     SubtitleChoiceTimeoutWorker.KEY_BACKEND_OVERRIDE to backendOverride,
                     SubtitleChoiceTimeoutWorker.KEY_SOURCE to source,
                     SubtitleChoiceTimeoutWorker.KEY_CONTENT_HASH to contentHash,
+                    SubtitleChoiceTimeoutWorker.KEY_ORIGIN_TIMESTAMP_MS to originTimestampMs,
                 )
             )
             .build()

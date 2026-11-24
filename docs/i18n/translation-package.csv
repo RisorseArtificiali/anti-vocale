@@ -794,6 +794,7 @@ session_paused_notification_text,Paused at %1$s of %2$s,formatted,"keep verbatim
 session_resume_action,Resume,plain,
 session_pause_action,Pause,plain,
 session_paused_label,Paused,plain,
+history_origin_timestamp,Original message: %1$s,formatted,keep verbatim: ['%1$s']
 session_park_cause_native_crash,Interrupted by a native crash,plain,
 session_park_cause_app_restart,Interrupted by app restart,plain,
 session_expired_reason,Expired,plain,

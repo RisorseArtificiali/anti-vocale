@@ -61,6 +61,9 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
             ?: com.antivocale.app.service.InferenceService.SOURCE_SHARE
         // TASK-842: the intake content hash, onto the fallback's row.
         val contentHash = inputData.getString(KEY_CONTENT_HASH)
+        // TASK-1040: the original-message moment onto the fallback's row.
+        val originTimestampMs = inputData.getLong(KEY_ORIGIN_TIMESTAMP_MS, 0L)
+            .takeIf { it > 0L }
 
         if (filePath.isNullOrBlank()) {
             Log.e(TAG, "Missing file path input — cannot run ASR fallback")
@@ -109,7 +112,8 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
             requestType = com.antivocale.app.receiver.TaskerRequestReceiver.REQUEST_TYPE_AUDIO,
             filePath = filePath,
             sourcePackageName = sourcePackage,
-            contentHash = contentHash
+            contentHash = contentHash,
+            originTimestampMs = originTimestampMs
         )
         return try {
             val cacheDir = applicationContext.cacheDir
@@ -205,6 +209,9 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
         const val KEY_SOURCE = "source"
         /** TASK-842: the intake content hash, re-emitted on the fallback. */
         const val KEY_CONTENT_HASH = "content_hash"
+        /** TASK-1040: the original-message moment; 0 = absent (extras
+         *  cannot express null), mapped to null at the read. */
+        const val KEY_ORIGIN_TIMESTAMP_MS = "origin_timestamp_ms"
         const val KEY_BACKEND_OVERRIDE = "backend_override"
     }
 }
