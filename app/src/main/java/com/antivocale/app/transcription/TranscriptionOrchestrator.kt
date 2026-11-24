@@ -333,6 +333,11 @@ class TranscriptionOrchestrator @Inject constructor(
      *  plus resampler fuzz) before the early-EOS guard parks the session. */
     private val DECODE_SHORTFALL_TOLERANCE_SAMPLES = 60L * SESSION_SAMPLE_RATE
 
+    /** TASK-1043: a stint parks when its failed chunks are a STRICT
+     *  majority (failed * NUMERATOR > processed); the doubled-comparison
+     *  form keeps the arithmetic exact without integer division. */
+    private val SESSION_MAJORITY_PARK_NUMERATOR = 2
+
     /**
      * TASK-1037 phase 6: the engage's free-space floor. A session run
      * writes its chunk rows and a final history row measured around
@@ -4294,6 +4299,21 @@ class TranscriptionOrchestrator @Inject constructor(
             Log.i(TAG, "Session resume: taskId=$taskId offset=$prefixEnd samples " +
                 "(${prefillRows.size} prefilled chunks, ${accumulatedText.length} chars)")
         }
+        // TASK-1043: the stint view of the chunk counters, derived (the
+        // same captured-base idiom as sessionBaseComputeMs above) rather
+        // than carried as a second lockstep pair. The majority-failed park
+        // guard at stream end divides the stint view, not the cumulative
+        // pair: inherited failures lie after the contiguous prefix, so a
+        // healthy resumed stint re-runs and succeeds them, and a cumulative
+        // ratio could never clear once inherited failures passed half the
+        // file (a clean resume would park forever). The success funnel
+        // reports the stint views for the same reason: ranges the resume
+        // re-runs (failures, blanks, retries) must not double-count against
+        // their seeded inherited totals.
+        val stintProcessedBase = processedChunks
+        val stintFailedBase = failedChunks
+        val stintBlankBase = blankChunks
+        val stintRetriedBase = retriedChunks
 
         /**
          * The one delivery of a decoded non-blank chunk into the stream
@@ -4467,6 +4487,16 @@ class TranscriptionOrchestrator @Inject constructor(
         // Phase 4: the pause boundary's captured sentinel (see the
         // boundary site for the escape mechanism).
         var pauseSentinel: SessionPaused? = null
+        // TASK-1043 simplify round: the ONE construction of the park
+        // sentinel's snapshot fields (previously three verbatim copies:
+        // boundary pause, decode shortfall, majority failed). Closures
+        // over the var locals read them at call time, which is what every
+        // park site wants.
+        fun sessionPausedNow() = SessionPaused(
+            accumulatedText = accumulatedText.toString(),
+            decodedSeconds = decodedSeconds,
+            totalDurationSeconds = totalDurationSeconds,
+        )
         try {
             audioPreprocessor.prepareAudioStream(
                 inputPath = filePath,
@@ -4564,11 +4594,7 @@ class TranscriptionOrchestrator @Inject constructor(
                             // (which the stream rethrows unwrapped) and hand
                             // the real sentinel over through the local; the
                             // dedicated catch below converts it back.
-                            pauseSentinel = SessionPaused(
-                                accumulatedText = accumulatedText.toString(),
-                                decodedSeconds = decodedSeconds,
-                                totalDurationSeconds = totalDurationSeconds,
-                            )
+                            pauseSentinel = sessionPausedNow()
                             throw CancellationException("session-pause-boundary")
                         }
                         val collected = speakerChunks
@@ -4768,12 +4794,32 @@ class TranscriptionOrchestrator @Inject constructor(
                     Log.e(TAG, "Session decode ended early: decoded $decodedSamplesGlobal of " +
                         "$expectedTotal samples (${decodedSamplesGlobal / SESSION_SAMPLE_RATE}s of " +
                         "${expectedTotal / SESSION_SAMPLE_RATE}s); parking for resume, not success")
-                    throw SessionPaused(
-                        accumulatedText = accumulatedText.toString(),
-                        decodedSeconds = decodedSeconds,
-                        totalDurationSeconds = totalDurationSeconds,
-                    )
+                    throw sessionPausedNow()
                 }
+            }
+
+            // TASK-1043 (3h05 pause-leg finding): the decode can be COMPLETE
+            // while the inference engine fails most chunks. After a pause +
+            // freezer-suspension cycle the resumed stint decoded all 186
+            // chunks but the engine failed every post-offset call (133/186,
+            // each retried and failed again), and per-chunk non-fatal
+            // handling completed the run as a partial SUCCESS at ~30% of
+            // the content. A stint whose OWN chunks mostly fail parks for
+            // resume instead, exactly like the decode-truncation arm above:
+            // a resume reloads the backend fresh (the healing the codec
+            // probe established), the text is kept, and a persistently
+            // poisoned engine is a visible cancellable loop. The ratio is
+            // stint-local on purpose (see the capture above); the log
+            // carries both views for device diagnosis.
+            val stintProcessed = processedChunks - stintProcessedBase
+            val stintFailed = failedChunks - stintFailedBase
+            if (activeSession != null && stintProcessed > 0 &&
+                stintFailed * SESSION_MAJORITY_PARK_NUMERATOR > stintProcessed) {
+                Log.e(TAG, "Session inference failed the majority of chunks: " +
+                    "$stintFailed/$stintProcessed this stint " +
+                    "(${failedChunks}/${processedChunks} cumulative); " +
+                    "parking for resume, not partial success")
+                throw sessionPausedNow()
             }
         } catch (e: CancellationException) {
             // Phase 4: the pause boundary's escape vehicle. A sentinel in
@@ -4883,16 +4929,27 @@ class TranscriptionOrchestrator @Inject constructor(
             silentDecodeFailure(backend, blankChunks, false,
                 retriedChunks = retriedChunks.takeIf { it > 0 })
         } else {
+            // TASK-1043: the reported counts describe what the FINAL pass
+            // delivered. A resumed stint re-runs every chunk past the
+            // contiguous prefix (inherited failures, blanks and retries
+            // included), so at completion only THIS stint's failures are
+            // still missing content; the cumulative counters would keep
+            // marking ghost failures the resume already healed and
+            // double-count the re-run blanks and retries. Identical to them
+            // on every non-resumed run (the prefill is the only seeding
+            // site).
+            val unresolvedFailedChunks = failedChunks - stintFailedBase
             if (failedChunks > 0) {
-                Log.w(TAG, "Pipeline completed with $failedChunks/$processedChunks failed chunks")
+                Log.w(TAG, "Pipeline completed with $failedChunks/$processedChunks failed chunks " +
+                    "($unresolvedFailedChunks unresolved)")
             }
             silentModelDemoter.onSuccessfulDecode(backend.id)
             Result.success(TranscriptionResult(
                 text = combinedResult,
                 confidence = minConfidence,
                 detectedLanguage = detectedLang,
-                isPartial = failedChunks > 0,
-                failedChunkCount = failedChunks,
+                isPartial = unresolvedFailedChunks > 0,
+                failedChunkCount = unresolvedFailedChunks,
                 streamedWithoutVad = streamedWithoutVad,
                 segments = segments,
                 processing = ProcessingContext(
@@ -4903,9 +4960,9 @@ class TranscriptionOrchestrator @Inject constructor(
                     // would inflate the rendered failure rate against the
                     // counted failedChunks numerator.
                     totalChunks = processedChunks,
-                    failedChunks = failedChunks,
-                    blankChunks = blankChunks.takeIf { it > 0 },
-                    retriedChunks = retriedChunks.takeIf { it > 0 },
+                    failedChunks = unresolvedFailedChunks,
+                    blankChunks = (blankChunks - stintBlankBase).takeIf { it > 0 },
+                    retriedChunks = (retriedChunks - stintRetriedBase).takeIf { it > 0 },
                     transcribedSeconds = totalDurationSeconds.takeIf { it > 0.0 },
                     chunkCapSeconds = maxChunkDurationSeconds,
                     availableRamBytes = availableRamBytes,

@@ -87,8 +87,8 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
     // total == decoded amount). The old 1s chunks under a 2400s header
     // encoded exactly the silent-truncation class the 3h device proof
     // caught (a 79% shortfall completing SUCCESS); the early-EOS guard
-    // now parks such a run. Six 400s chunks cover the 2400s header
-    // exactly; ONE shared FloatArray keeps the fixture at ~25 MB.
+    // now parks such a run. Sixty 40s chunks cover the 2400s header
+    // exactly; ONE shared FloatArray keeps the fixture at ~2.5 MB.
     private val chunkSeconds = 40L
     private val chunkSamples = 16000L * chunkSeconds
     private val chunkCount = 60
@@ -107,7 +107,9 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
     private var lastStreamOffset = -1L
 
     private fun chunkAt(index: Int): FloatArray {
-        sharedChunkSamples.fill(index.toFloat())
+        // Only element 0 is ever read (stubDecode keys on samples[0]); a
+        // full fill would be a 2.5 MB memset per emitted chunk.
+        sharedChunkSamples[0] = index.toFloat()
         return sharedChunkSamples
     }
 
@@ -166,6 +168,29 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
     private fun expectedCue(index: Int) =
         TimedSegment(startMs = index * chunkSeconds * 1000L, endMs = (index + 1) * chunkSeconds * 1000L, text = "w$index")
 
+    /** The delivered transcript for the fixture: every chunk's token
+     *  space-joined, with a paragraph break at each failed-gap index in
+     *  [gaps] (the TASK-910 contract: a failed chunk leaves a cue time-gap
+     *  that ParagraphBreaks renders as \n\n). */
+    private fun expectedText(gaps: Set<Int> = emptySet()): String = buildString {
+        for (i in 0 until chunkCount) {
+            if (i in gaps) continue
+            if (isNotEmpty()) append(if (i - 1 in gaps) "\n\n" else " ")
+            append("w$i")
+        }
+    }
+
+    /** The poisoned-engine decode: every chunk from [index] fails and
+     *  stays failed through the retry (the 3h05 shape). The two tests
+     *  sharing this must fail the SAME chunks (the second one's premise
+     *  is the first one's parked state). */
+    private fun stubPoisonedFrom(index: Int) {
+        stubDecode { i ->
+            if (i >= index) Result.failure(IllegalStateException("engine poisoned"))
+            else Result.success(TranscriptionResult(text = "w$i"))
+        }
+    }
+
     @Before
     override fun baseSetUp() {
         super.baseSetUp()
@@ -187,15 +212,19 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
                 java.io.File.createTempFile("speaker-ids", null).let { f -> f.delete(); f.mkdirs(); f }),
             sessionDao,
         )
-        // Capture the segments the success funnel delivers (arg 10 of onSuccess).
+        // Capture the segments the success funnel delivers (arg 10 of onSuccess)
+        // and the partial flags (args 7/8: isPartial, failedChunkCount).
         every { listener.onSuccess(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } answers {
             @Suppress("UNCHECKED_CAST")
             lastSegments = args[10] as? List<TimedSegment> ?: emptyList()
-            Unit
+            lastIsPartial = args[7] as Boolean
+            lastFailedChunkCount = args[8] as Int
         }
     }
 
     private var lastSegments: List<TimedSegment> = emptyList()
+    private var lastIsPartial: Boolean = false
+    private var lastFailedChunkCount: Int = 0
 
     /** prepareSessionResume requires the History row to exist (the base's
      *  logDao stub answers null, which reads as a deleted row). */
@@ -376,6 +405,91 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         val result = request("tolerated-drift")
         assertEquals((0 until chunkCount - 1).joinToString(" ") { "w$it" }, result.getOrNull())
         assertNull("no session survives the completed run", sessionDao.sessions["tolerated-drift"])
+    }
+
+    @Test
+    fun `a stint whose majority of chunks fail at inference parks instead of partial success`() = runTest {
+        // The 3h05 pause-leg class: the decode is COMPLETE (the early-EOS
+        // guard's domain never fires) but the engine fails every call past
+        // an offset, each failure retried and failing again. The run must
+        // park (text kept, resumable), never complete a partial SUCCESS at
+        // half the content. Chunks 29..59 fail: 31 of 60 sits strictly over
+        // the majority threshold (exactly half must NOT park).
+        stubStream()
+        stubPoisonedFrom(29)
+        stubRow(taskId)
+        val result = request()
+        assertTrue("the majority-failed run parks, not succeeds", result.isFailure)
+        val parked = sessionDao.sessions[taskId]
+        assertNotNull(parked)
+        assertEquals(TranscriptionSessionEntity.STATE_PAUSED_USER, parked!!.state)
+        assertEquals("successful chunks checkpointed", 29, sessionDao.getChunks(taskId).size)
+        assertEquals(29 * chunkSamples, sessionDao.contiguousPrefixEnd(taskId))
+        io.mockk.coVerify(atLeast = 1) { logDao.parkProcessingAsPaused(taskId, any()) }
+    }
+
+    @Test
+    fun `a minority-failed stint still completes partial success`() = runTest {
+        // The tolerance arm: two failed chunks of 60 (3%) stay the per-chunk
+        // non-fatal behavior (SUCCESS, isPartial, counted failures), exactly
+        // as before the guard.
+        stubStream()
+        stubDecode { index ->
+            if (index == 7 || index == 21) Result.failure(IllegalStateException("transient"))
+            else Result.success(TranscriptionResult(text = "w$index"))
+        }
+        val result = request("minority-fail")
+        assertEquals(expectedText(setOf(7, 21)), result.getOrNull())
+        assertTrue("a minority-failed run is still marked partial", lastIsPartial)
+        assertEquals(2, lastFailedChunkCount)
+        assertNull("no session survives the completed run", sessionDao.sessions["minority-fail"])
+    }
+
+    @Test
+    fun `a resumed stint with inherited majority failures completes and reports only its own`() = runTest {
+        // Two pins on the stint-local choice, shaped so BOTH discriminate.
+        // Stint 1: chunks 0..28 succeed, 29..57 FAIL (29), 58 succeeds and
+        // requests the pause; the park row therefore carries
+        // failedChunkCount=29 (written by 58's checkpoint, past the
+        // failures) while the contiguous prefix stays at 29 chunks.
+        // RATIO: the resume re-runs 29..59; cumulative counting (29
+        // inherited + 2 new = 31 failed of 60 processed, a majority) would
+        // park the healing stint forever, stint-local counting (2/31)
+        // completes it. REPORTING: the completed run owes only its OWN two
+        // unresolved failures (failedChunkCount 2, never the 31 cumulative
+        // ghost count).
+        stubStream()
+        stubDecode { index ->
+            if (index == 58) {
+                assertTrue("a mid-stint pause must arm", orchestrator.requestSessionPause(taskId))
+            }
+            if (index in 29..57) Result.failure(IllegalStateException("engine poisoned"))
+            else Result.success(TranscriptionResult(text = "w$index"))
+        }
+        stubRow(taskId)
+        assertTrue(request().isFailure)
+        val parked = sessionDao.sessions[taskId]!!
+        assertEquals(TranscriptionSessionEntity.STATE_PAUSED_USER, parked.state)
+        assertEquals("the park row carries the inherited failures (29, checkpointed past them)",
+            29, parked.failedChunkCount)
+        assertEquals("the contiguous prefix stops at the first failure",
+            29 * chunkSamples, sessionDao.contiguousPrefixEnd(taskId))
+
+        // What the cold-start recovery writes after a process death.
+        sessionDao.upsertSession(parked.copy(state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM))
+        stubStream()
+        stubDecode { index ->
+            if (index == 40 || index == 50) Result.failure(IllegalStateException("transient"))
+            else Result.success(TranscriptionResult(text = "w$index"))
+        }
+        val resumed = request()
+        assertEquals(expectedText(setOf(40, 50)), resumed.getOrNull())
+        assertEquals("the resumed decode starts at the store's prefix end",
+            29 * chunkSamples, lastStreamOffset)
+        assertTrue("the two still-missing chunks mark the run partial", lastIsPartial)
+        assertEquals("only the stint's own failures report (never the 31 cumulative)",
+            2, lastFailedChunkCount)
+        assertNull("the terminal transition deleted the session rows", sessionDao.sessions[taskId])
     }
 
     @Test
