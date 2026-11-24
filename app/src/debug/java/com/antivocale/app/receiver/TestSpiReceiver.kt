@@ -329,7 +329,9 @@ class TestSpiReceiver : BroadcastReceiver() {
             { source -> voiceNoteDetectionCoordinators.forSource(source).gateState.value },
             logDao,
             voiceNoteAutoTranscriber,
-            if (op == TestSpiOps.OP_IMPORT) {
+            // TASK-1037: decode_probe2 rides the same async lane (a
+            // multi-hour decode cannot live inside the broadcast window).
+            if (op == TestSpiOps.OP_IMPORT || op == TestSpiOps.OP_DECODE_PROBE2) {
                 CoroutineScope(appScope.coroutineContext + Dispatchers.IO)
             } else {
                 null
