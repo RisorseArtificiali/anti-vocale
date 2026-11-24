@@ -1226,7 +1226,13 @@ internal class TestSpiOps(
             } catch (e: Exception) {
                 failure = "${e.javaClass.simpleName}: ${e.message}"
             }
-            val exp = expected
+            // The delivered count is POST-SKIP (the discard happens inside
+            // prepareAudioStream), so the honest expectation is the header
+            // total MINUS the offset; comparing against the full total made
+            // earlyEos fire on every offset probe (the live RMX3853 run:
+            // delivered 143,582,936 vs expected-kept 143,582,914, a FULL
+            // delivery that the old formula misread as truncation).
+            val exp = expected?.let { it - offset }
             val earlyEos = exp != null && exp - delivered > 60L * 16000
             val body = buildString {
                 append("""{"op":"decode_probe2_state","running":false,"everRan":true,"file":"$filePath","""")
