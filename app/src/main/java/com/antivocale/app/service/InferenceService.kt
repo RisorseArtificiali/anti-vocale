@@ -241,6 +241,12 @@ class InferenceService : Service(), TranscriptionListener {
     private var currentProcessingJob: Job? = null
     /** taskId currently being processed (null while idle); per-task cancel targets this. */
     @Volatile private var currentTaskId: String? = null
+    /** TASK-1045: per-task Cancels that arrived while their target was
+     *  neither current nor queued, i.e. inside the dispatch window (the
+     *  request is already polled out of the queue, currentTaskId has not
+     *  taken it yet; the resume hydration is the long stretch). The drain
+     *  consumes the marker before launching the run. */
+    private val pendingUserCancels = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
     /** Child job running the current task's processRequest; per-task cancel target. */
     @Volatile private var currentTaskJob: Job? = null
     @Volatile private var transcriptionStartTime: Long = 0
@@ -765,6 +771,17 @@ class InferenceService : Service(), TranscriptionListener {
                         }
                     }
 
+                    // TASK-1045: a Cancel that raced this dispatch (the
+                    // request was polled out of the queue and currentTaskId
+                    // had not taken it yet) recorded itself; the cancel's
+                    // own arm already closed the row and the parked
+                    // session, so here the run is dropped, never started.
+                    if (pendingUserCancels.remove(request.taskId)) {
+                        Log.i(TAG, "Per-task cancel raced the dispatch for ${request.taskId}; dropping the run")
+                        inFlightTaskIds.remove(request.taskId)
+                        continue
+                    }
+
                     currentIndex++
                     currentTaskId = request.taskId
 
@@ -1000,6 +1017,12 @@ class InferenceService : Service(), TranscriptionListener {
             val waiting = requestQueue.firstOrNull { it.taskId == taskId }
             val removed = waiting != null && requestQueue.removeIf { it.taskId == taskId }
             if (!removed) {
+                // TASK-1045: the task may be inside the dispatch window
+                // (polled, not yet current): record the cancel so the drain
+                // drops the run instead of starting cancelled work. The
+                // marker is consumed at dispatch; ids are unique per
+                // request, so an unconsumed marker is a stale tap's leftover.
+                pendingUserCancels.add(taskId)
                 // Code review: a PAUSED History row's Cancel lands here (the
                 // session is neither in-flight nor queued). cancelSessionTask
                 // is a safe probe: it no-ops when no session exists for the

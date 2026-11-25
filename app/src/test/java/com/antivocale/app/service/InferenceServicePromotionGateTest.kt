@@ -6,6 +6,7 @@ import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.util.AppNotificationChannel
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -287,5 +288,68 @@ class InferenceServicePromotionGateTest {
             fallbackNotifications(service).isNotEmpty(),
         )
         assertTrue("the empty service must stop itself", Shadows.shadowOf(service).isStoppedBySelf)
+    }
+
+    // ---- TASK-1045: a per-task Cancel racing the dispatch window ----
+
+    /** The shared fixture: a resume request whose hydration gate delivers
+     *  arbitrary mid-window traffic (TASK-1045: the cancel under test must
+     *  land exactly between the poll and currentTaskId). */
+    private fun dispatchRaceFixture(
+        midWindowTraffic: (InferenceService) -> Unit,
+    ): Pair<InferenceService, TranscriptionOrchestrator> {
+        val service = Robolectric.buildService(InferenceService::class.java).create().get()
+        val orchestrator = mockk<TranscriptionOrchestrator>(relaxed = true)
+        coEvery { orchestrator.prepareSessionResume("race-1", any()) } coAnswers {
+            midWindowTraffic(service)
+            TranscriptionOrchestrator.SessionResumePlan.Ready(
+                filePath = "/data/race.opus", prompt = "", source = "share",
+                sourcePackage = null, senderName = null,
+                backendOverride = "whisper", languageOverride = null)
+        }
+        coEvery {
+            orchestrator.processRequest(any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any())
+        } returns Result.success("ok")
+        inject(service, "orchestrator", orchestrator)
+        return service to orchestrator
+    }
+
+    @Test
+    fun `a cancel inside the hydration window drops the run instead of starting it`() {
+        val (service, orchestrator) = dispatchRaceFixture { svc ->
+            // The cancel arrives exactly mid-hydration: the request is out
+            // of the queue and currentTaskId has not taken it yet.
+            svc.onStartCommand(
+                Intent(svc, InferenceService::class.java)
+                    .setAction(InferenceService.ACTION_CANCEL_TASK)
+                    .putExtra(InferenceService.EXTRA_CANCEL_TASK_ID, "race-1"),
+                0, 2)
+        }
+        service.onStartCommand(
+            com.antivocale.app.service.AudioRequestIntent.resumeSession(service, "race-1"), 0, 1)
+
+        // The cancel's own arm ran (the session close for the unknown id)...
+        io.mockk.coVerify(timeout = 2_000) {
+            orchestrator.cancelSessionTask("race-1", any())
+        }
+        // ...and the raced dispatch is DROPPED: the run never starts (the
+        // TASK-1045 shape was hours of cancelled work running anyway).
+        io.mockk.coVerify(timeout = 2_000, exactly = 0) {
+            orchestrator.processRequest(match { it == "race-1" }, any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `the same window without a cancel dispatches the resume normally`() {
+        val (service, orchestrator) = dispatchRaceFixture { }
+        service.onStartCommand(
+            com.antivocale.app.service.AudioRequestIntent.resumeSession(service, "race-1"), 0, 1)
+
+        io.mockk.coVerify(timeout = 2_000, atLeast = 1) {
+            orchestrator.processRequest(match { it == "race-1" }, any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any())
+        }
     }
 }
