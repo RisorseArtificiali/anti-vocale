@@ -654,4 +654,64 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         // The restore: the base stubs answer the singleton whisper mock.
         every { backendManager.getActiveBackend() } returns backend
     }
+
+    @Test
+    fun `a crash-loop tombstone counts as unresolved content but never parks the stint`() = runTest {
+        // TASK-1044: two shapes in one pin. The session sits at offset zero
+        // with the crash counter past the threshold, so the resume writes a
+        // chunk-cap tombstone (80s = 2 fixture chunks) and processes only
+        // the third. DELIVERY: the completed run reports the skipped range
+        // as missing content (isPartial, failedChunkCount 2) and the +1s
+        // survive every later checkpoint ride-along (the final funnel read
+        // IS the last sink state). PARK RATIO: without the tombstone
+        // exclusion the cumulative math (2 failed of 1 processed this
+        // stint) would park the healing stint forever.
+        every { backend.maxChunkDurationSeconds } returns 80
+        stubStream()
+        // A 3-chunk stream (the class stub emits 60; re-stub to the short
+        // file so the tombstone's skip dominates the stint's own work).
+        every { audioPreprocessor.prepareAudioStream(
+            any(), any(), any(), any(), any(), any(), any(), any(), any()) } answers {
+            val offset = arg<Long>(8)
+            flow {
+                emit(AudioPreprocessor.StreamEvent.Header(AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000,
+                    totalDurationSeconds = 3 * chunkSeconds.toDouble(),
+                    expectedChunkCount = (3 - (offset / chunkSamples).toInt()).coerceAtLeast(0),
+                    startOffsetSamples = offset,
+                )))
+                val firstKept = (offset / chunkSamples).toInt()
+                for (i in firstKept until 3) {
+                    emit(AudioPreprocessor.StreamEvent.Chunk(AudioPreprocessor.StreamChunk(
+                        samples = chunkAt(i),
+                        sampleRate = 16000,
+                        chunkIndex = i - firstKept,
+                        isLast = i == 2,
+                    )))
+                }
+            }
+        }
+        stubDecode { index -> Result.success(TranscriptionResult(text = "w$index")) }
+        stubRow(taskId)
+        sessionDao.upsertSession(TranscriptionSessionEntity(
+            taskId = taskId,
+            filePath = sessionFile.absolutePath,
+            fileSizeBytes = sessionFile.length(), fileMtimeMs = sessionFile.lastModified(),
+            backendId = "whisper", modelPath = "/models/whisper",
+            source = "share", state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM,
+            crashAtOffsetCount = 2,
+            totalOutputSamples = 3 * chunkSamples,
+            createdAtMs = 1L, updatedAtMs = 1L,
+        ))
+        val result = request()
+        // Only the third chunk reached the engine; the first two are the
+        // tombstone's skip.
+        assertEquals("w2", result.getOrNull())
+        assertTrue("the skipped range marks the run partial", lastIsPartial)
+        assertEquals("the cap-sized skip counts as one unresolved chunk at delivery",
+            1, lastFailedChunkCount)
+        assertNull("the terminal transition deleted the session rows", sessionDao.sessions[taskId])
+        // The restore: the cap goes back to the base stub's value.
+        every { backend.maxChunkDurationSeconds } returns 30
+    }
 }

@@ -4312,6 +4312,11 @@ class TranscriptionOrchestrator @Inject constructor(
         // their seeded inherited totals.
         val stintProcessedBase = processedChunks
         val stintFailedBase = failedChunks
+        // TASK-1044: tombstones this stint wrote (permanent skips). They
+        // count as UNRESOLVED content at delivery (a skipped range is
+        // missing audio) but never in the majority-failed park ratio: a
+        // tombstone is a deliberate skip, not engine poisoning.
+        var stintTombstonedChunks = 0
         val stintBlankBase = blankChunks
         val stintRetriedBase = retriedChunks
 
@@ -4468,7 +4473,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     text = "",
                 ))
                 activeSession = activeSession!!.copy(
-                    failedChunkCount = activeSession!!.failedChunkCount + 1,
+                    failedChunkCount = failedChunks + 1,
                     crashAtOffsetCount = 0,
                     updatedAtMs = System.currentTimeMillis(),
                 )
@@ -4477,6 +4482,14 @@ class TranscriptionOrchestrator @Inject constructor(
                 if (it is kotlinx.coroutines.CancellationException) throw it
                 Log.w(TAG, "Crash-loop tombstone write failed; decoding from the crash offset anyway", it)
             }
+            // TASK-1044 single-writer rule: the row write above is the
+            // immediate view; the LOCAL cumulative is the durable one (the
+            // checkpoint sink rides it onto every later row write, so the
+            // +1 survives instead of being reverted by the first
+            // checkpoint's stale seed). The tombstone marker rides the
+            // count's sidecar so the park ratio can exclude it.
+            failedChunks++
+            stintTombstonedChunks++
             Log.w(TAG, "Crash-loop guard: skipping engine-poisoned chunk at $resumeOffsetSamples " +
                 "($skipSamples samples, tombstone written); decode resumes at $tombstoneEnd")
             resumeOffsetSamples = tombstoneEnd
@@ -4812,7 +4825,7 @@ class TranscriptionOrchestrator @Inject constructor(
             // stint-local on purpose (see the capture above); the log
             // carries both views for device diagnosis.
             val stintProcessed = processedChunks - stintProcessedBase
-            val stintFailed = failedChunks - stintFailedBase
+            val stintFailed = failedChunks - stintFailedBase - stintTombstonedChunks
             if (activeSession != null && stintProcessed > 0 &&
                 stintFailed * SESSION_MAJORITY_PARK_NUMERATOR > stintProcessed) {
                 Log.e(TAG, "Session inference failed the majority of chunks: " +
