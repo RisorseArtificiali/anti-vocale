@@ -4840,7 +4840,17 @@ class TranscriptionOrchestrator @Inject constructor(
             // to the sentinel Result the interception site parks. Without
             // one it is a real cancellation (job cancel, service stop):
             // rethrow untouched.
-            pauseSentinel?.let { return Result.failure(it) }
+            // TASK-1049: a sentinel alone is not proof of a pause when the
+            // JOB is also cancelled (the service's user-cancel marks and
+            // cancels; a Pause honored in the same chunk window leaves the
+            // sentinel armed when the cancel's CancellationException
+            // arrives). Preferring the sentinel there parks explicitly
+            // cancelled work as PAUSED_USER; the cancelled job is the
+            // stronger signal, and rethrowing lets the service's marker
+            // delete the session instead.
+            if (currentCoroutineContext().isActive) {
+                pauseSentinel?.let { return Result.failure(it) }
+            }
             throw e
         } catch (e: SessionPaused) {
             // TASK-1037: the parked stint. BEFORE the PreprocessingError and
