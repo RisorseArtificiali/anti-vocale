@@ -51,6 +51,26 @@
             "command": "python3 .claude/hooks/pre-push-invariant-gate.py"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/commit-untracked-guard.py",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/gradle-pipe-guard.py",
+            "timeout": 15
+          }
+        ]
       }
     ]
   }
