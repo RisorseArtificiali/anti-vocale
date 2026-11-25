@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -23,6 +24,8 @@ import com.svenjacobs.reveal.RevealOverlayArrangement
 import com.svenjacobs.reveal.RevealOverlayScope
 import com.svenjacobs.reveal.RevealState
 import com.svenjacobs.reveal.revealable
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * The welcome tour's step table (TASK-491, reveal-based coach marks over the
@@ -43,6 +46,37 @@ enum class TourStep(val key: String) {
 
     /** The browse FAB on History: pick a local file instead. */
     BrowseFab("tour_browse_fab"),
+}
+
+/** TASK-1029: the bound on waiting for a step's revealable to register.
+ *  The normal case settles within the same frame (layout follows apply);
+ *  this is only the escape hatch for a key that never appears. */
+internal const val TOUR_REVEAL_REGISTRATION_TIMEOUT_MS = 2_000L
+
+/**
+ * TASK-1029: [RevealState.reveal] throws the moment the key has not
+ * registered, and a revealable registers in onGloballyPositioned (the
+ * frame's LAYOUT pass) while the tour's LaunchedEffect body runs in the
+ * apply phase. A tab the effect switched to this frame has composed but
+ * not laid out, so a rapid step mash (two advances coalescing into one
+ * frame) crashed the tour with "Revealable with key not found"
+ * (Crashlytics 1.16.1, Huawei Android 8.1). Waits for the registration
+ * instead, bounded: a key that never appears skips the reveal (the coach
+ * card still shows over the last cutout) instead of crashing.
+ */
+internal suspend fun RevealState.revealWhenRegistered(key: String) {
+    withTimeoutOrNull(TOUR_REVEAL_REGISTRATION_TIMEOUT_MS) {
+        snapshotFlow { containsRevealable(key) }.first { it }
+    } ?: run {
+        // Loud, not silent: pre-fix a bad key crashed into Crashlytics;
+        // the skip must stay diagnosable (a floating card over the wrong
+        // cutout would otherwise have no breadcrumb at all).
+        android.util.Log.w(
+            "WelcomeTour", "Tour revealable never registered within " +
+                "${TOUR_REVEAL_REGISTRATION_TIMEOUT_MS}ms: $key (skipping the reveal)")
+        return
+    }
+    reveal(key)
 }
 
 /** The coach-mark card for one step: title, body, Next/Done + Skip. */

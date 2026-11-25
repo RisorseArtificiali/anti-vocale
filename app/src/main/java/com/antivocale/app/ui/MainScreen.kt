@@ -19,6 +19,7 @@ import com.antivocale.app.ui.components.PipTranscriptionView
 import com.antivocale.app.ui.onboarding.TourStep
 import com.antivocale.app.ui.onboarding.tourCardModifier
 import com.antivocale.app.ui.onboarding.TourOverlayCard
+import com.antivocale.app.ui.onboarding.revealWhenRegistered
 import com.antivocale.app.ui.onboarding.tourRevealable
 import com.antivocale.app.ui.tabs.HistoryTab
 import com.antivocale.app.ui.tabs.ModelTab
@@ -110,16 +111,20 @@ fun MainScreen(
         }
         // Drive the reveal: each step's key revealed on entry; steps that
         // target a specific tab switch to it first so the revealable exists.
+        // TASK-1029: revealWhenRegistered everywhere: the tab switched this
+        // frame has composed but not laid out when this effect body runs,
+        // and a bare reveal() throws on the unregistered key (the 1.16.1
+        // step-mash crash).
         when (val step = tourStep) {
             null -> revealState.hide()
-            TourStep.Welcome -> revealState.reveal(TourStep.Welcome.key)
+            TourStep.Welcome -> revealState.revealWhenRegistered(TourStep.Welcome.key)
             TourStep.ModelsTab -> {
                 selectedTabIndex = AppNavigation.TAB_INDEX_MODELS
-                revealState.reveal(TourStep.ModelsTab.key)
+                revealState.revealWhenRegistered(TourStep.ModelsTab.key)
             }
             TourStep.HistoryTab, TourStep.BrowseFab -> {
                 selectedTabIndex = AppNavigation.TAB_INDEX_HISTORY
-                revealState.reveal(step.key)
+                revealState.revealWhenRegistered(step.key)
             }
         }
     }

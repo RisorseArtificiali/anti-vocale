@@ -3,7 +3,6 @@ package com.antivocale.app.ui.components
 import android.app.Application
 import android.content.Context
 import android.content.pm.ActivityInfo
-import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -11,16 +10,14 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.R
+import com.antivocale.app.util.RegisterComponentActivityRule
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestWatcher
-import org.junit.runner.Description
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
@@ -33,26 +30,8 @@ import org.robolectric.annotation.Config
 @Config(application = Application::class)
 class OnboardingTooltipTest {
 
-    /**
-     * Registers ComponentActivity in Robolectric's shadow PackageManager
-     * before createComposeRule() tries to launch it.
-     *
-     * createComposeRule() internally uses ActivityScenario to launch
-     * ComponentActivity, but Robolectric cannot resolve it unless it is
-     * registered. See https://github.com/robolectric/robolectric/pull/4736
-     */
     @get:Rule(order = 0)
-    val registerComponentActivityRule = object : TestWatcher() {
-        override fun starting(description: Description?) {
-            val appContext: Application = ApplicationProvider.getApplicationContext()
-            shadowOf(appContext.packageManager).addActivityIfNotPresent(
-                android.content.ComponentName(
-                    appContext.packageName,
-                    ComponentActivity::class.java.name
-                )
-            )
-        }
-    }
+    val registerComponentActivityRule = RegisterComponentActivityRule()
 
     @get:Rule(order = 1)
     val composeTestRule = createComposeRule()
