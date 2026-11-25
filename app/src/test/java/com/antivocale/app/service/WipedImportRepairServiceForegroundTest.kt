@@ -135,8 +135,10 @@ class WipedImportRepairServiceForegroundTest {
             service.getString(com.antivocale.app.R.string.wiped_imports_progress_title),
             attempts[1].extras.getCharSequence(Notification.EXTRA_TITLE))
         io.mockk.coVerify(exactly = 1, timeout = 1_000) { repairer.repairAll() }
-        assertFalse(
-            "a recovered start must not stop the service",
-            Shadows.shadowOf(service).isStoppedBySelf)
+        // No stopped-state assert here, on purpose: with the Unconfined fake
+        // scope the instant mock repair COMPLETES inside onStartCommand and
+        // the service then stops itself honestly. The pin is the recovered
+        // start PROCEEDING (two attempts, minimal form, repair launched);
+        // the twice-rejected stop is pinned by the previous test.
     }
 }
