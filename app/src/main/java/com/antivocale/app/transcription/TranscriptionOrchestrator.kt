@@ -555,6 +555,29 @@ class TranscriptionOrchestrator @Inject constructor(
             // unreadable metadata means no resumable session (the engage
             // gate and this comment now agree).
             val resumeSession = runCatching { sessionDao.getSession(taskId) }.getOrNull()
+            // TASK-1046: a zero-progress park on record means the previous
+            // stint decoded to the real end and STILL fell short of the
+            // recorded total (the duration tag overstates the content).
+            // Another resume cannot make progress; close as kept-text
+            // partial instead of looping the user through a park/resume
+            // cycle that only a Cancel could end. Lives HERE (the resume
+            // arm both the direct path and the service drain hydrate
+            // through), beside the completing check below.
+            if (resumeSession != null && resumeSession.noProgressParkCount >= 1) {
+                val reason = "Resume stopped: the previous resume made no progress " +
+                    "(the file's duration tag overstates its content); the recovered text is kept"
+                Log.w(TAG, reason)
+                // The row is PROCESSING here (markProcessing above promoted
+                // it out of PAUSED), and the close-as-partial arm closes
+                // PAUSED rows only: without the park-back the guarded
+                // UPDATE matches nothing and the row is left a zombie
+                // in-flight entry while the session rows are deleted
+                // (code review finding, 2026-11-25).
+                runCatching { logDao.parkProcessingAsPaused(taskId, null) }
+                    .onFailure { Log.w(TAG, "Gate park write failed for $taskId", it) }
+                closeSessionAsPartial(taskId, reason, context)
+                return Result.failure(IllegalStateException(reason))
+            }
             if (resumeSession != null) runIsSessionRun = true
             // Phase 4 review: candidacy is dispatch knowledge (resume or a
             // probe-eligible request), set before any pass can write.
@@ -4807,6 +4830,27 @@ class TranscriptionOrchestrator @Inject constructor(
                     Log.e(TAG, "Session decode ended early: decoded $decodedSamplesGlobal of " +
                         "$expectedTotal samples (${decodedSamplesGlobal / SESSION_SAMPLE_RATE}s of " +
                         "${expectedTotal / SESSION_SAMPLE_RATE}s); parking for resume, not success")
+                    // TASK-1046: a stint that advanced NOTHING past the
+                    // prefix it started from cannot be out-run by another
+                    // resume (the recorded total overstates the real
+                    // content). Stamp the session so the resume gate closes
+                    // it as kept-text partial instead of looping.
+                    if (decodedSamplesGlobal <= resumeOffsetSamples) {
+                        runCatching {
+                            sessionDao.upsertSession(
+                                activeSession!!.copy(
+                                    noProgressParkCount = activeSession!!.noProgressParkCount + 1,
+                                    updatedAtMs = System.currentTimeMillis()).also {
+                                    activeSession = it
+                                })
+                        }.onFailure {
+                            if (it is kotlinx.coroutines.CancellationException) throw it
+                            Log.w(TAG, "No-progress park counter write failed", it)
+                        }
+                        Log.e(TAG, "Session stalled: this resume advanced 0 samples toward the " +
+                            "${(expectedTotal - resumeOffsetSamples) / SESSION_SAMPLE_RATE}s " +
+                            "recorded shortfall (the file's duration tag overstates its content)")
+                    }
                     throw sessionPausedNow()
                 }
             }

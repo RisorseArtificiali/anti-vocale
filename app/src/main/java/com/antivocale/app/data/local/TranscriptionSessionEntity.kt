@@ -39,6 +39,16 @@ data class TranscriptionSessionEntity(
     val retriedChunkCount: Int = 0,
     /** Native crashes counted at the SAME resume offset; the crash-loop guard's counter. */
     val crashAtOffsetCount: Int = 0,
+    /**
+     * TASK-1046 (GH #190 review): zero-progress parks. A resume whose
+     * decode advanced nothing past the prefix and still fell short of the
+     * recorded total means the total overstates the real content (the
+     * lying-duration-tag class): the stint parks, but the NEXT resume
+     * cannot make progress either. The resume gate closes such a session
+     * as kept-text partial once this counter is past zero, ending the
+     * loop instead of asking the user to Cancel their way out.
+     */
+    val noProgressParkCount: Int = 0,
     val createdAtMs: Long,
     val updatedAtMs: Long,
 ) {

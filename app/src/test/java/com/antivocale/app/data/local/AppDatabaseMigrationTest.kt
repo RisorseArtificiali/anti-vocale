@@ -3,6 +3,9 @@ package com.antivocale.app.data.local
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteOpenHelper
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
@@ -11,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,6 +51,7 @@ private val ALL_MIGRATIONS = arrayOf(
     AppDatabase.MIGRATION_10_11, AppDatabase.MIGRATION_11_12, AppDatabase.MIGRATION_12_13,
     AppDatabase.MIGRATION_13_14, AppDatabase.MIGRATION_14_15,
     AppDatabase.MIGRATION_15_16, AppDatabase.MIGRATION_16_17, AppDatabase.MIGRATION_17_18,
+    AppDatabase.MIGRATION_18_19,
 )
 
 @RunWith(AndroidJUnit4::class)
@@ -354,10 +359,58 @@ class AppDatabaseMigrationTest {
         assertEquals(160_000L, runBlocking { db!!.sessionDao().contiguousPrefixEnd("task-1") })
     }
 
+    /**
+     * TASK-1046: the noProgressParkCount default for pre-v19 rows. The
+     * migration KDoc claims "pre-v19 sessions have never seen a
+     * no-progress park"; this pins it against the REAL v18 column set
+     * (the 18.json schema DDL, hand-seeded through a framework helper so
+     * the ALTER runs in isolation, not behind Room's full opening chain):
+     * a v18-shaped parked row survives MIGRATION_18_19 reading 0. A future
+     * edit that flips the DEFAULT or drops the NOT NULL clause fails here
+     * instead of silently pre-arming the resume gate on every upgrade.
+     */
+    @Test
+    fun migrate_18_to_19_defaultsNoProgressParkCountToZero() {
+        val helper = FrameworkSQLiteOpenHelperFactory().create(
+            SupportSQLiteOpenHelper.Configuration.builder(context)
+                .name(dbFile.absolutePath)
+                .callback(object : SupportSQLiteOpenHelper.Callback(18) {
+                    override fun onCreate(db: SupportSQLiteDatabase) {
+                        db.execSQL(
+                            "CREATE TABLE transcription_sessions (" +
+                                "taskId TEXT NOT NULL, filePath TEXT NOT NULL, " +
+                                "fileSizeBytes INTEGER NOT NULL, fileMtimeMs INTEGER NOT NULL, " +
+                                "backendId TEXT NOT NULL, modelPath TEXT NOT NULL, " +
+                                "languagePin TEXT, prompt TEXT NOT NULL, source TEXT NOT NULL, " +
+                                "sourcePackage TEXT, senderName TEXT, state TEXT NOT NULL, " +
+                                "totalOutputSamples INTEGER, accumulatedComputeMs INTEGER NOT NULL, " +
+                                "failedChunkCount INTEGER NOT NULL, blankChunkCount INTEGER NOT NULL, " +
+                                "retriedChunkCount INTEGER NOT NULL, crashAtOffsetCount INTEGER NOT NULL, " +
+                                "createdAtMs INTEGER NOT NULL, updatedAtMs INTEGER NOT NULL, " +
+                                "PRIMARY KEY(taskId))")
+                    }
+                    override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+                })
+                .build())
+        val raw = helper.writableDatabase
+        raw.execSQL(
+            "INSERT INTO transcription_sessions (taskId, filePath, fileSizeBytes, " +
+                "fileMtimeMs, backendId, modelPath, prompt, source, state, " +
+                "accumulatedComputeMs, failedChunkCount, blankChunkCount, retriedChunkCount, " +
+                "crashAtOffsetCount, createdAtMs, updatedAtMs) VALUES " +
+                "('v18-1', '/x/a.m4a', 1, 2, 'whisper', '/m', '', 'share', 'PAUSED_SYSTEM', " +
+                "0, 0, 0, 0, 0, 1, 1)")
+        AppDatabase.MIGRATION_18_19.migrate(raw)
+        raw.query("SELECT noProgressParkCount FROM transcription_sessions WHERE taskId = 'v18-1'").use { c ->
+            assertTrue("the seed row must survive the ALTER", c.moveToFirst())
+            assertEquals("pre-v19 sessions read zero no-progress parks", 0, c.getInt(0))
+        }
+        helper.close()
+    }
+
     /** A fresh v3 DB (no migration) must also be internally consistent with the entity. */
     @Test
-    fun fresh_v3_database_isConsistent() {
-        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+    fun fresh_v3_database_isConsistent() {        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
 

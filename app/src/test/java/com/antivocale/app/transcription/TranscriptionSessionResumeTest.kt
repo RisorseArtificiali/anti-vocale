@@ -714,4 +714,110 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         // The restore: the cap goes back to the base stub's value.
         every { backend.maxChunkDurationSeconds } returns 30
     }
+
+    @Test
+    fun `a zero-progress stint parks and stamps the no-progress counter`() = runTest {
+        // TASK-1046: the recorded total overstates the real content by
+        // 80s (> the 60s tolerance). The resume starts at the prefix (all
+        // real content checkpointed), decodes NOTHING past it (the stream
+        // is exhausted), and still falls short: the early-EOS park fires
+        // with zero progress and the session is stamped for the gate.
+        stubStream()
+        lastStreamOffset = -1L
+        stubRow("stall-1")
+        // The stream delivers only what the prefix already covers: past
+        // the offset it emits the header and nothing else (the real
+        // content ends at the prefix).
+        every { audioPreprocessor.prepareAudioStream(
+            any(), any(), any(), any(), any(), any(), any(), any(), any()) } answers {
+            val offset = arg<Long>(8)
+            flow {
+                emit(AudioPreprocessor.StreamEvent.Header(AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000,
+                    totalDurationSeconds = (6 + 2) * chunkSeconds.toDouble(),
+                    expectedChunkCount = 0,
+                    startOffsetSamples = offset,
+                )))
+            }
+        }
+        var cursor = 0L
+        for (i in 0 until 6) {
+            sessionDao.insertChunk(SessionChunkEntity(
+                taskId = "stall-1",
+                startSample = cursor,
+                endSample = cursor + chunkSamples,
+                text = "w$i",
+            ))
+            cursor += chunkSamples
+        }
+        sessionDao.upsertSession(TranscriptionSessionEntity(
+            taskId = "stall-1",
+            filePath = sessionFile.absolutePath,
+            fileSizeBytes = sessionFile.length(), fileMtimeMs = sessionFile.lastModified(),
+            backendId = "whisper", modelPath = "/models/whisper",
+            source = "share", state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM,
+            // The lie: 80s of content beyond the real end.
+            totalOutputSamples = cursor + 2 * chunkSamples,
+            createdAtMs = 1L, updatedAtMs = 1L,
+        ))
+        val result = request("stall-1")
+        assertTrue("the zero-progress stint parks", result.isFailure)
+        val stamped = sessionDao.sessions["stall-1"]
+        assertNotNull(stamped)
+        assertEquals("the zero-progress park increments the counter",
+            1, stamped!!.noProgressParkCount)
+        assertEquals(TranscriptionSessionEntity.STATE_PAUSED_USER, stamped.state)
+    }
+
+    @Test
+    fun `a resume past a no-progress park closes as kept-text partial`() = runTest {
+        // TASK-1046: the gate in the resume arm. The counter is on
+        // record; another stint cannot make progress, so instead of
+        // decoding (or parking again) the session closes as partial with
+        // the text kept and the stated reason, ending the loop without
+        // asking the user to Cancel their way out.
+        stubStream()
+        lastStreamOffset = -1L
+        stubRow("stall-2")
+        var cursor = 0L
+        for (i in 0 until chunkCount) {
+            sessionDao.insertChunk(SessionChunkEntity(
+                taskId = "stall-2",
+                startSample = cursor,
+                endSample = cursor + chunkSamples,
+                text = "w$i",
+            ))
+            cursor += chunkSamples
+        }
+        sessionDao.upsertSession(TranscriptionSessionEntity(
+            taskId = "stall-2",
+            filePath = sessionFile.absolutePath,
+            fileSizeBytes = sessionFile.length(), fileMtimeMs = sessionFile.lastModified(),
+            backendId = "whisper", modelPath = "/models/whisper",
+            source = "share", state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM,
+            noProgressParkCount = 1,
+            createdAtMs = 1L, updatedAtMs = 1L,
+        ))
+        val result = request("stall-2")
+        assertTrue("the gated resume closes, not succeeds", result.isFailure)
+        assertTrue("the reason names the overstated tag",
+            result.exceptionOrNull()!!.message!!.contains("duration tag overstates"))
+        assertEquals("the decode never starts (the loop is broken at the resume arm)",
+            -1L, lastStreamOffset)
+        assertNull("the session rows are deleted on the close", sessionDao.sessions["stall-2"])
+        // The text survives on the History row (kept-text partial).
+        val kept = io.mockk.slot<String>()
+        io.mockk.coVerify(atLeast = 1) { logDao.updateInterimResult("stall-2", capture(kept), isPartial = true) }
+        assertTrue("the kept text spans the whole prefix",
+            kept.captured.contains("w0") && kept.captured.contains("w${chunkCount - 1}"))
+        // The gate runs AFTER markProcessing promoted the row out of PAUSED
+        // (the code-review zombie finding): the row must be parked back
+        // BEFORE the close-as-partial arm runs, or the guarded
+        // closePausedAsError UPDATE matches nothing and History keeps a
+        // zombie in-flight row.
+        io.mockk.coVerifyOrder {
+            logDao.parkProcessingAsPaused("stall-2", null)
+            logDao.closePausedAsError("stall-2", any())
+        }
+    }
 }
