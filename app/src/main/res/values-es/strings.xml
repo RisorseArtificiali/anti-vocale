@@ -95,6 +95,7 @@
     <string name="export_settings_title">Guardado automático y exportación</string>
     <string name="export_settings_description">Opcional: escribe también cada transcripción en una carpeta que elijas, con el formato que prefieras. Todo queda siempre en la pestaña Historial.</string>
     <string name="error_folder_not_writable">Esta carpeta no puede recibir archivos. Elija una carpeta del almacenamiento del dispositivo (no el acceso directo de Descargas).</string>
+    <string name="error_no_document_picker">Este dispositivo no tiene un selector de archivos, así que no se pueden elegir archivos ni carpetas.</string>
     <string name="language_phone_option">Idioma del teléfono (%1$s)</string>
     <string name="today">Hoy</string>
     <string name="yesterday">Ayer, %1$s</string>

@@ -502,10 +502,23 @@ class ShareReceiverActivity : ComponentActivity() {
     /**
      * Opens the system SAF audio picker for the shortcut flow. The transparent
      * Activity stays alive (no finish) so the picker result can return to this
-     * instance through [audioPicker].
+     * instance through [audioPicker]. TASK-1052: on a device with no
+     * documents UI the launch throws ActivityNotFoundException and no result
+     * would EVER come back, so this flow-owner site (unlike the UI-tab
+     * sites) catches locally and accounts its [endFlow] slot: toast, end
+     * the flow, finish. The generic helper is deliberately NOT used here;
+     * its toast-and-return contract would leave the transparent window
+     * hanging over whatever the user was doing (altitude review).
      */
     private fun launchAudioPicker() {
-        audioPicker.launch(arrayOf("audio/*"))
+        try {
+            audioPicker.launch(arrayOf("audio/*"))
+        } catch (e: android.content.ActivityNotFoundException) {
+            Log.w(TAG, "No documents UI; the audio picker cannot open", e)
+            com.antivocale.app.util.ToastCompat.show(
+                this, com.antivocale.app.R.string.error_no_document_picker, android.widget.Toast.LENGTH_LONG)
+            endFlow()
+        }
     }
 
     /**

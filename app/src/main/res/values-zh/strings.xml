@@ -109,6 +109,7 @@
     <string name="export_settings_title">自动保存与导出</string>
     <string name="export_settings_description">可选：按你选定的格式，将每份转写文本同时写入你指定的文件夹。所有内容也始终保留在历史记录标签页中。</string>
     <string name="error_folder_not_writable">此文件夹无法接收文件。请从设备存储中选择文件夹，不要使用下载快捷方式。</string>
+    <string name="error_no_document_picker">此设备没有文件选择器，因此无法选择文件或文件夹。</string>
     <string name="language_phone_option">手机语言（%1$s）</string>
     <string name="today">今天</string>
     <string name="yesterday">昨天，%1$s</string>

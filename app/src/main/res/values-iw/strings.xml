@@ -125,6 +125,7 @@
     <string name="export_settings_title">שמירה אוטומטית וייצוא</string>
     <string name="export_settings_description">אופציונלי: כותב גם כל תמליל לתיקייה שתבחרו, בפורמט שתבחרו. הכול נשאר תמיד גם בלשונית ההיסטוריה.</string>
     <string name="error_folder_not_writable">תיקייה זו לא יכולה לקבל קבצים. בחר תיקייה מאחסון המכשיר (לא מקיצור הדרך של הורדות).</string>
+    <string name="error_no_document_picker">אין במכשיר הזה בורר קבצים, לכן לא ניתן לבחור קבצים או תיקיות.</string>
     <string name="language_phone_option">שפת הטלפון (%1$s)</string>
     <string name="today">היום</string>
     <string name="yesterday">אתמול, %1$s</string>

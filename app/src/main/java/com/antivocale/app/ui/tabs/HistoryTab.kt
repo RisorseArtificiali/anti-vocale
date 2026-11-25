@@ -1,6 +1,7 @@
 package com.antivocale.app.ui.tabs
 
 import com.antivocale.app.service.ResultNotificationFactory
+import com.antivocale.app.util.launchDocumentPick
 import com.antivocale.app.ui.components.TranscriptWordTaps
 import com.antivocale.app.util.SubtitleFormatter
 import androidx.compose.animation.animateColorAsState
@@ -1119,7 +1120,10 @@ fun HistoryTab(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { browseLauncher.launch(arrayOf("audio/*", "video/*")) },
+                onClick = {
+                    launchDocumentPick(
+                        context, browseLauncher, arrayOf("audio/*", "video/*"))
+                },
                 modifier = Modifier
                     .navigationBarsPadding()
                     .tourRevealable(TourStep.BrowseFab.key, tourRevealState),

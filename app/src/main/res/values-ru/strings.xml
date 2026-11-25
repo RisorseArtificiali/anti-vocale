@@ -113,6 +113,7 @@
     <string name="export_settings_title">Автосохранение и экспорт</string>
     <string name="export_settings_description">Необязательно: каждая расшифровка дополнительно сохраняется в выбранную папку в выбранном формате. Всё всегда остаётся и во вкладке «История».</string>
     <string name="error_folder_not_writable">Эта папка не может получать файлы. Выберите папку из хранилища устройства (не ярлык Загрузок).</string>
+    <string name="error_no_document_picker">На этом устройстве нет средства выбора файлов, поэтому нельзя выбрать файлы или папки.</string>
     <string name="language_phone_option">Язык телефона (%1$s)</string>
     <string name="today">Сегодня</string>
     <string name="yesterday">Вчера, %1$s</string>

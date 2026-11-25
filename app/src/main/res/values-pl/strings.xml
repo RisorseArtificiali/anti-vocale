@@ -129,6 +129,7 @@
     <string name="export_settings_title">Autozapis i eksport</string>
     <string name="export_settings_description">Opcjonalnie: zapisuje też każdą transkrypcję do wybranego folderu, w wybranym formacie. Wszystko zawsze zostaje też w zakładce Historia.</string>
     <string name="error_folder_not_writable">Ten folder nie może odbierać plików. Wybierz folder z pamięci urządzenia (nie skrót Pobrane).</string>
+    <string name="error_no_document_picker">To urządzenie nie ma wyboru plików, więc nie można wybrać plików ani folderów.</string>
     <string name="language_phone_option">Język telefonu (%1$s)</string>
     <string name="today">Dzisiaj</string>
     <string name="yesterday">Wczoraj, %1$s</string>

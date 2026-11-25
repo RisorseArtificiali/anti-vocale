@@ -124,6 +124,7 @@
     <string name="export_settings_title">Salvataggio automatico ed esportazione</string>
     <string name="export_settings_description">Facoltativo: scrive anche ogni trascrizione in una cartella che scegli, nel formato che preferisci. Tutto resta comunque nella scheda Cronologia.</string>
     <string name="error_folder_not_writable">Questa cartella non può ricevere file. Scegli una cartella dalla memoria del dispositivo (non dalla scorciatoia Scaricamenti).</string>
+    <string name="error_no_document_picker">Questo dispositivo non ha un selettore file, quindi non è possibile scegliere file o cartelle.</string>
     <string name="language_phone_option">Lingua del telefono (%1$s)</string>
     <string name="today">Oggi</string>
     <string name="yesterday">Ieri, %1$s</string>

@@ -1,6 +1,7 @@
 package com.antivocale.app.ui.tabs
 
 import com.antivocale.app.transcription.LanguageFlags
+import com.antivocale.app.util.launchDocumentPick
 import android.annotation.SuppressLint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -249,7 +250,8 @@ fun ModelTab(
         pendingExportDir = dir.path
         pendingExportEntryId = entry.id
         pendingExportDirName = variant.dirName
-        bundleExportPicker.launch(exportFileName(entry.id, variant.variantName))
+        launchDocumentPick(
+            context, bundleExportPicker, exportFileName(entry.id, variant.variantName))
     }
 
     val externalFolderPicker = rememberLauncherForActivityResult(
@@ -338,7 +340,7 @@ fun ModelTab(
     // Handle file picker event
     LaunchedEffect(viewModel.filePickerEvent) {
         viewModel.filePickerEvent.collect {
-            filePickerLauncher.launch(arrayOf("*/*"))
+            launchDocumentPick(context, filePickerLauncher, arrayOf("*/*"))
         }
     }
 
@@ -1029,7 +1031,9 @@ fun ModelTab(
             onNavConsumed = onNavConsumed,
                     viewModel = viewModel,
                     activeBackendId = activeBackendId,
-                    folderPicker = { externalFolderPicker.launch(null) },
+                    folderPicker = {
+                        launchDocumentPick(context, externalFolderPicker, null)
+                    },
                     detectedFamily = detectedExternalFamily,
                     selection = externalImport,
                     onSelectionChange = { externalImport = it; detectedExternalFamily = null },

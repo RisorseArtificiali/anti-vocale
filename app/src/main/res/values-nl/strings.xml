@@ -130,6 +130,7 @@
     <string name="export_settings_title">Automatisch opslaan &amp; exporteren</string>
     <string name="export_settings_description">Optioneel: schrijf elke transcriptie ook naar een map die je kiest, in het formaat dat je kiest. Alles blijft altijd ook in het tabblad Geschiedenis staan.</string>
     <string name="error_folder_not_writable">Deze map kan geen bestanden ontvangen. Kies een map uit de opslag van het apparaat (niet de snelkoppeling Downloads).</string>
+    <string name="error_no_document_picker">Dit apparaat heeft geen bestandskiezer, dus bestanden en mappen kunnen niet gekozen worden.</string>
     <string name="language_phone_option">Telefoontaal (%1$s)</string>
     <string name="today">Vandaag</string>
     <string name="yesterday">Gisteren, %1$s</string>

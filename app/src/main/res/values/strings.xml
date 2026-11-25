@@ -131,6 +131,7 @@
     <string name="export_settings_title">Auto-Save &amp; Export</string>
     <string name="export_settings_description">Optional: also write each transcript to a folder you choose, in the format you pick. Everything always stays in the History tab too.</string>
     <string name="error_folder_not_writable">This folder cannot receive files. Pick a folder from the device storage (not the Downloads shortcut).</string>
+    <string name="error_no_document_picker">This device has no file picker, so files and folders cannot be chosen.</string>
     <string name="language_phone_option">Phone language (%1$s)</string>
     <string name="today">Today</string>
     <string name="yesterday">Yesterday, %1$s</string>

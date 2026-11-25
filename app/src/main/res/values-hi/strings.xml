@@ -105,6 +105,7 @@
     <string name="export_settings_title">ऑटो-सेव और एक्सपोर्ट</string>
     <string name="export_settings_description">वैकल्पिक: हर ट्रांसक्रिप्शन आपकी चुनी फ़ोल्डर में, आपके चुने फ़ॉर्मैट में भी लिखता है। सब कुछ हमेशा इतिहास टैब में भी रहता है।</string>
     <string name="error_folder_not_writable">यह फ़ोल्डर फ़ाइलें प्राप्त नहीं कर सकता। डिवाइस स्टोरेज से फ़ोल्डर चुनें (Downloads शॉर्टकट नहीं)।</string>
+    <string name="error_no_document_picker">इस डिवाइस पर कोई फ़ाइल पिकर नहीं है, इसलिए फ़ाइलें या फ़ोल्डर नहीं चुने जा सकते.</string>
     <string name="language_phone_option">फ़ोन भाषा (%1$s)</string>
     <string name="today">आज</string>
     <string name="yesterday">कल, %1$s</string>

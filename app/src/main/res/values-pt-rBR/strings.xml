@@ -95,6 +95,7 @@
     <string name="export_settings_title">Salvamento automático e exportação</string>
     <string name="export_settings_description">Opcional: também grava cada transcrição numa pasta que você escolher, no formato que preferir. Tudo continua sempre na aba Histórico.</string>
     <string name="error_folder_not_writable">Esta pasta não pode receber arquivos. Escolha uma pasta do armazenamento do dispositivo (não o atalho de Downloads).</string>
+    <string name="error_no_document_picker">Este dispositivo não tem um seletor de arquivos, então não é possível escolher arquivos ou pastas.</string>
     <string name="language_phone_option">Idioma do telefone (%1$s)</string>
     <string name="today">Hoje</string>
     <string name="yesterday">Ontem, %1$s</string>

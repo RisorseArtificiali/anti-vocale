@@ -113,6 +113,7 @@ import com.antivocale.app.util.ClipboardWriter
 import com.antivocale.app.util.FeedbackHelper
 import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.util.ToastCompat
+import com.antivocale.app.util.launchDocumentPick
 import java.io.File
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.components.EditablePromptCard
@@ -312,9 +313,6 @@ fun SettingsTab(
     ) { result ->
         viewModel.handleOAuthResult(result.data)
     }
-
-    // SAF folder picker for transcript auto-save (issue #14, TASK-539)
-    val outputFolderLauncher = rememberOutputFolderPickerLauncher(viewModel, "SettingsTab")
 
     // Load models on first composition; the battery-kill count joins here so
     // the search filter sees it before the Advanced section ever composes
@@ -2592,15 +2590,15 @@ private fun VoiceNoteDetectionSection(
                             com.antivocale.app.data.VoiceNoteTreeGrant.pickerInitialUri(source))
                     }.onFailure {
                         Log.w("SettingsTab", "tree picker launch failed", it)
-                        // Guarded too: a device with no DocumentsUI
-                        // handler throws the SAME exception for the
-                        // plain launch, and an unguarded fallback
-                        // would crash the click handler it exists
-                        // to save (review F6).
-                        runCatching { voiceNoteTreePicker.launch(null) }
-                            .onFailure { e ->
-                                Log.e("SettingsTab", "plain tree picker launch failed", e)
-                            }
+                        // TASK-1052: the plain-form retry rides the
+                        // helper, which toasts the no-documents-UI case
+                        // and lets every other failure through to the
+                        // F6 log (the retry itself stays guarded).
+                        runCatching {
+                            launchDocumentPick(context, voiceNoteTreePicker, null)
+                        }.onFailure { e ->
+                            Log.e("SettingsTab", "plain tree picker launch failed", e)
+                        }
                     }
                 },
             )
@@ -2622,6 +2620,7 @@ internal fun BackupTransferScreen(
     onScrollConsumed: () -> Unit = {},
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
     val backupState by viewModel.backupState.collectAsState()
     var showExportDisclosure by remember { mutableStateOf(false) }
 
@@ -2654,7 +2653,7 @@ internal fun BackupTransferScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showExportDisclosure = false
-                    exportPicker.launch(backupFileName())
+                    launchDocumentPick(context, exportPicker, backupFileName())
                 }) { Text(stringResource(R.string.backup_export_action)) }
             },
             dismissButton = {
@@ -2691,7 +2690,7 @@ internal fun BackupTransferScreen(
             description = stringResource(R.string.backup_import_description),
         ) {
             Button(
-                onClick = { importPicker.launch(arrayOf("*/*")) },
+                onClick = { launchDocumentPick(context, importPicker, arrayOf("*/*")) },
                 enabled = backupState !is SettingsViewModel.BackupState.Exporting &&
                     backupState !is SettingsViewModel.BackupState.Importing,
             ) { Text(stringResource(R.string.backup_import_action)) }
@@ -3586,6 +3585,7 @@ private fun SearchFilterRow(
  */
 @Composable
 internal fun SpeakerIdentitiesCard(viewModel: SettingsViewModel) {
+    val context = LocalContext.current
     val identities by viewModel.speakerIdentities.collectAsState()
     val pending by viewModel.speakerEnrollPending.collectAsState()
     val error by viewModel.speakerEnrollError.collectAsState()
@@ -3632,7 +3632,9 @@ internal fun SpeakerIdentitiesCard(viewModel: SettingsViewModel) {
             )
         }
         OutlinedButton(
-            onClick = { picker.launch(arrayOf("audio/*")) },
+            onClick = {
+                launchDocumentPick(context, picker, arrayOf("audio/*"))
+            },
             enabled = !busy,
         ) {
             Icon(Icons.Default.Add, contentDescription = null)
@@ -4808,6 +4810,7 @@ fun ExportSettingsScreen(
     onScrollConsumed: () -> Unit = {},
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
     val outputFolderLauncher = rememberOutputFolderPickerLauncher(viewModel, "ExportSettings")
     val transcriptExportFormat by viewModel.transcriptExportFormat.collectAsState()
 
@@ -4823,7 +4826,9 @@ fun ExportSettingsScreen(
             // The two cards, verbatim from the inline transcription section
             OutputFolderSettingCard(
                 outputFolderUri = outputFolderUri,
-                onChoose = { outputFolderLauncher.launch(null) },
+                onChoose = {
+                    launchDocumentPick(context, outputFolderLauncher, null)
+                },
                 onClear = { viewModel.saveOutputFolderUri(null) }
             )
 
@@ -4903,8 +4908,15 @@ internal fun ShareShortcutIconsCard(viewModel: SettingsViewModel) {
                 }
                 TextButton(onClick = {
                     pendingBackendId = backend.backendId
-                    picker.launch(PickVisualMediaRequest(
-                        ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    // TASK-1052: guarded like the documents pickers; the
+                    // pinned activity library's photo-picker fallback
+                    // chain ends on ACTION_OPEN_DOCUMENT, the very action
+                    // that throws on a no-documents-UI device.
+                    launchDocumentPick(
+                        context,
+                        picker,
+                        PickVisualMediaRequest(
+                            ActivityResultContracts.PickVisualMedia.ImageOnly))
                 }) {
                     Text(stringResource(R.string.shortcut_icon_choose))
                 }

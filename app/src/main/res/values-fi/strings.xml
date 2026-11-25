@@ -117,6 +117,7 @@
     <string name="export_settings_title">Automaattitallennus ja vienti</string>
     <string name="export_settings_description">Valinnainen: jokainen transkriptio kirjoitetaan myös valitsemaasi kansioon valitsemassasi muodossa. Kaikki säilyy aina myös Historia-välilehdellä.</string>
     <string name="error_folder_not_writable">Tähän kansioon ei voi tallentaa tiedostoja. Valitse kansio laitteen tallennustilasta (ei Lataukset-pikakuvaketta).</string>
+    <string name="error_no_document_picker">Tässä laitteessa ei ole tiedostonvalitsinta, joten tiedostoja tai kansioita ei voi valita.</string>
     <string name="language_phone_option">Puhelimen kieli (%1$s)</string>
     <string name="today">Tänään</string>
     <string name="yesterday">Eilen, %1$s</string>

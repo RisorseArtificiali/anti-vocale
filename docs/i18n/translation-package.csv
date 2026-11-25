@@ -107,6 +107,7 @@ transcript_capped_autosave_saved,Full transcript auto-saved to your folder,plain
 export_settings_title,Auto-Save & Export,plain,
 export_settings_description,"Optional: also write each transcript to a folder you choose, in the format you pick. Everything always stays in the History tab too.",plain,
 error_folder_not_writable,This folder cannot receive files. Pick a folder from the device storage (not the Downloads shortcut).,plain,
+error_no_document_picker,"This device has no file picker, so files and folders cannot be chosen.",plain,
 language_phone_option,Phone language (%1$s),formatted,keep verbatim: ['%1$s']
 today,Today,plain,
 yesterday,"Yesterday, %1$s",formatted,keep verbatim: ['%1$s']

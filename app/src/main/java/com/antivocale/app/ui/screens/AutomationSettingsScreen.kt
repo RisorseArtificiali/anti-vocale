@@ -266,7 +266,7 @@ private fun ScheduledFolderWatchCard(viewModel: SettingsViewModel) {
             }
         }
         OutlinedButton(
-            onClick = { picker.launch(null) },
+            onClick = { com.antivocale.app.util.launchDocumentPick(context, picker, null) },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))

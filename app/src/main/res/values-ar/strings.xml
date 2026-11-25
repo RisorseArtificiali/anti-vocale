@@ -109,6 +109,7 @@
     <string name="export_settings_title">الحفظ التلقائي والتصدير</string>
     <string name="export_settings_description">اختياري: يتم أيضًا حفظ كل نص في مجلد تختاره وبالصيغة التي تحددها. ويبقى كل شيء دائمًا في تبويب السجل كذلك.</string>
     <string name="error_folder_not_writable">لا يمكن لهذا المجلد استقبال الملفات. اختر مجلدًا من وحدة تخزين الجهاز (وليس اختصار التنزيلات).</string>
+    <string name="error_no_document_picker">لا يتوفر على هذا الجهاز أداة لاختيار الملفات، لذا لا يمكن اختيار الملفات أو المجلدات.</string>
     <string name="language_phone_option">لغة الهاتف (%1$s)</string>
     <string name="today">اليوم</string>
     <string name="yesterday">أمس، %1$s</string>
