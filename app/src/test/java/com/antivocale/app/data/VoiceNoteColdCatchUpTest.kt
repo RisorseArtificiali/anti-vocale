@@ -79,6 +79,19 @@ class VoiceNoteColdCatchUpTest {
         coEvery { preferences.resetVoiceNoteBusinessWatermark() } answers {
             storedWatermarks[VoiceNoteSource.WHATSAPP_BUSINESS] = null
         }
+        every { preferences.voiceNoteWatchedWatermark } answers {
+            flowOf(storedWatermarks[VoiceNoteSource.WATCHED_FOLDER])
+        }
+        coEvery { preferences.bumpVoiceNoteWatchedWatermark(any()) } answers {
+            val candidate = firstArg<String>()
+            val current = storedWatermarks[VoiceNoteSource.WATCHED_FOLDER]
+            if (current == null || candidate > current) {
+                storedWatermarks[VoiceNoteSource.WATCHED_FOLDER] = candidate
+            }
+        }
+        coEvery { preferences.resetVoiceNoteWatchedWatermark() } answers {
+            storedWatermarks[VoiceNoteSource.WATCHED_FOLDER] = null
+        }
         scope = CoroutineScope(Dispatchers.Unconfined)
         detector = VoiceNoteDetector(scope, appContext(), preferences)
         // Unconfined collector: emissions land in `entries` synchronously.
@@ -500,5 +513,85 @@ class VoiceNoteColdCatchUpTest {
 
         assertEquals(1, entries.size)
         awaitWatermark(keyOf("300", "PTT-20261025-WA00001.opus"))
+    }
+
+    // ---- TASK-1047: the watched-folder source's UNKEYED recovery ----
+
+    /** A watched-source detector over a raw: tree grant pointing at the
+     *  temp root. The docId is PERCENT-ENCODED: Uri.parse splits path
+     *  segments on literal slashes, so an unencoded raw:/var/... docId
+     *  arrives as just "raw:" (getPathSegments then decodes the whole
+     *  segment back into the full path, which is also why adb grants of
+     *  raw trees encode this way). */
+    private fun watchedDetector(sink: MutableList<VoiceNoteEntry>): VoiceNoteDetector {
+        val d = VoiceNoteDetector(scope, appContext(), preferences,
+            source = VoiceNoteSource.WATCHED_FOLDER)
+        scope.launch { d.detections.collect { sink += it } }
+        val encoded = ("raw:" + tmp.root.absolutePath)
+            .replace(":", "%3A").replace("/", "%2F")
+        d.subscribe("content://com.android.externalstorage.documents/tree/$encoded")
+        return d
+    }
+
+    /** A note written straight into the watched root (the temp root)
+     *  with an aged mtime. */
+    private fun watchedNote(fileName: String, ageMs: Long = 0): File =
+        File(tmp.root, fileName).apply {
+            writeText("x")
+            if (ageMs > 0) setLastModified(System.currentTimeMillis() - ageMs)
+        }
+
+    @Test
+    fun `the watched sweep emits fresh files past the mtime watermark and advances it`() {
+        // The frozen-watch recovery (TASK-1047): the files' events never
+        // fired; the sweep is the only surface that can see them. The
+        // watermark is the last emission's mtime, not a PTT key.
+        val fresh = watchedNote("note-new.m4a", ageMs = 60_000)
+        val stale = watchedNote("note-old.m4a", ageMs = 3 * 60 * 60 * 1000) // past TTL
+        watchedNote("readme.txt")                                            // not audio
+        // The watermark sits between the two notes' mtimes (the stale
+        // note's own stamp: at-or-before it is covered, the fresh one is
+        // strictly past it and inside the TTL).
+        storedWatermarks[VoiceNoteSource.WATCHED_FOLDER] = stale.lastModified().toString()
+
+        val sink = mutableListOf<VoiceNoteEntry>()
+        val watched = watchedDetector(sink)
+        try {
+            kotlinx.coroutines.runBlocking {
+                withTimeout(5_000) { while (sink.isEmpty()) delay(10) }
+            }
+            assertEquals("only the fresh note is emitted", 1, sink.size)
+            assertTrue("the emission carries the catch-up flag", sink[0].catchup)
+            assertEquals("the stamp is the FILE's mtime (the 833 invariant)",
+                fresh.lastModified(), sink[0].detectedAtMs)
+            kotlinx.coroutines.runBlocking { delay(500) }
+            assertEquals(
+                "expected=${fresh.lastModified()} stored=${storedWatermarks[VoiceNoteSource.WATCHED_FOLDER]}",
+                fresh.lastModified().toString(),
+                storedWatermarks[VoiceNoteSource.WATCHED_FOLDER])
+        } finally {
+            watched.dispose()
+        }
+    }
+
+    @Test
+    fun `the watched sweep stays quiet when the watermark already covers everything`() {
+        // Steady state after a healthy run: every file's mtime is at or
+        // before the watermark, so arms and rearm ticks emit nothing (the
+        // burst stays bounded and re-subscribes are free).
+        watchedNote("note-a.m4a", ageMs = 60_000)
+        watchedNote("note-b.m4a", ageMs = 90_000)
+        storedWatermarks[VoiceNoteSource.WATCHED_FOLDER] =
+            (System.currentTimeMillis() - 30_000).toString() // newer than both
+
+        val sink = mutableListOf<VoiceNoteEntry>()
+        val watched = watchedDetector(sink)
+        try {
+            // Give the sweep a beat to (wrongly) emit, then assert quiet.
+            kotlinx.coroutines.runBlocking { delay(300) }
+            assertTrue("a covering watermark emits nothing", sink.isEmpty())
+        } finally {
+            watched.dispose()
+        }
     }
 }

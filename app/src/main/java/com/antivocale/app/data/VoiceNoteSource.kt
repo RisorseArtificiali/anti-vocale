@@ -158,24 +158,26 @@ suspend fun PreferencesManager.saveVoiceNoteTreeUri(source: VoiceNoteSource, uri
  * build may have mixed Business keys into it; bounded, one-time (see
  * TASK-891's notes).
  *
- * TASK-966: the watched-folder source has NO keyed recovery (ordinary
- * file names carry no ordering; the detector skips the watermark-gated
- * sweep for it), so its arms are constants that keep the accessors total
- * over the enum without a preference key nothing would ever write. If a
- * keyed scheme arrives for it, give it real keys like the Business twin.
+ * TASK-1047: the watched-folder source's recovery is UNKEYED by name (a
+ * plain mtime watermark; ordinary file names carry no ordering). The
+ * arms are real keys like the Business twin, holding the newest EMITTED
+ * mtime as an epoch-millis string.
  */
 fun PreferencesManager.voiceNoteWatermark(source: VoiceNoteSource): Flow<String?> =
     when (source) {
         VoiceNoteSource.WHATSAPP -> voiceNoteWatermark
         VoiceNoteSource.WHATSAPP_BUSINESS -> voiceNoteBusinessWatermark
-        VoiceNoteSource.WATCHED_FOLDER -> kotlinx.coroutines.flow.flowOf(null)
+        // TASK-1047: the mtime watermark, same contract over the unkeyed
+        // sweep's own key (the newest EMITTED mtime as epoch-millis
+        // string; monotonic as a same-length numeric string).
+        VoiceNoteSource.WATCHED_FOLDER -> voiceNoteWatchedWatermark
     }
 
 suspend fun PreferencesManager.bumpVoiceNoteWatermark(source: VoiceNoteSource, candidate: String) {
     when (source) {
         VoiceNoteSource.WHATSAPP -> bumpVoiceNoteWatermark(candidate)
         VoiceNoteSource.WHATSAPP_BUSINESS -> bumpVoiceNoteBusinessWatermark(candidate)
-        VoiceNoteSource.WATCHED_FOLDER -> Unit
+        VoiceNoteSource.WATCHED_FOLDER -> bumpVoiceNoteWatchedWatermark(candidate)
     }
 }
 
@@ -183,6 +185,6 @@ suspend fun PreferencesManager.resetVoiceNoteWatermark(source: VoiceNoteSource) 
     when (source) {
         VoiceNoteSource.WHATSAPP -> resetVoiceNoteWatermark()
         VoiceNoteSource.WHATSAPP_BUSINESS -> resetVoiceNoteBusinessWatermark()
-        VoiceNoteSource.WATCHED_FOLDER -> Unit
+        VoiceNoteSource.WATCHED_FOLDER -> resetVoiceNoteWatchedWatermark()
     }
 }

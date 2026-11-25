@@ -511,9 +511,18 @@ class VoiceNoteDetector(
      * dedup then absorbs.
      */
     private fun advanceWatermark(entry: VoiceNoteEntry) {
-        val key = VoiceNoteFilter.watermarkKeyOf(File(entry.path ?: return)) ?: return
+        // TASK-1047: the watched source has no PTT key; its watermark is
+        // the emission's own stamp (the file's mtime on the sweep lane,
+        // the wall clock on live arrival), an epoch-millis string whose
+        // fixed length keeps the store's lexicographic bump monotonic.
+        val key = if (source.usesPttLayout) {
+            VoiceNoteFilter.watermarkKeyOf(File(entry.path ?: return)) ?: return
+        } else {
+            entry.detectedAtMs.toString()
+        }
         scope.launch(Dispatchers.IO) {
-            preferencesManager.bumpVoiceNoteWatermark(source, key)
+            runCatching { preferencesManager.bumpVoiceNoteWatermark(source, key) }
+                .onFailure { Log.w(TAG, "Watermark bump failed for ${source.name}", it) }
         }
     }
 
@@ -536,8 +545,15 @@ class VoiceNoteDetector(
         // names parse to a key (ordinary file names carry no ordering), so
         // for the watched-folder source it could only ever walk the tree
         // and find nothing. Skip it there; live CLOSE_WRITE/MOVED_TO
-        // events are that source's whole detection surface.
-        if (!source.usesPttLayout) return
+        // events are that source's steady-state surface.
+        // TASK-1047: the watched-folder source's recovery is UNKEYED
+        // (plain mtime gate); live CLOSE_WRITE/MOVED_TO events remain its
+        // steady-state detection, this sweep is the frozen/dead-watch
+        // recovery.
+        if (!source.usesPttLayout) {
+            watchedFolderColdCatchUp()
+            return
+        }
         val treeUri = grantedTreeUri
         if (treeUri != null) {
             // TASK-906: the SAF lane is the PRODUCTION lane. Measured on
@@ -555,6 +571,57 @@ class VoiceNoteDetector(
             .orEmpty()
         Log.i(TAG, "cold catch-up folders=${folders.size}")
         coldCatchUpScan(folders)
+    }
+
+    /**
+     * TASK-1047: the watched-folder source's recovery sweep. Notes that
+     * arrived while the process was frozen/dead or the watch silently
+     * died have no events coming; this is the only surface that can see
+     * them. Plain mtime gate (newer than the source's watermark, younger
+     * than [coldCatchUpTtlMs], newest [coldCatchUpCap] only) over the
+     * watched root, riding [serveRipe] for the quiet gate and emission
+     * (the stamp is the FILE's mtime, the 833 matcher invariant). The
+     * raw lane serves the tests and the on-device ROOT listing; a denied
+     * listing logs and returns - the watermark keeps everything at-or-
+     * before it excluded on the next arm either way.
+     */
+    private suspend fun watchedFolderColdCatchUp() {
+        val root = root
+        val now = System.currentTimeMillis()
+        val listing = root.listFiles()
+        if (listing == null) {
+            Log.w(TAG, "1047 watched sweep: listing denied for ${root.absolutePath}")
+            return
+        }
+        val watermark = preferencesManager.voiceNoteWatermark(source).first()
+        val fresh = listing
+            .filter { it.isFile && VoiceNoteFilter.isVoiceNoteName(source, it.name) }
+            .map { SweepFile(it.absolutePath, it.lastModified()) }
+            .filter { sweep ->
+                (watermark == null || sweep.lastModified.toString() > watermark) &&
+                    // The quiet gate (the 831 rule): a file still younger
+                    // than the catch-up delay may be mid-write; its live
+                    // CLOSE_WRITE delivers it once complete.
+                    now - sweep.lastModified >= catchUpDelayMs &&
+                    now - sweep.lastModified < coldCatchUpTtlMs
+            }
+            .sortedByDescending { it.lastModified }
+            .take(coldCatchUpCap)
+        if (fresh.isEmpty()) return
+        Log.i(TAG, "1047 watched sweep: ${fresh.size} fresh note(s) past the watermark")
+        // The cold lane's emission contract (scanCandidates' shape): the
+        // catchup flag suppresses the per-note result notification (the
+        // 889 digest covers the burst), the stamp is the note's OWN mtime
+        // (the 833 matcher invariant), and only real emissions count.
+        var emitted = 0
+        fresh.forEach { sweep ->
+            if (onDetection(
+                    entryFor(sweep.path)
+                        .copy(detectedAtMs = sweep.lastModified, catchup = true))) {
+                emitted++
+            }
+        }
+        if (emitted > 0) _catchUpBursts.trySend(emitted)
     }
 
     /** The SAF walk's result: per-folder files plus the folder docIds the

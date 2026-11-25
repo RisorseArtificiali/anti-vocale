@@ -227,11 +227,14 @@ class VoiceNoteSourceTest {
         assertFalse(prefs.voiceNoteDetectionEnabled(VoiceNoteSource.WHATSAPP_BUSINESS).first())
         assertNull(prefs.voiceNoteTreeUri(VoiceNoteSource.WHATSAPP).first())
         assertNull(prefs.voiceNoteTreeUri(VoiceNoteSource.WHATSAPP_BUSINESS).first())
-        // No keyed catch-up for this source: the watermark accessors stay
-        // total but empty (and the writes are no-ops).
+        // TASK-1047: the unkeyed catch-up rides the mtime watermark (its
+        // own key; the WhatsApp pair stays untouched).
         assertNull(prefs.voiceNoteWatermark(VoiceNoteSource.WATCHED_FOLDER).first())
-        prefs.bumpVoiceNoteWatermark(VoiceNoteSource.WATCHED_FOLDER, "999/20261105/0000000001")
-        assertNull(prefs.voiceNoteWatermark(VoiceNoteSource.WATCHED_FOLDER).first())
+        prefs.bumpVoiceNoteWatermark(VoiceNoteSource.WATCHED_FOLDER, "1795600000000")
+        assertEquals("1795600000000",
+            prefs.voiceNoteWatermark(VoiceNoteSource.WATCHED_FOLDER).first())
+        assertNull(prefs.voiceNoteWatermark(VoiceNoteSource.WHATSAPP).first())
+        assertNull(prefs.voiceNoteWatermark(VoiceNoteSource.WHATSAPP_BUSINESS).first())
     }
 
     @Test

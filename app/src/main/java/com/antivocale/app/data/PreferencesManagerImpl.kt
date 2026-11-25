@@ -147,6 +147,10 @@ class PreferencesManagerImpl(
         // tree); the WhatsApp entry keeps the legacy key above, so released
         // installs (which never ran a Business detector) migrate as-is.
         private val VOICE_NOTE_BUSINESS_WATERMARK = stringPreferencesKey("voice_note_business_watermark")
+        // TASK-1047: the watched-folder source's mtime watermark (the
+        // unkeyed sweep's own key: the newest EMITTED mtime as epoch-millis
+        // string).
+        private val VOICE_NOTE_WATCHED_WATERMARK = stringPreferencesKey("voice_note_watched_watermark")
         // TASK-681: the LAN-offload (OmniVoice) consent gate and its config triple.
         private val REMOTE_OMNIVOICE_ENABLED = booleanPreferencesKey("remote_omnivoice_enabled")
         private val REMOTE_OMNIVOICE_ENDPOINT = stringPreferencesKey("remote_omnivoice_endpoint")
@@ -230,6 +234,7 @@ class PreferencesManagerImpl(
         val voiceNoteWatchedTreeUri: String? = null,
         val voiceNoteWatermark: String? = null,
         val voiceNoteBusinessWatermark: String? = null,
+        val voiceNoteWatchedWatermark: String? = null,
         val remoteOmnivoiceEnabled: Boolean = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED,
         val remoteOmnivoiceEndpoint: String = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT,
         val remoteOmnivoiceApiKey: String = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY,
@@ -311,6 +316,7 @@ class PreferencesManagerImpl(
         voiceNoteWatchedTreeUri = this[VOICE_NOTE_WATCHED_TREE_URI],
         voiceNoteWatermark = this[VOICE_NOTE_WATERMARK],
         voiceNoteBusinessWatermark = this[VOICE_NOTE_BUSINESS_WATERMARK],
+        voiceNoteWatchedWatermark = this[VOICE_NOTE_WATCHED_WATERMARK],
         remoteOmnivoiceEnabled = this[REMOTE_OMNIVOICE_ENABLED] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED,
         remoteOmnivoiceEndpoint = this[REMOTE_OMNIVOICE_ENDPOINT] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT,
         remoteOmnivoiceApiKey = this[REMOTE_OMNIVOICE_API_KEY] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY,
@@ -1152,6 +1158,32 @@ class PreferencesManagerImpl(
     override suspend fun resetVoiceNoteWatermark() {
         dataStore.edit { it.remove(VOICE_NOTE_WATERMARK) }
         cache.updateAndGet { it.copy(voiceNoteWatermark = null) }
+    }
+
+    // TASK-1047: the watched-folder watermark trio, the twin of the
+    // WhatsApp block over the mtime key (the unkeyed sweep's own anchor).
+    override val voiceNoteWatchedWatermark: Flow<String?> = dataStore.data.map { it[VOICE_NOTE_WATCHED_WATERMARK] }
+        .onStart { emit(cache.get().voiceNoteWatchedWatermark) }
+
+    override suspend fun bumpVoiceNoteWatchedWatermark(candidate: String) {
+        dataStore.edit { preferences ->
+            val current = preferences[VOICE_NOTE_WATCHED_WATERMARK]
+            if (current == null || candidate > current) {
+                preferences[VOICE_NOTE_WATCHED_WATERMARK] = candidate
+            }
+        }
+        cache.updateAndGet { cached ->
+            if (cached.voiceNoteWatchedWatermark == null || candidate > cached.voiceNoteWatchedWatermark) {
+                cached.copy(voiceNoteWatchedWatermark = candidate)
+            } else {
+                cached
+            }
+        }
+    }
+
+    override suspend fun resetVoiceNoteWatchedWatermark() {
+        dataStore.edit { it.remove(VOICE_NOTE_WATCHED_WATERMARK) }
+        cache.updateAndGet { it.copy(voiceNoteWatchedWatermark = null) }
     }
 
     // TASK-891: the Business watermark trio, the twin of the WhatsApp

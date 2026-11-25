@@ -434,6 +434,14 @@ interface PreferencesManager {
     val voiceNoteBusinessWatermark: Flow<String?>
 
     /**
+     * TASK-1047: the watched-folder source's own watermark (the epoch-millis
+     * string of the newest EMITTED note's mtime; monotonic as a same-length
+     * numeric string). The recovery sweep for that source is UNKEYED by name
+     * and keys on this instead.
+     */
+    val voiceNoteWatchedWatermark: Flow<String?>
+
+    /**
      * TASK-778: advances [voiceNoteWatermark] monotonically (a candidate
      * at or below the stored value is a no-op). The compare lives inside
      * the store's edit so concurrent emissions cannot regress the
@@ -452,6 +460,11 @@ interface PreferencesManager {
      * would silently suppress every future recovery.
      */
     suspend fun resetVoiceNoteWatermark()
+    /** TASK-1047: advances [voiceNoteWatchedWatermark] monotonically. */
+    suspend fun bumpVoiceNoteWatchedWatermark(candidate: String)
+
+    /** TASK-1047: clears [voiceNoteWatchedWatermark]. */
+    suspend fun resetVoiceNoteWatchedWatermark()
 
     /** TASK-891: the Business twin of [resetVoiceNoteWatermark]. */
     suspend fun resetVoiceNoteBusinessWatermark()

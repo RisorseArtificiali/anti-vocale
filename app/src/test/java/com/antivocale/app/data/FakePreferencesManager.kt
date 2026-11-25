@@ -55,6 +55,14 @@ internal class FakePreferencesManager : PreferencesManager {
         if (current == null || candidate > current) _voiceNoteBusinessWatermark.value = candidate
     }
     override suspend fun resetVoiceNoteBusinessWatermark() { _voiceNoteBusinessWatermark.value = null }
+    // TASK-1047: the watched-folder twin (the mtime watermark).
+    val _voiceNoteWatchedWatermark = MutableStateFlow<String?>(null)
+    override val voiceNoteWatchedWatermark: Flow<String?> = _voiceNoteWatchedWatermark
+    override suspend fun bumpVoiceNoteWatchedWatermark(candidate: String) {
+        val current = _voiceNoteWatchedWatermark.value
+        if (current == null || candidate > current) _voiceNoteWatchedWatermark.value = candidate
+    }
+    override suspend fun resetVoiceNoteWatchedWatermark() { _voiceNoteWatchedWatermark.value = null }
     val _vadEnabled = MutableStateFlow(false)
     val _freezeProtectionEnabled = MutableStateFlow(false)
     override val freezeProtectionEnabled: Flow<Boolean> = _freezeProtectionEnabled
