@@ -736,7 +736,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 // cold-start recovery already rewrote to PAUSED_SYSTEM.
                 resumeSession != null && resumeSession.totalOutputSamples
                     ?.let { total -> (resumePrefixRows.lastOrNull()?.endSample ?: 0L) >= total } == true ->
-                    completedSessionFromStore(taskId, resumeSession, resumePrefixRows)
+                    completedSessionFromStore(taskId, resumeSession, resumePrefixRows, context)
                 requestType == "audio" -> if (f4LoadFailure != null) {
                     recoverFirstPass(fastFirstPass!!, f4LoadFailure,
                         DualRefinementPolicy.SKIP_REFINE_LOAD_FAILED)
@@ -5218,10 +5218,34 @@ class TranscriptionOrchestrator @Inject constructor(
         taskId: String,
         session: TranscriptionSessionEntity,
         prefixRows: List<SessionChunkEntity>,
+        context: Context,
     ): Result<TranscriptionResult> {
-        val backend = backendManager.getActiveBackend()
-            ?: return Result.failure(IllegalStateException(
-                "No active backend for the completing-session resume of $taskId"))
+        // TASK-1048: the session's FROZEN backend, never the ambient active
+        // one. The transcript text in the store came from the frozen model;
+        // the user may have switched the active backend between the stint
+        // and this resume, and labeling the completed run (and running its
+        // final pass) with the new model is the TASK-545 misattribution
+        // class. Same override+language pair the Ready plan hands the
+        // normal resumed stint; the load is skipped when the frozen backend
+        // is already the active one (the common resume, no gratuitous
+        // reload).
+        val backend: TranscriptionBackend
+        if (backendManager.getActiveBackend()?.id == session.backendId) {
+            backend = backendManager.getActiveBackend()!!
+        } else {
+            ensureBackendLoaded(
+                context,
+                session.backendId,
+                languageOverride = session.languagePin,
+            ).onFailure {
+                return Result.failure(IllegalStateException(
+                    "Could not load the session's frozen backend ${session.backendId} " +
+                        "for the completing resume of $taskId", it))
+            }
+            backend = backendManager.getActiveBackend()
+                ?: return Result.failure(IllegalStateException(
+                    "No active backend for the completing-session resume of $taskId"))
+        }
         val chunks = prefixRows
         val text = assembledSessionText(chunks)
         val cues = chunks.flatMap { chunk ->

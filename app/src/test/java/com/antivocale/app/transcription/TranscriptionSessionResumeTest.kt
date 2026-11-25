@@ -591,4 +591,67 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         assertEquals("no decode may run for a completing resume", -1L, lastStreamOffset)
         assertNull(sessionDao.sessions["completing"])
     }
+
+    @Test
+    fun `a completing resume with a switched active backend loads the session's frozen one`() = runTest {
+        // TASK-1048: the completing arm must resolve the FROZEN backend, not
+        // the ambient active one. The pin: a DIFFERENT backend is active when
+        // the resume runs; the only way the run completes with the store's
+        // chunks is the fix loading the frozen id (observed as the
+        // setActiveBackend("whisper") request flipping the active mock).
+        stubStream()
+        lastStreamOffset = -1L
+        val parakeet = mockk<TranscriptionBackend>(relaxed = true) {
+            every { id } returns "parakeet"
+            every { isReady() } returns true
+            every { isAudioSupported() } returns true
+            every { supportsAudio } returns true
+            every { maxChunkDurationSeconds } returns 30
+            every { displayName } returns "Parakeet"
+        }
+        var current: TranscriptionBackend = parakeet
+        every { backendManager.getActiveBackend() } answers { current }
+        io.mockk.coEvery { backendManager.setActiveBackend(any(), any(), any()) }.coAnswers {
+            current = if (firstArg<String>() == "whisper") backend else parakeet
+            Result.success(Unit)
+        }
+        var cursor = 0L
+        for (i in 0 until chunkCount) {
+            sessionDao.insertChunk(SessionChunkEntity(
+                taskId = "switched",
+                startSample = cursor,
+                endSample = cursor + chunkSamples,
+                text = "w$i",
+            ))
+            cursor += chunkSamples
+        }
+        sessionDao.upsertSession(TranscriptionSessionEntity(
+            taskId = "switched",
+            filePath = sessionFile.absolutePath,
+            fileSizeBytes = sessionFile.length(), fileMtimeMs = sessionFile.lastModified(),
+            backendId = "whisper", modelPath = "/models/whisper",
+            source = "share", state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM,
+            totalOutputSamples = cursor,
+            createdAtMs = 1L, updatedAtMs = 1L,
+        ))
+        stubRow("switched")
+        // A REAL directory for the whisper model path: the load honors the
+        // saved path when it exists and skips the catalog auto-resolution
+        // walk (which needs a real filesystem).
+        val whisperDir = java.io.File.createTempFile("whisper", ".dir").let {
+            it.delete(); it.mkdirs(); it }
+        every { preferencesManager.sherpaModelPath("whisper") } returns
+            kotlinx.coroutines.flow.flowOf(whisperDir.absolutePath)
+        val result = request("switched")
+        val outcome = result.fold(
+            { it },
+            { "FAILURE: ${it.message} (cause ${it.cause?.message})" })
+        assertEquals("the completing arm rebuilds from the store on the frozen backend",
+            (0 until chunkCount).joinToString(" ") { "w$it" }, outcome)
+        io.mockk.coVerify(atLeast = 1) {
+            backendManager.setActiveBackend("whisper", any(), any())
+        }
+        // The restore: the base stubs answer the singleton whisper mock.
+        every { backendManager.getActiveBackend() } returns backend
+    }
 }
