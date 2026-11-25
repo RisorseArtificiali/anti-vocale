@@ -386,6 +386,19 @@ object WipedImportRepairNotifications {
         progressNotification(context, detail)
     }
 
+    /**
+     * TASK-1051: the rejection-retry form of the foreground state. Title
+     * only, no contentIntent and no Cancel action (the likeliest rejects
+     * on OEM builds that refuse the full form); same channel the service
+     * registers right before its foreground start.
+     */
+    fun minimalProgressNotification(context: Context): Notification =
+        NotificationCompat.Builder(context, AppNotificationChannel.MODEL_REPAIR.id)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setContentTitle(context.getString(R.string.wiped_imports_progress_title))
+            .setOngoing(true)
+            .build()
+
     private fun modelsTabIntent(context: Context): PendingIntent =
         ResultNotificationFactory(context).modelsTabPendingIntent()
 

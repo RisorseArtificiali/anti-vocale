@@ -2,22 +2,18 @@ package com.antivocale.app.service
 
 import android.app.Notification
 import android.os.IBinder
-import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.util.Log
-import androidx.core.app.NotificationCompat
-import com.antivocale.app.R
 import com.antivocale.app.data.ExternalImportRepairer
 import com.antivocale.app.data.ExternalImportProgressRelay
 import com.antivocale.app.di.ApplicationScope
 import com.antivocale.app.receiver.WipedImportRepairNotifications
 import com.antivocale.app.util.AppNotificationChannel
+import com.antivocale.app.util.CrashReporter
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -42,7 +38,7 @@ import kotlinx.coroutines.launch
  * Starts ONLY from the user's Recover tap (the maintainer's
  * no-background-gigabytes decision): the receiver starts this service and
  * nothing else ever does; no startup path reaches it. START_NOT_STICKY on
- * purpose: a killed repair must NOT silently restart gigabytes - the next
+ * purpose: a killed repair must NOT silently restart gigabytes; the next
  * cold start re-posts the wiped notice and the user decides again.
  *
  * The single-flight discipline moves here from the receiver: the service
@@ -97,7 +93,13 @@ class WipedImportRepairService : Service() {
                     startForegroundCompat(WipedImportRepairNotifications.progressNotification(this))
                     return START_NOT_STICKY
                 }
-                startForegroundCompat(WipedImportRepairNotifications.progressNotification(this))
+                if (!startForegroundCompat(
+                        WipedImportRepairNotifications.progressNotification(this))) {
+                    // Twice-rejected start: the helper already stopped us;
+                    // do NOT launch the repair into a tearing-down service
+                    // (the ragged-edge fix from the simplify round).
+                    return START_NOT_STICKY
+                }
                 repairJob = applicationScope.launch(Dispatchers.IO) {
                     val result = try {
                         repairer.repairAll()
@@ -171,14 +173,60 @@ class WipedImportRepairService : Service() {
         super.onDestroy()
     }
 
-    private fun startForegroundCompat(notification: Notification) {
+    /**
+     * TASK-1051: the service owns its channel. The receiver's post() was
+     * the ONLY creator of MODEL_REPAIR, so a channel lost to a reinstall
+     * or an OEM channel cleanup left the foreground start holding a
+     * notification on an unregistered id, which surfaces as
+     * CannotPostForegroundServiceNotificationException (the Android 16
+     * Vivo report; a plain notify() would just drop). The per-delivery
+     * create() is stronger than the sibling onCreate precedent
+     * (ExtractionService): it also covers an OEM channel deletion
+     * mid-lifetime. A REJECTED notification retries once with the minimal
+     * form; if that too is rejected the service stops itself and returns
+     * false so the caller skips its own work (the normal-start arm must
+     * not launch a multi-GB repair into a service already tearing down;
+     * there the wipe notice stays and a re-tap restarts it). The stop on
+     * a REQUIRED delivery is a DESIGNED stop with attribution (the
+     * CrashReporter report; the TASK-1014 lesson that Log.w alone proved
+     * unattributable), not a guaranteed crash avoidance: on ROMs that
+     * still enforce the fgRequired promise the system may raise the
+     * timeout exception anyway. On the duplicate-start arm (a repair
+     * already live) the stop cancels the repair at onDestroy and the
+     * shade empties until the next cold-start scan re-offers the wipe;
+     * that edge is documented rather than bridged, because re-posting the
+     * actionable notice needs a suspend scan from this synchronous arm.
+     */
+    private fun startForegroundCompat(notification: Notification): Boolean {
+        AppNotificationChannel.MODEL_REPAIR.create(this)
+        return runCatching {
+            foregroundStart(notification)
+        }.recoverCatching {
+            Log.w(TAG, "Foreground start rejected; retrying with the minimal form", it)
+            // Wrapped: a throw from the reporting infra here would convert
+            // the retry into a failure (the InferenceService outside-the-
+            // catch placement, same contract).
+            runCatching { CrashReporter.report(it, "WipedImportRepairService.startForeground") }
+            foregroundStart(WipedImportRepairNotifications.minimalProgressNotification(this))
+        }.onFailure {
+            Log.e(TAG, "Foreground start rejected twice; stopping (the wipe notice stays)", it)
+            stopSelf(lastStartId)
+        }.isSuccess
+    }
+
+    /**
+     * Test seam (the InferenceService.foregroundPromotion precedent):
+     * production always calls the real startForeground; tests substitute a
+     * recorder or a throwing form to drive the rejection arm.
+     */
+    internal var foregroundStart: (Notification) -> Unit = {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
                 WipedImportRepairNotifications.NOTIFICATION_ID,
-                notification,
+                it,
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         } else {
-            startForeground(WipedImportRepairNotifications.NOTIFICATION_ID, notification)
+            startForeground(WipedImportRepairNotifications.NOTIFICATION_ID, it)
         }
     }
 
