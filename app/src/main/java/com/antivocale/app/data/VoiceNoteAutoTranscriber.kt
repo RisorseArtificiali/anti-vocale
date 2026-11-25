@@ -56,11 +56,14 @@ class VoiceNoteAutoTranscriber @Inject constructor(
          *  result notification (the digest replaces the burst's N posts). */
         catchup: Boolean = false,
     ): EnqueueOutcome {
-        // TASK-842: the completed-row silent dedup. The taskId derives from
-        // the note's unique PTT name (see serviceIntent), so "same taskId"
-        // IS "same note"; WhatsApp re-delivering an already-transcribed
+        // TASK-842: the completed-row silent dedup. The WhatsApp sources'
+        // taskId derives from the note's unique PTT name (see
+        // serviceIntent), so "same taskId" IS "same note": a re-delivered
         // note (a redownload, a folder scan) transcribes once, not twice.
-        val taskId = taskIdFor(whatsappPath, source)
+        // The watched source's id is ARRIVAL-salted (TASK-1055): the guard
+        // still collapses one arrival's stragglers, and a deliberate
+        // re-copy is a new row by design (GH #191).
+        val taskId = taskIdFor(whatsappPath, source, detectedAtMs)
         if (duplicateGuard.alreadyTranscribed(taskId)) {
             Log.i(TAG, "note already transcribed, deduped: $whatsappPath")
             return EnqueueOutcome.DEDUPED
@@ -94,7 +97,12 @@ class VoiceNoteAutoTranscriber @Inject constructor(
             context, serviceIntent(localPath, whatsappPath, senderName, contentHash, source, catchup,
                 // TASK-1040: the detection stamp IS the note's original
                 // moment (live arrival time; the file mtime for scans).
-                originTimestampMs = detectedAtMs))) {
+                originTimestampMs = detectedAtMs,
+                // TASK-1055: explicit on purpose (no default): the guard
+                // above and this intent must key the SAME arrival-salted
+                // id, or the guard queries an id no row ever carries (the
+                // code-review catch on the 0L default).
+                detectedAtMs = detectedAtMs))) {
             InferenceEnqueue.Outcome.Started,
             InferenceEnqueue.Outcome.FallbackNotificationPosted -> {
                 Log.i(TAG, "voice note auto-enqueued: $localPath")
@@ -122,6 +130,7 @@ class VoiceNoteAutoTranscriber @Inject constructor(
         source: VoiceNoteSource = VoiceNoteSource.WHATSAPP,
         catchup: Boolean = false,
         originTimestampMs: Long? = null,
+        detectedAtMs: Long,
     ): Intent =
         // TASK-776: the shared audio-request factory; the taskId stays
         // local because the PTT-name derivation is this transcriber's
@@ -132,8 +141,9 @@ class VoiceNoteAutoTranscriber @Inject constructor(
             // PTT names are unique per note, so the id cannot collide
             // across a burst the way a millisecond timestamp can
             // (review F2: the service drops duplicate taskIds) and a
-            // re-resolved note keeps its id.
-            taskIdFor(whatsappPath, source),
+            // re-resolved note keeps its id. The watched source salts on
+            // the arrival bucket (TASK-1055), same math as the detector.
+            taskIdFor(whatsappPath, source, detectedAtMs),
             localPath,
             sourcePackage = source.packageName,
             senderName = senderName,
@@ -154,10 +164,22 @@ class VoiceNoteAutoTranscriber @Inject constructor(
      * absorbs it instead of double-transcribing. Undecorated names
      * rebuild to themselves byte-identically, so every existing row's id
      * is unchanged.
+     *
+     * TASK-1055: the watched source keys on the ARRIVAL, not the path
+     * alone: a deliberate re-copy of the same filename is a new
+     * recording (the deleting reporter's exact ask), while one arrival's
+     * double events still collapse (the detector's moving-window filter
+     * emits once per arrival; this id only ever sees that one emission).
+     * The two layers share the WINDOW constant, not the mechanism. The
+     * WhatsApp sources keep the pure path key: their PTT names are
+     * unique per note, and a redelivery re-dedups.
      */
-    private fun taskIdFor(whatsappPath: String, source: VoiceNoteSource): String =
-        "voicenote_${source.idNamespace}" +
+    private fun taskIdFor(whatsappPath: String, source: VoiceNoteSource, detectedAtMs: Long): String {
+        val base = "voicenote_${source.idNamespace}" +
             VoiceNoteFilter.canonicalNoteName(whatsappPath.substringAfterLast('/'))
+        return if (source.usesPttLayout) base
+        else base + "_" + VoiceNoteFilter.watchedArrivalSalt(detectedAtMs).toString(36)
+    }
 
     private companion object {
         const val TAG = "VoiceNoteAuto"

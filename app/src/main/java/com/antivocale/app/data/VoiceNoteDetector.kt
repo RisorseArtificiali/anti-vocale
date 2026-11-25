@@ -129,6 +129,8 @@ class VoiceNoteDetector(
     val catchUpBursts: Flow<Int> = _catchUpBursts.receiveAsFlow()
 
     private val seen = VoiceNoteFilter.IncrementalFilter()
+    // TASK-1055: the watched source's arrival-window dedup (moving window).
+    private val watchedArrivals = VoiceNoteFilter.ArrivalWindowFilter()
     // vars: refresh() swaps in fresh collections gap-free (review F2)
     private var observers = mutableListOf<FileObserver>()
     private var watchedDirs = mutableSetOf<String>()
@@ -491,9 +493,17 @@ class VoiceNoteDetector(
 
     /** True iff this entry passed the seen filter and was emitted (the
      *  sweep burst counts these, so a live-delivered or deduped note never
-     *  inflates the digest; TASK-889). */
+     *  inflates the digest; TASK-889). TASK-1055: the watched source
+     *  dedups on the ARRIVAL (a moving per-path window), so a re-copied
+     *  filename past the window is a new recording while one arrival's
+     *  double events still collapse (GH #191). The transcriber's task id
+     *  salts on the arrival bucket and only ever sees one emission per
+     *  arrival, so the two dedup layers agree. */
     private fun onDetection(entry: VoiceNoteEntry): Boolean {
-        val isNew = synchronized(this@VoiceNoteDetector) { seen.observe(entry) }
+        val isNew = synchronized(this@VoiceNoteDetector) {
+            if (source.usesPttLayout) seen.observe(entry.id)
+            else watchedArrivals.observe(entry.id, entry.detectedAtMs)
+        }
         if (isNew) {
             _detections.trySend(entry)
             advanceWatermark(entry)
@@ -1078,9 +1088,34 @@ object VoiceNoteFilter {
     fun isCounterFolderName(name: String): Boolean = name.toIntOrNull() != null
 
     /**
-     * Event dedup: the same file can fire CLOSE_WRITE more than once
-     * (WhatsApp's post-write touches); a bounded recent-id window keeps
-     * one queue entry per note while the memory stays constant.
+     * TASK-1055: the arrival window for the watched source's dedup keys
+     * (detector filter and task id alike). Two events of ONE arrival
+     * (CLOSE_WRITE then MOVED_TO, a post-write touch) land in the same
+     * bucket; a deliberate re-copy of the same name cannot (GH #191:
+     * delete, re-copy, same filename must transcribe again).
+     */
+    const val WATCHED_ARRIVAL_BUCKET_MS = 2_000L
+
+    /**
+     * TASK-1055: the watched task id's arrival salt (the stamp's bucket).
+     * A deliberate re-copy of the same name gets a NEW task id (so the
+     * 842 completed-row guard does not swallow the re-transcription, GH
+     * #191), while one arrival's double events cannot reach here twice
+     * (the detector's moving-window filter emits once). The bucket is
+     * aligned, which is safe BECAUSE of that upstream guarantee: a
+     * boundary-straddling double event would produce two ids, so it must
+     * never arrive. Deterministic per emission; the path participates in
+     * the id only through the canonical name it already carries.
+     */
+    fun watchedArrivalSalt(stampMs: Long): Long =
+        stampMs / WATCHED_ARRIVAL_BUCKET_MS
+
+    /**
+     * Event dedup for the WhatsApp sources (the watched source uses
+     * [ArrivalWindowFilter]): the same file can fire CLOSE_WRITE more
+     * than once (WhatsApp's post-write touches); a bounded recent-key
+     * window keeps one queue entry per note while the memory stays
+     * constant. The key is the entry id (path hash).
      */
     class IncrementalFilter(private val capacity: Int = 128) {
         private val seen = object : LinkedHashMap<Long, Unit>(16, 0.75f, true) {
@@ -1088,9 +1123,34 @@ object VoiceNoteFilter {
                 size > capacity
         }
 
-        /** true when the entry is NEW (first sighting within the window). */
-        fun observe(entry: VoiceNoteEntry): Boolean =
-            seen.put(entry.id, Unit) == null
+        /** true when the KEY is new (first sighting within the window). */
+        fun observe(key: Long): Boolean =
+            seen.put(key, Unit) == null
+    }
+
+    /**
+     * TASK-1055: the watched source's LIVE dedup: a per-path MOVING
+     * window, not a salted key. A bucket boundary would split one
+     * arrival's double events that straddle it (CLOSE_WRITE at 1999ms,
+     * MOVED_TO at 2001ms) and nothing downstream could re-merge them;
+     * the moving window compares against the path's LAST sighting, so
+     * adjacency is what matters, never the absolute clock. The transcriber's
+     * task id still salts on the bucket ([watchedArrivalKey]): it only
+     * needs to be a deterministic function of one EMISSION, and the
+     * filter above guarantees one emission per arrival.
+     */
+    class ArrivalWindowFilter(private val capacity: Int = 128) {
+        private val lastSighting = object : LinkedHashMap<Long, Long>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Long, Long>) =
+                size > capacity
+        }
+
+        /** true when this (path, stamp) is a NEW arrival: first sighting,
+         *  or more than [WATCHED_ARRIVAL_BUCKET_MS] since the path's last. */
+        fun observe(pathHash: Long, stampMs: Long): Boolean {
+            val last = lastSighting.put(pathHash, stampMs)
+            return last == null || stampMs - last > WATCHED_ARRIVAL_BUCKET_MS
+        }
     }
 
     /**

@@ -70,7 +70,7 @@ class VoiceNoteAutoTranscriberTest {
     @Test
     fun `serviceIntent mirrors the share path's audio shape`() {
         val serviceIntent = impl("/local/n.opus")
-            .serviceIntent("/local/n.opus", "/tree/202642/PTT-1.opus")
+            .serviceIntent("/local/n.opus", "/tree/202642/PTT-1.opus", detectedAtMs = 1L)
         assertEquals(
             TaskerRequestReceiver.REQUEST_TYPE_AUDIO,
             serviceIntent.getStringExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE))
@@ -90,7 +90,7 @@ class VoiceNoteAutoTranscriberTest {
         // suppresses the per-note result notification on it).
         assertEquals(false, serviceIntent.getBooleanExtra(InferenceService.EXTRA_CATCHUP, false))
         val sweepIntent = impl("/local/n.opus").serviceIntent(
-            "/local/n.opus", "/tree/202642/PTT-1.opus", catchup = true)
+            "/local/n.opus", "/tree/202642/PTT-1.opus", catchup = true, detectedAtMs = 1L)
         assertEquals(true, sweepIntent.getBooleanExtra(InferenceService.EXTRA_CATCHUP, false))
     }
 
@@ -100,11 +100,12 @@ class VoiceNoteAutoTranscriberTest {
         // notification name the source app from this package, and the
         // namespace keeps the two clients' same-named PTT files apart.
         val serviceIntent = impl("/local/n.opus").serviceIntent(
-            "/local/n.opus", "/tree/202642/PTT-1.opus", source = VoiceNoteSource.WHATSAPP_BUSINESS)
+            "/local/n.opus", "/tree/202642/PTT-1.opus", source = VoiceNoteSource.WHATSAPP_BUSINESS,
+            detectedAtMs = 1L)
         assertEquals("com.whatsapp.w4b", serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE_PACKAGE))
         val businessId = serviceIntent.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)
         assertEquals("voicenote_w4b_PTT-1.opus", businessId)
-        val whatsAppId = impl("/local/n.opus").serviceIntent("/local/n.opus", "/tree/202642/PTT-1.opus")
+        val whatsAppId = impl("/local/n.opus").serviceIntent("/local/n.opus", "/tree/202642/PTT-1.opus", detectedAtMs = 1L)
             .getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)
         assertNotEquals("the same PTT name from the two apps must not share an id", whatsAppId, businessId)
         assertEquals(InferenceService.SOURCE_VOICE_NOTE, serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE))
@@ -118,14 +119,83 @@ class VoiceNoteAutoTranscriberTest {
      */
     @Test
     fun `a watched-folder note is ungrouped and carries the watched namespace`() {
+        // TASK-1055: the id salts on the ARRIVAL bucket (detectedAtMs /
+        // 2s, base-36): same arrival -> same id (the 842 guard absorbs a
+        // double event), a re-copied file -> a new id (GH #191).
         val serviceIntent = impl("/local/n.m4a").serviceIntent(
             "/local/n.m4a", "/storage/emulated/0/Music/Signal/note.m4a",
-            source = VoiceNoteSource.WATCHED_FOLDER)
+            source = VoiceNoteSource.WATCHED_FOLDER,
+            detectedAtMs = 3_000L)
         assertNull(serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE_PACKAGE))
-        assertEquals("voicenote_watched_note.m4a",
+        assertEquals("voicenote_watched_note.m4a_" +
+            VoiceNoteFilter.watchedArrivalSalt(3_000L).toString(36),
             serviceIntent.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID))
         assertEquals(InferenceService.SOURCE_VOICE_NOTE,
             serviceIntent.getStringExtra(InferenceService.EXTRA_SOURCE))
+    }
+
+    /**
+     * TASK-1055 (GH #191): re-copying the same filename into the watched
+     * folder is a NEW arrival: the task id must differ so the completed-
+     * row dedup does not swallow the re-transcription; a double event of
+     * one arrival must keep ONE id so it still collapses.
+     */
+    @Test
+    fun `a watched re-copy gets a new task id while one arrival's double events share it`() {
+        val t = impl("/local/n.m4a")
+        fun idAt(stamp: Long) = t.serviceIntent(
+            "/local/n.m4a", "/storage/emulated/0/Music/Signal/note.m4a",
+            source = VoiceNoteSource.WATCHED_FOLDER, detectedAtMs = stamp)
+            .getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)!!
+        val first = idAt(10_000L)
+        assertEquals("one arrival's double events share the id", first, idAt(11_999L))
+        assertNotEquals("a re-copy past the window is a new row", first, idAt(120_000L))
+        // The WhatsApp sources keep the pure path key (redelivery dedup).
+        val wa = t.serviceIntent("/local/n.opus", "/tree/202642/PTT-1.opus", detectedAtMs = 1L)
+            .getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)!!
+        val waAgain = t.serviceIntent("/local/n.opus", "/tree/202642/PTT-1.opus", detectedAtMs = 999_999L)
+            .getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)!!
+        assertEquals("WhatsApp ids stay time-independent", wa, waAgain)
+    }
+
+    /**
+     * TASK-1055 (code-review round): the arrival-salted id must be ONE
+     * derivation across the whole enqueue path, pinned END TO END: the id
+     * the 842 guard checks and the id the dispatched intent carries must
+     * be the same string, or the guard queries an id no row ever holds
+     * (the 0L-default bug this round caught). Driven through enqueue,
+     * not serviceIntent, so the production threading is what's pinned.
+     */
+    @Test
+    fun `the watched guard and the dispatched intent key the same arrival id`() = runBlocking {
+        // The impl() helper shape: a resolving tree grant, a fresh identity
+        // cache, and a guard that records what it checked.
+        val checked = mutableListOf<String>()
+        val transcriber = VoiceNoteAutoTranscriber(
+            context,
+            mockk<VoiceNoteTreeGrant> {
+                coEvery { resolve(any(), any(), any()) } returns "/local/n.m4a"
+            },
+            mockk<AudioPreprocessor>(),
+            VoiceNoteIdentityCache(),
+            mockk<VoiceNoteDuplicateGuard> {
+                coEvery { alreadyTranscribed(capture(checked)) } returns false
+                // hashOf stays REAL: the local path does not exist, so it
+                // returns null, which the enqueue path handles by design.
+            },
+        )
+        transcriber.enqueue(
+            "/storage/emulated/0/Music/Signal/note.m4a",
+            detectedAtMs = 3_000L,
+            treeUri = "content://tree/x",
+            source = VoiceNoteSource.WATCHED_FOLDER)
+        val dispatched = shadowOf(context.applicationContext as android.app.Application)
+            .nextStartedService.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)!!
+        assertEquals("the guard's checked id IS the dispatched id (one derivation)",
+            checked.single(), dispatched)
+        assertEquals("the id carries the 3s arrival bucket, not the 0L default",
+            "voicenote_watched_note.m4a_" + VoiceNoteFilter.watchedArrivalSalt(3_000L).toString(36),
+            dispatched)
     }
 
     /**
@@ -183,10 +253,10 @@ class VoiceNoteAutoTranscriberTest {
         val impl = impl("/local/n.opus")
         assertEquals(
             "Anna",
-            impl.serviceIntent("/local/n.opus", "/w/PTT-1.opus", senderName = "Anna")
+            impl.serviceIntent("/local/n.opus", "/w/PTT-1.opus", senderName = "Anna", detectedAtMs = 1L)
                 .getStringExtra(InferenceService.EXTRA_SENDER_NAME))
         assertNull(
-            impl.serviceIntent("/local/n.opus", "/w/PTT-1.opus")
+            impl.serviceIntent("/local/n.opus", "/w/PTT-1.opus", detectedAtMs = 1L)
                 .getStringExtra(InferenceService.EXTRA_SENDER_NAME))
     }
 

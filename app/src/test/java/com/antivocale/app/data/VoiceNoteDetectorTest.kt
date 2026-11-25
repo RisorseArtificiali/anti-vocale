@@ -3,6 +3,7 @@ package com.antivocale.app.data
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 /**
@@ -52,14 +53,47 @@ class VoiceNoteDetectorTest {
     @Test
     fun `the incremental filter dedups repeated events for one note`() {
         // WhatsApp's write fires CREATE and CLOSE_WRITE for the same file,
-        // and post-write touches re-fire: one offer per note.
+        // and post-write touches re-fire: one offer per note. The filter
+        // is key-agnostic; the arrival math has its own pin below.
         val filter = VoiceNoteFilter.IncrementalFilter()
-        val entry = VoiceNoteEntry(id = 42L, path = "/x/PTT-1.opus", detectedAtMs = 1L)
-        assertTrue("first sighting is new", filter.observe(entry))
-        assertFalse("the re-fire is a duplicate", filter.observe(entry))
-        assertFalse("and again", filter.observe(entry))
-        val other = entry.copy(id = 43L)
-        assertTrue("a different note is new", filter.observe(other))
+        assertTrue("first sighting is new", filter.observe(42L))
+        assertFalse("the re-fire is a duplicate", filter.observe(42L))
+        assertFalse("and again", filter.observe(42L))
+        assertTrue("a different note is new", filter.observe(43L))
+    }
+
+    /**
+     * TASK-1055 (GH #191): the watched source's live dedup. A re-copied
+     * filename past the window is a NEW arrival (the reporter's exact
+     * case: same name, new copy, must transcribe again); one arrival's
+     * double events (CLOSE_WRITE then MOVED_TO, adjacent on the clock)
+     * collapse EVEN when they straddle a bucket boundary, which is the
+     * property the moving window exists for (the salted task id has no
+     * such guarantee and does not need one: the filter guarantees it one
+     * emission per arrival).
+     */
+    @Test
+    fun `the watched arrival window collapses one arrival's doubles and passes re-copies`() {
+        val arrivals = VoiceNoteFilter.ArrivalWindowFilter()
+        val pathHash = "note.m4a".hashCode().toLong()
+        assertTrue("the first sighting is an arrival", arrivals.observe(pathHash, 1_000L))
+        assertFalse("a double event 999ms later is the same arrival", arrivals.observe(pathHash, 1_999L))
+        assertFalse("even one straddling the old bucket boundary", arrivals.observe(pathHash, 2_001L))
+        assertTrue("a re-copy past the window is a new arrival", arrivals.observe(pathHash, 60_000L))
+        assertFalse("the re-copy's own double event collapses", arrivals.observe(pathHash, 60_999L))
+        assertTrue("a different file is always independent",
+            arrivals.observe("other.m4a".hashCode().toLong(), 1_050L))
+    }
+
+    /** TASK-1055: the task id's arrival salt is deterministic per bucket
+     *  (the transcriber contract the 842 guard relies on): same bucket,
+     *  same id; a new bucket, a new id. */
+    @Test
+    fun `the watched arrival salt is deterministic per bucket`() {
+        assertEquals(VoiceNoteFilter.watchedArrivalSalt(4_000L),
+            VoiceNoteFilter.watchedArrivalSalt(5_999L))
+        assertNotEquals(VoiceNoteFilter.watchedArrivalSalt(4_000L),
+            VoiceNoteFilter.watchedArrivalSalt(6_000L))
     }
 
     @Test
