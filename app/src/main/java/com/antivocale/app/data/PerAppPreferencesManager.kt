@@ -6,9 +6,11 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 /**
@@ -61,6 +63,14 @@ class PerAppPreferencesManager(private val context: Context) {
          * Key for tracking whether the user has seen the per-app onboarding tooltip
          */
         private val SEEN_PER_APP_ONBOARDING = booleanPreferencesKey("seen_per_app_onboarding")
+
+        /**
+         * GH #192 (TASK-1050): the packages the user ADDED to the per-app
+         * screen manually. The screen's manual list used to be Compose
+         * remember state, so entries vanished on re-entry; this set is the
+         * persisted membership the screen reconciles against.
+         */
+        private val MANUAL_PACKAGES = stringSetPreferencesKey("manual_packages")
 
         /**
          * Preference key suffixes
@@ -120,7 +130,7 @@ class PerAppPreferencesManager(private val context: Context) {
                 notificationSound = preferences[notificationSoundKeyForPackage(packageName)] ?: defaultPrefs.notificationSound,
                 quickShareBack = preferences[quickShareBackKeyForPackage(packageName)] ?: defaultPrefs.quickShareBack
             )
-        }
+        }.distinctUntilChanged()
     }
 
     /**
@@ -182,9 +192,27 @@ class PerAppPreferencesManager(private val context: Context) {
     }
 
     /**
+     * GH #192 (TASK-1050): the persisted manually-added packages, for the
+     * per-app screen's "Manually Added" section. Empty until the user adds
+     * one; the screen filters out the built-in known apps when rendering.
+     */
+    val manualPackages: Flow<Set<String>> = context.perAppPreferencesDataStore.data.map { preferences ->
+        preferences[MANUAL_PACKAGES] ?: emptySet()
+    }.distinctUntilChanged()
+
+    /** Records a manually added package (idempotent). */
+    suspend fun addManualPackage(packageName: String) {
+        context.perAppPreferencesDataStore.edit { preferences ->
+            val current = preferences[MANUAL_PACKAGES] ?: emptySet()
+            preferences[MANUAL_PACKAGES] = current + packageName
+        }
+    }
+
+    /**
      * Clear all preferences for a specific package.
      *
-     * This will reset to defaults on next read.
+     * This will reset to defaults on next read, and a manually added
+     * package leaves the manual list (GH #192).
      *
      * @param packageName Package name
      */
@@ -194,6 +222,13 @@ class PerAppPreferencesManager(private val context: Context) {
             preferences.remove(showShareActionKeyForPackage(packageName))
             preferences.remove(notificationSoundKeyForPackage(packageName))
             preferences.remove(quickShareBackKeyForPackage(packageName))
+            val manual = preferences[MANUAL_PACKAGES] ?: emptySet()
+            if (packageName in manual) {
+                // Both a missing key and an empty set read identically
+                // through [manualPackages], so the plain assignment is the
+                // whole story.
+                preferences[MANUAL_PACKAGES] = manual - packageName
+            }
         }
     }
 

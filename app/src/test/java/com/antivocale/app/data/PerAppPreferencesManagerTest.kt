@@ -286,4 +286,45 @@ class PerAppPreferencesManagerTest {
             manager.hasSeenOnboarding.first()
         )
     }
+
+    // ---- GH #192 (TASK-1050): the manually added list persists ----
+
+    @Test
+    fun testManualPackagesPersistAndDeduplicate() = runTest {
+        manager.addManualPackage("com.example.app")
+        manager.addManualPackage("com.example.app")
+        manager.addManualPackage("org.other.app")
+
+        val stored = manager.manualPackages.first()
+        assertEquals(
+            "The manual set persists and a repeated add does not duplicate",
+            setOf("com.example.app", "org.other.app"), stored)
+    }
+
+    @Test
+    fun testClearPreferencesForPackageDropsAManualEntry() = runTest {
+        manager.addManualPackage("com.example.app")
+        manager.updatePreferencesForPackage("com.example.app") { copy(autoCopy = true) }
+
+        manager.clearPreferencesForPackage("com.example.app")
+
+        assertTrue(
+            "A reset on a manually added app drops its manual entry (GH #192)",
+            manager.manualPackages.first().isEmpty())
+        assertFalse(
+            "And its preferences are gone too",
+            manager.getCurrentPreferences("com.example.app").autoCopy)
+    }
+
+    @Test
+    fun testClearAllPreferencesEmptiesTheManualSet() = runTest {
+        manager.addManualPackage("com.example.app")
+
+        manager.clearAllPreferences()
+
+        assertTrue(
+            "clearAllPreferences wipes the manual list",
+            manager.manualPackages.first().isEmpty())
+    }
+
 }

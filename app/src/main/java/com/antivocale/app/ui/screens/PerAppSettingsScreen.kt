@@ -23,6 +23,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
@@ -32,6 +33,7 @@ import com.antivocale.app.ui.components.AppPreferenceListItem
 import com.antivocale.app.ui.components.AppPreferencePanel
 import com.antivocale.app.ui.components.OnboardingTooltip
 import com.antivocale.app.ui.dialogs.AddAppPreferenceDialog
+import com.antivocale.app.util.AppInfoUtils
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
@@ -51,6 +53,7 @@ fun PerAppSettingsScreen(
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     // Both reset snackbar arms consume this from non-composable coroutine
     // lambdas, so it resolves here in composition.
     val resetDoneMessage = stringResource(R.string.per_app_settings_reset_done)
@@ -100,6 +103,35 @@ fun PerAppSettingsScreen(
             }
         }
 
+        // GH #192 (TASK-1050): the manually added list is PERSISTED now;
+        // seed its rows BEFORE the loading flag flips so the section
+        // renders complete, exactly like the known apps' rows.
+        val knownPackageNames = knownApps.map { it.first }.toSet()
+        // The per-package observer jobs, so a leaving package's collector
+        // is CANCELLED (a remove/re-add cycle must not stack observers on
+        // the same flow) and its stale preferences entry is dropped.
+        val manualJobs = mutableMapOf<String, kotlinx.coroutines.Job>()
+        suspend fun seedManual(stored: Set<String>) {
+            (stored - knownPackageNames).forEach { packageName ->
+                if (packageName !in manualApps) {
+                    // PackageManager binder calls stay off the main thread
+                    // (the dialog's own convention).
+                    manualApps[packageName] = kotlinx.coroutines.withContext(
+                        kotlinx.coroutines.Dispatchers.IO) {
+                        AppInfoUtils.getAppName(context, packageName)
+                    }
+                    preferencesState[packageName] =
+                        preferencesManager.getCurrentPreferences(packageName)
+                }
+            }
+            (manualApps.keys - stored).forEach { packageName ->
+                manualApps.remove(packageName)
+                preferencesState.remove(packageName)
+                manualJobs.remove(packageName)?.cancel()
+            }
+        }
+        seedManual(preferencesManager.manualPackages.first())
+
         // Wait for all to load
         jobs.awaitAll()
         isLoading = false
@@ -113,6 +145,23 @@ fun PerAppSettingsScreen(
             launch {
                 preferencesManager.getPreferencesForPackage(packageName).collect { prefs ->
                     preferencesState[packageName] = prefs
+                }
+            }
+        }
+
+        // The manual list's ONE owner: the same seed reconciles the UI map
+        // against the store's set (the built-in known apps render from
+        // their own list, so they stay out of it), then observes each
+        // manual app's prefs like the known ones.
+        preferencesManager.manualPackages.collect { stored ->
+            seedManual(stored)
+            (stored - knownPackageNames).forEach { packageName ->
+                if (manualJobs[packageName]?.isActive != true) {
+                    manualJobs[packageName] = launch {
+                        preferencesManager.getPreferencesForPackage(packageName).collect { prefs ->
+                            preferencesState[packageName] = prefs
+                        }
+                    }
                 }
             }
         }
@@ -402,21 +451,16 @@ fun PerAppSettingsScreen(
         AddAppPreferenceDialog(
             onDismiss = { showAddAppDialog = false },
             onAppSelected = { packageName, appName ->
-                // Add to manual apps
-                manualApps[packageName] = appName
-
-                // Load initial preference for this app and observe for updates
+                // GH #192: persist the membership and open the panel; the
+                // manualPackages collector owns the row (label, load and
+                // observation), so no second observer path exists here.
+                // A built-in package picked here stays in the known
+                // section only (the collector filters it out). The panel
+                // header reuses the label the dialog already resolved on
+                // IO (no second PackageManager round-trip on main).
                 scope.launch {
-                    val prefs = preferencesManager.getCurrentPreferences(packageName)
-                    preferencesState[packageName] = prefs
-
-                    // Open preference panel for the newly added app
+                    preferencesManager.addManualPackage(packageName)
                     selectedApp = packageName to appName
-
-                    // Then observe for updates
-                    preferencesManager.getPreferencesForPackage(packageName).collect { updatedPrefs ->
-                        preferencesState[packageName] = updatedPrefs
-                    }
                 }
             }
         )
