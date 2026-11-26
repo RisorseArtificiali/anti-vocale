@@ -156,7 +156,7 @@ class ExtractionService : Service() {
             val variant = intent.getStringExtra(EXTRA_CANCEL_VARIANT)
             val key = modelKey?.let { jobKey(it, variant) }
             val nid = key?.let { notificationIdForKey(it) } ?: NOTIFICATION_ID_BASE
-            startForeground(nid, createNotification(
+            promoteToForeground(nid, createNotification(
                 getString(R.string.notification_cancelling),
                 title = key?.let { displayNames[it] } ?: getString(R.string.app_name),
                 notificationId = nid,
@@ -183,7 +183,7 @@ class ExtractionService : Service() {
         displayNames[key] = displayName
         val nid = notificationIdForKey(key)
 
-        startForeground(nid, createNotification(
+        promoteToForeground(nid, createNotification(
             getString(R.string.download_status_connecting),
             title = displayName,
             notificationId = nid,
@@ -328,6 +328,25 @@ class ExtractionService : Service() {
 
     private fun createNotificationChannel() {
         AppNotificationChannel.EXTRACTION.create(this)
+    }
+
+    /** TASK-1051: every promotion re-asserts the channel (idempotent), so a
+     *  live-service re-delivery cannot land on a mid-lifetime-deleted
+     *  channel (the async Bad-notification kill; see InferenceService's
+     *  promoteToForeground for the full rationale, 8bd22a30 discipline). */
+    private fun promoteToForeground(nid: Int, notification: Notification) {
+        createNotificationChannel()
+        foregroundStart(nid, notification)
+    }
+
+    /**
+     * Test seam (the WipedImportRepairService.foregroundStart precedent):
+     * production always calls the real startForeground; tests substitute a
+     * recorder to observe the promotion (and the channel state at its
+     * exact moment) or a throwing form to drive the rejection arm.
+     */
+    internal var foregroundStart: (Int, Notification) -> Unit = { nid, n ->
+        startForeground(nid, n)
     }
 
     private fun createNotification(

@@ -8,6 +8,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -146,6 +147,22 @@ class PreferencesManagerGuardedFlowTest {
             markerWrite = { store.prefs.saveSherpaModelPath("parakeet-v3", "/models/parakeet-v3") },
             expectedAfterMarker = "/models/parakeet-v3",
             shape = "sherpa model path",
+        )
+    }
+
+    /** The raw-blob-guard shape: the decoded projections guard the stored
+     *  blob BEFORE decoding, so unrelated writes skip the decode too
+     *  (review round's gap: the reordered projections had no pin). The
+     *  emission is projected onto the stable runs field because Record's
+     *  tsMs is wall-clock. */
+    @Test
+    fun `unrelated writes do not re-emit a decoded blob projection`() = runBlocking {
+        assertUnrelatedWriteIsInvisible(
+            store.prefs.measuredModelMemory.map { records -> records.mapValues { it.value.runs } },
+            initial = emptyMap(),
+            markerWrite = { store.prefs.mergeMeasuredModelMemorySample("parakeet-v3", 1024L, 4096L) },
+            expectedAfterMarker = mapOf("parakeet-v3" to 1),
+            shape = "decoded blob",
         )
     }
 }

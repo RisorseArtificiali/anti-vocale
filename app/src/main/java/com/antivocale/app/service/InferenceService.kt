@@ -359,6 +359,20 @@ class InferenceService : Service(), TranscriptionListener {
      */
     private fun promoteToForeground(origin: String): Boolean =
         runCatching {
+            // TASK-1051 class hardening (the canonical rationale; the other
+            // promotion sites point here): the promotion channel was created
+            // in onCreate, and a re-delivery to a LIVE service re-arms
+            // fgRequired without re-running onCreate; if the channel is gone
+            // by then (OEM cleanup, a failed post-side create), the promotion
+            // lands on an unregistered id and the system kills the process
+            // asynchronously ("Bad notification for startForeground", the
+            // 1.17.1 WipedImportRepairService field events). The create is
+            // idempotent. Scoped claim: this re-asserts the PROMOTION channel
+            // only (TRANSCRIPTION_RESULT stays onCreate-only and is safe
+            // because no promotion posts on it); a future promotion variant
+            // on another channel must join this call (the 8bd22a30
+            // discipline).
+            createNotificationChannel()
             foregroundPromotion(
                 deriveChunkNavView()?.let { assembleChunkNavNotification(it) }
                     ?: lastForegroundNotification

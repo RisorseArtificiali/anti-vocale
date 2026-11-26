@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -13,6 +14,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import com.antivocale.app.receiver.TaskerRequestReceiver
+import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.ProgressThrottler
 
 /**
@@ -285,5 +287,39 @@ class InferenceServiceNotificationTest {
                     .setAction(InferenceService.ACTION_CANCEL_TASK)
                     .putExtra(InferenceService.EXTRA_CANCEL_TASK_ID, "some-task")
             })
+    }
+
+    /** TASK-1051 class: a promotion on a LIVE service must re-assert a
+     *  channel deleted mid-lifetime, and the channel must be registered
+     *  AT the promotion itself (the async Bad-notification kill). */
+    @Test
+    fun `a delivery re-asserts the channel deleted after onCreate`() {
+        val channelId = AppNotificationChannel.INFERENCE.id
+        val service = Robolectric.buildService(InferenceService::class.java).create().get()
+        val notificationManager = service.getSystemService(NotificationManager::class.java)
+        notificationManager.deleteNotificationChannel(channelId)
+        assertNull(
+            "precondition: the channel is gone (mid-lifetime deletion)",
+            notificationManager.getNotificationChannel(channelId))
+
+        var channelPresentAtPromotion: Boolean? = null
+        service.foregroundPromotion = { _ ->
+            channelPresentAtPromotion =
+                notificationManager.getNotificationChannel(channelId) != null
+        }
+
+        // A control delivery reaches the promotion without starting work.
+        service.onStartCommand(
+            Intent(service, InferenceService::class.java)
+                .setAction(InferenceService.ACTION_CANCEL),
+            0, 1)
+
+        assertNotNull(
+            "the promotion itself must have run (the seam recorded it)",
+            channelPresentAtPromotion)
+        assertEquals(
+            "the channel must be re-registered BEFORE startForeground",
+            true,
+            channelPresentAtPromotion)
     }
 }

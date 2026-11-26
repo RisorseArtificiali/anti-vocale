@@ -204,7 +204,15 @@ class OpenTranscribeProviderService : Service() {
             // the throw must not kill the request. Serialization is the
             // orchestrator's runMutex (one engine, one run at a time, every
             // execution site); liveJobs brackets only the foreground life.
-            runCatching { startForeground(NOTIFICATION_ID, buildNotification()) }
+            // TASK-1051: idempotent channel re-assert inside the best-effort
+            // promotion (mid-lifetime-deletion kill class; InferenceService's
+            // promoteToForeground owns the full rationale). No sibling pin
+            // test: the promotion rides the binder-bound job, so the
+            // discipline is pinned on the two testable services.
+            runCatching {
+                AppNotificationChannel.INFERENCE.create(this)
+                startForeground(NOTIFICATION_ID, buildNotification())
+            }
             // The TASK-432 pre-copy gate, the share path's rule: never fill
             // the target storage with a client's audio. A statSize of 0
             // means the size is unknown (a pipe): the gate stays open.
