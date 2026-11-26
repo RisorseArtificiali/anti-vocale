@@ -124,7 +124,7 @@
     <string name="voice_message_duration">spraakbericht</string>
     <string name="source_was_video">Bron: videobestand</string>
     <string name="processed_in">Verwerkt in %1$s</string>
-    <string name="transcript_render_capped">Eerste %1$d tekens getoond, %2$d meer. Gebruik Kopiëren voor de volledige tekst.</string>
+    <string name="transcript_render_scrolls">Lange transcriptie: scroll in het paneel om alles te lezen.</string>
     <string name="transcript_capped_autosave_hint">Volledige transcriptie beschikbaar via automatisch opslaan: Instellingen → Automatisch opslaan in map</string>
     <string name="transcript_capped_autosave_saved">Volledige transcriptie automatisch in je map opgeslagen</string>
     <string name="export_settings_title">Automatisch opslaan &amp; exporteren</string>

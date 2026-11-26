@@ -103,7 +103,7 @@
     <string name="voice_message_duration">语音消息</string>
     <string name="source_was_video">来源：视频文件</string>
     <string name="processed_in">处理用时 %1$s</string>
-    <string name="transcript_render_capped">已显示前 %1$d 个字符，还有 %2$d 个。使用复制功能可获取完整文本。</string>
+    <string name="transcript_render_scrolls">长转录文本：在面板内滚动即可阅读全文。</string>
     <string name="transcript_capped_autosave_hint">完整转写文本可通过自动保存获取：设置 → 自动保存到文件夹</string>
     <string name="transcript_capped_autosave_saved">完整转写文本已自动保存到你的文件夹</string>
     <string name="export_settings_title">自动保存与导出</string>

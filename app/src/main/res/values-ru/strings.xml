@@ -107,7 +107,7 @@
     <string name="voice_message_duration">голосовое сообщение</string>
     <string name="source_was_video">Источник: видеофайл</string>
     <string name="processed_in">Обработано за %1$s</string>
-    <string name="transcript_render_capped">Показаны первые %1$d символов, ещё %2$d. Используйте «Копировать», чтобы получить полный текст.</string>
+    <string name="transcript_render_scrolls">Длинная расшифровка: прокрутите внутри панели, чтобы прочитать всё.</string>
     <string name="transcript_capped_autosave_hint">Полная расшифровка в автосохранении: Настройки → Сохранить в папку</string>
     <string name="transcript_capped_autosave_saved">Полная расшифровка автоматически сохранена в вашей папке</string>
     <string name="export_settings_title">Автосохранение и экспорт</string>

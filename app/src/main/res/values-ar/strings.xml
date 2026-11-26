@@ -103,7 +103,7 @@
     <string name="voice_message_duration">رسالة صوتية</string>
     <string name="source_was_video">المصدر: ملف فيديو</string>
     <string name="processed_in">تمت المعالجة خلال %1$s</string>
-    <string name="transcript_render_capped">يتم عرض أول %1$d حرفًا، وهناك %2$d حرفًا إضافيًا. استخدم زر النسخ للحصول على النص الكامل.</string>
+    <string name="transcript_render_scrolls">نسخ طويل: مرّر داخل اللوحة لقراءته بالكامل.</string>
     <string name="transcript_capped_autosave_hint">النص الكامل متاح عبر الحفظ التلقائي: الإعدادات ← الحفظ التلقائي في مجلد</string>
     <string name="transcript_capped_autosave_saved">تم حفظ النص الكامل تلقائيًا في مجلدك</string>
     <string name="export_settings_title">الحفظ التلقائي والتصدير</string>

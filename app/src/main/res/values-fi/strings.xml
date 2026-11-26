@@ -111,7 +111,7 @@
     <string name="voice_message_duration">ääniviesti</string>
     <string name="source_was_video">Lähde: videotiedosto</string>
     <string name="processed_in">Käsitelty ajassa %1$s</string>
-    <string name="transcript_render_capped">Näytetään ensimmäiset %1$d merkkiä, %2$d lisää. Käytä Kopioi-toimintoa koko tekstin saamiseksi.</string>
+    <string name="transcript_render_scrolls">Pitkä transkriptio: vieritä paneelin sisällä lukeaksesi kaiken.</string>
     <string name="transcript_capped_autosave_hint">Koko transkriptio saatavilla automaattitallennuksella: Asetukset → Automaattinen tallennus kansioon</string>
     <string name="transcript_capped_autosave_saved">Koko transkriptio tallennettu automaattisesti kansioosi</string>
     <string name="export_settings_title">Automaattitallennus ja vienti</string>

@@ -118,7 +118,7 @@
     <string name="voice_message_duration">messaggio vocale</string>
     <string name="source_was_video">Origine: file video</string>
     <string name="processed_in">Elaborato in %1$s</string>
-    <string name="transcript_render_capped">Mostrati i primi %1$d caratteri, altri %2$d. Usa Copia per il testo completo.</string>
+    <string name="transcript_render_scrolls">Trascrizione lunga: scorri dentro il pannello per leggerla tutta.</string>
     <string name="transcript_capped_autosave_hint">Trascrizione completa nel salvataggio automatico: Impostazioni → Salva su cartella</string>
     <string name="transcript_capped_autosave_saved">Trascrizione completa salvata automaticamente nella tua cartella</string>
     <string name="export_settings_title">Salvataggio automatico ed esportazione</string>

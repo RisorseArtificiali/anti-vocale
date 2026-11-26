@@ -118,7 +118,7 @@
     <string name="voice_message_duration">پیام صوتی</string>
     <string name="source_was_video">منبع: فایل ویدیویی</string>
     <string name="processed_in">در %1$s پردازش شد</string>
-    <string name="transcript_render_capped">%1$d نویسه نخست نمایش داده شده، %2$d نویسه دیگر. برای متن کامل از کپی استفاده کنید.</string>
+    <string name="transcript_render_scrolls">رونوشت طولانی: برای خواندن کامل آن داخل پنل بکشید.</string>
     <string name="transcript_capped_autosave_hint">متن کامل رونویسی در ذخیره خودکار: تنظیمات ← ذخیره خودکار در پوشه</string>
     <string name="transcript_capped_autosave_saved">متن کامل رونویسی به‌طور خودکار در پوشه شما ذخیره شد</string>
     <string name="export_settings_title">ذخیره خودکار و برون‌بری</string>

@@ -101,7 +101,7 @@ tour_title_welcome,Welcome to Anti-Vocale,plain,
 voice_message_duration,voice message,plain,
 source_was_video,Source: video file,plain,
 processed_in,Processed in %1$s,formatted,keep verbatim: ['%1$s']
-transcript_render_capped,"First %1$d characters shown, %2$d more. Use Copy for the full text.",formatted,"keep verbatim: ['%1$d', '%2$d']"
+transcript_render_scrolls,Long transcript: scroll inside the panel to read it all.,plain,
 transcript_capped_autosave_hint,Full transcript available via auto-save: Settings → Auto-Save to Folder,plain,
 transcript_capped_autosave_saved,Full transcript auto-saved to your folder,plain,
 export_settings_title,Auto-Save & Export,plain,
