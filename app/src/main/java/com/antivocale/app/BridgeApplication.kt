@@ -17,7 +17,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -178,13 +177,14 @@ class BridgeApplication : Application(), Configuration.Provider {
         }
         // TASK-736 hardening: the identity listener's COMPONENT follows the
         // preference (ships disabled; the toggle, TEST_SPI, or any other
-        // writer flips it here, one owner). distinctUntilChanged: the flow
-        // replays the cached value at startup and the write is a binder
-        // call. Off also clears the RAM identity cache: the service's own
-        // collector is cancelled by the disable itself, so this owner must
-        // do it (the RAM-only contract: off leaves nothing readable).
+        // writer flips it here, one owner). The flow itself carries the
+        // TASK-1009 guard (prefFlow's distinctUntilChanged), so the write
+        // is a binder call. Off also clears the RAM identity cache: the
+        // service's own collector is cancelled by the disable itself, so
+        // this owner must do it (the RAM-only contract: off leaves nothing
+        // readable).
         applicationScope.launch(kotlinx.coroutines.Dispatchers.Default) {
-            preferencesManager.voiceNoteIdentityEnabled.distinctUntilChanged().collect { enabled ->
+            preferencesManager.voiceNoteIdentityEnabled.collect { enabled ->
                 voiceNoteIdentityCache.accepting = enabled
                 com.antivocale.app.receiver.VoiceNoteIdentityComponent.setEnabled(
                     this@BridgeApplication, enabled)
@@ -211,7 +211,7 @@ class BridgeApplication : Application(), Configuration.Provider {
         // TEST_SPI, any future one); setEnabled reads first, so the replay
         // never churns package state for the default-off case.
         applicationScope.launch(kotlinx.coroutines.Dispatchers.Default) {
-            preferencesManager.openTranscribeEnabled.distinctUntilChanged().collect { enabled ->
+            preferencesManager.openTranscribeEnabled.collect { enabled ->
                 com.antivocale.app.service.OpenTranscribeComponentSync
                     .setEnabled(this@BridgeApplication, enabled)
             }
