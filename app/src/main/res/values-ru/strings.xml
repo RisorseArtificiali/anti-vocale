@@ -970,7 +970,7 @@
     <string name="model_info_arch_llm">Большая языковая модель</string>
     <string name="model_info_model_size">Размер модели</string>
     <string name="model_info_max_audio">Максимальная длительность аудио</string>
-    <string name="model_info_max_audio_unlimited">Без ограничений</string>
+    <string name="model_info_max_audio_unlimited">Без ограничения на сегмент; до %1$d часов при потоковой передаче, иначе память устройства</string>
     <plurals name="model_info_max_audio_seconds">
         <item quantity="one">%d секунда</item>
         <item quantity="few">%d секунды</item>
@@ -1173,7 +1173,7 @@
     <string name="copy_summary">Копировать резюме</string>
     <string name="copy_original">Копировать оригинал</string>
     <string name="logs_model_label">Модель: %1$s</string>
-    <string name="model_limit_chunked">Без ограничений: длинные записи разбиваются автоматически</string>
+    <string name="model_limit_chunked">Длинные записи разбиваются автоматически; до %1$d часов за прогон</string>
 
     <!-- TASK-336: background-kill remediation card -->
     <string name="battery_exemption_title">Разрешить работу в фоне</string>

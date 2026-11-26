@@ -400,7 +400,7 @@
     <string name="download_models">מודלי Gemma</string>
     <string name="gemma_advanced_features_description">מודלי LLM מולטימודליים מלאים עם יכולות מתקדמות: תמלול, עיבוד טקסט והעשרתו.</string>
     <!-- GH #49: audio-length capability, shown in the model list BEFORE download -->
-    <string name="model_limit_chunked">כל אורך: אודיו ארוך מפוצל אוטומטית</string>
+    <string name="model_limit_chunked">אודיו ארוך מפוצל אוטומטית; עד %1$d שעות לכל ריצה</string>
     <string name="requires_huggingface_token">דורש טוקן של HuggingFace.</string>
     <string name="add_in_settings">הוספה בהגדרות</string>
     <string name="recommended">מומלץ</string>
@@ -975,7 +975,7 @@
     <string name="model_info_arch_llm">מודל שפה גדול</string>
     <string name="model_info_model_size">גודל המודל</string>
     <string name="model_info_max_audio">אורך אודיו מקסימלי</string>
-    <string name="model_info_max_audio_unlimited">ללא הגבלה</string>
+    <string name="model_info_max_audio_unlimited">ללא הגבלת מקטע; עד %1$d שעות בהזרמה, אחרת זיכרון המכשיר</string>
     <plurals name="model_info_max_audio_seconds">
         <item quantity="one">שנייה אחת</item>
         <item quantity="two">שתי שניות</item>

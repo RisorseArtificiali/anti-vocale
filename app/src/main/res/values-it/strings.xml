@@ -395,7 +395,7 @@
     <!-- Model Tab - Download section -->
     <string name="download_models">Modelli Gemma</string>
     <string name="gemma_advanced_features_description">LLM multimodali completi con funzionalità avanzate: trascrizione, trasformazione del testo e arricchimento.</string>
-    <string name="model_limit_chunked">Nessun limite: gli audio lunghi vengono spezzati automaticamente</string>
+    <string name="model_limit_chunked">Gli audio lunghi vengono divisi automaticamente; fino a %1$d ore per esecuzione</string>
     <string name="requires_huggingface_token">Richiede token HuggingFace.</string>
     <string name="add_in_settings">Aggiungi in Impostazioni</string>
     <string name="recommended">Consigliato</string>
@@ -918,7 +918,7 @@
     <string name="model_info_arch_llm">Modello linguistico grande</string>
     <string name="model_info_model_size">Dimensione modello</string>
     <string name="model_info_max_audio">Durata massima audio</string>
-    <string name="model_info_max_audio_unlimited">Illimitata</string>
+    <string name="model_info_max_audio_unlimited">Nessun limite per segmento; fino a %1$d ore in streaming, altrimenti memoria del dispositivo</string>
     <plurals name="model_info_max_audio_seconds">
         <item quantity="one">%d secondo</item>
         <item quantity="other">%d secondi</item>

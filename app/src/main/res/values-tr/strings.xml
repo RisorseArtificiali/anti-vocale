@@ -400,7 +400,7 @@
     <string name="download_models">Gemma Modelleri</string>
     <string name="gemma_advanced_features_description">Gelişmiş özelliklere sahip tam çok kipli LLM\'ler: metin çıkarma, metin dönüştürme ve zenginleştirme.</string>
     <!-- GH #49: audio-length capability, shown in the model list BEFORE download -->
-    <string name="model_limit_chunked">Her uzunluk: daha uzun sesler otomatik olarak bölünür</string>
+    <string name="model_limit_chunked">Uzun sesler otomatik olarak bölünür; çalışma başına %1$d saate kadar</string>
     <string name="requires_huggingface_token">HuggingFace jetonu gerektirir.</string>
     <string name="add_in_settings">Ayarlar\'da ekle</string>
     <string name="recommended">Önerilen</string>
@@ -968,7 +968,7 @@
     <string name="model_info_arch_llm">Büyük Dil Modeli</string>
     <string name="model_info_model_size">Model boyutu</string>
     <string name="model_info_max_audio">En fazla ses uzunluğu</string>
-    <string name="model_info_max_audio_unlimited">Sınırsız</string>
+    <string name="model_info_max_audio_unlimited">Segment sınırı yok; akışta %1$d saate kadar, aksi halde cihaz belleği</string>
     <plurals name="model_info_max_audio_seconds">
             <item quantity="one">%d saniye</item>
             <item quantity="other">%d saniye</item>

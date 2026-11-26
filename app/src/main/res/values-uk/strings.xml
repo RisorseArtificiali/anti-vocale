@@ -408,7 +408,7 @@
     <string name="download_models">Моделі Gemma</string>
     <string name="gemma_advanced_features_description">Повноцінні мультимодальні LLM з розширеними функціями: розшифровка, перетворення та збагачення тексту.</string>
     <!-- GH #49: audio-length capability, shown in the model list BEFORE download -->
-    <string name="model_limit_chunked">Будь-яка довжина: довше аудіо автоматично розбивається</string>
+    <string name="model_limit_chunked">Довгі записи розбиваються автоматично; до %1$d годин за прогін</string>
     <string name="requires_huggingface_token">Потребує токена HuggingFace.</string>
     <string name="add_in_settings">Додати в Налаштуваннях</string>
     <string name="recommended">Рекомендована</string>
@@ -990,7 +990,7 @@
     <string name="model_info_arch_llm">Велика мовна модель</string>
     <string name="model_info_model_size">Розмір моделі</string>
     <string name="model_info_max_audio">Максимальна тривалість аудіо</string>
-    <string name="model_info_max_audio_unlimited">Без обмежень</string>
+    <string name="model_info_max_audio_unlimited">Без обмеження на сегмент; до %1$d годин у потоковому режимі, інакше пам\'ять пристрою</string>
     <plurals name="model_info_max_audio_seconds">
         <item quantity="one">%d секунда</item>
         <item quantity="few">%d секунди</item>

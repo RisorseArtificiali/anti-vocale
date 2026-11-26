@@ -336,7 +336,7 @@
     <string name="generating_text">正在生成文本回复…</string>
     <string name="download_models">Gemma 模型</string>
     <string name="gemma_advanced_features_description">具备高级功能的多模态大语言模型：转写、文本转换与增强。</string>
-    <string name="model_limit_chunked">任意长度：较长的音频会自动分段</string>
+    <string name="model_limit_chunked">长音频自动切分；单次运行最长 %1$d 小时</string>
     <string name="requires_huggingface_token">需要 HuggingFace 令牌。</string>
     <string name="add_in_settings">在设置中添加</string>
     <string name="recommended">推荐</string>
@@ -809,7 +809,7 @@
     <string name="model_info_arch_llm">大语言模型</string>
     <string name="model_info_model_size">模型大小</string>
     <string name="model_info_max_audio">最大音频时长</string>
-    <string name="model_info_max_audio_unlimited">无限制</string>
+    <string name="model_info_max_audio_unlimited">无分段限制；流式识别最长 %1$d 小时，否则受设备内存限制</string>
     <string name="model_info_quantization">量化</string>
     <string name="model_info_recommended_threads">推荐线程数</string>
     <string name="model_info_threads_range">%1$d – %2$d</string>

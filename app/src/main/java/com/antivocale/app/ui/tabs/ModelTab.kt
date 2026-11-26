@@ -3130,16 +3130,32 @@ private fun ComparisonRow(
  */
 @Composable
 private fun AudioLimitLabel(limit: AudioLimit) {
-    // Reuses the model_info_max_audio* family (translated in all locales) for the
-    // capped and no-limit cases; only the chunked wording is new (GH #49).
+    // The model_info_max_audio* family (translated in all locales); the
+    // capped form is the model's own limit, the no-limit form states the
+    // app ceilings for the path such models actually take (GH #49 origin,
+    // TASK-1036 wording).
+    // TASK-1036 (GH #190): the labels tell the truth about the app-level
+    // ceiling, not just the model's own per-segment limit. The hours come
+    // from the policy, so THESE labels follow a WHOLE-HOUR ceiling change
+    // with no string edit (the strings hardcode the plural noun; a
+    // non-multiple-of-3600 valve would read "1 hours"). Manual sync
+    // points for the number: the refusal string
+    // (error_audio_too_long_streaming), README/FAQ prose, and the
+    // fastlane full_description listings.
+    // The strings carry a plural "hours": the valve must stay whole-hour
+    // or every locale reads "1 hours".
+    check(com.antivocale.app.audio.AudioDurationPolicy.SESSION_MAX_SECONDS % 3600L == 0L) {
+        "SESSION_MAX_SECONDS must be a whole number of hours (the label strings pluralize hours)"
+    }
+    val ceilingHours = (com.antivocale.app.audio.AudioDurationPolicy.SESSION_MAX_SECONDS / 3600).toInt()
     val text = when (limit) {
         is AudioLimit.HardCap ->
             stringResource(R.string.model_info_max_audio) + ": " +
                 pluralStringResource(R.plurals.model_info_max_audio_seconds, limit.seconds, limit.seconds)
         AudioLimit.ChunkedAnyLength ->
-            stringResource(R.string.model_limit_chunked)
+            stringResource(R.string.model_limit_chunked, ceilingHours)
         AudioLimit.NoKnownLimit ->
-            stringResource(R.string.model_info_max_audio_unlimited)
+            stringResource(R.string.model_info_max_audio_unlimited, ceilingHours)
     }
     // TASK-383 (1.4.3/1.4.4): 11sp tertiary-on-surfaceVariant was below 4.5:1 in
     // most palettes (2.5-5.7); labelMedium + primary improves it but is STILL

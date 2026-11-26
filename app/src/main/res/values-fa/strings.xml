@@ -394,7 +394,7 @@
     <!-- Model Tab - Download section -->
     <string name="download_models">مدل‌های Gemma</string>
     <string name="gemma_advanced_features_description">LLMهای چندوجهی کامل با قابلیت‌های پیشرفته: رونویسی، تبدیل و غنی‌سازی متن.</string>
-    <string name="model_limit_chunked">بدون محدودیت: صدای طولانی‌تر خودکار بخش می‌شود</string>
+    <string name="model_limit_chunked">صدای بلند به‌طور خودکار بخش می‌شود؛ حداکثر %1$d ساعت در هر اجرا</string>
     <string name="requires_huggingface_token">به توکن HuggingFace نیاز دارد.</string>
     <string name="add_in_settings">در تنظیمات اضافه کنید</string>
     <string name="recommended">پیشنهادی</string>
@@ -917,7 +917,7 @@
     <string name="model_info_arch_llm">مدل زبانی بزرگ</string>
     <string name="model_info_model_size">حجم مدل</string>
     <string name="model_info_max_audio">بیشینه طول صدا</string>
-    <string name="model_info_max_audio_unlimited">نامحدود</string>
+    <string name="model_info_max_audio_unlimited">بدون محدودیت بخش؛ تا %1$d ساعت در حالت جریان، در غیر این صورت حافظه دستگاه</string>
     <plurals name="model_info_max_audio_seconds">
         <item quantity="one">%d ثانیه</item>
         <item quantity="other">%d ثانیه</item>

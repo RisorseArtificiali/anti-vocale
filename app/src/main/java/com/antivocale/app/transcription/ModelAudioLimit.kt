@@ -12,7 +12,9 @@ sealed interface AudioLimit {
     /** The model accepts at most [seconds] of audio in one pass (e.g. Gemma: 30s). */
     data class HardCap(val seconds: Int) : AudioLimit
 
-    /** No practical length limit: longer inputs are chunked in software and concatenated. */
+    /** No per-segment limit: longer inputs are chunked in software and
+     *  concatenated. The app-level ceiling still applies (see
+     *  AudioDurationPolicy; TASK-1036's labels state it). */
     data object ChunkedAnyLength : AudioLimit
 
     /** No known limit (offline transducers without a cap, streaming models). */

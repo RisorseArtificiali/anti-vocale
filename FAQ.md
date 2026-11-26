@@ -14,20 +14,21 @@ On phones with 4 GB of RAM or less (and, with a higher bar, on 4-8 GB phones) th
 
 ### How long can an audio file be?
 
-There is no app-level limit. Each model has its own **per-segment** limit, and the app transparently splits longer audio into chunks and concatenates the transcripts:
+The app-level ceiling is four hours per run on the streaming path (long recordings become pausable sessions you can resume), and a memory-dependent ceiling applies when VAD chunks the whole file in one pass. Within that, each model has its own **per-segment** limit, and the app transparently splits longer audio into chunks and concatenates the transcripts:
 
 | Model | Per-segment limit | Long audio |
 |---|---|---|
-| Whisper | 30 s | chunked by the app, any length |
-| Qwen3-ASR | 30 s | chunked by the app, any length |
+| Whisper | 30 s | chunked by the app, any length up to the app ceiling |
+| Qwen3-ASR | 30 s | chunked by the app, any length up to the app ceiling |
 | Parakeet TDT | 1:00 app-side chunking (the model's own hard cap is 6:40) | chunked by the app ([#50](https://github.com/RisorseArtificiali/anti-vocale/issues/50)), chunk length sized to free RAM ([#44](https://github.com/RisorseArtificiali/anti-vocale/issues/44)) |
 | Gemma (LLM) | 30 s | currently one segment |
-| Nemotron 3.5 (streaming) | no known limit (streams) | n/a |
-| GigaAM v3 | 0:30 app-side chunking (the model's own crash cap is 3:20, but quality degrades well before that) | chunked by the app, any length |
+| Nemotron 3.5 (streaming) | no known limit (streams) | app ceiling (4 h per run) |
+| Whistle | no known limit | whole-file decode: device-memory ceiling (typically 10-25 min; the error message states your exact limit) |
+| GigaAM v3 | 0:30 app-side chunking (the model's own crash cap is 3:20, but quality degrades well before that) | chunked by the app, any length up to the app ceiling |
 
 The Parakeet limit is not arbitrary: the model's attention has a hard 5000-frame cap baked into NVIDIA's checkpoint, and 5000 frames at 12.5 frames/s is exactly 400 seconds. Inputs beyond it fail natively; the app-side chunking that removes this limitation landed in [#50](https://github.com/RisorseArtificiali/anti-vocale/issues/50). Since [#44](https://github.com/RisorseArtificiali/anti-vocale/issues/44) the app chunks Parakeet at 1 minute rather than just under the native cap: attention memory grows with the square of the chunk length, and a single 6-minute pass peaks at over 5GB of RAM, enough to starve an 8GB phone. The chunk length also tightens automatically on devices with little free memory.
 
-Every "any length" in the table above means *the app does the splitting for you in software*: no model itself handles arbitrary length in one pass. The two "no known limit" rows are models with no measured cap and no app-side splitting.
+Every "any length" in the table above means *the app does the splitting for you in software*: no model itself handles arbitrary length in one pass. The "no known limit" rows are models with no measured cap and no app-side splitting: Nemotron streams (app ceiling 4 h per run), while Whistle decodes the whole file in memory, so its practical ceiling is the device-memory one below (typically 10 to 25 minutes).
 
 The absolute ceilings ([#73](https://github.com/RisorseArtificiali/anti-vocale/issues/73)): 4 hours for the streaming decode path, and files above 2GB are refused. With VAD enabled the whole audio is decoded into memory at once, so the maximum length depends on your device's memory (typically 10 to 25 minutes); the error message tells you the exact limit on your device. Turn VAD off for long recordings, or use a model the app chunks automatically.
 

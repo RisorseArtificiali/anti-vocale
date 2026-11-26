@@ -402,7 +402,7 @@
     <string name="download_models">Gemma-modellen</string>
     <string name="gemma_advanced_features_description">Volledige multimodale LLMs met geavanceerde functies: transcriptie, teksttransformatie en verrijking.</string>
     <!-- GH #49: audio-length capability, shown in the model list BEFORE download -->
-    <string name="model_limit_chunked">Elke lengte: langere audio wordt automatisch gesplitst</string>
+    <string name="model_limit_chunked">Lange audio wordt automatisch gesplitst; tot %1$d uur per keer</string>
     <string name="requires_huggingface_token">Vereist een HuggingFace-token.</string>
     <string name="add_in_settings">Toevoegen in Instellingen</string>
     <string name="recommended">Aanbevolen</string>
@@ -990,7 +990,7 @@
     <string name="model_info_arch_llm">Groot taalmodel</string>
     <string name="model_info_model_size">Modelgrootte</string>
     <string name="model_info_max_audio">Maximale audiolengte</string>
-    <string name="model_info_max_audio_unlimited">Onbeperkt</string>
+    <string name="model_info_max_audio_unlimited">Geen segmentlimiet; tot %1$d uur bij streaming, anders apparaatgeheugen</string>
     <plurals name="model_info_max_audio_seconds">
         <item quantity="one">%d seconde</item>
         <item quantity="other">%d seconden</item>

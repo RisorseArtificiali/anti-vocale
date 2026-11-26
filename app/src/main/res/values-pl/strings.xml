@@ -406,7 +406,7 @@
     <string name="download_models">Modele Gemma</string>
     <string name="gemma_advanced_features_description">Pełne multimodalne LLM z zaawansowanymi funkcjami: transkrypcja, przekształcanie i wzbogacanie tekstu.</string>
     <!-- GH #49: audio-length capability, shown in the model list BEFORE download -->
-    <string name="model_limit_chunked">Dowolna długość: dłuższe audio jest automatycznie dzielone</string>
+    <string name="model_limit_chunked">Długie nagrania są dzielone automatycznie; do %1$d godzin na przebieg</string>
     <string name="requires_huggingface_token">Wymaga tokenu HuggingFace.</string>
     <string name="add_in_settings">Dodaj w Ustawieniach</string>
     <string name="recommended">Zalecany</string>
@@ -988,7 +988,7 @@
     <string name="model_info_arch_llm">Duży model językowy</string>
     <string name="model_info_model_size">Rozmiar modelu</string>
     <string name="model_info_max_audio">Maksymalna długość audio</string>
-    <string name="model_info_max_audio_unlimited">Bez limitu</string>
+    <string name="model_info_max_audio_unlimited">Bez limitu na segment; do %1$d godzin w trybie strumieniowym, w przeciwnym razie pamięć urządzenia</string>
     <plurals name="model_info_max_audio_seconds">
         <item quantity="one">%d sekunda</item>
         <item quantity="few">%d sekundy</item>

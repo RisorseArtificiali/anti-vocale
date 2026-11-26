@@ -336,7 +336,7 @@
     <string name="generating_text">جارٍ إنشاء الرد النصي…</string>
     <string name="download_models">نماذج Gemma</string>
     <string name="gemma_advanced_features_description">نماذج لغوية كبيرة متعددة الوسائط بالكامل مع ميزات متقدمة: النسخ، وتحويل النص، وإثرائه.</string>
-    <string name="model_limit_chunked">أي مدة: يتم تقسيم الصوت الأطول تلقائيًا</string>
+    <string name="model_limit_chunked">يُقسَّم الصوت الطويل تلقائيًا؛ حتى %1$d ساعات لكل تشغيل</string>
     <string name="requires_huggingface_token">يتطلب رمز HuggingFace.</string>
     <string name="add_in_settings">أضفه في الإعدادات</string>
     <string name="recommended">موصى به</string>
@@ -809,7 +809,7 @@
     <string name="model_info_arch_llm">نموذج لغوي كبير</string>
     <string name="model_info_model_size">حجم النموذج</string>
     <string name="model_info_max_audio">أقصى مدة للصوت</string>
-    <string name="model_info_max_audio_unlimited">غير محدود</string>
+    <string name="model_info_max_audio_unlimited">بلا حد للمقطع؛ حتى %1$d ساعات في البث، وإلا فذاكرة الجهاز</string>
     <string name="model_info_quantization">التكميم</string>
     <string name="model_info_recommended_threads">عدد الخيوط الموصى به</string>
     <string name="model_info_threads_range">%1$d – %2$d</string>

@@ -331,7 +331,7 @@ processing_queue_chunk,Processing chunk %1$d/%2$d (%3$d of %4$d)…,formatted,"k
 generating_text,Generating text response…,plain,
 download_models,Gemma Models,plain,
 gemma_advanced_features_description,"Full multimodal LLMs with advanced features: transcription, text transformation, and enrichment.",plain,
-model_limit_chunked,Any length: longer audio is split automatically,plain,
+model_limit_chunked,Long audio is split automatically; up to %1$d hours per run,formatted,keep verbatim: ['%1$d']
 requires_huggingface_token,Requires HuggingFace token.,plain,
 add_in_settings,Add in Settings,plain,
 recommended,Recommended,plain,
@@ -815,7 +815,7 @@ model_info_arch_ctc,CTC (Connectionist Temporal Classification),plain,
 model_info_arch_llm,Large Language Model,plain,
 model_info_model_size,Model size,plain,
 model_info_max_audio,Max audio length,plain,
-model_info_max_audio_unlimited,Unlimited,plain,
+model_info_max_audio_unlimited,"No per-segment limit; up to %1$d hours when streamed, device memory otherwise",formatted,keep verbatim: ['%1$d']
 model_info_quantization,Quantization,plain,
 model_info_recommended_threads,Recommended threads,plain,
 model_info_threads_range,%1$d – %2$d,formatted,"keep verbatim: ['%1$d', '%2$d']"

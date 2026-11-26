@@ -352,7 +352,7 @@
     <string name="generating_text">Luodaan tekstivastausta…</string>
     <string name="download_models">Gemma-mallit</string>
     <string name="gemma_advanced_features_description">Täysin multimodaaliset LLM-mallit lisäominaisuuksilla: transkriptio, tekstin muuntaminen ja rikastaminen.</string>
-    <string name="model_limit_chunked">Mikä tahansa pituus: pidempi ääni jaetaan automaattisesti</string>
+    <string name="model_limit_chunked">Pitkä ääni jaetaan automaattisesti; enintään %1$d tuntia per ajo</string>
     <string name="requires_huggingface_token">Vaatii HuggingFace-tunnuksen.</string>
     <string name="add_in_settings">Lisää Asetuksista</string>
     <string name="recommended">Suositeltu</string>
@@ -861,7 +861,7 @@
     <string name="model_info_arch_llm">Suuri kielimalli</string>
     <string name="model_info_model_size">Mallin koko</string>
     <string name="model_info_max_audio">Äänen enimmäispituus</string>
-    <string name="model_info_max_audio_unlimited">Rajaton</string>
+    <string name="model_info_max_audio_unlimited">Ei segmenttirajaa; enintään %1$d tuntia suoratoistossa, muuten laitteen muisti</string>
     <plurals name="model_info_max_audio_seconds">
         <item quantity="one">%d sekunti</item>
         <item quantity="other">%d sekuntia</item>

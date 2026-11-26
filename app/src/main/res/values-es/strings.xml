@@ -829,7 +829,7 @@
     <string name="model_info_arch_llm">Modelo de lenguaje de gran tamaño</string>
     <string name="model_info_model_size">Tamaño del modelo</string>
     <string name="model_info_max_audio">Duración máxima de audio</string>
-    <string name="model_info_max_audio_unlimited">Ilimitada</string>
+    <string name="model_info_max_audio_unlimited">Sin límite por segmento; hasta %1$d horas en streaming, si no, memoria del dispositivo</string>
     <plurals name="model_info_max_audio_seconds">
         <item quantity="one">%d segundo</item>
         <item quantity="other">%d segundos</item>
@@ -1016,7 +1016,7 @@
     <string name="copy_summary">Copiar resumen</string>
     <string name="copy_original">Copiar original</string>
     <string name="logs_model_label">Modelo: %1$s</string>
-    <string name="model_limit_chunked">Sin límite: los audios largos se dividen automáticamente</string>
+    <string name="model_limit_chunked">El audio largo se divide automáticamente; hasta %1$d horas por ejecución</string>
 
     <!-- TASK-336 -->
     <string name="battery_exemption_title">Permitir funcionamiento en segundo plano</string>
