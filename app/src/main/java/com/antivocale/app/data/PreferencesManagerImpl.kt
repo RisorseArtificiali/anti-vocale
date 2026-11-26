@@ -38,6 +38,35 @@ class PreferencesManagerImpl(
 
     private val dataStore: DataStore<Preferences> = injectedDataStore ?: context.dataStore
 
+    /**
+     * TASK-1009: the canonical preference-flow shape. DataStore re-emits its
+     * whole snapshot on EVERY write to ANY key, so a plain map{} flow
+     * re-emits an UNCHANGED value on every unrelated write; a
+     * change-reactive collector on the other end (the TASK-1008 class)
+     * then restarts real work for nothing. The builder makes the three
+     * disciplines structural: map the key, seed from the cache in onStart,
+     * and drop re-emitted equal values with distinctUntilChanged. Flows
+     * whose shape is NOT this canonical triple stay hand-built and carry
+     * their own rationale.
+     */
+    private fun <T : Any> prefFlow(
+        key: Preferences.Key<T>,
+        default: T,
+        cached: () -> T,
+    ): Flow<T> = dataStore.data
+        .map { it[key] ?: default }
+        .onStart { emit(cached()) }
+        .distinctUntilChanged()
+
+    /** The nullable-key twin ([prefFlow] for keys with no stored default). */
+    private fun <T : Any> prefFlowNullable(
+        key: Preferences.Key<T>,
+        cached: () -> T?,
+    ): Flow<T?> = dataStore.data
+        .map { it[key] }
+        .onStart { emit(cached()) }
+        .distinctUntilChanged()
+
     companion object {
         private val MODEL_PATH = stringPreferencesKey("model_path")
         private val KEEP_ALIVE_TIMEOUT = intPreferencesKey("keep_alive_timeout_v2")
@@ -347,8 +376,8 @@ class PreferencesManagerImpl(
         }
     }
 
-    override val modelPath: Flow<String?> = dataStore.data.map { it[MODEL_PATH] }
-        .onStart { emit(cache.get().modelPath) }
+    override val modelPath: Flow<String?> = prefFlowNullable(MODEL_PATH,
+            cached = { cache.get().modelPath })
 
     override suspend fun saveModelPath(path: String) {
         dataStore.edit { preferences ->
@@ -404,8 +433,8 @@ class PreferencesManagerImpl(
         }.first()
     }
 
-    override val themePreference: Flow<String> = dataStore.data.map { it[THEME_PREFERENCE] ?: PreferencesManager.DEFAULT_THEME }
-        .onStart { emit(cache.get().themePreference) }
+    override val themePreference: Flow<String> = prefFlow(THEME_PREFERENCE, default = PreferencesManager.DEFAULT_THEME,
+            cached = { cache.get().themePreference })
 
     override val textScalePreference: Flow<String> =
         dataStore.data.map { it[TEXT_SCALE] ?: PreferencesManager.DEFAULT_TEXT_SCALE }
@@ -462,8 +491,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(themePreference = theme) }
     }
 
-    override val themeMode: Flow<String> = dataStore.data.map { it[THEME_MODE] ?: PreferencesManager.DEFAULT_THEME_MODE }
-        .onStart { emit(cache.get().themeMode) }
+    override val themeMode: Flow<String> = prefFlow(THEME_MODE, default = PreferencesManager.DEFAULT_THEME_MODE,
+            cached = { cache.get().themeMode })
 
     override suspend fun saveThemeMode(mode: String) {
         dataStore.edit { preferences ->
@@ -472,12 +501,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(themeMode = mode) }
     }
 
-    override val transcriptionBackend: Flow<String> = dataStore.data.map { it[TRANSCRIPTION_BACKEND] ?: PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND }
-        .onStart { emit(cache.get().transcriptionBackend) }
-        // Same rationale as externalModelsJson: unrelated preference writes re-emit the
-        // identical value and every collector (ActiveModelRepository's flatMapLatest,
-        // ModelViewModel's activeBackendId) would restart on it for nothing.
-        .distinctUntilChanged()
+    override val transcriptionBackend: Flow<String> = prefFlow(TRANSCRIPTION_BACKEND, default = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND,
+            cached = { cache.get().transcriptionBackend })
 
     override val refinementModelBackendId: Flow<String> =
         dataStore.data.map { it[REFINEMENT_MODEL_BACKEND_ID] ?: "" }
@@ -569,21 +594,21 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(sherpaModelPaths = it.sherpaModelPaths - entryId) }
     }
 
-    override val customTransducerModelPath: Flow<String?> = dataStore.data.map { it[CUSTOM_TRANSDUCER_MODEL_PATH] }
-        .onStart { emit(cache.get().customTransducerModelPath) }
+    override val customTransducerModelPath: Flow<String?> = prefFlowNullable(CUSTOM_TRANSDUCER_MODEL_PATH,
+            cached = { cache.get().customTransducerModelPath })
 
     override val customTransducerModelType: Flow<String> = dataStore.data
         .map { it[CUSTOM_TRANSDUCER_MODEL_TYPE] ?: PreferencesManager.DEFAULT_CUSTOM_TRANSDUCER_MODEL_TYPE }
         .onStart { emit(cache.get().customTransducerModelType) }
 
-    override val externalMigrationDone: Flow<Boolean> = dataStore.data.map { it[EXTERNAL_MIGRATION_DONE] ?: false }
-        .onStart { emit(cache.get().externalMigrationDone) }
+    override val externalMigrationDone: Flow<Boolean> = prefFlow(EXTERNAL_MIGRATION_DONE, default = false,
+            cached = { cache.get().externalMigrationDone })
 
-    override val pendingBackendLoad: Flow<String?> = dataStore.data.map { it[PENDING_BACKEND_LOAD] }
-        .onStart { emit(cache.get().pendingBackendLoad) }
+    override val pendingBackendLoad: Flow<String?> = prefFlowNullable(PENDING_BACKEND_LOAD,
+            cached = { cache.get().pendingBackendLoad })
 
-    override val externalCatalogUrl: Flow<String> = dataStore.data.map { it[EXTERNAL_CATALOG_URL] ?: PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL }
-        .onStart { emit(cache.get().externalCatalogUrl) }
+    override val externalCatalogUrl: Flow<String> = prefFlow(EXTERNAL_CATALOG_URL, default = PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL,
+            cached = { cache.get().externalCatalogUrl })
 
     override suspend fun saveExternalCatalogUrl(url: String) {
         dataStore.edit { preferences ->
@@ -612,15 +637,15 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(externalMigrationDone = done) }
     }
 
-    override val autoCopyEnabled: Flow<Boolean> = dataStore.data.map { it[AUTO_COPY_ENABLED] ?: PreferencesManager.DEFAULT_AUTO_COPY_ENABLED }
-        .onStart { emit(cache.get().autoCopyEnabled) }
+    override val autoCopyEnabled: Flow<Boolean> = prefFlow(AUTO_COPY_ENABLED, default = PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
+            cached = { cache.get().autoCopyEnabled })
 
-    override val signatureEnabled: Flow<Boolean> = dataStore.data.map { it[SIGNATURE_ENABLED] ?: PreferencesManager.DEFAULT_SIGNATURE_ENABLED }
-        .onStart { emit(cache.get().signatureEnabled) }
-    override val signatureText: Flow<String> = dataStore.data.map { it[SIGNATURE_TEXT] ?: PreferencesManager.DEFAULT_SIGNATURE_TEXT }
-        .onStart { emit(cache.get().signatureText) }
-    override val signaturePosition: Flow<String> = dataStore.data.map { it[SIGNATURE_POSITION] ?: PreferencesManager.DEFAULT_SIGNATURE_POSITION }
-        .onStart { emit(cache.get().signaturePosition) }
+    override val signatureEnabled: Flow<Boolean> = prefFlow(SIGNATURE_ENABLED, default = PreferencesManager.DEFAULT_SIGNATURE_ENABLED,
+            cached = { cache.get().signatureEnabled })
+    override val signatureText: Flow<String> = prefFlow(SIGNATURE_TEXT, default = PreferencesManager.DEFAULT_SIGNATURE_TEXT,
+            cached = { cache.get().signatureText })
+    override val signaturePosition: Flow<String> = prefFlow(SIGNATURE_POSITION, default = PreferencesManager.DEFAULT_SIGNATURE_POSITION,
+            cached = { cache.get().signaturePosition })
 
     override suspend fun saveAutoCopyEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -646,8 +671,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(signaturePosition = position) }
     }
 
-    override val outputFolderUri: Flow<String?> = dataStore.data.map { it[OUTPUT_FOLDER_URI] }
-        .onStart { emit(cache.get().outputFolderUri) }
+    override val outputFolderUri: Flow<String?> = prefFlowNullable(OUTPUT_FOLDER_URI,
+            cached = { cache.get().outputFolderUri })
 
     override suspend fun saveOutputFolderUri(uri: String?) {
         dataStore.edit { preferences ->
@@ -671,8 +696,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(transcriptExportFormat = format) }
     }
 
-    override val vadEnabled: Flow<Boolean> = dataStore.data.map { it[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED }
-        .onStart { emit(cache.get().vadEnabled) }
+    override val vadEnabled: Flow<Boolean> = prefFlow(VAD_ENABLED, default = PreferencesManager.DEFAULT_VAD_ENABLED,
+            cached = { cache.get().vadEnabled })
 
     override val freezeProtectionEnabled: Flow<Boolean> =
         dataStore.data.map { it[FREEZE_PROTECTION_ENABLED] ?: PreferencesManager.DEFAULT_FREEZE_PROTECTION_ENABLED }
@@ -690,8 +715,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(vadEnabled = enabled) }
     }
 
-    override val vadAdvisoryDismissed: Flow<Boolean> = dataStore.data.map { it[VAD_ADVISORY_DISMISSED] ?: false }
-        .onStart { emit(cache.get().vadAdvisoryDismissed) }
+    override val vadAdvisoryDismissed: Flow<Boolean> = prefFlow(VAD_ADVISORY_DISMISSED, default = false,
+            cached = { cache.get().vadAdvisoryDismissed })
 
     override suspend fun saveVadAdvisoryDismissed(dismissed: Boolean) {
         dataStore.edit { preferences ->
@@ -700,8 +725,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(vadAdvisoryDismissed = dismissed) }
     }
 
-    override val onboardingCompleted: Flow<Boolean> = dataStore.data.map { it[ONBOARDING_COMPLETED] ?: false }
-        .onStart { emit(cache.get().onboardingCompleted) }
+    override val onboardingCompleted: Flow<Boolean> = prefFlow(ONBOARDING_COMPLETED, default = false,
+            cached = { cache.get().onboardingCompleted })
 
     override suspend fun saveOnboardingCompleted(completed: Boolean) {
         dataStore.edit { preferences ->
@@ -710,8 +735,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(onboardingCompleted = completed) }
     }
 
-    override val progressiveTranscription: Flow<Boolean> = dataStore.data.map { it[PROGRESSIVE_TRANSCRIPTION] ?: PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION }
-        .onStart { emit(cache.get().progressiveTranscription) }
+    override val progressiveTranscription: Flow<Boolean> = prefFlow(PROGRESSIVE_TRANSCRIPTION, default = PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
+            cached = { cache.get().progressiveTranscription })
 
     override suspend fun saveProgressiveTranscription(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -720,8 +745,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(progressiveTranscription = enabled) }
     }
 
-    override val earlyPreviewEnabled: Flow<Boolean> = dataStore.data.map { it[EARLY_PREVIEW_ENABLED] ?: PreferencesManager.DEFAULT_EARLY_PREVIEW }
-        .onStart { emit(cache.get().earlyPreviewEnabled) }
+    override val earlyPreviewEnabled: Flow<Boolean> = prefFlow(EARLY_PREVIEW_ENABLED, default = PreferencesManager.DEFAULT_EARLY_PREVIEW,
+            cached = { cache.get().earlyPreviewEnabled })
 
     override suspend fun saveEarlyPreviewEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -730,8 +755,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(earlyPreviewEnabled = enabled) }
     }
 
-    override val interruptedRunNotifications: Flow<Boolean> = dataStore.data.map { it[INTERRUPTED_RUN_NOTIFICATIONS] ?: PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS }
-        .onStart { emit(cache.get().interruptedRunNotifications) }
+    override val interruptedRunNotifications: Flow<Boolean> = prefFlow(INTERRUPTED_RUN_NOTIFICATIONS, default = PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS,
+            cached = { cache.get().interruptedRunNotifications })
 
     override suspend fun saveInterruptedRunNotifications(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -750,8 +775,8 @@ class PreferencesManagerImpl(
         }.first()
     }
 
-    override val defaultPrompt: Flow<String> = dataStore.data.map { it[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE }
-        .onStart { emit(cache.get().defaultPrompt) }
+    override val defaultPrompt: Flow<String> = prefFlow(DEFAULT_PROMPT, default = PreferencesManager.DEFAULT_PROMPT_VALUE,
+            cached = { cache.get().defaultPrompt })
 
     override suspend fun saveDefaultPrompt(prompt: String) {
         val truncated = prompt.take(PreferencesManager.PROMPT_CAP)
@@ -761,8 +786,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(defaultPrompt = truncated) }
     }
 
-    override val punctuationMode: Flow<String> = dataStore.data.map { it[PUNCTUATION_MODE] ?: PreferencesManager.DEFAULT_PUNCTUATION_MODE }
-        .onStart { emit(cache.get().punctuationMode) }
+    override val punctuationMode: Flow<String> = prefFlow(PUNCTUATION_MODE, default = PreferencesManager.DEFAULT_PUNCTUATION_MODE,
+            cached = { cache.get().punctuationMode })
 
     override suspend fun savePunctuationMode(mode: String) {
         dataStore.edit { preferences ->
@@ -771,11 +796,11 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(punctuationMode = mode) }
     }
 
-    override val punctuationPrompt: Flow<String> = dataStore.data.map { it[PUNCTUATION_PROMPT] ?: "" }
-        .onStart { emit(cache.get().punctuationPrompt) }
+    override val punctuationPrompt: Flow<String> = prefFlow(PUNCTUATION_PROMPT, default = "",
+            cached = { cache.get().punctuationPrompt })
 
-    override val summaryPrompt: Flow<String> = dataStore.data.map { it[SUMMARY_PROMPT] ?: "" }
-        .onStart { emit(cache.get().summaryPrompt) }
+    override val summaryPrompt: Flow<String> = prefFlow(SUMMARY_PROMPT, default = "",
+            cached = { cache.get().summaryPrompt })
 
     override val summaryPreset: Flow<String> = dataStore.data.map {
         it[SUMMARY_PRESET] ?: PreferencesManager.DEFAULT_SUMMARY_PRESET
@@ -791,15 +816,10 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(punctuationPrompt = truncated) }
     }
 
-    override val keywordBiasing: Flow<String> = dataStore.data.map { it[KEYWORD_BIASING] ?: "" }
-        .onStart { emit(cache.get().keywordBiasing) }
-        // TASK-1008: every DataStore write re-runs the map above and without
-        // this guard the unchanged value re-emits; the 994.1 collector read
-        // that as a dictionary edit and unloaded the active backend 2s after
-        // every activation (the footprint write), killing long-audio runs
-        // mid-preprocessing. New preference flows feeding change-reactive
-        // collectors need the same guard (see transcriptionBackend above).
-        .distinctUntilChanged()
+    override val keywordBiasing: Flow<String> = prefFlow(KEYWORD_BIASING, default = "",
+            cached = { cache.get().keywordBiasing })
+        // TASK-1008's incident flow: its collector once unloaded the backend on
+        // every unrelated write before the guard (now structural in prefFlow).
 
     override val biasingScore: Flow<Float> =
         dataStore.data.map { it[BIASING_SCORE] ?: PreferencesManager.DEFAULT_BIASING_SCORE }
@@ -825,8 +845,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(keywordBiasing = truncated) }
     }
 
-    override val summarizeEnabled: Flow<Boolean> = dataStore.data.map { it[SUMMARIZE_ENABLED] ?: PreferencesManager.DEFAULT_SUMMARIZE_ENABLED }
-        .onStart { emit(cache.get().summarizeEnabled) }
+    override val summarizeEnabled: Flow<Boolean> = prefFlow(SUMMARIZE_ENABLED, default = PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
+            cached = { cache.get().summarizeEnabled })
 
     override suspend fun saveSummaryPrompt(prompt: String) {
         val truncated = prompt.take(PreferencesManager.PROMPT_CAP)
@@ -861,8 +881,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(summarizeEnabled = enabled) }
     }
 
-    override val threadCount: Flow<Int> = dataStore.data.map { it[THREAD_COUNT] ?: PreferencesManager.DEFAULT_THREAD_COUNT }
-        .onStart { emit(cache.get().threadCount) }
+    override val threadCount: Flow<Int> = prefFlow(THREAD_COUNT, default = PreferencesManager.DEFAULT_THREAD_COUNT,
+            cached = { cache.get().threadCount })
 
     override suspend fun saveThreadCount(threads: Int) {
         dataStore.edit { preferences ->
@@ -871,8 +891,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(threadCount = threads) }
     }
 
-    override val inferenceProvider: Flow<String> = dataStore.data.map { it[INFERENCE_PROVIDER] ?: PreferencesManager.DEFAULT_INFERENCE_PROVIDER }
-        .onStart { emit(cache.get().inferenceProvider) }
+    override val inferenceProvider: Flow<String> = prefFlow(INFERENCE_PROVIDER, default = PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
+            cached = { cache.get().inferenceProvider })
 
     override suspend fun saveInferenceProvider(provider: String) {
         dataStore.edit { preferences ->
@@ -881,8 +901,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(inferenceProvider = provider) }
     }
 
-    override val transcriptionLanguage: Flow<String> = dataStore.data.map { it[TRANSCRIPTION_LANGUAGE] ?: PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE }
-        .onStart { emit(cache.get().transcriptionLanguage) }
+    override val transcriptionLanguage: Flow<String> = prefFlow(TRANSCRIPTION_LANGUAGE, default = PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
+            cached = { cache.get().transcriptionLanguage })
 
     override suspend fun saveTranscriptionLanguage(language: String) {
         dataStore.edit { preferences ->
@@ -905,8 +925,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(modelFilterLanguage = code) }
     }
 
-    override val swipeActionMode: Flow<String> = dataStore.data.map { it[SWIPE_ACTION_MODE] ?: PreferencesManager.DEFAULT_SWIPE_ACTION_MODE }
-        .onStart { emit(cache.get().swipeActionMode) }
+    override val swipeActionMode: Flow<String> = prefFlow(SWIPE_ACTION_MODE, default = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE,
+            cached = { cache.get().swipeActionMode })
 
     override suspend fun saveSwipeActionMode(mode: String) {
         dataStore.edit { preferences ->
@@ -1009,8 +1029,8 @@ class PreferencesManagerImpl(
         }
     }
 
-    override val groupLogsByConversation: Flow<Boolean> = dataStore.data.map { it[GROUP_LOGS_BY_CONVERSATION] ?: PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION }
-        .onStart { emit(cache.get().groupLogsByConversation) }
+    override val groupLogsByConversation: Flow<Boolean> = prefFlow(GROUP_LOGS_BY_CONVERSATION, default = PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION,
+            cached = { cache.get().groupLogsByConversation })
 
     override suspend fun saveGroupLogsByConversation(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -1019,8 +1039,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(groupLogsByConversation = enabled) }
     }
 
-    override val showTechnicalDetails: Flow<Boolean> = dataStore.data.map { it[SHOW_TECHNICAL_DETAILS] ?: PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS }
-        .onStart { emit(cache.get().showTechnicalDetails) }
+    override val showTechnicalDetails: Flow<Boolean> = prefFlow(SHOW_TECHNICAL_DETAILS, default = PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS,
+            cached = { cache.get().showTechnicalDetails })
 
     override suspend fun saveShowTechnicalDetails(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -1029,8 +1049,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(showTechnicalDetails = enabled) }
     }
 
-    override val advancedSharingEnabled: Flow<Boolean> = dataStore.data.map { it[ADVANCED_SHARING_ENABLED] ?: PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED }
-        .onStart { emit(cache.get().advancedSharingEnabled) }
+    override val advancedSharingEnabled: Flow<Boolean> = prefFlow(ADVANCED_SHARING_ENABLED, default = PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
+            cached = { cache.get().advancedSharingEnabled })
 
     override suspend fun saveAdvancedSharingEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -1039,8 +1059,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(advancedSharingEnabled = enabled) }
     }
 
-    override val showRetranscribeButton: Flow<Boolean> = dataStore.data.map { it[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON }
-        .onStart { emit(cache.get().showRetranscribeButton) }
+    override val showRetranscribeButton: Flow<Boolean> = prefFlow(SHOW_RETRANSCRIBE_BUTTON, default = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
+            cached = { cache.get().showRetranscribeButton })
 
     override suspend fun saveShowRetranscribeButton(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -1049,8 +1069,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(showRetranscribeButton = enabled) }
     }
 
-    override val wordTapSeek: Flow<Boolean> = dataStore.data.map { it[WORD_TAP_SEEK] ?: PreferencesManager.DEFAULT_WORD_TAP_SEEK }
-        .onStart { emit(cache.get().wordTapSeek) }
+    override val wordTapSeek: Flow<Boolean> = prefFlow(WORD_TAP_SEEK, default = PreferencesManager.DEFAULT_WORD_TAP_SEEK,
+            cached = { cache.get().wordTapSeek })
 
     override suspend fun saveWordTapSeek(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -1059,8 +1079,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(wordTapSeek = enabled) }
     }
 
-    override val advancedShareFormats: Flow<Boolean> = dataStore.data.map { it[ADVANCED_SHARE_FORMATS] ?: PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS }
-        .onStart { emit(cache.get().advancedShareFormats) }
+    override val advancedShareFormats: Flow<Boolean> = prefFlow(ADVANCED_SHARE_FORMATS, default = PreferencesManager.DEFAULT_ADVANCED_SHARE_FORMATS,
+            cached = { cache.get().advancedShareFormats })
 
     override suspend fun saveAdvancedShareFormats(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -1069,24 +1089,24 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(advancedShareFormats = enabled) }
     }
 
-    override val memoryProtection: Flow<Boolean> = dataStore.data.map { it[MEMORY_PROTECTION] ?: PreferencesManager.DEFAULT_MEMORY_PROTECTION }
-        .onStart { emit(cache.get().memoryProtection) }
+    override val memoryProtection: Flow<Boolean> = prefFlow(MEMORY_PROTECTION, default = PreferencesManager.DEFAULT_MEMORY_PROTECTION,
+            cached = { cache.get().memoryProtection })
 
-    override val externalAutomationEnabled: Flow<Boolean> = dataStore.data.map { it[EXTERNAL_AUTOMATION_ENABLED] ?: PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED }
-        .onStart { emit(cache.get().externalAutomationEnabled) }
+    override val externalAutomationEnabled: Flow<Boolean> = prefFlow(EXTERNAL_AUTOMATION_ENABLED, default = PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED,
+            cached = { cache.get().externalAutomationEnabled })
 
-    override val openTranscribeEnabled: Flow<Boolean> = dataStore.data.map { it[OPEN_TRANSCRIBE_ENABLED] ?: PreferencesManager.DEFAULT_OPEN_TRANSCRIBE_ENABLED }
-        .onStart { emit(cache.get().openTranscribeEnabled) }
+    override val openTranscribeEnabled: Flow<Boolean> = prefFlow(OPEN_TRANSCRIBE_ENABLED, default = PreferencesManager.DEFAULT_OPEN_TRANSCRIBE_ENABLED,
+            cached = { cache.get().openTranscribeEnabled })
 
-    override val voiceNoteIdentityEnabled: Flow<Boolean> = dataStore.data.map { it[VOICE_NOTE_IDENTITY_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_IDENTITY_ENABLED }
-        .onStart { emit(cache.get().voiceNoteIdentityEnabled) }
+    override val voiceNoteIdentityEnabled: Flow<Boolean> = prefFlow(VOICE_NOTE_IDENTITY_ENABLED, default = PreferencesManager.DEFAULT_VOICE_NOTE_IDENTITY_ENABLED,
+            cached = { cache.get().voiceNoteIdentityEnabled })
 
-    override val voiceNoteDetectionEnabled: Flow<Boolean> = dataStore.data.map { it[VOICE_NOTE_DETECTION_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED }
-        .onStart { emit(cache.get().voiceNoteDetectionEnabled) }
-    override val voiceNoteTreeUri: Flow<String?> = dataStore.data.map { it[VOICE_NOTE_TREE_URI] }
-        .onStart { emit(cache.get().voiceNoteTreeUri) }
-    override val voiceNoteWatermark: Flow<String?> = dataStore.data.map { it[VOICE_NOTE_WATERMARK] }
-        .onStart { emit(cache.get().voiceNoteWatermark) }
+    override val voiceNoteDetectionEnabled: Flow<Boolean> = prefFlow(VOICE_NOTE_DETECTION_ENABLED, default = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED,
+            cached = { cache.get().voiceNoteDetectionEnabled })
+    override val voiceNoteTreeUri: Flow<String?> = prefFlowNullable(VOICE_NOTE_TREE_URI,
+            cached = { cache.get().voiceNoteTreeUri })
+    override val voiceNoteWatermark: Flow<String?> = prefFlowNullable(VOICE_NOTE_WATERMARK,
+            cached = { cache.get().voiceNoteWatermark })
 
     override suspend fun saveVoiceNoteTreeUri(uri: String?) {
         dataStore.edit { preferences ->
@@ -1096,10 +1116,10 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(voiceNoteTreeUri = uri) }
     }
 
-    override val voiceNoteBusinessDetectionEnabled: Flow<Boolean> = dataStore.data.map { it[VOICE_NOTE_BUSINESS_DETECTION_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED }
-        .onStart { emit(cache.get().voiceNoteBusinessDetectionEnabled) }
-    override val voiceNoteBusinessTreeUri: Flow<String?> = dataStore.data.map { it[VOICE_NOTE_BUSINESS_TREE_URI] }
-        .onStart { emit(cache.get().voiceNoteBusinessTreeUri) }
+    override val voiceNoteBusinessDetectionEnabled: Flow<Boolean> = prefFlow(VOICE_NOTE_BUSINESS_DETECTION_ENABLED, default = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED,
+            cached = { cache.get().voiceNoteBusinessDetectionEnabled })
+    override val voiceNoteBusinessTreeUri: Flow<String?> = prefFlowNullable(VOICE_NOTE_BUSINESS_TREE_URI,
+            cached = { cache.get().voiceNoteBusinessTreeUri })
 
     override suspend fun saveVoiceNoteBusinessDetectionEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -1119,10 +1139,10 @@ class PreferencesManagerImpl(
     // TASK-966: the watched-folder source's pair, the twin of the blocks
     // above over its own keys (a user-picked folder instead of a fixed
     // WhatsApp tree; no watermark twin, that source has no keyed catch-up).
-    override val voiceNoteWatchedDetectionEnabled: Flow<Boolean> = dataStore.data.map { it[VOICE_NOTE_WATCHED_DETECTION_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED }
-        .onStart { emit(cache.get().voiceNoteWatchedDetectionEnabled) }
-    override val voiceNoteWatchedTreeUri: Flow<String?> = dataStore.data.map { it[VOICE_NOTE_WATCHED_TREE_URI] }
-        .onStart { emit(cache.get().voiceNoteWatchedTreeUri) }
+    override val voiceNoteWatchedDetectionEnabled: Flow<Boolean> = prefFlow(VOICE_NOTE_WATCHED_DETECTION_ENABLED, default = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED,
+            cached = { cache.get().voiceNoteWatchedDetectionEnabled })
+    override val voiceNoteWatchedTreeUri: Flow<String?> = prefFlowNullable(VOICE_NOTE_WATCHED_TREE_URI,
+            cached = { cache.get().voiceNoteWatchedTreeUri })
 
     override suspend fun saveVoiceNoteWatchedDetectionEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -1162,8 +1182,8 @@ class PreferencesManagerImpl(
 
     // TASK-1047: the watched-folder watermark trio, the twin of the
     // WhatsApp block over the mtime key (the unkeyed sweep's own anchor).
-    override val voiceNoteWatchedWatermark: Flow<String?> = dataStore.data.map { it[VOICE_NOTE_WATCHED_WATERMARK] }
-        .onStart { emit(cache.get().voiceNoteWatchedWatermark) }
+    override val voiceNoteWatchedWatermark: Flow<String?> = prefFlowNullable(VOICE_NOTE_WATCHED_WATERMARK,
+            cached = { cache.get().voiceNoteWatchedWatermark })
 
     override suspend fun bumpVoiceNoteWatchedWatermark(candidate: String) {
         dataStore.edit { preferences ->
@@ -1188,8 +1208,8 @@ class PreferencesManagerImpl(
 
     // TASK-891: the Business watermark trio, the twin of the WhatsApp
     // block above over its own key (independent counter tree).
-    override val voiceNoteBusinessWatermark: Flow<String?> = dataStore.data.map { it[VOICE_NOTE_BUSINESS_WATERMARK] }
-        .onStart { emit(cache.get().voiceNoteBusinessWatermark) }
+    override val voiceNoteBusinessWatermark: Flow<String?> = prefFlowNullable(VOICE_NOTE_BUSINESS_WATERMARK,
+            cached = { cache.get().voiceNoteBusinessWatermark })
 
     override suspend fun bumpVoiceNoteBusinessWatermark(candidate: String) {
         dataStore.edit { preferences ->
@@ -1215,14 +1235,14 @@ class PreferencesManagerImpl(
     // TASK-681: the LAN-offload gate and its config triple. Re-emits on
     // unrelated writes are fine here, like the siblings above: the
     // collectors only compare values.
-    override val remoteOmnivoiceEnabled: Flow<Boolean> = dataStore.data.map { it[REMOTE_OMNIVOICE_ENABLED] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED }
-        .onStart { emit(cache.get().remoteOmnivoiceEnabled) }
+    override val remoteOmnivoiceEnabled: Flow<Boolean> = prefFlow(REMOTE_OMNIVOICE_ENABLED, default = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED,
+            cached = { cache.get().remoteOmnivoiceEnabled })
 
-    override val remoteOmnivoiceEndpoint: Flow<String> = dataStore.data.map { it[REMOTE_OMNIVOICE_ENDPOINT] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT }
-        .onStart { emit(cache.get().remoteOmnivoiceEndpoint) }
+    override val remoteOmnivoiceEndpoint: Flow<String> = prefFlow(REMOTE_OMNIVOICE_ENDPOINT, default = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT,
+            cached = { cache.get().remoteOmnivoiceEndpoint })
 
-    override val remoteOmnivoiceApiKey: Flow<String> = dataStore.data.map { it[REMOTE_OMNIVOICE_API_KEY] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY }
-        .onStart { emit(cache.get().remoteOmnivoiceApiKey) }
+    override val remoteOmnivoiceApiKey: Flow<String> = prefFlow(REMOTE_OMNIVOICE_API_KEY, default = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY,
+            cached = { cache.get().remoteOmnivoiceApiKey })
 
     override val remoteOmnivoiceModel: Flow<String> = dataStore.data.map {
         it[REMOTE_OMNIVOICE_MODEL] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_MODEL
@@ -1296,10 +1316,10 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(remoteOmnivoiceModel = trimmed) }
     }
 
-    override val compactResultActions: Flow<Boolean> = dataStore.data.map { it[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS }
-        .onStart { emit(cache.get().compactResultActions) }
-    override val languageChipEnabled: Flow<Boolean> = dataStore.data.map { it[LANGUAGE_CHIP_ENABLED] ?: PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED }
-        .onStart { emit(cache.get().languageChipEnabled) }
+    override val compactResultActions: Flow<Boolean> = prefFlow(COMPACT_RESULT_ACTIONS, default = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
+            cached = { cache.get().compactResultActions })
+    override val languageChipEnabled: Flow<Boolean> = prefFlow(LANGUAGE_CHIP_ENABLED, default = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
+            cached = { cache.get().languageChipEnabled })
 
     override suspend fun saveCompactResultActions(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -1350,15 +1370,11 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(voiceNoteDetectionEnabled = enabled) }
     }
 
-    override val externalModelsJson: Flow<String?> = dataStore.data.map { it[EXTERNAL_MODELS_JSON] }
-        .onStart { emit(cache.get().externalModelsJson) }
-        // The JSON string is the natural key: unrelated preference writes re-emit the
-        // same value, and every downstream consumer re-decodes it. Skip the duplicates.
-        .distinctUntilChanged()
+    override val externalModelsJson: Flow<String?> = prefFlowNullable(EXTERNAL_MODELS_JSON,
+            cached = { cache.get().externalModelsJson })
 
-    override val scheduledFoldersJson: Flow<String?> = dataStore.data.map { it[SCHEDULED_FOLDERS_JSON] }
-        .onStart { emit(cache.get().scheduledFoldersJson) }
-        .distinctUntilChanged()
+    override val scheduledFoldersJson: Flow<String?> = prefFlowNullable(SCHEDULED_FOLDERS_JSON,
+            cached = { cache.get().scheduledFoldersJson })
 
     override suspend fun saveExternalModelsJson(json: String) {
         dataStore.edit { preferences ->
