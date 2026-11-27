@@ -145,7 +145,12 @@ data class WindowPlan(
 }
 
 /** One embedded piece of a segment; [embedding] is L2-normalized. */
-class Piece(val span: TimeSpan, val embedding: FloatArray)
+class Piece(
+    val span: TimeSpan,
+    val embedding: FloatArray,
+    /** The segment this piece was cut from, unique per run; [PieceClustering.coarsen] merges only within one. */
+    val segment: Long,
+)
 
 /**
  * TASK-1060.4: the windowed pass's output. [centroids] maps each dense
@@ -509,9 +514,15 @@ object PieceClustering {
 
     /**
      * Halves the piece count until it fits [maxPieces] by merging each
-     * piece with the next when the two are contiguous cuts of one segment
-     * (the embedding becomes the normalized sum). Returns the input when it
-     * already fits or when no contiguous pair is left to merge.
+     * piece with the next when both are touching cuts of the same segment
+     * (the embedding becomes the normalized sum). Touching spans alone are
+     * not enough: sherpa's frame-quantized segments abut exactly at a speaker
+     * change, and overlapped speech can leave one segment's cut touching
+     * another's, so merging on the span would average two voices. A turn that
+     * crosses a window's core boundary is two segments (one per window) and
+     * stays two pieces there: at most one extra piece per window boundary, a
+     * few dozen on a multi-hour file against a cap in the thousands. Returns
+     * the input when it already fits or when no mergeable pair is left.
      */
     fun coarsen(pieces: List<Piece>, maxPieces: Int): List<Piece> {
         var current = pieces
@@ -521,9 +532,9 @@ object PieceClustering {
             while (i < current.size) {
                 val a = current[i]
                 val b = current.getOrNull(i + 1)
-                if (b != null && b.span.startSec == a.span.endSec) {
+                if (b != null && b.segment == a.segment && b.span.startSec == a.span.endSec) {
                     val sum = FloatArray(a.embedding.size) { a.embedding[it] + b.embedding[it] }
-                    next += Piece(TimeSpan(a.span.startSec, b.span.endSec), normalized(sum))
+                    next += Piece(TimeSpan(a.span.startSec, b.span.endSec), normalized(sum), a.segment)
                     i += 2
                 } else {
                     next += a

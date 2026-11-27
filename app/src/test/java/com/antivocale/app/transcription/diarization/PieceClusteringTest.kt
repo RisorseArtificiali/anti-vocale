@@ -19,8 +19,20 @@ class PieceClusteringTest {
 
     private fun span(start: Double, end: Double) = TimeSpan(start, end)
 
+    private var nextSegment = 0L
+
+    /** A one-cut segment of its own. */
     private fun piece(start: Double, end: Double, vararg embedding: Float) =
-        Piece(span(start, end), PieceClustering.normalized(embedding))
+        Piece(span(start, end), PieceClustering.normalized(embedding), segment = nextSegment++)
+
+    /** [count] consecutive [pieceSec] cuts of one new segment starting at [start]. */
+    private fun segmentPieces(start: Double, count: Int, vararg embedding: Float, pieceSec: Double = 3.0): List<Piece> {
+        val segment = nextSegment++
+        return (0 until count).map {
+            Piece(span(start + it * pieceSec, start + (it + 1) * pieceSec), PieceClustering.normalized(embedding),
+                segment = segment)
+        }
+    }
 
     /** Same co-membership for every pair: label values themselves are opaque. */
     private fun assertSamePartition(expected: IntArray, actual: IntArray, message: String) {
@@ -391,7 +403,7 @@ class PieceClusteringTest {
         // Six contiguous x pieces coarsen pairwise into three to fit 5.
         // 185 s of talk puts the floor at its 10 s minimum: the 3 s x-leaning cluster
         // is close (absorbed), the 2 s z cluster is far (dropped).
-        val pieces = (0 until 6).map { piece(it * 30.0, it * 30.0 + 30, 1f, 0f, 0f) } + listOf(
+        val pieces = segmentPieces(0.0, 6, 1f, 0f, 0f, pieceSec = 30.0) + listOf(
             piece(200.0, 203.0, 1f, 0.5f, 0f),
             piece(210.0, 212.0, 0f, 0f, 1f),
         )
@@ -458,7 +470,7 @@ class PieceClusteringTest {
         // A segment at 593.1 s: its Double cut points round DOWN as Float, so a
         // Float-rounded end compared with the next exact start split the turn.
         val cuts = PieceClustering.cutPieces(span(590.1, 602.1), 3.0)
-        val pieces = cuts.map { Piece(it, PieceClustering.normalized(floatArrayOf(1f, 0f))) }
+        val pieces = cuts.map { Piece(it, PieceClustering.normalized(floatArrayOf(1f, 0f)), segment = 0) }
         val segments = PieceClustering.assemble(pieces, IntArray(pieces.size))
         assertEquals(1, segments.size)
         assertEquals(590.1f, segments.single().startSec)
@@ -478,8 +490,7 @@ class PieceClusteringTest {
     @Test
     fun `coarsening halves contiguous pieces until the count fits`() {
         // Two segments of four 3 s pieces each, with a gap between them.
-        val pieces = (0 until 4).map { piece(it * 3.0, it * 3.0 + 3, 1f, 0f) } +
-            (0 until 4).map { piece(20 + it * 3.0, 23 + it * 3.0, 0f, 1f) }
+        val pieces = segmentPieces(0.0, 4, 1f, 0f) + segmentPieces(20.0, 4, 0f, 1f)
         val coarse = PieceClustering.coarsen(pieces, 4)
         assertEquals(4, coarse.size)
         assertEquals(listOf(span(0.0, 6.0), span(6.0, 12.0), span(20.0, 26.0), span(26.0, 32.0)),
@@ -488,6 +499,29 @@ class PieceClusteringTest {
         // Nothing contiguous left to merge: returned as is, never looping.
         val isolated = listOf(piece(0.0, 3.0, 1f, 0f), piece(5.0, 8.0, 1f, 0f))
         assertEquals(isolated, PieceClustering.coarsen(isolated, 1))
+    }
+
+    @Test
+    fun `coarsening never merges abutting pieces of two different segments`() {
+        // Speaker x's segment ends exactly where speaker y's starts (sherpa's
+        // frame-quantized boundaries are equal floats): the touching pieces
+        // belong to different voices and must keep their own embeddings. One
+        // x piece puts the turn inside the first pair the halving visits.
+        val pieces = segmentPieces(0.0, 1, 1f, 0f) + segmentPieces(3.0, 2, 0f, 1f)
+        val coarse = PieceClustering.coarsen(pieces, 2)
+        assertEquals(listOf(span(0.0, 3.0), span(3.0, 9.0)), coarse.map { it.span })
+        assertEquals(1f, coarse[0].embedding[0], 1e-6f)
+        assertEquals(1f, coarse[1].embedding[1], 1e-6f)
+        // Overlapped speech: y (7-13 s) lost its first cut, so its second cut
+        // touches x's last one at 10 s. A later cut of ITS OWN segment is
+        // still a different voice from x.
+        val overlapped = segmentPieces(0.0, 1, 1f, 0f, pieceSec = 10.0) + segmentPieces(10.0, 1, 0f, 1f)
+        assertEquals(listOf(span(0.0, 10.0), span(10.0, 13.0)),
+            PieceClustering.coarsen(overlapped, 1).map { it.span })
+        // A merged half of one segment still merges with a raw cut of it:
+        // three cuts halve to [0-6, 6-9], which then must join into [0-9].
+        val three = segmentPieces(0.0, 3, 1f, 0f)
+        assertEquals(listOf(span(0.0, 9.0)), PieceClustering.coarsen(three, 1).map { it.span })
     }
 
     @Test

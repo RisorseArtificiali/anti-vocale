@@ -65,6 +65,23 @@ class WindowedDiarizerTest {
     }
 
     @Test
+    fun `coarsening keeps an exact turn change between the two voices`() = runTest {
+        // A (0-9 s, three cuts) hands straight over to B (9-15 s, two cuts):
+        // the turn boundary is one shared float. maxPieces 4 forces coarsening,
+        // whose first halving pairs A's last cut with B's first; merging them
+        // would average the voices and drag A's label past 9 s.
+        val samples = audio(15, Triple(0, 9, 1f), Triple(9, 15, 2f))
+        val result = WindowedDiarizer(params.copy(maxPieces = 4), segmentBySpeech, embedByValue)
+            .diarize(flowOf(samples))
+
+        assertEquals(3, result.stats.piecesAfterCoarsen)
+        assertEquals(
+            listOf(DiarizedSegment(0f, 9f, 0, null), DiarizedSegment(9f, 15f, 1, null)),
+            result.segments,
+        )
+    }
+
+    @Test
     fun `speakers keep one global id across windows`() = runTest {
         // A and B alternate across 150 s: three 60 s windows (0-60, 50-110, 100-150).
         val samples = audio(150,

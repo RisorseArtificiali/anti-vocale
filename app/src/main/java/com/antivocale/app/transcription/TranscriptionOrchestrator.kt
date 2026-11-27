@@ -780,12 +780,12 @@ class TranscriptionOrchestrator @Inject constructor(
                 completingResume && resumeSession != null ->
                     completedSessionFromStore(taskId, resumeSession, resumePrefixRows, context).also {
                         // TASK-1060.4: no decode runs here, so the pass re-decodes the file.
-                        // A session only ever engages an audio run (the
-                        // candidacy gate requires a source path), so the
-                        // check stays at this one creation boundary.
+                        // The session row is the resume's source of truth for the path
+                        // (non-null by schema), so a delivery hydrated without one
+                        // cannot fail an already-complete transcript.
                         if (collectSpeakers && !postPassCrashed) speakerTimeline = SpeakerTimeline.Windowed(
                             SpeakerTimeline.Reason.RESUMED_SESSION,
-                            resumeSession.totalOutputSamples, checkNotNull(filePath))
+                            resumeSession.totalOutputSamples, resumeSession.filePath)
                     }
                 requestType == "audio" -> if (f4LoadFailure != null) {
                     recoverFirstPass(fastFirstPass!!, f4LoadFailure,

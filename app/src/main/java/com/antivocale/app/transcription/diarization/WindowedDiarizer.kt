@@ -26,6 +26,9 @@ class WindowedDiarizer(
     private val segmentWindow: (samples: FloatArray) -> List<TimeSpan>,
     private val embedWindow: (samples: FloatArray, ranges: List<IntRange>) -> List<FloatArray?>,
 ) {
+    /** Segment ids stay unique across every window of the run. */
+    private var nextSegmentId = 0L
+
     companion object {
         const val SAMPLE_RATE = 16000
 
@@ -180,10 +183,16 @@ class WindowedDiarizer(
         onDropped: (span: TimeSpan, rejected: Boolean) -> Unit,
     ): List<Piece> {
         val offsetSec = plan.startSample.toDouble() / SAMPLE_RATE
-        val spans = segmentWindow(samples)
+        // Each cut carries its segment's id: coarsen merges only within one
+        // segment, never two touching segments of different voices.
+        val cuts = segmentWindow(samples)
             .map { TimeSpan(offsetSec + it.startSec, offsetSec + it.endSec) }
             .mapNotNull(plan::clip)
-            .flatMap { PieceClustering.cutPieces(it, params.pieceSec) }
+            .flatMap { segment ->
+                val id = nextSegmentId++
+                PieceClustering.cutPieces(segment, params.pieceSec).map { span -> span to id }
+            }
+        val spans = cuts.map { it.first }
         val ranges = spans.map { span ->
             val from = ((span.startSec * SAMPLE_RATE).toLong() - plan.startSample)
                 .coerceIn(0L, samples.size.toLong()).toInt()
@@ -191,12 +200,13 @@ class WindowedDiarizer(
                 .coerceIn(0L, samples.size.toLong()).toInt()
             from until to
         }
-        return spans.zip(embedWindow(samples, ranges)).mapNotNull { (span, embedding) ->
+        return cuts.zip(embedWindow(samples, ranges)).mapNotNull { (cut, embedding) ->
+            val (span, segment) = cut
             // A non-finite or unnormalizable embedding would poison every
             // cosine it meets (NaN) or sit at distance 1 from everything.
             when {
                 embedding == null -> null.also { onDropped(span, false) }
-                isUsable(embedding) -> Piece(span, PieceClustering.normalized(embedding))
+                isUsable(embedding) -> Piece(span, PieceClustering.normalized(embedding), segment)
                 else -> null.also { onDropped(span, true) }
             }
         }
