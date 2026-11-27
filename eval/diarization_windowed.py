@@ -131,9 +131,15 @@ def embed_pieces(args) -> int:
         pieces = []
         for w in win["windows"]:
             for s in w["segments"]:
-                mid = (s["start"] + s["end"]) / 2
-                if not (w["core_lo"] <= mid < w["core_hi"]):
-                    continue
+                if args.clip_core:
+                    # Clip to the core so a turn crossing the overlap is covered once.
+                    s = {"start": max(s["start"], w["core_lo"]), "end": min(s["end"], w["core_hi"])}
+                    if s["end"] <= s["start"]:
+                        continue
+                else:
+                    mid = (s["start"] + s["end"]) / 2
+                    if not (w["core_lo"] <= mid < w["core_hi"]):
+                        continue
                 cuts = list(np.arange(s["start"], s["end"], args.piece_s)) + [s["end"]]
                 if len(cuts) > 2 and cuts[-1] - cuts[-2] < 1.0:
                     del cuts[-2]
@@ -151,7 +157,7 @@ def embed_pieces(args) -> int:
         out = {"file": win["file"], "audio_s": win["audio_s"], "window_min": win["window_min"],
                "segment_wall_s": win["wall_s"], "embed_wall_s": round(time.monotonic() - t0, 1),
                "piece_s": args.piece_s, "pieces": pieces}
-        name = wpath.name.replace(".json", f".p{args.piece_s:g}.pieces.json")
+        name = wpath.name.replace(".json", f".p{args.piece_s:g}{'.clip' if args.clip_core else ''}.pieces.json")
         (args.out / name).write_text(json.dumps(out))
         print(json.dumps({"file": win["file"], "window_min": win["window_min"], "pieces": len(pieces),
                           "embed_wall_s": out["embed_wall_s"]}), flush=True)
@@ -347,6 +353,7 @@ def main() -> int:
     e.add_argument("--audio-dir", type=Path, required=True)
     e.add_argument("--out", type=Path, required=True)
     e.add_argument("--piece-s", type=float, default=3.0)
+    e.add_argument("--clip-core", action="store_true", help="clip segments to the window core instead of midpoint ownership")
     e.add_argument("--threads", type=int, default=4)
     e.add_argument("windowed_files", type=Path, nargs="+")
     sp = sub.add_parser("score-pieces")
