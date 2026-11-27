@@ -194,4 +194,21 @@ class WindowedDiarizerTest {
         assertTrue(!WindowedDiarizer.isUsable(floatArrayOf(3e19f, 0f)))
         assertTrue(WindowedDiarizer.isUsable(floatArrayOf(0.3f, 0.4f)))
     }
+
+    @Test
+    fun `a dropped voice reaches the result as an unlabeled span`() = runTest {
+        // C (value 3) talks 3 s, under the 5 s floor and orthogonal to A and B: dropped.
+        val samples = audio(60, Triple(0, 20, 1f), Triple(21, 41, 2f), Triple(42, 45, 3f))
+        val oneHot: (FloatArray, List<IntRange>) -> List<FloatArray?> = { window, ranges ->
+            ranges.map { range ->
+                val value = range.map { window[it] }.firstOrNull { it != 0f }
+                value?.let { v -> FloatArray(3).also { it[v.toInt() - 1] = 1f } }
+            }
+        }
+        val result = WindowedDiarizer(params.copy(absorbFloorMinSec = 5.0), segmentBySpeech, oneHot)
+            .diarize(flowOf(samples))
+
+        assertEquals(listOf(TimeSpan(42.0, 45.0)), result.unlabeledSpans)
+        assertEquals(setOf(0, 1), result.centroids.keys)
+    }
 }

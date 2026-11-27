@@ -209,4 +209,23 @@ class SpeakerResplitTest {
         assertTrue(outcome.cues.single().mixedSpeakers)
         assertFalse(outcome.cues.single().speakerName != null)
     }
+
+    @Test
+    fun `a split half that is mostly an unlabeled voice carries no speaker`() {
+        // TASK-1060.9: A 0-0.5 s, unknown 0.5-3.5 s, B 3.5-4 s. The labeler
+        // gives the cue no speaker; the straddle still splits at the B turn,
+        // and the first half (0.5 s of A, 2.5 s unknown) must not become A.
+        val segments = listOf(
+            DiarizedSegment(0f, 0.5f, 0, null),
+            DiarizedSegment(3.5f, 4.0f, 1, null),
+        )
+        val unknown = listOf(TimeSpan(0.5, 3.5))
+        val plain = TimedSegment(startMs = 0, endMs = 4000, text = "alpha beta gamma delta")
+        val outcome = SpeakerResplit.resplit(plain, emptyList(), segments, null, unknown)
+
+        assertEquals(SpeakerResplit.Tier.SILENCE_GAP, outcome.tier)
+        assertEquals(listOf("alpha beta gamma", "delta"), outcome.cues.map { it.text })
+        assertNull(outcome.cues[0].speaker)
+        assertEquals(1, outcome.cues[1].speaker)
+    }
 }

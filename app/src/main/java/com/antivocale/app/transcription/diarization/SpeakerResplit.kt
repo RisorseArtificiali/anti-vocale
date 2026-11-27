@@ -55,6 +55,14 @@ object SpeakerResplit {
         segments: List<DiarizedSegment>,
         /** TASK-678: the labeler's id for a cue this pass leaves unsplit. */
         fallbackSpeaker: Int? = null,
+        /**
+         * TASK-1060.9: the windowed pass's unlabeled speech. The straddle
+         * test and the split point read speakers only; each split half's
+         * re-vote counts this coverage against its winner (the labeler's
+         * rule), so a half that is mostly unlabeled voice ships with no
+         * speaker rather than the sliver's.
+         */
+        unknown: List<TimeSpan> = emptyList(),
     ): Outcome {
         val votes = SpeakerLabeler.overlapVotesMs(cue.startMs, cue.endMs, segments)
         // Review: the same tie-break winnerMs applies (lower speaker id on
@@ -77,7 +85,7 @@ object SpeakerResplit {
         if (tokenSpans != null) {
             val index = nearestWordBoundary(tokenSpans, boundaryMs, cue)
                 ?.takeIf { bothHalvesViable(tokenSpans, it) }
-            return if (index != null) splitAt(cue, words, tokenSpans, index, Tier.WORD_BOUNDARY, segments)
+            return if (index != null) splitAt(cue, words, tokenSpans, index, Tier.WORD_BOUNDARY, segments, unknown)
             else mixed(cue, cueTokens)
         }
 
@@ -86,7 +94,7 @@ object SpeakerResplit {
         val spans = proportionalSpans(cue, words.size)
         val index = nearestWordBoundary(spans, boundaryMs, cue)
             ?.takeIf { bothHalvesViable(spans, it) }
-        return if (index != null) splitAt(cue, words, spans, index, Tier.SILENCE_GAP, segments)
+        return if (index != null) splitAt(cue, words, spans, index, Tier.SILENCE_GAP, segments, unknown)
         else mixed(cue, cueTokens)
     }
 
@@ -135,6 +143,7 @@ object SpeakerResplit {
         splitIndex: Int,
         tier: Tier,
         segments: List<DiarizedSegment>,
+        unknown: List<TimeSpan>,
     ): Outcome {
         val boundary = ((spans[splitIndex - 1].endMs + spans[splitIndex].startMs) / 2)
             .coerceIn(cue.startMs + 1, cue.endMs - 1)
@@ -149,7 +158,8 @@ object SpeakerResplit {
             TimedSegment(
                 startMs = startMs, endMs = endMs, text = text,
                 speaker = SpeakerLabeler.winnerMs(
-                    SpeakerLabeler.overlapVotesMs(startMs, endMs, segments)),
+                    SpeakerLabeler.overlapVotesMs(startMs, endMs, segments),
+                    SpeakerLabeler.unknownOverlapMs(startMs, endMs, unknown)),
                 words = words,
             )
         val halfWords = when (tier) {

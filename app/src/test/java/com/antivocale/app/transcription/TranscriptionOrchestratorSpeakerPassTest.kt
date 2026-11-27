@@ -4,6 +4,7 @@ import android.content.Context
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.transcription.diarization.DiarizedSegment
 import com.antivocale.app.transcription.diarization.SpeakerLabelTail
+import com.antivocale.app.transcription.diarization.TimeSpan
 import com.antivocale.app.transcription.diarization.WindowedDiarization
 import com.antivocale.app.transcription.diarization.WindowedDiarizationStats
 import io.mockk.clearMocks
@@ -134,6 +135,23 @@ class TranscriptionOrchestratorSpeakerPassTest : TranscriptionOrchestratorTestBa
         assertEquals(0, wholeFileCalls)
         assertEquals(listOf(filePath to 16000L), windowedCalls)
         assertEquals(listOf(1), deliveredCues.map { it.speaker })
+    }
+
+    @Test
+    fun `the windowed pass's unlabeled speech outvotes a speaker's sliver of the cue`() = runTest {
+        every { audioPreprocessor.getAudioDuration(any()) } returns 2 * 3600.0
+        stubStream(FloatArray(16000))
+        orchestrator.windowedDiarization = { _, _, _, _, _ ->
+            WindowedDiarization(
+                listOf(DiarizedSegment(0f, 0.1f, 1, null)), emptyMap(),
+                WindowedDiarizationStats(0, 0, 0, 0, 0.0, 0, 0.0),
+                unlabeledSpans = listOf(TimeSpan(0.1, 1.0)))
+        }
+
+        val (result, _) = run()
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf<Int?>(null), deliveredCues.map { it.speaker })
     }
 
     @Test

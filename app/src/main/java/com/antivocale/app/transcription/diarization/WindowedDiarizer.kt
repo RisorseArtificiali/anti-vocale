@@ -163,7 +163,7 @@ class WindowedDiarizer(
         val diarization = PieceClustering.diarize(pieces, params)
         return WindowedDiarization(
             diarization.segments, diarization.centroids,
-            diarization.stats.copy(unusableEmbeddings = unusable))
+            diarization.stats.copy(unusableEmbeddings = unusable), diarization.unlabeledSpans)
     }
 
     private fun embedPieces(samples: FloatArray, plan: WindowPlan, onUnusable: () -> Unit): List<Piece> {

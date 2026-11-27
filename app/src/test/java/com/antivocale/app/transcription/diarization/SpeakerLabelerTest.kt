@@ -55,6 +55,25 @@ class SpeakerLabelerTest {
     }
 
     @Test
+    fun `a cue that is mostly an unlabeled voice gets no speaker, not the neighbor's`() {
+        // TASK-1060.9 review: 5 s of a voice the windowed pass left
+        // unlabeled and 0.2 s of A. Without the unknown coverage the
+        // sliver wins the vote.
+        val segments = listOf(seg(5f, 5.2f, 0))
+        val unknown = listOf(TimeSpan(0.0, 5.0))
+        val cues = listOf(cue(0f, 5.2f))
+        assertEquals(listOf(0), SpeakerLabeler.label(cues, segments))
+        assertEquals(listOf<Int?>(null), SpeakerLabeler.label(cues, segments, unknown))
+    }
+
+    @Test
+    fun `a cue that is mostly one speaker with a sliver of unknown keeps that speaker`() {
+        val segments = listOf(seg(0f, 5f, 0))
+        val unknown = listOf(TimeSpan(5.0, 5.2))
+        assertEquals(listOf(0), SpeakerLabeler.label(listOf(cue(0f, 5.2f)), segments, unknown))
+    }
+
+    @Test
     fun `empty inputs label nothing`() {
         assertNull(SpeakerLabeler.label(listOf(cue(0f, 1f)), emptyList()).single())
         assertEquals(emptyList<Int?>(), SpeakerLabeler.label(emptyList(), prototypeSegments))

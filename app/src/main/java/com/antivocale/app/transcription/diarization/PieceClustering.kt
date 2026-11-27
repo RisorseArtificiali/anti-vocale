@@ -76,7 +76,10 @@ data class WindowedDiarizationParams(
         require(absorbFloorMinSec >= 0) { "the floor's minimum cannot be negative" }
     }
 
-    /** The talk floor for a file whose pieces total [talkSec]. */
+    /**
+     * The talk floor for a file whose pieces total [talkSec]: all coarsened
+     * talk, labeled or not (PieceClustering.diarize says why).
+     */
     fun absorbFloorFor(talkSec: Double): Double =
         minOf(absorbFloorSec, maxOf(absorbFloorMinSec, absorbFloorFraction * talkSec))
 
@@ -149,11 +152,15 @@ class Piece(val span: TimeSpan, val embedding: FloatArray)
  * speaker id of [segments] to the L2-normalized sum of that speaker's piece
  * embeddings: the windowed pass never holds the whole file's samples, so
  * the naming pass matches these voiceprints instead of re-embedding audio.
+ * TASK-1060.9: [unlabeledSpans] is the speech of every piece left without a
+ * speaker, in time order with touching or overlapping spans merged, so the
+ * cue join can count it as a vote for no speaker instead of a gap.
  */
 class WindowedDiarization(
     val segments: List<DiarizedSegment>,
     val centroids: Map<Int, FloatArray>,
     val stats: WindowedDiarizationStats,
+    val unlabeledSpans: List<TimeSpan> = emptyList(),
 )
 
 /**
@@ -181,6 +188,8 @@ data class WindowedDiarizationStats(
     val unlabeledUnsampledSec: Double = 0.0,
     /** TASK-1060.9: more than twice maxPieces after coarsen, so nothing was clustered. */
     val subsampleRefused: Boolean = false,
+    /** The piece cap the pass ran with, so a refusal can be logged against it. */
+    val maxPieces: Int = 0,
 )
 
 /**
@@ -446,11 +455,9 @@ object PieceClustering {
         var droppedSec = 0.0
         for ((label, sec) in talk) {
             if (sec >= floorSec) continue
-            val own = normalized(sums.getValue(label))
-            val nearest = centroids.indices.maxBy { dot(centroids[it], own) }
-            val accepted = 1.0 - dot(centroids[nearest], own) <= maxDistance
-            target[label] = if (accepted) big[nearest] else null
-            if (accepted) absorbedSec += sec else droppedSec += sec
+            val nearest = nearestWithinGate(centroids, normalized(sums.getValue(label)), maxDistance)
+            target[label] = nearest?.let(big::get)
+            if (nearest != null) absorbedSec += sec else droppedSec += sec
         }
         val absorbed = target.values.count { it != null }
         return Absorption(
@@ -577,21 +584,48 @@ object PieceClustering {
         val centroids = sums.values.map(::normalized)
         val labels = arrayOfNulls<Int>(n)
         sampled.forEachIndexed { j, row -> labels[row] = sampleLabels[j] }
-        val sampledRows = sampled.toHashSet()
         val row = FloatArray(embeddings[0].size)
         for (i in 0 until n) {
-            if (i in sampledRows) continue
+            if (labels[i] != null) continue
             normalizeInto(embeddings[i], row)
-            val nearest = centroids.indices.maxBy { dot(centroids[it], row) }
-            if (1.0 - dot(centroids[nearest], row) <= maxDistance) labels[i] = clusterIds[nearest]
+            nearestWithinGate(centroids, row, maxDistance)?.let { labels[i] = clusterIds[it] }
         }
         return BoundedClusters(labels.asList(), sums.size)
     }
 
     /**
+     * The index of the [centroids] entry most cosine-similar to [row] (both
+     * normalized), or null when it lies farther than [maxDistance]: the one
+     * gate [absorbSmall] and the subsample fallback share.
+     */
+    private fun nearestWithinGate(centroids: List<FloatArray>, row: FloatArray, maxDistance: Double): Int? {
+        var best = -1
+        var bestSimilarity = Double.NEGATIVE_INFINITY
+        for (i in centroids.indices) {
+            val similarity = dot(centroids[i], row)
+            if (similarity > bestSimilarity) {
+                best = i
+                bestSimilarity = similarity
+            }
+        }
+        // Non-finite embeddings are filtered where they are produced
+        // (WindowedDiarizer.isUsable), so a NaN here is a broken invariant.
+        check(bestSimilarity.isFinite()) { "no finite similarity among ${centroids.size} centroids" }
+        return best.takeIf { 1.0 - bestSimilarity <= maxDistance }
+    }
+
+    /**
      * Global clustering, absorption and assembly over every piece of the
      * file, plus each final speaker's centroid keyed by its dense id. A
-     * dropped piece (see [absorbSmall]) leaves no segment and no centroid.
+     * dropped piece (see [absorbSmall]) leaves no segment and no centroid;
+     * its span joins [WindowedDiarization.unlabeledSpans].
+     *
+     * The absorption floor is derived from ALL coarsened talk, while
+     * [absorbSmall] measures each cluster's LABELED talk only: when the
+     * subsample fallback leaves rows unlabeled, the floor still scales with
+     * the file. That mirrors eval/diarization_windowed.py score-subsample,
+     * the measurement behind the fallback, so the shipped floor is the one
+     * that was scored.
      */
     fun diarize(pieces: List<Piece>, params: WindowedDiarizationParams): WindowedDiarization {
         val bounded = coarsen(pieces, params.maxPieces)
@@ -603,10 +637,20 @@ object PieceClustering {
             maxDistance = params.absorbMaxDistance)
         val kept = ArrayList<Piece>(bounded.size)
         val keptLabels = ArrayList<Int>(bounded.size)
-        absorption.labels.forEachIndexed { i, label ->
+        val unlabeled = ArrayList<TimeSpan>()
+        var unlabeledUnsampled = 0
+        var unlabeledUnsampledSec = 0.0
+        bounded.forEachIndexed { i, piece ->
+            val label = absorption.labels[i]
             if (label != null) {
-                kept += bounded[i]
+                kept += piece
                 keptLabels += label
+            } else {
+                unlabeled += piece.span
+            }
+            if (clusters.labels[i] == null) {
+                unlabeledUnsampled++
+                unlabeledUnsampledSec += piece.span.durationSec
             }
         }
         val labels = keptLabels.toIntArray()
@@ -631,13 +675,27 @@ object PieceClustering {
                 absorbedSec = absorption.absorbedSec,
                 droppedClusters = absorption.droppedClusters,
                 droppedSec = absorption.droppedSec,
-                unlabeledUnsampled = clusters.labels.count { it == null },
-                unlabeledUnsampledSec = bounded.indices.sumOf {
-                    if (clusters.labels[it] == null) bounded[it].span.durationSec else 0.0
-                },
+                unlabeledUnsampled = unlabeledUnsampled,
+                unlabeledUnsampledSec = unlabeledUnsampledSec,
                 subsampleRefused = clusters.refused,
+                maxPieces = params.maxPieces,
             ),
+            mergedSpans(unlabeled),
         )
+    }
+
+    /** [spans] in time order with touching or overlapping ones merged. */
+    private fun mergedSpans(spans: List<TimeSpan>): List<TimeSpan> {
+        val merged = ArrayList<TimeSpan>()
+        for (span in spans.sortedBy { it.startSec }) {
+            val last = merged.lastOrNull()
+            if (last != null && span.startSec <= last.endSec) {
+                merged[merged.size - 1] = TimeSpan(last.startSec, maxOf(last.endSec, span.endSec))
+            } else {
+                merged += span
+            }
+        }
+        return merged
     }
 
     private fun distinctCount(labels: IntArray): Int {

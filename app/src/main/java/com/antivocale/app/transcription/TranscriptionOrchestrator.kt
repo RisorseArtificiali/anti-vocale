@@ -21,6 +21,7 @@ import com.antivocale.app.transcription.diarization.SpeakerResplit
 import com.antivocale.app.transcription.diarization.SpeakerIdentityStore
 import com.antivocale.app.transcription.diarization.SpeakerLabelTail
 import com.antivocale.app.transcription.diarization.SpeakerTimeline
+import com.antivocale.app.transcription.diarization.TimeSpan
 import com.antivocale.app.transcription.diarization.DiarizedSegment
 import com.antivocale.app.transcription.diarization.SpeakerIdentity
 import com.antivocale.app.transcription.diarization.WindowedDiarization
@@ -2494,7 +2495,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // release (review R2: the extractor loads its own titanet; running
         // both native sessions at once doubled the ~40MB footprint at
         // exactly the moment TASK-679's OOM class hits).
-        segments to speakerClusterNames(context, segments, samples, timeline.sampleRate, threads)
+        SpeakerPassLabels(segments, speakerClusterNames(context, segments, samples, timeline.sampleRate, threads))
     }
 
     /**
@@ -2537,22 +2538,42 @@ class TranscriptionOrchestrator @Inject constructor(
                 "unlabeledUnsampled=$unlabeledUnsampled/${unlabeledUnsampledSec.toInt()}s " +
                 "subsampleRefused=$subsampleRefused " +
                 "speakers=${diarization.centroids.size}")
+            // TASK-1058 owns surfacing this skip to the user; until then the
+            // log is the only trace that every cue came back unlabeled.
+            if (subsampleRefused) {
+                Log.w(TAG, "Speaker labels: $piecesAfterCoarsen pieces exceed twice the " +
+                    "cap $maxPieces, so nothing was clustered and every cue stays unlabeled")
+            }
         }
-        diarization.segments to SpeakerNamer.nameCentroids(
-            diarization.segments, diarization.centroids, namingIdentities())
+        SpeakerPassLabels(
+            diarization.segments,
+            SpeakerNamer.nameCentroids(diarization.segments, diarization.centroids, namingIdentities()),
+            diarization.unlabeledSpans,
+        )
     }
+
+    /**
+     * What a speaker-pass arm hands the shared labeling: the dense segments,
+     * the cluster names, and (windowed arm only, TASK-1060.9) the speech the
+     * pass left without a speaker.
+     */
+    private class SpeakerPassLabels(
+        val segments: List<DiarizedSegment>,
+        val names: Map<Int, String>,
+        val unlabeledSpans: List<TimeSpan> = emptyList(),
+    )
 
     /**
      * GH #83: what both speaker-pass arms share: the status, the model
      * download, the cue labeling and the failure contract. [diarize]
-     * returns the dense segments and the cluster names. Additive only: any
+     * returns the arm's [SpeakerPassLabels]. Additive only: any
      * failure logs and returns the input unchanged.
      */
     private suspend fun speakerPass(
         context: Context,
         result: Result<TranscriptionResult>,
         listener: TranscriptionListener,
-        diarize: suspend (threads: Int) -> Pair<List<DiarizedSegment>, Map<Int, String>>,
+        diarize: suspend (threads: Int) -> SpeakerPassLabels,
     ): Result<TranscriptionResult> {
         val transcription = result.getOrNull() ?: return result
         if (transcription.segments.isEmpty()) return result
@@ -2566,8 +2587,8 @@ class TranscriptionOrchestrator @Inject constructor(
         return runCatching {
             listener.onStatusUpdate(context.getString(R.string.speaker_labels_status))
             ensureDiarizationModels(context).getOrThrow()
-            val (segments, names) = diarize(preferencesManager.threadCount.first())
-            SpeakerLabelTail.withSpeakerLabels(transcription, segments, names)
+            val labels = diarize(preferencesManager.threadCount.first())
+            SpeakerLabelTail.withSpeakerLabels(transcription, labels.segments, labels.names, labels.unlabeledSpans)
         }.fold(
             onSuccess = { Result.success(it) },
             onFailure = { failure ->

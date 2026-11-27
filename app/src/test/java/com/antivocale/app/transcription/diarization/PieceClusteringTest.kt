@@ -197,6 +197,42 @@ class PieceClusteringTest {
     }
 
     @Test
+    fun `dropped pieces are reported as merged unlabeled spans that outvote a neighbor's sliver`() {
+        // Two contiguous z pieces (6 s, under the 10 s floor, far from x and y) are dropped.
+        val pieces = listOf(
+            piece(0.0, 100.0, 1f, 0f, 0f),
+            piece(100.0, 200.0, 0f, 1f, 0f),
+            piece(200.0, 203.0, 0f, 0f, 1f),
+            piece(203.0, 206.0, 0f, 0.05f, 1f),
+        )
+        val result = PieceClustering.diarize(pieces, params.copy(threshold = 0.2f))
+
+        assertEquals(listOf(span(200.0, 206.0)), result.unlabeledSpans)
+        // A cue over 0.2 s of y and 5 s of the dropped voice gets no speaker.
+        val cues = listOf(com.antivocale.app.transcription.TimedSegment(199_800L, 205_000L, "ciao"))
+        assertEquals(listOf<Int?>(null), SpeakerLabeler.label(cues, result.segments, result.unlabeledSpans))
+    }
+
+    @Test
+    fun `a null label stays null and changes no cluster's floor status or centroid`() {
+        // The null row's 30 s of y would lift cluster 1 over the floor, and
+        // its embedding would pull centroid 0 away from cluster 1's (0.6, 0.8).
+        val withNull = listOf(
+            piece(0.0, 20.0, 1f, 0f),
+            piece(20.0, 25.0, 0.6f, 0.8f),
+            piece(25.0, 55.0, 0f, 1f),
+        )
+        val absorbed = PieceClustering.absorbSmall(listOf(0, 1, null), withNull, floorSec = 15.0, maxDistance = 0.45)
+        val without = PieceClustering.absorbSmall(listOf(0, 1), withNull.take(2), floorSec = 15.0, maxDistance = 0.45)
+
+        assertEquals(listOf(0, 0, null), absorbed.labels)
+        assertEquals(without.labels + listOf<Int?>(null), absorbed.labels)
+        assertEquals(without.absorbedClusters, absorbed.absorbedClusters)
+        assertEquals(without.absorbedSec, absorbed.absorbedSec, 1e-9)
+        assertEquals(without.droppedClusters, absorbed.droppedClusters)
+    }
+
+    @Test
     fun `the relative floor keeps a short real speaker and absorbs a fragment of its voice`() {
         // 124 s of talk: 2 percent is 2.48 s, so the 10 s minimum sets the
         // floor, well under the 30 s cap. The 10 s y speaker survives; a 4 s
@@ -366,7 +402,7 @@ class PieceClusteringTest {
             WindowedDiarizationStats(
                 piecesIn = 8, piecesAfterCoarsen = 5, rawClusters = 3,
                 absorbedClusters = 1, absorbedSec = 3.0,
-                droppedClusters = 1, droppedSec = 2.0),
+                droppedClusters = 1, droppedSec = 2.0, maxPieces = 5),
             stats)
     }
 

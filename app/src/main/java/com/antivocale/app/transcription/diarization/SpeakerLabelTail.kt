@@ -17,16 +17,19 @@ internal object SpeakerLabelTail {
      * labeler's label by ORIGINAL index (the split changes the cue
      * count, so the two lists must never be re-zipped). The transient
      * tokens are consumed here and dropped. TASK-670: [names] maps a
-     * dense cluster id to its enrolled person's name.
+     * dense cluster id to its enrolled person's name. TASK-1060.9:
+     * [unlabeledSpans] is the windowed arm's speech without a speaker,
+     * counted as votes for no speaker; the whole-file arm passes none.
      */
     fun withSpeakerLabels(
         transcription: TranscriptionResult,
         segments: List<DiarizedSegment>,
         names: Map<Int, String>,
+        unlabeledSpans: List<TimeSpan> = emptyList(),
     ): TranscriptionResult {
-        val labels = SpeakerLabeler.label(transcription.segments, segments)
+        val labels = SpeakerLabeler.label(transcription.segments, segments, unlabeledSpans)
         val outcomes = transcription.segments.mapIndexed { index, cue ->
-            SpeakerResplit.resplit(cue, cue.tokens, segments, labels[index])
+            SpeakerResplit.resplit(cue, cue.tokens, segments, labels[index], unlabeledSpans)
         }
         val tierCounts = outcomes.mapNotNull { it.tier }.groupingBy { it }.eachCount()
         val resplitSummary = if (tierCounts.isEmpty()) null else
