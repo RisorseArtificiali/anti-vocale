@@ -152,9 +152,12 @@ class Piece(val span: TimeSpan, val embedding: FloatArray)
  * speaker id of [segments] to the L2-normalized sum of that speaker's piece
  * embeddings: the windowed pass never holds the whole file's samples, so
  * the naming pass matches these voiceprints instead of re-embedding audio.
- * TASK-1060.9: [unlabeledSpans] is the speech of every piece left without a
- * speaker, in time order with touching or overlapping spans merged, so the
- * cue join can count it as a vote for no speaker instead of a gap.
+ * TASK-1060.9: [unlabeledSpans] is speech without a speaker, in time order
+ * with touching or overlapping spans merged, so the cue join can count it as
+ * a vote for no speaker instead of a gap. [diarize] fills it with the pieces
+ * it leaves unlabeled; WindowedDiarizer replaces it with ALL core-clipped
+ * segmented speech no labeled segment covers (which also catches speech
+ * that never became a piece: under 0.5 s, or no usable embedding).
  */
 class WindowedDiarization(
     val segments: List<DiarizedSegment>,
@@ -682,6 +685,28 @@ object PieceClustering {
             ),
             mergedSpans(unlabeled),
         )
+    }
+
+    /**
+     * The parts of [spans] no [cover] span overlaps; both are merged first,
+     * so the result is sorted and non-overlapping.
+     */
+    internal fun subtractSpans(spans: List<TimeSpan>, cover: List<TimeSpan>): List<TimeSpan> {
+        val holes = mergedSpans(cover)
+        val out = ArrayList<TimeSpan>()
+        var h = 0
+        for (span in mergedSpans(spans)) {
+            var start = span.startSec
+            while (h < holes.size && holes[h].endSec <= start) h++
+            var k = h
+            while (k < holes.size && holes[k].startSec < span.endSec) {
+                if (holes[k].startSec > start) out += TimeSpan(start, holes[k].startSec)
+                start = maxOf(start, holes[k].endSec)
+                k++
+            }
+            if (start < span.endSec) out += TimeSpan(start, span.endSec)
+        }
+        return out
     }
 
     /** [spans] in time order with touching or overlapping ones merged. */

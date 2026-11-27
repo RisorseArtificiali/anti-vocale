@@ -214,4 +214,22 @@ class WindowedDiarizerTest {
         assertEquals(listOf(TimeSpan(42.0, 45.0)), result.unlabeledSpans)
         assertEquals(setOf(0, 1), result.centroids.keys)
     }
+
+    @Test
+    fun `speech that never becomes a piece still votes for no speaker`() = runTest {
+        // A 0.3 s turn is dropped by the piece cutter and a 4 s turn gets no
+        // embedding at all; neither may leave a gap a neighbor could fill.
+        val samples = FloatArray(30 * rate)
+        samples.fill(1f, 0, 10 * rate)
+        samples.fill(2f, 12 * rate, 12 * rate + rate * 3 / 10)
+        samples.fill(3f, 20 * rate, 24 * rate)
+        val nullForThird: (FloatArray, List<IntRange>) -> List<FloatArray?> = { window, ranges ->
+            ranges.map { r -> if (window[r.first] == 3f) null else floatArrayOf(1f, 0f) }
+        }
+        val result = WindowedDiarizer(params, segmentBySpeech, nullForThird).diarize(flowOf(samples))
+        assertTrue(result.unlabeledSpans.any { it.startSec <= 12.0 && it.endSec >= 12.29 })
+        assertTrue(result.unlabeledSpans.any { it.startSec <= 20.0 && it.endSec >= 23.99 })
+        assertTrue(result.unlabeledSpans.none { it.startSec < 10.0 && it.endSec > 0.0 })
+        assertEquals(0, result.stats.unusableEmbeddings)
+    }
 }

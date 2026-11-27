@@ -535,4 +535,15 @@ class PieceClusteringTest {
         assertTrue("the absorbed piece pulls the centroid off the axis", x[1] > 0f)
         assertEquals(1.0, kotlin.math.sqrt((x[0] * x[0] + x[1] * x[1]).toDouble()), 1e-5)
     }
+
+    @Test
+    fun `subtracting labeled cover leaves exactly the uncovered speech`() {
+        val speech = listOf(span(0.0, 10.0), span(8.0, 12.0), span(20.0, 25.0))
+        val cover = listOf(span(2.0, 4.0), span(3.0, 6.0), span(11.0, 21.0))
+        assertEquals(
+            listOf(span(0.0, 2.0), span(6.0, 11.0), span(21.0, 25.0)),
+            PieceClustering.subtractSpans(speech, cover))
+        assertEquals(emptyList<TimeSpan>(), PieceClustering.subtractSpans(speech, listOf(span(0.0, 30.0))))
+        assertEquals(PieceClustering.mergedSpans(speech), PieceClustering.subtractSpans(speech, emptyList()))
+    }
 }

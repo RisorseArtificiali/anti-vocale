@@ -111,7 +111,7 @@ class WindowedDiarizer(
         val stride = windowSamples - PieceClustering.overlapSamples(SAMPLE_RATE, params)
         val pieces = ArrayList<Piece>()
         var unusable = 0
-        val unembeddable = ArrayList<TimeSpan>()
+        val speech = ArrayList<TimeSpan>()
         // TASK-1060.7: sized to the decode when it is known, so a resumed or
         // retention-abandoned short file does not pay for a whole window; it
         // doubles up to the window when the decode is unknown or longer than
@@ -125,12 +125,7 @@ class WindowedDiarizer(
         fun runWindow(samples: FloatArray, isLast: Boolean) {
             val plan = PieceClustering.window(
                 bufferStart, bufferStart + samples.size, isLast, SAMPLE_RATE, params)
-            pieces += embedPieces(samples, plan) { span, rejected ->
-                // Speech that could not be embedded is still speech without a
-                // speaker: it votes for no speaker like a dropped piece.
-                unembeddable += span
-                if (rejected) unusable++
-            }
+            pieces += embedPieces(samples, plan, speech) { unusable++ }
             // An estimated totalSamples can undercount the real decode.
             onWindowDone(++done, windowCount?.let { maxOf(it, done) })
         }
@@ -170,19 +165,25 @@ class WindowedDiarizer(
         return WindowedDiarization(
             diarization.segments, diarization.centroids,
             diarization.stats.copy(unusableEmbeddings = unusable),
-            PieceClustering.mergedSpans(diarization.unlabeledSpans + unembeddable))
+            // Every instant of segmented speech no labeled segment covers votes
+            // for no speaker: dropped and unlabeled pieces, and also speech
+            // that never became a piece (under 0.5 s, or no usable embedding).
+            PieceClustering.subtractSpans(
+                speech, diarization.segments.map { TimeSpan(it.startSec.toDouble(), it.endSec.toDouble()) }))
     }
 
-    /** [onDropped] gets each piece that yields no usable embedding; rejected = it came back unusable (vs too short). */
+    /** Adds the window's core-clipped speech to [speech]; [onUnusable] counts rejected embeddings. */
     private fun embedPieces(
         samples: FloatArray,
         plan: WindowPlan,
-        onDropped: (span: TimeSpan, rejected: Boolean) -> Unit,
+        speech: MutableList<TimeSpan>,
+        onUnusable: () -> Unit,
     ): List<Piece> {
         val offsetSec = plan.startSample.toDouble() / SAMPLE_RATE
         val spans = segmentWindow(samples)
             .map { TimeSpan(offsetSec + it.startSec, offsetSec + it.endSec) }
             .mapNotNull(plan::clip)
+            .also { speech += it }
             .flatMap { PieceClustering.cutPieces(it, params.pieceSec) }
         val ranges = spans.map { span ->
             val from = ((span.startSec * SAMPLE_RATE).toLong() - plan.startSample)
@@ -195,9 +196,9 @@ class WindowedDiarizer(
             // A non-finite or unnormalizable embedding would poison every
             // cosine it meets (NaN) or sit at distance 1 from everything.
             when {
-                embedding == null -> null.also { onDropped(span, false) }
+                embedding == null -> null
                 isUsable(embedding) -> Piece(span, PieceClustering.normalized(embedding))
-                else -> null.also { onDropped(span, true) }
+                else -> null.also { onUnusable() }
             }
         }
     }
