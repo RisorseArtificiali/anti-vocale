@@ -174,3 +174,6 @@ align-mockup*
 
 # cwd-drift recovery stub (memory reference_cwd_drift_hook_trap), deliberate working-tree artifact
 eval/.claude/
+
+# TASK-1060.1: diarization spike staging (multi-hour audio + model weights, never committed)
+eval/diarization-spike/
