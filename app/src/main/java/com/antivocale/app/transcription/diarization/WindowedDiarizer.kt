@@ -35,8 +35,7 @@ class WindowedDiarizer(
          * sessions are never alive at once (the TASK-679 OOM class). This is
          * the one place that lifecycle lives (TASK-1060.5 measures its
          * per-window load cost).
-         */
-        /**
+         *
          * @param onSegmentProgress the current window's segmentation
          *        progress (chunks done, chunk total), from the native run
          */

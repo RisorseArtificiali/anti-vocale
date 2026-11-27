@@ -754,25 +754,34 @@ class TranscriptionOrchestrator @Inject constructor(
                 runCatching { sessionDao.contiguousPrefixRows(taskId) }.getOrDefault(emptyList())
             else emptyList()
 
+            // TASK-1037: a resumed session whose chunk store already covers
+            // the whole file is a stint that died during the post-passes
+            // (the COMPLETING state). Completeness is derived from the DATA
+            // (prefix end vs the actual total recorded at the COMPLETING
+            // transition), never from the state string the cold-start
+            // recovery already rewrote to PAUSED_SYSTEM.
+            val completingResume = resumeSession != null && resumeSession.totalOutputSamples
+                ?.let { total -> (resumePrefixRows.lastOrNull()?.endSample ?: 0L) >= total } == true
+            // The last checkpoint zeroes crashAtOffsetCount, so a count on a
+            // completing resume means a native crash or low-memory kill AFTER
+            // the decode finished, inside the post-passes: rerunning the
+            // speaker pass (the heaviest of them) would die the same way on
+            // every Resume, so that resume delivers unlabeled.
+            val postPassCrashed = completingResume && (resumeSession?.crashAtOffsetCount ?: 0) > 0
+
             val result = when {
-                // TASK-1037: a resumed session whose chunk store already
-                // covers the whole file is a stint that died during the
-                // post-passes (the COMPLETING state): skip the decode
-                // entirely, rebuild the result from the chunk rows and let
-                // the post-pass chain below rerun exactly once at this true
-                // end (the plan's "resume skips decode and reruns
-                // post-passes" state row). Completeness is derived from the
-                // DATA (prefix end vs the actual total recorded at the
-                // COMPLETING transition), never from the state string the
-                // cold-start recovery already rewrote to PAUSED_SYSTEM.
-                resumeSession != null && resumeSession.totalOutputSamples
-                    ?.let { total -> (resumePrefixRows.lastOrNull()?.endSample ?: 0L) >= total } == true ->
+                // A completing resume skips the decode entirely, rebuilds
+                // the result from the chunk rows and lets the post-pass
+                // chain below rerun exactly once at this true end (the
+                // plan's "resume skips decode and reruns post-passes" state
+                // row).
+                completingResume && resumeSession != null ->
                     completedSessionFromStore(taskId, resumeSession, resumePrefixRows, context).also {
                         // TASK-1060.4: no decode runs here, so the pass re-decodes the file.
                         // A session only ever engages an audio run (the
                         // candidacy gate requires a source path), so the
                         // check stays at this one creation boundary.
-                        if (collectSpeakers) speakerTimeline = SpeakerTimeline.Windowed(
+                        if (collectSpeakers && !postPassCrashed) speakerTimeline = SpeakerTimeline.Windowed(
                             SpeakerTimeline.Reason.RESUMED_SESSION,
                             resumeSession.totalOutputSamples, checkNotNull(filePath))
                     }
@@ -912,10 +921,20 @@ class TranscriptionOrchestrator @Inject constructor(
             // TASK-1060.4: over-budget streaming runs, TASK-728 abandonments
             // and resumed sessions no longer land here; they hand the
             // windowed arm.
+            val deliveredFromFirstPass =
+                result.getOrNull()?.firstPass?.skipOutcome != null
             if (collectSpeakers && speakerTimeline == null && requestType == "audio" &&
                 delivered.isSuccess && delivered.getOrNull()?.text?.isNotBlank() == true
             ) {
-                Log.i(TAG, "Speaker labels skipped: no sample timeline reached this pass (VAD-segmented or TASK-681 remote-offloaded)")
+                val cause = when {
+                    postPassCrashed ->
+                        "the previous stint died in the post-passes by native crash or low-memory kill " +
+                            "(${resumeSession?.crashAtOffsetCount} since the last checkpoint)"
+                    deliveredFromFirstPass ->
+                        "dual-refinement fallback to the first pass, whose decode collects none"
+                    else -> "VAD-segmented or TASK-681 remote-offloaded"
+                }
+                Log.i(TAG, "Speaker labels skipped: no sample timeline reached this pass ($cause)")
             }
             // TASK-872 gate round: a backend whose output carries its own
             // speaker attribution (VibeVoice's literal "Speaker N:" lines)
@@ -932,8 +951,6 @@ class TranscriptionOrchestrator @Inject constructor(
             // phase-2 one; keying on the active backend would skip the pass
             // on text with NO native labels of its own. The fast producer
             // never emits native labels, so first-pass delivery never skips.
-            val deliveredFromFirstPass =
-                result.getOrNull()?.firstPass?.skipOutcome != null
             val producerEmitsNativeLabels = !deliveredFromFirstPass &&
                 backendManager.getActiveBackend()?.emitsNativeSpeakerLabels == true
             // delivered.isSuccess: a failed run never decoded, so nothing
@@ -2589,7 +2606,13 @@ class TranscriptionOrchestrator @Inject constructor(
                 onSegmentProgress = { done, total -> if (total > 0) report(done.toFloat() / total) },
             )
             windows = totalSamples?.let(diarizer::windowCount)
-            val chunks = audioPreprocessor.prepareAudioStream(filePath, enableVad = false)
+            // The pipeline's memory readings, or the STREAMING ceiling logs a
+            // misleading fail-open warning on every pass.
+            val chunks = audioPreprocessor.prepareAudioStream(
+                inputPath = filePath,
+                enableVad = false,
+                availableRamBytes = runCatching { MemoryReadings.availableRamBytes(context) }.getOrNull(),
+                maxHeapBytes = MemoryReadings.maxHeapBytes())
                 .filterIsInstance<StreamEvent.Chunk>()
                 .map { event ->
                     check(event.chunk.sampleRate == WindowedDiarizer.SAMPLE_RATE) {
@@ -4718,6 +4741,11 @@ class TranscriptionOrchestrator @Inject constructor(
                                     totalSamples = null, filePath)
                                 Log.i(TAG, "Speaker labels: windowed pass, retention dropped at ${speakerRetainedBytes / MB}MB: " +
                                     "over the ${speakerRetentionBudgetBytes / MB}MB memory budget (TASK-728 guard)")
+                                // The list outlives the state swap (the
+                                // collect lambda captures it): release the
+                                // chunks here, or the guard frees nothing.
+                                speakerRetainedChunks.clear()
+                                speakerRetainedBytes = 0L
                             } else {
                                 speakerRetainedChunks.add(chunk.samples)
                                 speakerRetainedBytes += chunkBytes

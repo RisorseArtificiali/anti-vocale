@@ -5,6 +5,7 @@ import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.transcription.diarization.DiarizedSegment
 import com.antivocale.app.transcription.diarization.SpeakerLabelTail
 import com.antivocale.app.transcription.diarization.WindowedDiarization
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -18,6 +19,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.lang.ref.WeakReference
 
 /**
  * TASK-1060.4: which speaker-pass arm a run takes. A pipelined run whose
@@ -148,6 +150,62 @@ class TranscriptionOrchestratorSpeakerPassTest : TranscriptionOrchestratorTestBa
         assertEquals(0, wholeFileCalls)
         assertEquals(listOf(filePath to oversized.size.toLong()), windowedCalls)
         assertEquals(listOf(1), deliveredCues.map { it.speaker })
+    }
+
+    @Test
+    fun `the retention guard releases the chunks it retained before the trip`() = runTest {
+        // No readable duration: chunks 0 and 1 (4 MB together) fit the
+        // ~13 MB unreadable-memory budget, chunk 2 (12 MB) trips the guard.
+        // Once chunk 2 has moved on as the previous neighbor, nothing may
+        // still pin chunk 1. Chunk 0 stays a small sacrifice: the first
+        // chunk's processing suspends, and the frame that resumes it stays
+        // on the stack for the rest of the stream, pinning that chunk.
+        every { audioPreprocessor.getAudioDuration(any()) } throws IllegalStateException("no metadata")
+        var tracked: WeakReference<FloatArray>? = null
+        var releasedAfterTrip = false
+        every {
+            audioPreprocessor.prepareAudioStream(
+                inputPath = any(), maxChunkDurationSeconds = any(), context = any(),
+                enableVad = any(), availableRamBytes = any(), maxHeapBytes = any())
+        } returns flow {
+            emit(AudioPreprocessor.StreamEvent.Header(
+                AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000, totalDurationSeconds = 0.0, expectedChunkCount = 4)))
+            emit(chunk(FloatArray(16000), index = 0, isLast = false))
+            emit(chunk(trackedSamples(1_000_000) { tracked = it }, index = 1, isLast = false))
+            emit(chunk(FloatArray(3_000_000), index = 2, isLast = false))
+            // The backend mock records its sample arguments; only the
+            // orchestrator's own references are under test.
+            clearMocks(backend, answers = false, recordedCalls = true, childMocks = false,
+                verificationMarks = false, exclusionRules = false)
+            releasedAfterTrip = collected(checkNotNull(tracked))
+            emit(chunk(FloatArray(16000), index = 3, isLast = true))
+        }
+
+        val (result, _) = run()
+
+        assertTrue(result.isSuccess)
+        assertEquals(0, wholeFileCalls)
+        assertEquals(1, windowedCalls.size)
+        assertTrue("the tripped guard must release the retained chunks", releasedAfterTrip)
+    }
+
+    private fun chunk(samples: FloatArray, index: Int, isLast: Boolean) =
+        AudioPreprocessor.StreamEvent.Chunk(
+            AudioPreprocessor.StreamChunk(
+                samples = samples, sampleRate = 16000, chunkIndex = index, isLast = isLast))
+
+    /** Allocates outside the caller's frame so the weak reference is the only test-side handle. */
+    private fun trackedSamples(size: Int, track: (WeakReference<FloatArray>) -> Unit) =
+        FloatArray(size).also { track(WeakReference(it)) }
+
+    private fun collected(ref: WeakReference<*>): Boolean {
+        repeat(20) {
+            if (ref.get() == null) return true
+            System.gc()
+            Thread.sleep(10)
+        }
+        return ref.get() == null
     }
 
     @Test

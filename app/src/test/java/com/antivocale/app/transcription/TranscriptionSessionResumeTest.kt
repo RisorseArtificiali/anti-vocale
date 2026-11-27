@@ -894,4 +894,41 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
         assertTrue(lastSegments.isNotEmpty())
         assertTrue(lastSegments.all { it.speaker == 0 })
     }
+
+    @Test
+    fun `a completing resume after a post-pass native death delivers unlabeled`() = runTest {
+        // The recovery counted a native-crash or low-memory death after the
+        // last checkpoint: the previous stint died inside the post-passes,
+        // so this resume must not rerun the speaker pass into the same death.
+        var cursor = 0L
+        for (i in 0 until chunkCount) {
+            sessionDao.insertChunk(SessionChunkEntity(
+                taskId = "completing-crashed",
+                startSample = cursor,
+                endSample = cursor + chunkSamples,
+                text = "w$i",
+                cuesJson = com.antivocale.app.data.local.TimedSegmentsConverter.toJson(
+                    listOf(expectedCue(i))),
+            ))
+            cursor += chunkSamples
+        }
+        sessionDao.upsertSession(TranscriptionSessionEntity(
+            taskId = "completing-crashed",
+            filePath = sessionFile.absolutePath,
+            fileSizeBytes = sessionFile.length(), fileMtimeMs = sessionFile.lastModified(),
+            backendId = "whisper", modelPath = "/models/whisper",
+            source = "share", state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM,
+            totalOutputSamples = cursor,
+            crashAtOffsetCount = 1,
+            createdAtMs = 1L, updatedAtMs = 1L,
+        ))
+        val totals = armWindowedSpeakerPass()
+
+        val result = request("completing-crashed")
+
+        assertEquals((0 until chunkCount).joinToString(" ") { "w$it" }, result.getOrNull())
+        assertTrue("the speaker pass must not run", totals.isEmpty())
+        assertEquals((0 until chunkCount).map { expectedCue(it) }, lastSegments)
+        assertNull(sessionDao.sessions["completing-crashed"])
+    }
 }

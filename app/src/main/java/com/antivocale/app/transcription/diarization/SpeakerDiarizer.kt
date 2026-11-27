@@ -96,8 +96,13 @@ class SpeakerDiarizer private constructor(
         }
         // The engine ignores the callback's return value (sherpa v2.0.2
         // offline-speaker-diarization-pyannote-impl.h), so it cannot cancel.
+        // The callback runs inside the JNI call: a throw would leave a
+        // pending exception in native code, so a failing listener is dropped.
         val raw = if (onProgress == null) engine.process(samples)
-        else engine.processWithCallback(samples, { done, total, _ -> onProgress(done, total); 0 })
+        else engine.processWithCallback(samples, { done, total, _ ->
+            runCatching { onProgress(done, total) }
+            0
+        })
         return SpeakerLabeler.denseSegments(raw.map { segment ->
             DiarizedSegment(
                 startSec = segment.start,
