@@ -685,7 +685,7 @@ object PieceClustering {
     }
 
     /** [spans] in time order with touching or overlapping ones merged. */
-    private fun mergedSpans(spans: List<TimeSpan>): List<TimeSpan> {
+    internal fun mergedSpans(spans: List<TimeSpan>): List<TimeSpan> {
         val merged = ArrayList<TimeSpan>()
         for (span in spans.sortedBy { it.startSec }) {
             val last = merged.lastOrNull()

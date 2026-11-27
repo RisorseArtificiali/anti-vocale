@@ -189,6 +189,9 @@ class WindowedDiarizerTest {
         assertTrue(result.segments.all { it.startSec >= 10f })
         assertTrue(result.segments.isNotEmpty())
         assertTrue("dropped pieces are counted", result.stats.unusableEmbeddings > 0)
+        assertTrue(
+            "unembeddable speech votes for no speaker",
+            result.unlabeledSpans.any { it.startSec <= 1.0 && it.endSec >= 8.0 })
         // A zero vector and a Float-overflowing norm are unusable too.
         assertTrue(!WindowedDiarizer.isUsable(floatArrayOf(0f, 0f)))
         assertTrue(!WindowedDiarizer.isUsable(floatArrayOf(3e19f, 0f)))

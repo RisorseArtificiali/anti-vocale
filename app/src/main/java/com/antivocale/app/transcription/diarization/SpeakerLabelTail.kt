@@ -27,9 +27,12 @@ internal object SpeakerLabelTail {
         names: Map<Int, String>,
         unlabeledSpans: List<TimeSpan> = emptyList(),
     ): TranscriptionResult {
-        val labels = SpeakerLabeler.label(transcription.segments, segments, unlabeledSpans)
+        // One merged, sorted copy: the labeler and the re-split both sum
+        // overlaps, so overlapping spans would count the same speech twice.
+        val unknown = PieceClustering.mergedSpans(unlabeledSpans)
+        val labels = SpeakerLabeler.label(transcription.segments, segments, unknown)
         val outcomes = transcription.segments.mapIndexed { index, cue ->
-            SpeakerResplit.resplit(cue, cue.tokens, segments, labels[index], unlabeledSpans)
+            SpeakerResplit.resplit(cue, cue.tokens, segments, labels[index], unknown)
         }
         val tierCounts = outcomes.mapNotNull { it.tier }.groupingBy { it }.eachCount()
         val resplitSummary = if (tierCounts.isEmpty()) null else

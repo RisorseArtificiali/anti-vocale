@@ -23,7 +23,8 @@ data class DiarizedSegment(
  * boundary): the prototype measured 11/11 cues attributed correctly this
  * way on ground truth, while whole-chunk labeling measured 63 percent and
  * is wrong by design for any conversation. Cues with no overlapping speech
- * (punctuation-only or silence artifacts) get no speaker.
+ * (punctuation-only or silence artifacts) get no speaker, and so (TASK-1060.9,
+ * windowed arm) do cues whose unlabeled-voice overlap beats the winner's.
  */
 object SpeakerLabeler {
 
@@ -65,12 +66,16 @@ object SpeakerLabeler {
     /**
      * @param unknown TASK-1060.9: speech the windowed pass left without a
      *  speaker (dropped by the absorption gate or unlabeled by the subsample
-     *  fallback), non-overlapping. Its overlap votes for no speaker: a cue
-     *  whose unknown overlap exceeds the winner's gets null, so a cue that
-     *  is mostly an unlabeled voice never takes a neighbor's sliver. Empty
-     *  (the whole-file arm) leaves the vote unchanged.
+     *  fallback), sorted and non-overlapping (SpeakerLabelTail merges it).
+     *  Its overlap votes for no speaker: a cue whose unknown overlap exceeds
+     *  the winner's gets null, so a cue that is mostly an unlabeled voice
+     *  never takes a neighbor's sliver. Non-empty input decides in the same
+     *  milliseconds as the re-split ([overlapVotesMs], [winnerMs]), so a cue
+     *  and its split halves cannot disagree on a near-tie. Empty (the
+     *  whole-file arm) leaves the original vote byte-for-byte unchanged.
      * @return the dense speaker id for each cue index, null where the cue
-     *  overlaps no speech; empty when there is nothing to join.
+     *  overlaps no speech or its unknown overlap beats the winner's; empty
+     *  when there is nothing to join.
      */
     fun label(
         cues: List<TimedSegment>,
@@ -78,6 +83,13 @@ object SpeakerLabeler {
         unknown: List<TimeSpan> = emptyList(),
     ): List<Int?> {
         if (cues.isEmpty() || segments.isEmpty()) return List(cues.size) { null }
+        if (unknown.isNotEmpty()) {
+            return cues.map { cue ->
+                winnerMs(
+                    overlapVotesMs(cue.startMs, cue.endMs, segments),
+                    unknownOverlapMs(cue.startMs, cue.endMs, unknown))
+            }
+        }
         return cues.map { cue ->
             val cueStartSec = cue.startMs / 1000f
             val cueEndSec = cue.endMs / 1000f
@@ -97,11 +109,7 @@ object SpeakerLabeler {
                     bestSpeaker = speaker
                 }
             }
-            val unknownOverlap = unknown.sumOf { span ->
-                (minOf(cueEndSec.toDouble(), span.endSec) - maxOf(cueStartSec.toDouble(), span.startSec))
-                    .coerceAtLeast(0.0)
-            }
-            if (unknownOverlap > bestOverlap) null else bestSpeaker
+            bestSpeaker
         }
     }
 
