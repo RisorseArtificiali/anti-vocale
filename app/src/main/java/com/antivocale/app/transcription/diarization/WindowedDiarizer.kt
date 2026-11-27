@@ -32,6 +32,16 @@ class WindowedDiarizer(
         /** The buffer's first size when the decode length is unknown: one minute. */
         private const val INITIAL_BUFFER_SAMPLES = 60L * SAMPLE_RATE
 
+        /** Finite values and a norm that stays finite (and nonzero) in Float. */
+        internal fun isUsable(embedding: FloatArray): Boolean {
+            var squares = 0.0
+            for (v in embedding) {
+                if (!v.isFinite()) return false
+                squares += v.toDouble() * v
+            }
+            return squares > 0.0 && squares.toFloat().isFinite()
+        }
+
         /**
          * The native pass. Each window creates, uses and releases its own
          * diarizer, then its own embedding extractor, so two titanet
@@ -100,6 +110,7 @@ class WindowedDiarizer(
         val windowSamples = PieceClustering.windowSamples(SAMPLE_RATE, params)
         val stride = windowSamples - PieceClustering.overlapSamples(SAMPLE_RATE, params)
         val pieces = ArrayList<Piece>()
+        var unusable = 0
         // TASK-1060.7: sized to the decode when it is known, so a resumed or
         // retention-abandoned short file does not pay for a whole window; it
         // doubles up to the window when the decode is unknown or longer than
@@ -113,7 +124,7 @@ class WindowedDiarizer(
         fun runWindow(samples: FloatArray, isLast: Boolean) {
             val plan = PieceClustering.window(
                 bufferStart, bufferStart + samples.size, isLast, SAMPLE_RATE, params)
-            pieces += embedPieces(samples, plan)
+            pieces += embedPieces(samples, plan) { unusable++ }
             // An estimated totalSamples can undercount the real decode.
             onWindowDone(++done, windowCount?.let { maxOf(it, done) })
         }
@@ -149,10 +160,13 @@ class WindowedDiarizer(
         // The diarizer takes the window as an exact array, so a partial last
         // window is briefly held twice.
         if (size > 0) runWindow(if (size == buffer.size) buffer else buffer.copyOf(size), isLast = true)
-        return PieceClustering.diarize(pieces, params)
+        val diarization = PieceClustering.diarize(pieces, params)
+        return WindowedDiarization(
+            diarization.segments, diarization.centroids,
+            diarization.stats.copy(unusableEmbeddings = unusable))
     }
 
-    private fun embedPieces(samples: FloatArray, plan: WindowPlan): List<Piece> {
+    private fun embedPieces(samples: FloatArray, plan: WindowPlan, onUnusable: () -> Unit): List<Piece> {
         val offsetSec = plan.startSample.toDouble() / SAMPLE_RATE
         val spans = segmentWindow(samples)
             .map { TimeSpan(offsetSec + it.startSec, offsetSec + it.endSec) }
@@ -166,9 +180,11 @@ class WindowedDiarizer(
             from until to
         }
         return spans.zip(embedWindow(samples, ranges)).mapNotNull { (span, embedding) ->
-            // A non-finite embedding would poison every cosine it meets.
-            embedding?.takeIf { e -> e.all { it.isFinite() } }
-                ?.let { Piece(span, PieceClustering.normalized(it)) }
+            // A non-finite or unnormalizable embedding would poison every
+            // cosine it meets (NaN) or sit at distance 1 from everything.
+            embedding?.let { e ->
+                if (isUsable(e)) Piece(span, PieceClustering.normalized(e)) else null.also { onUnusable() }
+            }
         }
     }
 }

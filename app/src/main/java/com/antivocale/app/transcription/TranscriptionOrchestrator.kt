@@ -2533,7 +2533,8 @@ class TranscriptionOrchestrator @Inject constructor(
         with(diarization.stats) {
             Log.i(TAG, "Speaker labels: windowed stats pieces=$piecesIn coarsened=$piecesAfterCoarsen " +
                 "rawClusters=$rawClusters farClusters=$farClusters absorbed=$absorbedClusters/${absorbedSec.toInt()}s " +
-                "dropped=$droppedClusters/${droppedSec.toInt()}s speakers=${diarization.centroids.size}")
+                "dropped=$droppedClusters/${droppedSec.toInt()}s unusableEmbeddings=$unusableEmbeddings " +
+                "speakers=${diarization.centroids.size}")
         }
         diarization.segments to SpeakerNamer.nameCentroids(
             diarization.segments, diarization.centroids, namingIdentities())

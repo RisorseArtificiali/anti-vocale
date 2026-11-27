@@ -178,6 +178,8 @@ data class WindowedDiarizationStats(
     val absorbedSec: Double,
     val droppedClusters: Int,
     val droppedSec: Double,
+    /** Pieces whose embedding was non-finite or unnormalizable, dropped before clustering. */
+    val unusableEmbeddings: Int = 0,
 )
 
 /**
@@ -196,6 +198,8 @@ class Absorption(
     val absorbedSec: Double,
     val droppedClusters: Int,
     val droppedSec: Double,
+    /** Pieces whose embedding was non-finite or unnormalizable, dropped before clustering. */
+    val unusableEmbeddings: Int = 0,
 )
 
 /**
@@ -535,11 +539,11 @@ object PieceClustering {
      *    whose centroids drift [threshold] apart stay split. Sampled
      *    clusters never merge here.
      * 3. Reassignment: every unsampled row takes the nearest centroid among
-     *    the sampled and far clusters within [threshold] of it, so a missed
-     *    voice's row near a sampled speaker still goes to its own far
-     *    cluster when that is closer; a row no cluster takes within
-     *    [threshold] (a far centroid drifted away from it) keeps its
-     *    nearest far cluster.
+     *    the far clusters and the sampled clusters within [threshold] of it,
+     *    so a missed voice's row near a sampled speaker still goes to its
+     *    own far cluster when that is closer. A far cluster can only win
+     *    over a within-threshold sampled one by being closer still, so no
+     *    gate is needed on the far side.
      *
      * This approximates complete linkage over all rows with centroid
      * distances: one voice the subsample missed comes out as one cluster
@@ -627,22 +631,16 @@ object PieceClustering {
                     bestSim = sim
                 }
             }
-            var nearestFar = -1
-            var nearestFarSim = Double.NEGATIVE_INFINITY
             for (f in farCentroids.indices) {
                 val sim = dot(farCentroids[f], row)
-                if (sim > nearestFarSim) {
-                    nearestFar = f
-                    nearestFarSim = sim
-                }
-                if (1.0 - sim < threshold && sim > bestSim) {
+                if (sim > bestSim) {
                     best = centroids.size + f
                     bestSim = sim
                 }
             }
-            // A row no cluster takes within threshold was far at seeding, so
-            // far clusters exist; it keeps the nearest one.
-            if (best < 0) best = centroids.size + nearestFar
+            // A row no sampled cluster takes was far at seeding, so far
+            // clusters exist; non-finite rows never get here (dropped where
+            // pieces are built), so this only fails on a broken invariant.
             check(best >= 0)
             if (best < centroids.size) labels[i] = clusterIds[best] else farOf[i] = best - centroids.size
         }

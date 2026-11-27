@@ -188,5 +188,10 @@ class WindowedDiarizerTest {
         val result = WindowedDiarizer(params, segmentBySpeech, nanForFirst).diarize(flowOf(samples))
         assertTrue(result.segments.all { it.startSec >= 10f })
         assertTrue(result.segments.isNotEmpty())
+        assertTrue("dropped pieces are counted", result.stats.unusableEmbeddings > 0)
+        // A zero vector and a Float-overflowing norm are unusable too.
+        assertTrue(!WindowedDiarizer.isUsable(floatArrayOf(0f, 0f)))
+        assertTrue(!WindowedDiarizer.isUsable(floatArrayOf(3e19f, 0f)))
+        assertTrue(WindowedDiarizer.isUsable(floatArrayOf(0.3f, 0.4f)))
     }
 }
