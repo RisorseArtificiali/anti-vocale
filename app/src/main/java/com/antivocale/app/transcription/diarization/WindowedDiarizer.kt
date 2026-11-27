@@ -1,6 +1,8 @@
 package com.antivocale.app.transcription.diarization
 
 import com.antivocale.app.transcription.TranscriptionException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import java.io.File
 
@@ -98,10 +100,12 @@ class WindowedDiarizer(
             val plan = PieceClustering.window(
                 bufferStart, bufferStart + samples.size, isLast, SAMPLE_RATE, params)
             pieces += embedPieces(samples, plan)
-            onWindowDone(++done, windowCount)
+            // An estimated totalSamples can undercount the real decode.
+            onWindowDone(++done, windowCount?.let { maxOf(it, done) })
         }
 
         chunks.collect { chunk ->
+            currentCoroutineContext().ensureActive()
             var offset = 0
             while (offset < chunk.size) {
                 // A full window with more audio still arriving cannot be the last one.

@@ -14,12 +14,23 @@ data class WindowedDiarizationParams(
     val pieceSec: Double = 3.0,
     val threshold: Float = SpeakerDiarizer.AUTO_THRESHOLD,
     val absorbFloorSec: Double = 30.0,
+    /**
+     * Bound on the clustering's condensed distance matrix (n(n-1)/2 floats:
+     * 5000 pieces is about 50 MB). Above it, adjacent pieces of one segment
+     * are merged pairwise (embeddings averaged) until the count fits; at
+     * about 1200 pieces per hour of speech (TASK-1060.2 composites) the
+     * 4 h streaming ceiling stays under it at full resolution.
+     */
+    val maxPieces: Int = 5000,
 ) {
     init {
-        require(overlapSec >= 0 && overlapSec < windowSec) {
-            "overlap must be shorter than the window"
+        // At least a second of stride, so neither the planner nor the
+        // streaming driver can stall on a window that never advances.
+        require(overlapSec >= 0 && windowSec - overlapSec >= 1.0) {
+            "the window must exceed the overlap by at least 1 s"
         }
-        require(pieceSec > 0) { "pieceSec must be positive" }
+        require(pieceSec >= 1.0) { "pieces under 1 s would all be dropped as too short" }
+        require(maxPieces >= 2) { "maxPieces must allow a clustering" }
     }
 }
 
@@ -143,7 +154,11 @@ object PieceClustering {
         val n = embeddings.size
         if (n <= 1) return IntArray(n)
         val rows = embeddings.map(::normalized)
-        val distances = FloatArray(n * (n - 1) / 2)
+        val pairs = n.toLong() * (n - 1) / 2
+        require(pairs <= Int.MAX_VALUE) { "too many pieces for one condensed matrix: $n" }
+        // Float distances (sherpa keeps doubles): halves the matrix; only a
+        // height within float rounding of the threshold could cut differently.
+        val distances = FloatArray(pairs.toInt())
         var k = 0
         for (i in 0 until n) {
             for (j in i + 1 until n) {
@@ -172,7 +187,8 @@ object PieceClustering {
 
     /** fastcluster's NN_chain_core for METHOD_METR_COMPLETE, tie-breaks included. */
     private fun nnChainComplete(n: Int, d: FloatArray): List<Merge> {
-        fun index(i: Int, j: Int): Int = n * i - i * (i + 1) / 2 + j - i - 1
+        fun index(i: Int, j: Int): Int =
+            (n.toLong() * i - i.toLong() * (i + 1) / 2 + j - i - 1).toInt()
         val succ = IntArray(n + 1) { it + 1 }
         val pred = IntArray(n + 1) { it - 1 }
         var activeStart = 0
@@ -293,24 +309,63 @@ object PieceClustering {
      * ids are dense in first-appearance order, confidence is unavailable.
      */
     fun assemble(pieces: List<Piece>, labels: IntArray): List<DiarizedSegment> {
-        val order = pieces.indices.sortedBy { pieces[it].span.startSec }
-        val merged = ArrayList<DiarizedSegment>()
-        for (i in order) {
+        // Spans stay Double until emitted: a Float-rounded end compared with
+        // the next piece's exact start would split touching pieces of one turn.
+        class Open(val speaker: Int, val startSec: Double, var endSec: Double)
+        val segments = ArrayList<Open>()
+        // Per speaker, so an overlapping piece of another speaker (overlapped
+        // speech) does not break the first speaker's contiguous turn.
+        val openBySpeaker = HashMap<Int, Open>()
+        for (i in pieces.indices.sortedBy { pieces[it].span.startSec }) {
             val span = pieces[i].span
-            val last = merged.lastOrNull()
-            if (last != null && last.speaker == labels[i] && span.startSec <= last.endSec) {
-                merged[merged.size - 1] = last.copy(endSec = maxOf(last.endSec, span.endSec.toFloat()))
+            val open = openBySpeaker[labels[i]]
+            if (open != null && span.startSec <= open.endSec) {
+                open.endSec = maxOf(open.endSec, span.endSec)
             } else {
-                merged += DiarizedSegment(span.startSec.toFloat(), span.endSec.toFloat(), labels[i], null)
+                Open(labels[i], span.startSec, span.endSec).also {
+                    segments += it
+                    openBySpeaker[labels[i]] = it
+                }
             }
         }
-        return SpeakerLabeler.denseSegments(merged)
+        return SpeakerLabeler.denseSegments(
+            segments.map { DiarizedSegment(it.startSec.toFloat(), it.endSec.toFloat(), it.speaker, null) })
+    }
+
+    /**
+     * Halves the piece count until it fits [maxPieces] by merging each
+     * piece with the next when the two are contiguous cuts of one segment
+     * (the embedding becomes the normalized sum). Returns the input when it
+     * already fits or when no contiguous pair is left to merge.
+     */
+    fun coarsen(pieces: List<Piece>, maxPieces: Int): List<Piece> {
+        var current = pieces
+        while (current.size > maxPieces) {
+            val next = ArrayList<Piece>(current.size / 2 + 1)
+            var i = 0
+            while (i < current.size) {
+                val a = current[i]
+                val b = current.getOrNull(i + 1)
+                if (b != null && b.span.startSec == a.span.endSec) {
+                    val sum = FloatArray(a.embedding.size) { a.embedding[it] + b.embedding[it] }
+                    next += Piece(TimeSpan(a.span.startSec, b.span.endSec), normalized(sum))
+                    i += 2
+                } else {
+                    next += a
+                    i += 1
+                }
+            }
+            if (next.size == current.size) break
+            current = next
+        }
+        return current
     }
 
     /** Global clustering, absorption and assembly over every piece of the file. */
     fun diarize(pieces: List<Piece>, params: WindowedDiarizationParams): List<DiarizedSegment> {
-        val labels = completeLinkage(pieces.map { it.embedding }, params.threshold)
-        return assemble(pieces, absorbSmall(labels, pieces, params.absorbFloorSec))
+        val bounded = coarsen(pieces, params.maxPieces)
+        val labels = completeLinkage(bounded.map { it.embedding }, params.threshold)
+        return assemble(bounded, absorbSmall(labels, bounded, params.absorbFloorSec))
     }
 
     fun normalized(vector: FloatArray): FloatArray {

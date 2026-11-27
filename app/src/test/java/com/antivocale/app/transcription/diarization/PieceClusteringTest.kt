@@ -182,4 +182,51 @@ class PieceClusteringTest {
         assertEquals(2, PieceClustering.assemble(pieces, intArrayOf(0, 0)).size)
         assertTrue(PieceClustering.assemble(emptyList(), IntArray(0)).isEmpty())
     }
+
+    @Test
+    fun `touching pieces at non-representable boundaries rejoin into one turn`() {
+        // A segment at 593.1 s: its Double cut points round DOWN as Float, so a
+        // Float-rounded end compared with the next exact start split the turn.
+        val cuts = PieceClustering.cutPieces(span(590.1, 602.1), 3.0)
+        val pieces = cuts.map { Piece(it, PieceClustering.normalized(floatArrayOf(1f, 0f))) }
+        val segments = PieceClustering.assemble(pieces, IntArray(pieces.size))
+        assertEquals(1, segments.size)
+        assertEquals(590.1f, segments.single().startSec)
+        assertEquals(602.1f, segments.single().endSec)
+    }
+
+    @Test
+    fun `an overlapping piece of another speaker does not break a turn`() {
+        val pieces = listOf(
+            piece(0.0, 3.0, 1f, 0f), piece(1.0, 2.0, 0f, 1f), piece(3.0, 6.0, 1f, 0f))
+        val segments = PieceClustering.assemble(pieces, intArrayOf(0, 1, 0))
+        assertEquals(
+            listOf(DiarizedSegment(0f, 6f, 0, null), DiarizedSegment(1f, 2f, 1, null)),
+            segments)
+    }
+
+    @Test
+    fun `coarsening halves contiguous pieces until the count fits`() {
+        // Two segments of four 3 s pieces each, with a gap between them.
+        val pieces = (0 until 4).map { piece(it * 3.0, it * 3.0 + 3, 1f, 0f) } +
+            (0 until 4).map { piece(20 + it * 3.0, 23 + it * 3.0, 0f, 1f) }
+        val coarse = PieceClustering.coarsen(pieces, 4)
+        assertEquals(4, coarse.size)
+        assertEquals(listOf(span(0.0, 6.0), span(6.0, 12.0), span(20.0, 26.0), span(26.0, 32.0)),
+            coarse.map { it.span })
+        assertEquals(pieces, PieceClustering.coarsen(pieces, 8))
+        // Nothing contiguous left to merge: returned as is, never looping.
+        val isolated = listOf(piece(0.0, 3.0, 1f, 0f), piece(5.0, 8.0, 1f, 0f))
+        assertEquals(isolated, PieceClustering.coarsen(isolated, 1))
+    }
+
+    @Test
+    fun `parameters that would stall or drop every piece are rejected`() {
+        for (bad in listOf(
+            { WindowedDiarizationParams(windowSec = 30.0, overlapSec = 29.5) },
+            { WindowedDiarizationParams(pieceSec = 0.4) },
+        )) {
+            assertTrue(runCatching { bad() }.exceptionOrNull() is IllegalArgumentException)
+        }
+    }
 }
