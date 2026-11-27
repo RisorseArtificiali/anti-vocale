@@ -229,4 +229,40 @@ class PieceClusteringTest {
             assertTrue(runCatching { bad() }.exceptionOrNull() is IllegalArgumentException)
         }
     }
+
+    @Test
+    fun `diarize keys each speaker's centroid by its dense id`() {
+        // Speaker B (y axis) speaks first, so it is dense id 0; its pieces
+        // lean either side of the axis, so the centroid is their normalized sum.
+        val pieces = listOf(
+            piece(0.0, 3.0, 0.1f, 1f),
+            piece(3.0, 6.0, -0.1f, 1f),
+            piece(10.0, 13.0, 1f, 0f),
+            piece(13.0, 16.0, 1f, 0f),
+        )
+        val result = PieceClustering.diarize(pieces, params.copy(absorbFloorSec = 1.0))
+
+        assertEquals(listOf(0, 1), result.segments.map { it.speaker })
+        assertEquals(setOf(0, 1), result.centroids.keys)
+        assertArrayEquals(floatArrayOf(0f, 1f), result.centroids.getValue(0), 1e-6f)
+        assertArrayEquals(floatArrayOf(1f, 0f), result.centroids.getValue(1), 1e-6f)
+    }
+
+    @Test
+    fun `an absorbed speaker's pieces count toward the centroid of the speaker it joined`() {
+        // The short x-leaning turn clusters alone at 0.2, is under the floor,
+        // and joins the long x speaker (closer by cosine than y).
+        val pieces = listOf(
+            piece(0.0, 3.0, 1f, 0f),
+            piece(3.0, 6.0, 1f, 0f),
+            piece(6.0, 7.0, 1f, 0.8f),
+            piece(10.0, 40.0, 0f, 1f),
+        )
+        val result = PieceClustering.diarize(pieces, params.copy(threshold = 0.2f, absorbFloorSec = 5.0))
+
+        assertEquals(setOf(0, 1), result.centroids.keys)
+        val x = result.centroids.getValue(0)
+        assertTrue("the absorbed piece pulls the centroid off the axis", x[1] > 0f)
+        assertEquals(1.0, kotlin.math.sqrt((x[0] * x[0] + x[1] * x[1]).toDouble()), 1e-5)
+    }
 }

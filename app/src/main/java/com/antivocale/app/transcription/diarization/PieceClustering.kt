@@ -64,6 +64,17 @@ data class WindowPlan(
 class Piece(val span: TimeSpan, val embedding: FloatArray)
 
 /**
+ * TASK-1060.4: the windowed pass's output. [centroids] maps each dense
+ * speaker id of [segments] to the L2-normalized sum of that speaker's piece
+ * embeddings: the windowed pass never holds the whole file's samples, so
+ * the naming pass matches these voiceprints instead of re-embedding audio.
+ */
+class WindowedDiarization(
+    val segments: List<DiarizedSegment>,
+    val centroids: Map<Int, FloatArray>,
+)
+
+/**
  * TASK-1060.3: the pure core of the windowed diarization pass (TASK-1060.2
  * verdict): windows give segmentation only, core-region segments are cut
  * into short pieces, and ONE global clustering over every piece of the file
@@ -308,7 +319,11 @@ object PieceClustering {
      * consecutive same-speaker pieces that touch merge back into one span,
      * ids are dense in first-appearance order, confidence is unavailable.
      */
-    fun assemble(pieces: List<Piece>, labels: IntArray): List<DiarizedSegment> {
+    fun assemble(pieces: List<Piece>, labels: IntArray): List<DiarizedSegment> =
+        SpeakerLabeler.denseSegments(assembleRaw(pieces, labels))
+
+    /** [assemble] before the dense renumbering: speakers keep their cluster labels. */
+    private fun assembleRaw(pieces: List<Piece>, labels: IntArray): List<DiarizedSegment> {
         // Spans stay Double until emitted: a Float-rounded end compared with
         // the next piece's exact start would split touching pieces of one turn.
         class Open(val speaker: Int, val startSec: Double, var endSec: Double)
@@ -328,8 +343,7 @@ object PieceClustering {
                 }
             }
         }
-        return SpeakerLabeler.denseSegments(
-            segments.map { DiarizedSegment(it.startSec.toFloat(), it.endSec.toFloat(), it.speaker, null) })
+        return segments.map { DiarizedSegment(it.startSec.toFloat(), it.endSec.toFloat(), it.speaker, null) }
     }
 
     /**
@@ -361,11 +375,27 @@ object PieceClustering {
         return current
     }
 
-    /** Global clustering, absorption and assembly over every piece of the file. */
-    fun diarize(pieces: List<Piece>, params: WindowedDiarizationParams): List<DiarizedSegment> {
+    /**
+     * Global clustering, absorption and assembly over every piece of the
+     * file, plus each final speaker's centroid keyed by its dense id.
+     */
+    fun diarize(pieces: List<Piece>, params: WindowedDiarizationParams): WindowedDiarization {
         val bounded = coarsen(pieces, params.maxPieces)
-        val labels = completeLinkage(bounded.map { it.embedding }, params.threshold)
-        return assemble(bounded, absorbSmall(labels, bounded, params.absorbFloorSec))
+        val labels = absorbSmall(
+            completeLinkage(bounded.map { it.embedding }, params.threshold),
+            bounded, params.absorbFloorSec)
+        val raw = assembleRaw(bounded, labels)
+        // denseSegments numbers speakers by first appearance in this same list.
+        val dense = raw.map { it.speaker }.distinct().withIndex().associate { (i, label) -> label to i }
+        val sums = HashMap<Int, FloatArray>()
+        bounded.forEachIndexed { i, piece ->
+            val sum = sums.getOrPut(dense.getValue(labels[i])) { FloatArray(piece.embedding.size) }
+            for (k in sum.indices) sum[k] += piece.embedding[k]
+        }
+        return WindowedDiarization(
+            SpeakerLabeler.denseSegments(raw),
+            sums.mapValues { (_, sum) -> normalized(sum) },
+        )
     }
 
     fun normalized(vector: FloatArray): FloatArray {

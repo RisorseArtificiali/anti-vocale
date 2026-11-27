@@ -36,18 +36,23 @@ class WindowedDiarizer(
          * the one place that lifecycle lives (TASK-1060.5 measures its
          * per-window load cost).
          */
+        /**
+         * @param onSegmentProgress the current window's segmentation
+         *        progress (chunks done, chunk total), from the native run
+         */
         fun native(
             segmentationModel: File,
             embeddingModel: File,
             numThreads: Int,
             params: WindowedDiarizationParams = WindowedDiarizationParams(),
+            onSegmentProgress: (done: Int, total: Int) -> Unit = { _, _ -> },
         ) = WindowedDiarizer(
             params,
             segmentWindow = { samples ->
                 val diarizer = SpeakerDiarizer.create(segmentationModel, embeddingModel, numThreads)
                     .getOrThrow()
                 try {
-                    diarizer.diarize(samples, SAMPLE_RATE)
+                    diarizer.diarize(samples, SAMPLE_RATE, onSegmentProgress)
                         .map { TimeSpan(it.startSec.toDouble(), it.endSec.toDouble()) }
                 } finally {
                     diarizer.release()
@@ -74,6 +79,10 @@ class WindowedDiarizer(
         )
     }
 
+    /** The number of windows [diarize] runs over a decode of [totalSamples]. */
+    fun windowCount(totalSamples: Long): Int =
+        PieceClustering.planWindows(totalSamples, SAMPLE_RATE, params).size
+
     /**
      * @param chunks the contiguous 16 kHz decode, in order
      * @param totalSamples the decode's length when known, for the window count
@@ -84,10 +93,8 @@ class WindowedDiarizer(
         chunks: Flow<FloatArray>,
         totalSamples: Long? = null,
         onWindowDone: (done: Int, total: Int?) -> Unit = { _, _ -> },
-    ): List<DiarizedSegment> {
-        val windowCount = totalSamples?.let {
-            PieceClustering.planWindows(it, SAMPLE_RATE, params).size
-        }
+    ): WindowedDiarization {
+        val windowCount = totalSamples?.let(::windowCount)
         val windowSamples = PieceClustering.windowSamples(SAMPLE_RATE, params)
         val stride = windowSamples - PieceClustering.overlapSamples(SAMPLE_RATE, params)
         val pieces = ArrayList<Piece>()

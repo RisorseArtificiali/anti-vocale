@@ -86,6 +86,27 @@ object AudioDurationPolicy {
         return minOf(ram / 4L, heap / 2L)
     }
 
+    /** TASK-1060.4: how the speaker-labeling pass gets its audio. */
+    enum class SpeakerPass {
+        /** The run retains its decoded chunks and diarizes them whole. */
+        WHOLE_FILE,
+        /** The pass re-decodes the file and diarizes it window by window. */
+        WINDOWED,
+    }
+
+    /**
+     * TASK-1060.4: the TASK-597 gate as a decision. Retaining a streaming
+     * run's chunks for the whole-file pass costs the whole-file PCM budget,
+     * so a source longer than [wholeFileCeilingSeconds] takes the windowed
+     * pass instead. An unreadable duration (null or non-positive) keeps the
+     * whole-file pass: the TASK-728 runtime guard still measures what is
+     * actually retained and switches the run to the windowed pass at the
+     * budget.
+     */
+    fun speakerPass(sourceDurationSeconds: Double?, wholeFileCeilingSeconds: Long): SpeakerPass =
+        if (sourceDurationSeconds != null && sourceDurationSeconds > wholeFileCeilingSeconds) SpeakerPass.WINDOWED
+        else SpeakerPass.WHOLE_FILE
+
     /** Advisory dialog threshold, above 30 minutes. */
     const val WARN_THRESHOLD_SECONDS = 1800L
 

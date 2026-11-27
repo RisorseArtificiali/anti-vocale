@@ -165,4 +165,31 @@ class AudioDurationPolicyTest {
         assertEquals(seed, AudioDurationPolicy.retentionBudgetBytes(0L, 256L * 1024 * 1024))
         assertEquals(seed, AudioDurationPolicy.retentionBudgetBytes(2L * 1024 * 1024 * 1024, 0L))
     }
+
+    @Test
+    fun `speaker pass goes windowed only above the whole-file ceiling`() {
+        // The 256MB-heap crash device: a 42.7MB retention budget, ~11 min.
+        val ceiling = AudioDurationPolicy.ceilingSeconds(
+            AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM, 2L * 1024 * 1024 * 1024, 256L * 1024 * 1024)
+        val twoHours = 2 * 3600.0
+        assertEquals(AudioDurationPolicy.SpeakerPass.WINDOWED,
+            AudioDurationPolicy.speakerPass(twoHours, ceiling))
+        assertEquals(AudioDurationPolicy.SpeakerPass.WHOLE_FILE,
+            AudioDurationPolicy.speakerPass(ceiling.toDouble(), ceiling))
+        assertEquals(AudioDurationPolicy.SpeakerPass.WINDOWED,
+            AudioDurationPolicy.speakerPass(ceiling + 0.5, ceiling))
+        assertEquals(AudioDurationPolicy.SpeakerPass.WHOLE_FILE,
+            AudioDurationPolicy.speakerPass(60.0, ceiling))
+    }
+
+    @Test
+    fun `an unreadable duration keeps the whole-file speaker pass`() {
+        // The TASK-728 runtime guard covers these: it measures what is retained.
+        assertEquals(AudioDurationPolicy.SpeakerPass.WHOLE_FILE,
+            AudioDurationPolicy.speakerPass(null, AudioDurationPolicy.VAD_MIN_SECONDS))
+        assertEquals(AudioDurationPolicy.SpeakerPass.WHOLE_FILE,
+            AudioDurationPolicy.speakerPass(0.0, AudioDurationPolicy.VAD_MIN_SECONDS))
+        assertEquals(AudioDurationPolicy.SpeakerPass.WHOLE_FILE,
+            AudioDurationPolicy.speakerPass(-1.0, AudioDurationPolicy.VAD_MIN_SECONDS))
+    }
 }

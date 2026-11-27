@@ -100,10 +100,7 @@ object SpeakerNamer {
     ): Map<Int, String> {
         if (identities.isEmpty() || segments.isEmpty() || samples.isEmpty()) return emptyMap()
         val names = HashMap<Int, String>()
-        val clusters = segments.groupBy { it.speaker }
-        for ((cluster, clusterSegments) in clusters) {
-            val speechSeconds = clusterSegments.sumOf { (it.endSec - it.startSec).toDouble() }
-            if (speechSeconds < MIN_CLUSTER_SECONDS) continue
+        for ((cluster, clusterSegments) in nameableClusters(segments)) {
             // Review R1: a dominant speaker's whole-cluster concat would
             // allocate a third full-file-sized copy (a 2h single-speaker
             // file OOMs a run that completed with generic labels). The
@@ -121,6 +118,33 @@ object SpeakerNamer {
         }
         return names
     }
+
+    /**
+     * TASK-1060.4: [nameClusters] for the windowed pass, which holds no
+     * whole-file samples to re-embed: each cluster carries its own
+     * voiceprint (the normalized sum of its piece embeddings, over ALL of
+     * its speech rather than the first [MAX_EMBEDDED_CLUSTER_SECONDS]).
+     * The speech floor and the match rule are the same ones nameClusters
+     * applies; a cluster without a centroid keeps its generic label.
+     */
+    fun nameCentroids(
+        segments: List<DiarizedSegment>,
+        centroids: Map<Int, FloatArray>,
+        identities: List<SpeakerIdentity>,
+        threshold: Float = MATCH_THRESHOLD,
+    ): Map<Int, String> {
+        if (identities.isEmpty()) return emptyMap()
+        return nameableClusters(segments).keys.mapNotNull { cluster ->
+            centroids[cluster]?.let { bestMatch(it, identities, threshold) }
+                ?.let { cluster to it.name }
+        }.toMap()
+    }
+
+    /** The clusters carrying at least [MIN_CLUSTER_SECONDS] of speech, with their segments. */
+    private fun nameableClusters(segments: List<DiarizedSegment>): Map<Int, List<DiarizedSegment>> =
+        segments.groupBy { it.speaker }.filterValues { clusterSegments ->
+            clusterSegments.sumOf { (it.endSec - it.startSec).toDouble() } >= MIN_CLUSTER_SECONDS
+        }
 
     /** Concatenates each segment's sample slice, clamped to the buffer's real extent. */
     private fun concatSlices(

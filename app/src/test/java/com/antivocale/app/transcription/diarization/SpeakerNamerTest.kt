@@ -175,4 +175,35 @@ class SpeakerNamerTest {
             embed = { _, _ -> floatArrayOf(1f, 0f) })
         assertEquals(mapOf(0 to "Alice"), names)
     }
+
+    @Test
+    fun `centroids name matched clusters under the same floor and threshold`() {
+        val segments = listOf(
+            DiarizedSegment(0f, 5f, 0, null),
+            DiarizedSegment(5f, 9f, 1, null),
+            // Under the 1 s speech floor: never named, even on a perfect match.
+            DiarizedSegment(9f, 9.5f, 2, null),
+            DiarizedSegment(10f, 15f, 3, null),
+        )
+        val centroids = mapOf(
+            0 to floatArrayOf(0.9f, 0.1f),
+            1 to floatArrayOf(0.5f, 0.5f), // cosine 0.71 to both, but Alice is first-listed
+            2 to floatArrayOf(0f, 1f),
+            3 to floatArrayOf(-1f, 0.2f), // nobody at or above 0.60
+        )
+        assertEquals(
+            mapOf(0 to "Alice", 1 to "Alice"),
+            SpeakerNamer.nameCentroids(segments, centroids, listOf(alice, bob)),
+        )
+    }
+
+    @Test
+    fun `a cluster without a centroid or without identities stays generic`() {
+        val segments = listOf(DiarizedSegment(0f, 5f, 0, null), DiarizedSegment(5f, 9f, 1, null))
+        assertEquals(
+            mapOf(1 to "Bob"),
+            SpeakerNamer.nameCentroids(segments, mapOf(1 to floatArrayOf(0f, 1f)), listOf(alice, bob)),
+        )
+        assertTrue(SpeakerNamer.nameCentroids(segments, mapOf(0 to floatArrayOf(1f, 0f)), emptyList()).isEmpty())
+    }
 }

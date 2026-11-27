@@ -2,6 +2,7 @@ package com.antivocale.app.transcription.diarization
 
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -74,7 +75,7 @@ class WindowedDiarizerTest {
         val segments = diarizer.diarize(
             flowOf(*chunked(samples, 7.3).toTypedArray()), samples.size.toLong()) { done, total ->
             progress += done to total
-        }
+        }.segments
 
         assertEquals(listOf(1 to 3, 2 to 3, 3 to 3), progress)
         assertEquals(
@@ -95,7 +96,7 @@ class WindowedDiarizerTest {
         val windows = ArrayList<Int>()
         val counting: (FloatArray) -> List<TimeSpan> = { windows += it.size; segmentBySpeech(it) }
         val segments = WindowedDiarizer(params, counting, embedByValue)
-            .diarize(flowOf(samples))
+            .diarize(flowOf(samples)).segments
 
         assertEquals(listOf(60 * rate, 50 * rate), windows)
         assertEquals(1, segments.count { it.startSec < 58f && it.endSec > 51f })
@@ -108,9 +109,9 @@ class WindowedDiarizerTest {
         val samples = audio(30, Triple(0, 9, 1f))
         val rejectAll: (FloatArray, List<IntRange>) -> List<FloatArray?> = { _, r -> r.map { null } }
         assertTrue(WindowedDiarizer(params, segmentBySpeech, rejectAll)
-            .diarize(flowOf(samples)).isEmpty())
+            .diarize(flowOf(samples)).segments.isEmpty())
         assertTrue(WindowedDiarizer(params, segmentBySpeech, embedByValue)
-            .diarize(flowOf()).isEmpty())
+            .diarize(flowOf()).segments.isEmpty())
     }
 
     @Test
@@ -118,8 +119,19 @@ class WindowedDiarizerTest {
         val samples = audio(60, Triple(5, 55, 1f))
         val progress = ArrayList<Pair<Int, Int?>>()
         val segments = WindowedDiarizer(params, segmentBySpeech, embedByValue)
-            .diarize(flowOf(samples)) { done, total -> progress += done to total }
+            .diarize(flowOf(samples)) { done, total -> progress += done to total }.segments
         assertEquals(listOf(1 to null), progress)
         assertEquals(listOf(DiarizedSegment(5f, 55f, 0, null)), segments)
+    }
+
+    @Test
+    fun `the centroids name the same global speakers across windows`() = runTest {
+        val samples = audio(150, Triple(0, 40, 1f), Triple(41, 100, 2f), Triple(101, 150, 1f))
+        val diarizer = WindowedDiarizer(params, segmentBySpeech, embedByValue)
+        val result = diarizer.diarize(flowOf(samples), samples.size.toLong())
+
+        assertEquals(3, diarizer.windowCount(samples.size.toLong()))
+        assertArrayEquals(floatArrayOf(1f, 0f), result.centroids.getValue(0), 1e-6f)
+        assertArrayEquals(floatArrayOf(0f, 1f), result.centroids.getValue(1), 1e-6f)
     }
 }

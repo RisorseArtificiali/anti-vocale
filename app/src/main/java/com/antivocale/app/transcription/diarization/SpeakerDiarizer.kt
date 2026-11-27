@@ -80,17 +80,24 @@ class SpeakerDiarizer private constructor(
      * a CONTIGUOUS decode (the orchestrator excludes VAD-stripped runs,
      * whose cues carry gapped original-audio times) concatenated in order.
      *
+     * @param onProgress TASK-1060.4: the engine's embedding progress
+     *        (chunks done, chunk total), called on the calling thread from
+     *        inside the native run; null runs without the callback
      * @throws TranscriptionException.NativeError when the native run fails
      */
     fun diarize(
         samples: FloatArray,
         sampleRate: Int,
+        onProgress: ((done: Int, total: Int) -> Unit)? = null,
     ): List<DiarizedSegment> {
         if (sampleRate != sampleRate()) {
             throw TranscriptionException.NativeError(
                 "speaker diarization needs ${sampleRate()} Hz, got $sampleRate")
         }
-        val raw = engine.process(samples)
+        // The engine ignores the callback's return value (sherpa v2.0.2
+        // offline-speaker-diarization-pyannote-impl.h), so it cannot cancel.
+        val raw = if (onProgress == null) engine.process(samples)
+        else engine.processWithCallback(samples, { done, total, _ -> onProgress(done, total); 0 })
         return SpeakerLabeler.denseSegments(raw.map { segment ->
             DiarizedSegment(
                 startSec = segment.start,
