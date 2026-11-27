@@ -69,11 +69,10 @@ object SpeakerLabeler {
      *  fallback), sorted and non-overlapping (SpeakerLabelTail merges it).
      *  Its overlap votes for no speaker: a cue whose unknown overlap exceeds
      *  the winner's gets null, so a cue that is mostly an unlabeled voice
-     *  never takes a neighbor's sliver. A cue that overlaps unknown speech
-     *  decides with the re-split's millisecond helpers ([overlapVotesMs],
-     *  [winnerMs]), the same rule a split half applies to its own span; a
-     *  cue that overlaps none (and the whole-file arm, which passes none)
-     *  keeps the original float vote.
+     *  never takes a neighbor's sliver. Non-empty input decides in the same
+     *  milliseconds as the re-split ([overlapVotesMs], [winnerMs]), so a cue
+     *  and its split halves cannot disagree on a near-tie. Empty (the
+     *  whole-file arm) leaves the original vote byte-for-byte unchanged.
      * @return the dense speaker id for each cue index, null where the cue
      *  overlaps no speech or its unknown overlap beats the winner's; empty
      *  when there is nothing to join.
@@ -84,13 +83,14 @@ object SpeakerLabeler {
         unknown: List<TimeSpan> = emptyList(),
     ): List<Int?> {
         if (cues.isEmpty() || segments.isEmpty()) return List(cues.size) { null }
-        return cues.map { cue ->
-            // Only a cue that overlaps unknown speech decides in the re-split's
-            // milliseconds; every other cue keeps the original float vote.
-            val unknownMs = unknownOverlapMs(cue.startMs, cue.endMs, unknown)
-            if (unknownMs > 0) {
-                return@map winnerMs(overlapVotesMs(cue.startMs, cue.endMs, segments), unknownMs)
+        if (unknown.isNotEmpty()) {
+            return cues.map { cue ->
+                winnerMs(
+                    overlapVotesMs(cue.startMs, cue.endMs, segments),
+                    unknownOverlapMs(cue.startMs, cue.endMs, unknown))
             }
+        }
+        return cues.map { cue ->
             val cueStartSec = cue.startMs / 1000f
             val cueEndSec = cue.endMs / 1000f
             var bestSpeaker: Int? = null
