@@ -12,11 +12,11 @@ data class WindowedDiarizationParams(
     val windowSec: Double = 10 * 60.0,
     val overlapSec: Double = 30.0,
     val pieceSec: Double = 3.0,
-    val threshold: Float = 0.8f,
+    val threshold: Float = SpeakerDiarizer.AUTO_THRESHOLD,
     val absorbFloorSec: Double = 30.0,
 ) {
     init {
-        require(windowSec > 0 && overlapSec >= 0 && overlapSec < windowSec) {
+        require(overlapSec >= 0 && overlapSec < windowSec) {
             "overlap must be shorter than the window"
         }
         require(pieceSec > 0) { "pieceSec must be positive" }
@@ -90,7 +90,7 @@ object PieceClustering {
         params: WindowedDiarizationParams,
     ): List<WindowPlan> {
         val windowSamples = windowSamples(sampleRate, params)
-        val overlapSamples = (params.overlapSec * sampleRate).toLong()
+        val overlapSamples = overlapSamples(sampleRate, params)
         val plans = ArrayList<WindowPlan>()
         var start = 0L
         while (start < totalSamples) {
@@ -104,6 +104,10 @@ object PieceClustering {
 
     fun windowSamples(sampleRate: Int, params: WindowedDiarizationParams): Int =
         (params.windowSec * sampleRate).toInt()
+
+    /** The one overlap derivation the planner and the streaming driver share. */
+    fun overlapSamples(sampleRate: Int, params: WindowedDiarizationParams): Int =
+        (params.overlapSec * sampleRate).toInt()
 
     /**
      * Cuts a segment into pieces of [pieceSec] from its start; a final
@@ -262,27 +266,23 @@ object PieceClustering {
      * are returned unchanged.
      */
     fun absorbSmall(labels: IntArray, pieces: List<Piece>, floorSec: Double): IntArray {
+        if (pieces.isEmpty()) return labels
         val talk = LinkedHashMap<Int, Double>()
+        val sums = HashMap<Int, FloatArray>()
         labels.forEachIndexed { i, label ->
             talk[label] = (talk[label] ?: 0.0) + pieces[i].span.durationSec
+            val sum = sums.getOrPut(label) { FloatArray(pieces[i].embedding.size) }
+            val e = pieces[i].embedding
+            for (k in sum.indices) sum[k] += e[k]
         }
         val big = talk.filterValues { it >= floorSec }.keys.toList()
         if (big.isEmpty()) return labels
-        val centroids = big.map { normalized(mean(labels, pieces, it)) }
-        val target = HashMap<Int, Int>()
-        for ((label, seconds) in talk) {
-            if (seconds >= floorSec) continue
-            val own = mean(labels, pieces, label)
-            var best = 0
-            var bestScore = Double.NEGATIVE_INFINITY
-            centroids.forEachIndexed { c, centroid ->
-                val score = dot(centroid, own)
-                if (score > bestScore) {
-                    bestScore = score
-                    best = c
-                }
-            }
-            target[label] = big[best]
+        val centroids = big.map { normalized(sums.getValue(it)) }
+        // The small cluster's raw sum suffices: its norm scales every
+        // candidate's score alike, so the argmax is the cosine argmax.
+        val target = talk.filterValues { it < floorSec }.keys.associateWith { label ->
+            val own = sums.getValue(label)
+            big[centroids.indices.maxBy { dot(centroids[it], own) }]
         }
         return IntArray(labels.size) { target[labels[it]] ?: labels[it] }
     }
@@ -316,19 +316,6 @@ object PieceClustering {
     fun normalized(vector: FloatArray): FloatArray {
         val norm = sqrt(dot(vector, vector)).toFloat()
         return FloatArray(vector.size) { vector[it] / (norm + 1e-9f) }
-    }
-
-    private fun mean(labels: IntArray, pieces: List<Piece>, label: Int): FloatArray {
-        val sum = FloatArray(pieces.first().embedding.size)
-        var count = 0
-        labels.forEachIndexed { i, l ->
-            if (l != label) return@forEachIndexed
-            val e = pieces[i].embedding
-            for (k in sum.indices) sum[k] += e[k]
-            count++
-        }
-        for (k in sum.indices) sum[k] /= count
-        return sum
     }
 
     private fun dot(a: FloatArray, b: FloatArray): Double {

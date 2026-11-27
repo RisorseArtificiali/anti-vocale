@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription.diarization
 
+import com.antivocale.app.transcription.TranscriptionException
 import kotlinx.coroutines.flow.Flow
 import java.io.File
 
@@ -53,11 +54,16 @@ class WindowedDiarizer(
             embedWindow = { samples, ranges ->
                 val embeddings = SpeakerEmbeddings.create(embeddingModel, numThreads).getOrThrow()
                 try {
+                    // Only the too-short verdict drops a piece; any other
+                    // engine failure propagates so a wedged extractor fails
+                    // the pass instead of yielding a silently empty result.
                     ranges.map { range ->
-                        runCatching {
+                        try {
                             embeddings.compute(
                                 samples.copyOfRange(range.first, range.last + 1), SAMPLE_RATE)
-                        }.getOrNull()
+                        } catch (_: TranscriptionException.NativeError) {
+                            null
+                        }
                     }
                 } finally {
                     embeddings.release()
@@ -81,7 +87,7 @@ class WindowedDiarizer(
             PieceClustering.planWindows(it, SAMPLE_RATE, params).size
         }
         val windowSamples = PieceClustering.windowSamples(SAMPLE_RATE, params)
-        val stride = windowSamples - (params.overlapSec * SAMPLE_RATE).toInt()
+        val stride = windowSamples - PieceClustering.overlapSamples(SAMPLE_RATE, params)
         val pieces = ArrayList<Piece>()
         var buffer = FloatArray(0)
         var size = 0
