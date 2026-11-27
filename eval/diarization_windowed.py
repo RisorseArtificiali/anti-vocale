@@ -20,6 +20,11 @@ Usage:
   eval/.venv/bin/python -I eval/diarization_windowed.py score \
       --reference eval/diarization-spike/reference \
       --windowed eval/diarization-spike/windowed --thresholds 0.3,0.4,0.5
+  eval/.venv/bin/python -I eval/diarization_windowed.py score-pieces \
+      --reference eval/diarization-spike/gt --pieces eval/diarization-spike/comp-pieces-clip \
+      --thresholds 0.8 --talk-floor 30
+      (the app's absorption; --absorb-max-distance 2.0 is the ungated original,
+      --absorb-floor-fraction 1 --absorb-floor-min 30 the absolute 30 s floor)
 """
 from __future__ import annotations
 
@@ -164,24 +169,50 @@ def embed_pieces(args) -> int:
     return 0
 
 
-def absorb_small(labels, durations, emb, floor_s):
-    """TASK-1061 absorption: clusters under floor_s talk join the nearest
-    large cluster centroid."""
+# Mirrors of WindowedDiarizationParams (PieceClustering.kt) defaults.
+ABSORB_FLOOR_S = 30.0
+ABSORB_FLOOR_FRACTION = 0.02
+ABSORB_FLOOR_MIN_S = 10.0
+ABSORB_MAX_DISTANCE = 0.45
+
+
+def absorb_floor(talk_s, cap_s, fraction, min_s):
+    """WindowedDiarizationParams.absorbFloorFor: the fraction of total talk,
+    no lower than min_s and no higher than cap_s."""
+    return min(cap_s, max(min_s, fraction * talk_s))
+
+
+def absorb_small(labels, durations, emb, floor_s, max_distance=ABSORB_MAX_DISTANCE):
+    """TASK-1061 absorption with the TASK-1060.7 gate (PieceClustering.absorbSmall):
+    a cluster under floor_s talk joins the nearest large cluster centroid when
+    its own normalized centroid lies within max_distance cosine distance,
+    else its pieces become -1 (unassigned). max_distance 2.0 is the ungated
+    original. Returns (labels, absorbed, dropped) cluster counts."""
     labels = np.asarray(labels)
     talk = defaultdict(float)
     for l, d in zip(labels, durations):
         talk[int(l)] += d
     big = [c for c, t in talk.items() if t >= floor_s]
     if not big:
-        return labels
-    cent = np.stack([emb[labels == c].mean(axis=0) for c in big])
-    cent /= np.linalg.norm(cent, axis=1, keepdims=True)
+        return labels, 0, 0
+    cent = np.stack([emb[labels == c].sum(axis=0) for c in big])
+    cent /= np.linalg.norm(cent, axis=1, keepdims=True) + 1e-9
     out = labels.copy()
+    absorbed = dropped = 0
     for c, t in talk.items():
         if t < floor_s:
             idx = labels == c
-            out[idx] = big[int(np.argmax(cent @ emb[idx].mean(axis=0)))]
-    return out
+            own = emb[idx].sum(axis=0)
+            own /= np.linalg.norm(own) + 1e-9
+            sims = cent @ own
+            nearest = int(np.argmax(sims))
+            if 1.0 - sims[nearest] <= max_distance:
+                out[idx] = big[nearest]
+                absorbed += 1
+            else:
+                out[idx] = -1
+                dropped += 1
+    return out, absorbed, dropped
 
 
 def score_pieces(args) -> int:
@@ -197,13 +228,18 @@ def score_pieces(args) -> int:
             labels = sherpa_onnx.FastClustering(
                 sherpa_onnx.FastClusteringConfig(num_clusters=-1, threshold=t))(emb)
             cluster_s = time.monotonic() - t0
-            for floor in (0.0, args.talk_floor):
-                lab = absorb_small(labels, dur, emb, floor) if floor else np.asarray(labels)
+            for absorb in (False, True):
+                floor = absorb_floor(sum(dur), args.talk_floor, args.absorb_floor_fraction,
+                                     args.absorb_floor_min) if absorb else 0.0
+                lab, absorbed, dropped = (absorb_small(labels, dur, emb, floor, args.absorb_max_distance)
+                                          if absorb else (np.asarray(labels), 0, 0))
                 hyp = [(p["start"], p["end"], int(l)) for p, l in zip(pc["pieces"], lab)]
                 r = compare(ref_segments(ref), hyp, ref["summary"]["audio_s"])
                 print(json.dumps({"file": stem, "window_min": pc["window_min"], "piece_s": pc["piece_s"],
-                                  "threshold": t, "absorb_floor": floor, "cluster_s": round(cluster_s, 2),
-                                  "pieces": len(dur), **r}), flush=True)
+                                  "threshold": t, "absorb_floor": round(floor, 2),
+                                  "absorb_max_distance": args.absorb_max_distance if absorb else None,
+                                  "absorbed": absorbed, "dropped": dropped,
+                                  "cluster_s": round(cluster_s, 2), "pieces": len(dur), **r}), flush=True)
     return 0
 
 
@@ -360,7 +396,11 @@ def main() -> int:
     sp.add_argument("--reference", type=Path, required=True)
     sp.add_argument("--pieces", type=Path, required=True)
     sp.add_argument("--thresholds", default="0.6,0.7,0.8,0.9")
-    sp.add_argument("--talk-floor", type=float, default=10.0)
+    sp.add_argument("--talk-floor", type=float, default=ABSORB_FLOOR_S, help="the absorption floor's cap")
+    sp.add_argument("--absorb-floor-fraction", type=float, default=ABSORB_FLOOR_FRACTION)
+    sp.add_argument("--absorb-floor-min", type=float, default=ABSORB_FLOOR_MIN_S)
+    sp.add_argument("--absorb-max-distance", type=float, default=ABSORB_MAX_DISTANCE,
+                    help="2.0 reproduces the ungated TASK-1061 absorption")
     args = ap.parse_args()
     return {"run": run, "score": score, "embed": embed_pieces, "score-pieces": score_pieces}[args.cmd](args)
 
