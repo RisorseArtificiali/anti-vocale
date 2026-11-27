@@ -131,13 +131,15 @@ class WindowedDiarizer(
                 }
                 val n = minOf(chunk.size - offset, windowSamples - size)
                 if (size + n > buffer.size) {
-                    // Past half the window, grow straight to it, so a
-                    // doubled buffer is at most half a window when it is
-                    // copied into the full one: 1.5 windows at the peak. A
-                    // first buffer sized to an undercounted estimate can be
-                    // larger, so that one growth stays under 2 windows.
-                    val grown = maxOf(buffer.size * 2, size + n)
-                    buffer = buffer.copyOf(if (grown > windowSamples / 2) windowSamples else grown)
+                    // Unknown length: past half the window, grow straight to
+                    // it, so a doubled buffer is at most half a window when
+                    // copied into the full one (1.5 windows at the peak).
+                    // Known length (an undercounted estimate): keep doubling
+                    // toward the window, so a short file never pays for a
+                    // whole one; that growth stays under 2 windows.
+                    val grown = minOf(windowSamples, maxOf(buffer.size * 2, size + n))
+                    buffer = buffer.copyOf(
+                        if (totalSamples == null && grown > windowSamples / 2) windowSamples else grown)
                 }
                 chunk.copyInto(buffer, size, offset, offset + n)
                 size += n
@@ -164,7 +166,9 @@ class WindowedDiarizer(
             from until to
         }
         return spans.zip(embedWindow(samples, ranges)).mapNotNull { (span, embedding) ->
-            embedding?.let { Piece(span, PieceClustering.normalized(it)) }
+            // A non-finite embedding would poison every cosine it meets.
+            embedding?.takeIf { e -> e.all { it.isFinite() } }
+                ?.let { Piece(span, PieceClustering.normalized(it)) }
         }
     }
 }

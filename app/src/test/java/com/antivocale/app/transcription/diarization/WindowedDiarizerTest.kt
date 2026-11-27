@@ -175,4 +175,18 @@ class WindowedDiarizerTest {
         assertArrayEquals(floatArrayOf(1f, 0f), result.centroids.getValue(0), 1e-6f)
         assertArrayEquals(floatArrayOf(0f, 1f), result.centroids.getValue(1), 1e-6f)
     }
+
+    @Test
+    fun `a non-finite embedding is dropped instead of poisoning the clustering`() = runTest {
+        val samples = audio(30, Triple(0, 9, 1f), Triple(10, 20, 2f))
+        // The first speaker's pieces embed as NaN; the second embeds normally.
+        val nanForFirst: (FloatArray, List<IntRange>) -> List<FloatArray?> = { window, ranges ->
+            embedByValue(window, ranges).map { e ->
+                if (e != null && e[0] > e[1]) floatArrayOf(Float.NaN, 0f) else e
+            }
+        }
+        val result = WindowedDiarizer(params, segmentBySpeech, nanForFirst).diarize(flowOf(samples))
+        assertTrue(result.segments.all { it.startSec >= 10f })
+        assertTrue(result.segments.isNotEmpty())
+    }
 }

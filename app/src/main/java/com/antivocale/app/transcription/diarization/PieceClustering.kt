@@ -61,7 +61,8 @@ data class WindowedDiarizationParams(
      * that cannot reach it (alternating short turns), a seeded random
      * subsample of exactly [maxPieces] pieces is clustered and every other
      * piece joins its nearest cluster centroid; pieces [threshold] or more
-     * from every sampled centroid form far clusters of their own (see
+     * from every sampled centroid seed far clusters of their own, which
+     * after reassignment can also hold rows near a sampled speaker (see
      * PieceClustering.clusterBounded).
      */
     val maxPieces: Int = MAX_PIECES,
@@ -164,8 +165,9 @@ class WindowedDiarization(
  * be diagnosed from the log. Seconds are piece talk time. [rawClusters]
  * counts complete linkage's clusters (of the subsample past maxPieces), so
  * a high value is over-segmentation; [farClusters] counts the consolidated
- * clusters of unsampled rows far from every sampled one, so a nonzero value
- * is a voice or noise the subsample missed. Absorption sees both kinds.
+ * clusters seeded by unsampled rows far from every sampled one that still
+ * hold a row after reassignment, so a nonzero value is a voice or noise the
+ * subsample missed. Absorption sees both kinds.
  */
 data class WindowedDiarizationStats(
     val piecesIn: Int,
@@ -515,9 +517,10 @@ object PieceClustering {
 
     /**
      * [completeLinkage] over at most [maxPieces] rows. Past the cap, which
-     * only happens when [coarsen] cannot reach it (at default budgets a
-     * file yields about 1200 pieces an hour against a cap of up to 5000, so
-     * rarely under the 4 h ceiling), a seeded random subsample of exactly
+     * only happens when [coarsen] cannot reach it (about 1200 pieces an
+     * hour; at the 5000 cap rarely under the 4 h ceiling, but a low-RAM
+     * budget derives a cap down to 500, where hour-long alternating-turn
+     * audio takes this path routinely), a seeded random subsample of exactly
      * [maxPieces] rows is clustered (an evenly spaced one phase-locks to
      * alternating turns and can miss a voice entirely) and the unsampled
      * rows are labeled in three steps:
@@ -527,12 +530,16 @@ object PieceClustering {
      *    order puts it in the nearest far cluster within [threshold], else
      *    opens a new one.
      * 2. Consolidation: the closest two far clusters whose centroids are
-     *    within [threshold] merge, until no pair is, so the seeding order no
-     *    longer splits one voice. Sampled clusters never merge here.
+     *    within [threshold] merge, until no pair is. This reduces, but does
+     *    not remove, the seeding order's influence: halves of one voice
+     *    whose centroids drift [threshold] apart stay split. Sampled
+     *    clusters never merge here.
      * 3. Reassignment: every unsampled row takes the nearest centroid among
-     *    the far clusters and the sampled clusters within [threshold] of it,
-     *    so a missed voice's row near a sampled speaker still goes to its
-     *    own far cluster when that is closer.
+     *    the sampled and far clusters within [threshold] of it, so a missed
+     *    voice's row near a sampled speaker still goes to its own far
+     *    cluster when that is closer; a row no cluster takes within
+     *    [threshold] (a far centroid drifted away from it) keeps its
+     *    nearest far cluster.
      *
      * This approximates complete linkage over all rows with centroid
      * distances: one voice the subsample missed comes out as one cluster
@@ -620,14 +627,22 @@ object PieceClustering {
                     bestSim = sim
                 }
             }
+            var nearestFar = -1
+            var nearestFarSim = Double.NEGATIVE_INFINITY
             for (f in farCentroids.indices) {
                 val sim = dot(farCentroids[f], row)
-                if (sim > bestSim) {
+                if (sim > nearestFarSim) {
+                    nearestFar = f
+                    nearestFarSim = sim
+                }
+                if (1.0 - sim < threshold && sim > bestSim) {
                     best = centroids.size + f
                     bestSim = sim
                 }
             }
-            // A row no sampled cluster takes was far at seeding, so it is in some far cluster.
+            // A row no cluster takes within threshold was far at seeding, so
+            // far clusters exist; it keeps the nearest one.
+            if (best < 0) best = centroids.size + nearestFar
             check(best >= 0)
             if (best < centroids.size) labels[i] = clusterIds[best] else farOf[i] = best - centroids.size
         }
