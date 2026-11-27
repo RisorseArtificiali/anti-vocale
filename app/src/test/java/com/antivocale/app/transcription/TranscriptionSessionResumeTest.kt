@@ -820,4 +820,78 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
             logDao.closePausedAsError("stall-2", any())
         }
     }
+
+    /** TASK-1060.4: speaker labels on, the windowed arm faked to label every cue speaker 0. */
+    private fun armWindowedSpeakerPass(): MutableList<Long?> {
+        every { preferencesManager.speakerLabelsEnabled } returns flowOf(true)
+        every { preferencesManager.speakerIdEnabled } returns flowOf(false)
+        val totals = mutableListOf<Long?>()
+        orchestrator.ensureDiarizationModels = { Result.success(Unit) }
+        orchestrator.wholeFileDiarization = { _, _, _, _ -> error("a session run must not retain its decode") }
+        orchestrator.windowedDiarization = { _, filePath, totalSamples, _, _ ->
+            assertEquals(sessionFile.absolutePath, filePath)
+            totals += totalSamples
+            com.antivocale.app.transcription.diarization.WindowedDiarization(
+                listOf(com.antivocale.app.transcription.diarization.DiarizedSegment(
+                    0f, (chunkCount * chunkSeconds).toFloat(), 0, null)),
+                emptyMap())
+        }
+        return totals
+    }
+
+    @Test
+    fun `a resumed stint with speaker labels takes the windowed pass over the whole file`() = runTest {
+        stubStream()
+        stubDecode { index ->
+            if (index == 2) assertTrue(orchestrator.requestSessionPause(taskId))
+            Result.success(TranscriptionResult(text = "w$index"))
+        }
+        assertTrue(request().isFailure)
+        sessionDao.upsertSession(sessionDao.sessions.getValue(taskId)
+            .copy(state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM))
+
+        val totals = armWindowedSpeakerPass()
+        stubStream()
+        stubDecode { index -> Result.success(TranscriptionResult(text = "w$index")) }
+        val resumed = request()
+
+        assertTrue(resumed.isSuccess)
+        // The exact length of the WHOLE file, the earlier stint's prefix included.
+        assertEquals(listOf<Long?>(chunkCount * chunkSamples), totals)
+        assertEquals(chunkCount, lastSegments.size)
+        assertTrue(lastSegments.all { it.speaker == 0 })
+    }
+
+    @Test
+    fun `a completing-session resume with speaker labels takes the windowed pass`() = runTest {
+        var cursor = 0L
+        for (i in 0 until chunkCount) {
+            sessionDao.insertChunk(SessionChunkEntity(
+                taskId = "completing-speakers",
+                startSample = cursor,
+                endSample = cursor + chunkSamples,
+                text = "w$i",
+                cuesJson = com.antivocale.app.data.local.TimedSegmentsConverter.toJson(
+                    listOf(expectedCue(i))),
+            ))
+            cursor += chunkSamples
+        }
+        sessionDao.upsertSession(TranscriptionSessionEntity(
+            taskId = "completing-speakers",
+            filePath = sessionFile.absolutePath,
+            fileSizeBytes = sessionFile.length(), fileMtimeMs = sessionFile.lastModified(),
+            backendId = "whisper", modelPath = "/models/whisper",
+            source = "share", state = TranscriptionSessionEntity.STATE_PAUSED_SYSTEM,
+            totalOutputSamples = cursor,
+            createdAtMs = 1L, updatedAtMs = 1L,
+        ))
+        val totals = armWindowedSpeakerPass()
+
+        val result = request("completing-speakers")
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf<Long?>(cursor), totals)
+        assertTrue(lastSegments.isNotEmpty())
+        assertTrue(lastSegments.all { it.speaker == 0 })
+    }
 }

@@ -20,6 +20,11 @@ import com.antivocale.app.transcription.diarization.SpeakerEmbeddings
 import com.antivocale.app.transcription.diarization.SpeakerResplit
 import com.antivocale.app.transcription.diarization.SpeakerIdentityStore
 import com.antivocale.app.transcription.diarization.SpeakerLabeler
+import com.antivocale.app.transcription.diarization.SpeakerTimeline
+import com.antivocale.app.transcription.diarization.DiarizedSegment
+import com.antivocale.app.transcription.diarization.SpeakerIdentity
+import com.antivocale.app.transcription.diarization.WindowedDiarization
+import com.antivocale.app.transcription.diarization.WindowedDiarizer
 import com.antivocale.app.transcription.diarization.SpeakerNamer
 import com.antivocale.app.audio.MemoryReadings
 import com.antivocale.app.audio.PreprocessingErrorMessages
@@ -52,7 +57,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
@@ -121,6 +128,42 @@ class TranscriptionOrchestrator @Inject constructor(
          * included).
          */
         internal const val SESSION_SAMPLE_RATE = 16000
+
+        /**
+         * GH #83: the speaker-labeling tail both arms share. Each cue gets
+         * the speaker whose segments overlap it most; TASK-678: a cue
+         * straddling two voices is re-split at the word nearest the speaker
+         * boundary (tier chain: tokens, proportional, honest mixed). Split
+         * halves carry their OWN re-voted speakers; unsplit cues take the
+         * labeler's label by ORIGINAL index (the split changes the cue
+         * count, so the two lists must never be re-zipped). The transient
+         * tokens are consumed here and dropped. TASK-670: [names] maps a
+         * dense cluster id to its enrolled person's name.
+         */
+        internal fun withSpeakerLabels(
+            transcription: TranscriptionResult,
+            segments: List<DiarizedSegment>,
+            names: Map<Int, String>,
+        ): TranscriptionResult {
+            val labels = SpeakerLabeler.label(transcription.segments, segments)
+            val outcomes = transcription.segments.mapIndexed { index, cue ->
+                SpeakerResplit.resplit(cue, cue.tokens, segments, labels[index])
+            }
+            val tierCounts = outcomes.mapNotNull { it.tier }.groupingBy { it }.eachCount()
+            val resplitSummary = if (tierCounts.isEmpty()) null else
+                tierCounts.entries.joinToString(",") { (tier, count) ->
+                    "${tier.name.lowercase()}=$count"
+                }
+            // TASK-678 review: map the RESPLIT segments (outcomes carry the
+            // labeled/re-split cues; mapping the original result discarded
+            // them and every label with them).
+            return transcription.copy(
+                segments = outcomes.flatMap { it.cues }.map { cue ->
+                    cue.copy(speakerName = cue.speaker?.let(names::get))
+                },
+                processing = transcription.processing?.copy(speakerResplit = resplitSummary),
+            )
+        }
         /** TASK-520: map -> reduce recursion budget; partials shrink hard per level. */
         private const val MAX_SUMMARY_LEVELS = 3
 
@@ -727,12 +770,12 @@ class TranscriptionOrchestrator @Inject constructor(
             // GH #45/TASK-734: the credit is written pre-decode above (the
             // success-site rewrite was a duplicate of the same derivation).
 
-            // GH #83: collect the preprocessed chunks once for the optional
-            // speaker-labeling pass (references only; the concatenated copy
-            // is built lazily inside the pass, after ASR releases its own
-            // working set). The fast first pass passes no collector.
-            var diarizationChunks: List<FloatArray>? = null
-            var diarizationSampleRate = 16000
+            // GH #83: the decode's speaker timeline for the optional
+            // speaker-labeling pass (retained chunks are references only;
+            // the concatenated copy is built lazily inside the pass, after
+            // ASR releases its own working set). The fast first pass passes
+            // no collector.
+            var speakerTimeline: SpeakerTimeline? = null
             val collectSpeakers = runCatching {
                 preferencesManager.speakerLabelsEnabled.first()
             }.getOrDefault(false)
@@ -759,7 +802,11 @@ class TranscriptionOrchestrator @Inject constructor(
                 // cold-start recovery already rewrote to PAUSED_SYSTEM.
                 resumeSession != null && resumeSession.totalOutputSamples
                     ?.let { total -> (resumePrefixRows.lastOrNull()?.endSample ?: 0L) >= total } == true ->
-                    completedSessionFromStore(taskId, resumeSession, resumePrefixRows, context)
+                    completedSessionFromStore(taskId, resumeSession, resumePrefixRows, context).also {
+                        // TASK-1060.4: no decode runs here, so the pass re-decodes the file.
+                        if (collectSpeakers) speakerTimeline = SpeakerTimeline.Windowed(
+                            SpeakerTimeline.Reason.RESUMED_SESSION, resumeSession.totalOutputSamples)
+                    }
                 requestType == "audio" -> if (f4LoadFailure != null) {
                     recoverFirstPass(fastFirstPass!!, f4LoadFailure,
                         DualRefinementPolicy.SKIP_REFINE_LOAD_FAILED)
@@ -782,30 +829,17 @@ class TranscriptionOrchestrator @Inject constructor(
                         languageOverride = languageOverride,
                         // TASK-1037: the session identity (fresh or resumed)
                         // rides to the pipeline with the dispatch-time prefix
-                        // rows (the one chunk-store read; a session run also
-                        // never collects a speaker timeline: a resumed stint
-                        // holds only the tail, so labels could never survive
-                        // a pause; labels are skipped for sessions outright,
-                        // the reason logged at the collector site).
+                        // rows (the one chunk-store read).
                         resumeSession = resumeSession,
                         resumePrefixRows = resumePrefixRows,
                         sessionRun = sessionRun,
                         probedDurationSeconds = probedDurationSeconds,
-                        // Simplify review F1: speaker labels skip applies ONLY
-                        // to resumed stints. A fresh-engage run keeps the
-                        // collector (the whole timeline IS in RAM on the
-                        // first stint); only a resumed stint cannot hold it.
-                        collectSamples = if (collectSpeakers && resumeSession == null) {
-                            { chunks, rate ->
-                                diarizationChunks = chunks
-                                diarizationSampleRate = rate
-                            }
-                        } else {
-                            if (collectSpeakers && resumeSession != null) {
-                                Log.i(TAG, "Speaker labels skipped: resumed stint (TASK-1037); a partial timeline cannot diarize")
-                            }
-                            null
-                        },
+                        // TASK-1060.4: a resumed stint holds only its tail,
+                        // so the pipeline hands it the windowed arm, which
+                        // re-decodes the whole file.
+                        collectSamples = if (collectSpeakers) {
+                            { timeline -> speakerTimeline = timeline }
+                        } else null,
                     )
                     if (fastFirstPass == null) {
                         phase2
@@ -906,10 +940,13 @@ class TranscriptionOrchestrator @Inject constructor(
             // something to skip; a failed run (memory refusal, decode error,
             // pipeline exception) never decoded, so nothing was skipped and
             // the old blanket line misattributed those failures to the path.
-            if (collectSpeakers && diarizationChunks == null && requestType == "audio" &&
+            // TASK-1060.4: over-budget streaming runs, TASK-728 abandonments
+            // and resumed sessions no longer land here; they hand the
+            // windowed arm.
+            if (collectSpeakers && speakerTimeline == null && requestType == "audio" &&
                 delivered.isSuccess && delivered.getOrNull()?.text?.isNotBlank() == true
             ) {
-                Log.i(TAG, "Speaker labels skipped: no sample timeline reached this pass (streaming, VAD-segmented, TASK-681 remote-offloaded, or TASK-728 memory-budget abandonment; the W-line above names which)")
+                Log.i(TAG, "Speaker labels skipped: no sample timeline reached this pass (VAD-segmented or TASK-681 remote-offloaded)")
             }
             // TASK-872 gate round: a backend whose output carries its own
             // speaker attribution (VibeVoice's literal "Speaker N:" lines)
@@ -932,22 +969,24 @@ class TranscriptionOrchestrator @Inject constructor(
                 backendManager.getActiveBackend()?.emitsNativeSpeakerLabels == true
             // delivered.isSuccess: a failed run never decoded, so nothing
             // was skipped (the TASK-600 F13 rule).
-            if (producerEmitsNativeLabels && diarizationChunks != null && delivered.isSuccess) {
+            if (producerEmitsNativeLabels && speakerTimeline != null && delivered.isSuccess) {
                 Log.i(TAG, "Speaker labels skipped: the delivered text carries native speaker labels (TASK-872)")
-                diarizationChunks = null
+                speakerTimeline = null
             }
+            // TASK-698: diarization (plus the first-use model download) is a
+            // silent stretch. TASK-699 stage 2: the run-level span covers it.
             val speakerLabeled: Result<TranscriptionResult> =
-                if (delivered.isSuccess && diarizationChunks != null) {
-                    // TASK-698: whole-clip diarization (plus the first-use
-                    // model download) is a silent stretch. TASK-699 stage 2:
-                    // the run-level span covers it.
-                    applySpeakerLabels(
-                        context, delivered, diarizationChunks!!, diarizationSampleRate, listener)
-                        // The concatenated copy must not outlive the pass.
-                        .also { diarizationChunks = null }
-                } else {
-                    delivered
+                if (!delivered.isSuccess) delivered
+                else when (val timeline = speakerTimeline) {
+                    is SpeakerTimeline.Retained ->
+                        applySpeakerLabels(context, delivered, timeline, listener)
+                    is SpeakerTimeline.Windowed ->
+                        // A timeline exists only for a file decode.
+                        applyWindowedSpeakerLabels(context, checkNotNull(filePath), delivered, timeline, listener)
+                    null -> delivered
                 }
+            // The retained chunks must not outlive the pass.
+            speakerTimeline = null
 
             speakerLabeled.fold(
                 onSuccess = { transcriptionResult ->
@@ -2447,19 +2486,78 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     /**
-     * GH #83: the optional speaker-labeling pass over a completed audio
-     * result. Downloads the two models on first use, runs the diarization
-     * engine on the concatenated preprocessed chunks (the cues' own
-     * timeline), and labels each cue by speech-time voting with the
-     * 2-speaker "phone call" preset. Additive only: any failure logs and
-     * returns the input unchanged.
+     * GH #83: the whole-file arm of the speaker-labeling pass. Runs the
+     * diarization engine on the concatenated preprocessed chunks (the cues'
+     * own timeline) and names the clusters from the same samples.
      */
     private suspend fun applySpeakerLabels(
         context: Context,
         result: Result<TranscriptionResult>,
-        chunks: List<FloatArray>,
-        sampleRate: Int,
+        timeline: SpeakerTimeline.Retained,
         listener: TranscriptionListener,
+    ): Result<TranscriptionResult> = speakerPass(context, result, listener) { threads ->
+        // The preprocessor's own merge keeps this copy's memory-peak
+        // contract pinned with its tests (code review F8); the list is
+        // dead after the merge, so its destructive clear is fine.
+        val samples = audioPreprocessor.mergeAndResample(
+            timeline.chunks.toMutableList(), timeline.sampleRate).first
+        val segments = wholeFileDiarization(context, samples, timeline.sampleRate, threads)
+        // TASK-670 (GH #83): the optional naming pass, AFTER the diarizer's
+        // release (review R2: the extractor loads its own titanet; running
+        // both native sessions at once doubled the ~40MB footprint at
+        // exactly the moment TASK-679's OOM class hits).
+        segments to speakerClusterNames(context, segments, samples, timeline.sampleRate, threads)
+    }
+
+    /**
+     * TASK-1060.4: the windowed arm of the speaker-labeling pass, for runs
+     * that could not hold their decode ([SpeakerTimeline.Windowed]). It
+     * re-decodes the original file once from the start on the pipeline's
+     * contiguous 16 kHz timeline (no VAD), so its segments share the cues'
+     * timeline, and names clusters by their piece-embedding centroids.
+     *
+     * Resumed sessions degrade the re-split: cues rebuilt from the session
+     * store (TimedSegmentsConverter.fromJson) carry no tokens, which are
+     * transient and never serialized, so a straddling cue from an earlier
+     * stint cannot reach [SpeakerResplit.Tier.WORD_BOUNDARY] and falls to
+     * the proportional SILENCE_GAP tier or the honest mixed label. Only the
+     * last stint's freshly decoded cues keep their tokens.
+     */
+    private suspend fun applyWindowedSpeakerLabels(
+        context: Context,
+        filePath: String,
+        result: Result<TranscriptionResult>,
+        timeline: SpeakerTimeline.Windowed,
+        listener: TranscriptionListener,
+    ): Result<TranscriptionResult> = speakerPass(context, result, listener) { threads ->
+        Log.i(TAG, "Speaker labels: windowed pass, ${timeline.reason.logText}")
+        val status = context.getString(R.string.speaker_labels_status)
+        val startMs = System.currentTimeMillis()
+        val durationSeconds = timeline.totalSamples?.let { (it / SESSION_SAMPLE_RATE).toInt() } ?: 0
+        var lastPercent = -1
+        val diarization = windowedDiarization(context, filePath, timeline.totalSamples, threads) { fraction ->
+            // The native callback fires per embedded chunk: post only percent changes.
+            val percent = (fraction * 100).toInt().coerceIn(0, 99)
+            if (percent != lastPercent) {
+                lastPercent = percent
+                listener.onProgress(status, percent, "", durationSeconds, startMs, 0)
+            }
+        }
+        diarization.segments to SpeakerNamer.nameCentroids(
+            diarization.segments, diarization.centroids, namingIdentities())
+    }
+
+    /**
+     * GH #83: what both speaker-pass arms share: the status, the model
+     * download, the cue labeling and the failure contract. [diarize]
+     * returns the dense segments and the cluster names. Additive only: any
+     * failure logs and returns the input unchanged.
+     */
+    private suspend fun speakerPass(
+        context: Context,
+        result: Result<TranscriptionResult>,
+        listener: TranscriptionListener,
+        diarize: suspend (threads: Int) -> Pair<List<DiarizedSegment>, Map<Int, String>>,
     ): Result<TranscriptionResult> {
         val transcription = result.getOrNull() ?: return result
         if (transcription.segments.isEmpty()) return result
@@ -2472,73 +2570,70 @@ class TranscriptionOrchestrator @Inject constructor(
         // behind ~47 MB.
         return runCatching {
             listener.onStatusUpdate(context.getString(R.string.speaker_labels_status))
-            DiarizationModels.ensureDownloaded(context).getOrThrow()
-            val threads = preferencesManager.threadCount.first()
-            // The preprocessor's own merge keeps this copy's memory-peak
-            // contract pinned with its tests (code review F8); the list is
-            // dead after the merge, so its destructive clear is fine.
-            val samples = audioPreprocessor.mergeAndResample(
-                chunks.toMutableList(), sampleRate).first
-            val diarizer = SpeakerDiarizer.create(
-                segmentationModel = DiarizationModels.segmentationFile(context),
-                embeddingModel = DiarizationModels.embeddingFile(context),
-                numThreads = threads,
-            ).getOrThrow()
-            var segmentsOut: List<com.antivocale.app.transcription.diarization.DiarizedSegment>? = null
-            // TASK-678: the tier summary and the split cues, set inside the
-            // try (the naming pass below consumes them after the release).
-            var resplitSummaryOut: String? = null
-            var outcomes: List<SpeakerResplit.Outcome> = emptyList()
-            try {
-                val segments = diarizer.diarize(samples, sampleRate)
-                val labels = SpeakerLabeler.label(transcription.segments, segments)
-                // TASK-678 (GH #83): a cue straddling two voices is re-split
-                // at the word nearest the speaker boundary (tier chain:
-                // tokens, proportional, honest mixed). Split halves carry
-                // their OWN re-voted speakers; unsplit cues take the
-                // labeler's label by ORIGINAL index (the split changes the
-                // cue count, so the two lists must never be re-zipped). The
-                // transient tokens are consumed here and dropped.
-                outcomes = transcription.segments.mapIndexed { index, cue ->
-                    SpeakerResplit.resplit(cue, cue.tokens, segments, labels[index])
-                }
-                val tierCounts = outcomes.mapNotNull { it.tier }.groupingBy { it }.eachCount()
-                resplitSummaryOut = if (tierCounts.isEmpty()) null else
-                    tierCounts.entries.joinToString(",") { (tier, count) ->
-                        "${tier.name.lowercase()}=$count"
-                    }
-                segmentsOut = segments
-                // Labels only here: naming waits until the diarizer session
-                // is RELEASED (review R2: the extractor loads its own titanet;
-                // running both native sessions at once doubled the ~40MB
-                // footprint at exactly the moment TASK-679's OOM class hits).
-            } finally {
-                diarizer.release()
-            }
-            // TASK-670 (GH #83): the optional naming pass above the labels,
-            // AFTER the diarizer's release; every failure inside degrades to
-            // the generic SPEAKER N labels, never a dropped or misnamed result.
-            val segments = segmentsOut ?: return@runCatching result
-            val names = speakerClusterNames(context, segments, samples, sampleRate, threads)
-            // TASK-678 review: map the RESPLIT segments (outcomes carry the
-            // labeled/re-split cues; mapping the original result discarded
-            // them and every label with them).
-            val outcomesSegments = outcomes.flatMap { it.cues }
-            result.map { unlabeled ->
-                unlabeled.copy(
-                    segments = outcomesSegments.map { cue ->
-                        cue.copy(speakerName = cue.speaker?.let(names::get))
-                    },
-                    processing = unlabeled.processing?.copy(speakerResplit = resplitSummaryOut),
-                )
-            }
+            ensureDiarizationModels(context).getOrThrow()
+            val (segments, names) = diarize(preferencesManager.threadCount.first())
+            withSpeakerLabels(transcription, segments, names)
         }.fold(
-            onSuccess = { it },
+            onSuccess = { Result.success(it) },
             onFailure = { failure ->
                 Result.success(degradeTo(transcription, "Speaker labels", failure))
             },
         )
     }
+
+    /**
+     * TASK-1060.4 seams: the model download and the native diarization
+     * behind each speaker-pass arm (sessions created and released inside).
+     * Tests swap in fakes to pin the routing and the shared labeling.
+     */
+    internal var ensureDiarizationModels: suspend (Context) -> Result<Unit> =
+        DiarizationModels::ensureDownloaded
+
+    internal var wholeFileDiarization:
+        suspend (Context, FloatArray, Int, Int) -> List<DiarizedSegment> =
+        { context, samples, sampleRate, threads ->
+            val diarizer = SpeakerDiarizer.create(
+                segmentationModel = DiarizationModels.segmentationFile(context),
+                embeddingModel = DiarizationModels.embeddingFile(context),
+                numThreads = threads,
+            ).getOrThrow()
+            try {
+                diarizer.diarize(samples, sampleRate)
+            } finally {
+                diarizer.release()
+            }
+        }
+
+    /** The last parameter receives the pass's overall progress, 0..1. */
+    internal var windowedDiarization:
+        suspend (Context, String, Long?, Int, (Float) -> Unit) -> WindowedDiarization =
+        { context, filePath, totalSamples, threads, onProgress ->
+            var windowsDone = 0
+            var windows: Int? = null
+            fun report(inWindow: Float) {
+                windows?.let { onProgress((windowsDone + inWindow) / it) }
+            }
+            val diarizer = WindowedDiarizer.native(
+                segmentationModel = DiarizationModels.segmentationFile(context),
+                embeddingModel = DiarizationModels.embeddingFile(context),
+                numThreads = threads,
+                onSegmentProgress = { done, total -> if (total > 0) report(done.toFloat() / total) },
+            )
+            windows = totalSamples?.let(diarizer::windowCount)
+            val chunks = audioPreprocessor.prepareAudioStream(filePath, enableVad = false)
+                .filterIsInstance<StreamEvent.Chunk>()
+                .map { event ->
+                    check(event.chunk.sampleRate == WindowedDiarizer.SAMPLE_RATE) {
+                        "windowed diarization needs ${WindowedDiarizer.SAMPLE_RATE} Hz, got ${event.chunk.sampleRate}"
+                    }
+                    event.chunk.samples
+                }
+            diarizer.diarize(chunks, totalSamples) { done, total ->
+                windowsDone = done
+                windows = total
+                report(0f)
+            }
+        }
 
     /**
      * TASK-670 (GH #83): the cluster -> enrolled-name map, or empty. Runs
@@ -2551,16 +2646,15 @@ class TranscriptionOrchestrator @Inject constructor(
      */
     private suspend fun speakerClusterNames(
         context: Context,
-        segments: List<com.antivocale.app.transcription.diarization.DiarizedSegment>,
+        segments: List<DiarizedSegment>,
         samples: FloatArray,
         sampleRate: Int,
         numThreads: Int,
     ): Map<Int, String> {
-        if (!preferencesManager.speakerIdEnabled.first()) return emptyMap()
-        val identities = speakerIdentityStore.list()
+        val identities = namingIdentities()
         if (identities.isEmpty()) return emptyMap()
-        // The models are already on disk: applySpeakerLabels downloaded them
-        // (or the pass degraded before reaching here).
+        // The models are already on disk: the speaker pass downloaded them
+        // (or degraded before reaching here).
         if (!DiarizationModels.isDownloaded(context)) return emptyMap()
         return SpeakerEmbeddings.create(
             embeddingModel = DiarizationModels.embeddingFile(context),
@@ -2585,6 +2679,10 @@ class TranscriptionOrchestrator @Inject constructor(
             },
         )
     }
+
+    /** TASK-670: the enrolled identities, empty unless the speakerIdEnabled privacy gate is on. */
+    private suspend fun namingIdentities(): List<SpeakerIdentity> =
+        if (preferencesManager.speakerIdEnabled.first()) speakerIdentityStore.list() else emptyList()
 
     /**
      * TASK-579: the phase-2 success arm of the dual fold. A refinement
@@ -3021,11 +3119,14 @@ class TranscriptionOrchestrator @Inject constructor(
          *  pass's growing partials never overwrite the complete first-pass
          *  text already on the row (design D6: the text never regresses). */
         emitInterim: Boolean = true,
-        /** GH #83: when non-null, invoked once with the preprocessed chunks
-         *  and their sample rate (contiguous-timeline runs only) for the
-         *  speaker-labeling pass. Streaming and VAD-segmented runs never
-         *  invoke it and the pass is skipped for them. */
-        collectSamples: ((List<FloatArray>, Int) -> Unit)? = null,
+        /** GH #83: when non-null, invoked once with the speaker-labeling
+         *  pass's [SpeakerTimeline]. The streaming pipeline (fresh or
+         *  resumed) and the whole-file arm without VAD invoke it: retained
+         *  chunks within the memory budget, the TASK-1060.4 windowed arm
+         *  beyond it or on a resumed session. VAD-segmented runs never
+         *  invoke it (their cues carry gap-stripped times) and the pass is
+         *  skipped for them. */
+        collectSamples: ((SpeakerTimeline) -> Unit)? = null,
         /** TASK-681: request-scoped language override, forwarded to the
          *  LAN-offload arm (its language is a request field, not engine
          *  config; local backends keep resolving it at load time). */
@@ -3059,11 +3160,10 @@ class TranscriptionOrchestrator @Inject constructor(
         // sample timeline here; the collector fires exactly once, at this
         // function's tail, instead of being re-plumbed per arm (the fixed
         // wiring bug was the recurrence proof).
-        var sampleTimeline: List<FloatArray>? = null
-        var sampleTimelineRate = 16000
+        var sampleTimeline: SpeakerTimeline? = null
 
         fun fireCollector() {
-            sampleTimeline?.let { collectSamples?.invoke(it, sampleTimelineRate) }
+            sampleTimeline?.let { collectSamples?.invoke(it) }
         }
 
 
@@ -3268,12 +3368,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 // labels (caught on the first real device trial).
                 // TASK-600 F11: the arm only RECORDS the timeline; the
                 // collector fires once at this function's tail.
-                collectSamples = collectSamples?.let {
-                    { chunks, rate ->
-                        sampleTimeline = chunks
-                        sampleTimelineRate = rate
-                    }
-                }
+                collectSamples = collectSamples?.let { { timeline -> sampleTimeline = timeline } }
             )
             fireCollector()
             return applyFinalGenerativePass(backend, promptPlan.finalPass, pipelined)
@@ -3318,8 +3413,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // concatenation starts at the speech onset (code review F3); the
         // offset mapping is a tracked follow-up, not a v1 guess.
         if (!vadEnabled) {
-            sampleTimeline = preprocessingResult.chunks
-            sampleTimelineRate = preprocessingResult.sampleRate
+            sampleTimeline = SpeakerTimeline.Retained(preprocessingResult.chunks, preprocessingResult.sampleRate)
         }
 
         val chunkCount = preprocessingResult.chunkCount
@@ -4165,12 +4259,13 @@ class TranscriptionOrchestrator @Inject constructor(
          *  the collector re-checks only the chunk-0 geometry. */
         earlyPreviewActive: Boolean = false,
         emitInterim: Boolean = true,
-        /** GH #83: when non-null, invoked after the stream completes with the
-         *  decoded chunk list. The pipeline's stream never strips silence
-         *  (enableVad is false by construction here) and cue times derive
-         *  from the same accumulated decoded seconds, so the timelines
-         *  match by construction. */
-        collectSamples: ((List<FloatArray>, Int) -> Unit)? = null,
+        /** GH #83: when non-null, invoked once after the stream completes
+         *  with the speaker pass's timeline: the decoded chunks when they fit
+         *  the memory budget (the stream never strips silence and cue times
+         *  derive from the same accumulated decoded seconds, so the
+         *  timelines match by construction), else the TASK-1060.4 windowed
+         *  arm with its reason. */
+        collectSamples: ((SpeakerTimeline) -> Unit)? = null,
         /** TASK-1037 (GH #190) phase 3: a resumed stint's frozen session row,
          *  or null on a fresh run. Non-null arms the checkpoint sink, seeds
          *  the accumulator from the chunk rows (the prefill), and starts the
@@ -4188,49 +4283,53 @@ class TranscriptionOrchestrator @Inject constructor(
     ): Result<TranscriptionResult> {
         val resolvedPrompt = resolvePrompt(prompt)
         // TASK-597: the streaming path's sample retention has no memory
-        // budget (the valve is a flat 14400s while the whole-file arm gates
-        // on min(ram/4, heap/2)); with speaker labels on, every decoded
-        // chunk is pinned for the whole run (64KiB/s: 115MB at 30min,
-        // ~920MB at 4h) and applySpeakerLabels' merge allocates a second
-        // copy. Apply the SAME budget: estimate the retention cost from
-        // the source duration, and if it exceeds the memory-derived
-        // ceiling, disable collection (labels skipped, the reason logged
-        // and reported like the whole-file arm's ceiling).
-        val effectiveCollectSamples = if (collectSamples != null) {
-            // Both budgets derive from the same reads; taken INSIDE the
-            // branch so labels-off runs (the default) pay nothing.
-            val speakerRamBytes = availableMemoryBytes(context).takeIf { it > 0 }
-            val speakerHeapBytes = MemoryReadings.maxHeapBytes().takeIf { it > 0 }
-            val speakerCeilingSec = AudioDurationPolicy.ceilingSeconds(
-                AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM,
-                speakerRamBytes, speakerHeapBytes)
-            val sourceDurationSec = runCatching {
-                audioPreprocessor.getAudioDuration(filePath)
-            }.getOrNull()
-            if (sourceDurationSec != null && sourceDurationSec > speakerCeilingSec) {
-                Log.w(TAG, "Speaker labels skipped: audio ${sourceDurationSec.toInt()}s exceeds the " +
-                    "memory budget ${speakerCeilingSec}s (streaming retention " +
-                    "${sourceDurationSec.toLong() * AudioDurationPolicy.PCM_BYTES_PER_SECOND / MB}MB); " +
-                    "TASK-597 gate")
-                null
-            } else collectSamples
-        } else null
+        // budget of its own (the valve is a flat 4h while the whole-file arm
+        // gates on min(ram/4, heap/2)); with speaker labels on, every decoded
+        // chunk is pinned for the whole run (64KiB/s: 115MB at 30min) and
+        // applySpeakerLabels' merge allocates a second copy. Apply the SAME
+        // budget: estimate the retention cost from the source duration, and
+        // when it exceeds the memory-derived ceiling retain nothing; the
+        // speaker pass then takes the TASK-1060.4 windowed arm, which
+        // re-decodes the file. A resumed session never retains either: its
+        // earlier stints' audio is gone.
+        var speakerWindowedReason: SpeakerTimeline.Reason? = when {
+            collectSamples == null -> null
+            resumeSession != null -> SpeakerTimeline.Reason.RESUMED_SESSION
+            else -> {
+                // Both budgets derive from the same reads; taken INSIDE the
+                // branch so labels-off runs (the default) pay nothing.
+                val speakerCeilingSec = AudioDurationPolicy.ceilingSeconds(
+                    AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM,
+                    availableMemoryBytes(context).takeIf { it > 0 },
+                    MemoryReadings.maxHeapBytes().takeIf { it > 0 })
+                val sourceDurationSec = runCatching {
+                    audioPreprocessor.getAudioDuration(filePath)
+                }.getOrNull()
+                if (AudioDurationPolicy.speakerPass(sourceDurationSec, speakerCeilingSec) ==
+                    AudioDurationPolicy.SpeakerPass.WINDOWED
+                ) {
+                    Log.i(TAG, "Speaker labels: windowed pass, audio ${sourceDurationSec?.toInt()}s exceeds the " +
+                        "memory budget ${speakerCeilingSec}s (TASK-597 gate)")
+                    SpeakerTimeline.Reason.OVER_BUDGET
+                } else null
+            }
+        }
         // TASK-728: the TASK-597 gate above is metadata-based and fail-opens
         // when the container duration is unreadable; the 1.13.2 OOM crash
         // class (Moto G55, 256MB heap) dies mid-stream at the per-chunk
         // allocation. The runtime guard at the add site measures what is
-        // ACTUALLY retained and nulls the collection at the raw byte budget
-        // (note: the gate's ceiling divides by 3 PCM copies, so it trips
-        // earlier; both share retentionBudgetBytes as the one rule).
+        // ACTUALLY retained and drops the collection at the raw byte budget
+        // (switching the pass to the windowed arm).
         // /PCM_PEAK_COPIES: the same divisor the whole-file ceiling applies,
         // so the guard trips at the same effective point as the metadata gate.
-        val speakerRetentionBudgetBytes = if (collectSamples != null)
+        var speakerChunks = if (collectSamples != null && speakerWindowedReason == null)
+            mutableListOf<FloatArray>() else null
+        val speakerRetentionBudgetBytes = if (speakerChunks != null)
             AudioDurationPolicy.retentionBudgetBytes(
                 availableMemoryBytes(context).takeIf { it > 0 },
                 MemoryReadings.maxHeapBytes().takeIf { it > 0 }) / AudioDurationPolicy.PCM_PEAK_COPIES
         else 0L
         var speakerRetainedBytes = 0L
-        var speakerChunks = if (effectiveCollectSamples != null) mutableListOf<FloatArray>() else null
         var speakerSampleRate = 16000
 
         val pipelineStartMs = System.currentTimeMillis()
@@ -4635,15 +4734,16 @@ class TranscriptionOrchestrator @Inject constructor(
                         }
                         val collected = speakerChunks
                         if (collected != null) {
-                            // TASK-728 runtime guard: null the collection at
-                            // the budget instead of OOM-ing mid-stream; labels
-                            // are skipped for this run (same UX as the
+                            // TASK-728 runtime guard: drop the collection at
+                            // the budget instead of OOM-ing mid-stream; the
+                            // pass takes the windowed arm (same as the
                             // metadata gate, but measured, so unreadable
                             // durations are covered too).
                             val chunkBytes = chunk.samples.size * Float.SIZE_BYTES.toLong()
                             if (speakerRetainedBytes + chunkBytes > speakerRetentionBudgetBytes) {
                                 speakerChunks = null
-                                Log.w(TAG, "Speaker labels abandoned at ${speakerRetainedBytes / MB}MB retained: " +
+                                speakerWindowedReason = SpeakerTimeline.Reason.RETENTION_ABANDONED
+                                Log.i(TAG, "Speaker labels: windowed pass, retention dropped at ${speakerRetainedBytes / MB}MB: " +
                                     "over the ${speakerRetentionBudgetBytes / MB}MB memory budget (TASK-728 guard)")
                             } else {
                                 collected.add(chunk.samples)
@@ -4968,12 +5068,18 @@ class TranscriptionOrchestrator @Inject constructor(
         val totalMs = System.currentTimeMillis() - pipelineStartMs
         Log.i(TAG, "PERF: pipeline total ${totalMs}ms for ${totalDurationSeconds}s audio, $processedChunks chunks (expected $expectedChunkCount), backend=${backend.id}, ttft_decode=${firstChunkDecodeMs}ms")
 
-        // GH #83: hand the accumulated contiguous chunks to the caller's
-        // speaker-labeling pass. By construction the pipeline never strips
-        // silence and cue times derive from the same accumulated decoded
-        // seconds, so the timelines match; chunks are references, the
-        // concatenated copy is built lazily inside the pass.
-        speakerChunks?.let { effectiveCollectSamples?.invoke(it, speakerSampleRate) }
+        // GH #83: hand the caller's speaker-labeling pass its timeline. By
+        // construction the pipeline never strips silence and cue times
+        // derive from the same accumulated decoded seconds, so the timelines
+        // match; chunks are references, the concatenated copy is built
+        // lazily inside the pass. The windowed arm gets the exact decoded
+        // length (the whole file's, resumed prefix included).
+        if (collectSamples != null) {
+            val retained = speakerChunks
+            collectSamples(
+                if (retained != null) SpeakerTimeline.Retained(retained, speakerSampleRate)
+                else SpeakerTimeline.Windowed(checkNotNull(speakerWindowedReason), decodedSamplesGlobal))
+        }
 
         // TASK-622: logged BEFORE the blank fail-fast so an all-blank run
         // (the swallowed-decode signature) still leaves the tell in logcat;
