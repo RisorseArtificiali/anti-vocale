@@ -223,6 +223,64 @@ def absorb_small(labels, durations, emb, floor_s, max_distance=ABSORB_MAX_DISTAN
     return out, absorbed, dropped
 
 
+def subsample_cluster(emb, threshold, max_pieces, max_distance, seed):
+    """TASK-1060.9 fallback (PieceClustering.clusterBounded): complete linkage
+    on a seeded random subsample of max_pieces rows; every other row takes the
+    nearest sampled cluster's normalized centroid only within max_distance,
+    else -1 (unlabeled). The app seeds java.util.Random(1060); this samples
+    with numpy, so it measures the rule's spread over seeds, not the app's
+    exact draw."""
+    import sherpa_onnx
+    n = len(emb)
+    rng = np.random.default_rng(seed)
+    sample = np.sort(rng.choice(n, size=max_pieces, replace=False))
+    sampled_labels = np.asarray(sherpa_onnx.FastClustering(
+        sherpa_onnx.FastClusteringConfig(num_clusters=-1, threshold=threshold))(emb[sample]))
+    labels = np.full(n, -1)
+    labels[sample] = sampled_labels
+    ids = sorted(set(sampled_labels.tolist()))
+    cent = np.stack([emb[sample][sampled_labels == c].sum(axis=0) for c in ids])
+    cent /= np.linalg.norm(cent, axis=1, keepdims=True) + 1e-9
+    rest = np.setdiff1d(np.arange(n), sample)
+    rows = emb[rest] / (np.linalg.norm(emb[rest], axis=1, keepdims=True) + 1e-9)
+    sims = rows @ cent.T
+    nearest = sims.argmax(axis=1)
+    ok = 1.0 - sims[np.arange(len(rest)), nearest] <= max_distance
+    labels[rest[ok]] = np.asarray(ids)[nearest[ok]]
+    return labels
+
+
+def score_subsample(args) -> int:
+    """TASK-1060.9: the fallback's agreement vs full linkage, at fractions of
+    each file's piece count, over several seeds, after the same absorption."""
+    import sherpa_onnx
+    fractions = [float(x) for x in args.fractions.split(",")]
+    for ppath in sorted(args.pieces.glob("*.pieces.json")):
+        pc = json.loads(ppath.read_text())
+        stem = Path(pc["file"]).stem
+        ref = json.loads((args.reference / f"{stem}.json").read_text())
+        emb = np.asarray([p["emb"] for p in pc["pieces"]], dtype=np.float32)
+        dur = np.asarray([p["end"] - p["start"] for p in pc["pieces"]])
+        floor = absorb_floor(float(dur.sum()), args.talk_floor, args.absorb_floor_fraction, args.absorb_floor_min)
+        for frac in [1.0] + fractions:
+            for seed in (range(args.seeds) if frac < 1.0 else [0]):
+                if frac < 1.0:
+                    labels = subsample_cluster(emb, args.threshold, int(len(emb) * frac),
+                                               args.absorb_max_distance, seed)
+                else:
+                    labels = np.asarray(sherpa_onnx.FastClustering(
+                        sherpa_onnx.FastClusteringConfig(num_clusters=-1, threshold=args.threshold))(emb))
+                kept = np.flatnonzero(labels >= 0)
+                unassigned_s = float(dur[labels < 0].sum())
+                lab, _, _ = absorb_small(labels[kept], dur[kept].tolist(), emb[kept], floor, args.absorb_max_distance)
+                hyp = [(pc["pieces"][i]["start"], pc["pieces"][i]["end"], int(l))
+                       for i, l in zip(kept, lab) if l >= 0]
+                r = compare(ref_segments(ref), hyp, ref["summary"]["audio_s"])
+                print(json.dumps({"file": stem, "window_min": pc["window_min"], "fraction": frac, "seed": seed,
+                                  "pieces": len(emb), "unassigned_s": round(unassigned_s, 1), **r}), flush=True)
+    return 0
+
+
 def score_pieces(args) -> int:
     import sherpa_onnx
     for ppath in sorted(args.pieces.glob("*.pieces.json")):
@@ -409,8 +467,19 @@ def main() -> int:
     sp.add_argument("--absorb-floor-min", type=float, default=ABSORB_FLOOR_MIN_S)
     sp.add_argument("--absorb-max-distance", type=float, default=ABSORB_MAX_DISTANCE,
                     help="2.0 reproduces the ungated TASK-1061 absorption")
+    ss = sub.add_parser("score-subsample")
+    ss.add_argument("--reference", type=Path, required=True)
+    ss.add_argument("--pieces", type=Path, required=True)
+    ss.add_argument("--threshold", type=float, default=0.8)
+    ss.add_argument("--fractions", default="0.5,0.25")
+    ss.add_argument("--seeds", type=int, default=5)
+    ss.add_argument("--talk-floor", type=float, default=30.0)
+    ss.add_argument("--absorb-floor-fraction", type=float, default=ABSORB_FLOOR_FRACTION)
+    ss.add_argument("--absorb-floor-min", type=float, default=ABSORB_FLOOR_MIN_S)
+    ss.add_argument("--absorb-max-distance", type=float, default=ABSORB_MAX_DISTANCE)
     args = ap.parse_args()
-    return {"run": run, "score": score, "embed": embed_pieces, "score-pieces": score_pieces}[args.cmd](args)
+    return {"run": run, "score": score, "embed": embed_pieces, "score-pieces": score_pieces,
+            "score-subsample": score_subsample}[args.cmd](args)
 
 
 if __name__ == "__main__":
