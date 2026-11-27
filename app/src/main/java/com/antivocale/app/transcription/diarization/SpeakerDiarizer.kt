@@ -34,6 +34,24 @@ class SpeakerDiarizer private constructor(
     private val engine: OfflineSpeakerDiarization,
 ) {
     companion object {
+        /**
+         * The sherpa JNI resolves the listener by
+         * GetMethodID(cls, "invoke", "(IIJ)Ljava/lang/Integer;") (v2.0.2
+         * jni/offline-speaker-diarization.cc), which an invokedynamic lambda
+         * lacks: it carries only the erased invoke, and the failed lookup
+         * leaves a pending NoSuchMethodError (CheckJNI, on in debuggable
+         * builds, aborts on the next JNI call; a release build throws it out
+         * of processWithCallback). An object expression
+         * compiles to a class with the specialized method.
+         */
+        internal fun progressCallback(onProgress: (done: Int, total: Int) -> Unit): (Int, Int, Long) -> Int =
+            object : (Int, Int, Long) -> Int {
+                override fun invoke(done: Int, total: Int, arg: Long): Int {
+                    runCatching { onProgress(done, total) }
+                    return 0
+                }
+            }
+
         /** The auto-clustering threshold measured correct on every
          *  prototype file (0.5 over-split all of them). */
         const val AUTO_THRESHOLD = 0.8f
@@ -99,10 +117,7 @@ class SpeakerDiarizer private constructor(
         // The callback runs inside the JNI call: a throw would leave a
         // pending exception in native code, so a failing listener is dropped.
         val raw = if (onProgress == null) engine.process(samples)
-        else engine.processWithCallback(samples, { done, total, _ ->
-            runCatching { onProgress(done, total) }
-            0
-        })
+        else engine.processWithCallback(samples, progressCallback(onProgress))
         return SpeakerLabeler.denseSegments(raw.map { segment ->
             DiarizedSegment(
                 startSec = segment.start,

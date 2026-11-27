@@ -47,6 +47,13 @@
 # Keep transcription backend classes (registered dynamically via map)
 -keep class com.antivocale.app.transcription.** { *; }
 
+# sherpa's diarization JNI resolves the progress listener by
+# GetMethodID("invoke", "(IIJ)Ljava/lang/Integer;"); only native code calls it,
+# so it must survive any narrowing of the rule above (TASK-1060.5 device crash).
+-keepclassmembers class com.antivocale.app.transcription.diarization.** implements kotlin.jvm.functions.Function3 {
+    java.lang.Integer invoke(int, int, long);
+}
+
 # Keep WorkManager workers (instantiated by class name via WorkManager/Hilt at runtime,
 # so R8's static tracer can't see them) — e.g. SubtitleChoiceTimeoutWorker (TASK-228.9)
 -keep class com.antivocale.app.work.** { *; }
