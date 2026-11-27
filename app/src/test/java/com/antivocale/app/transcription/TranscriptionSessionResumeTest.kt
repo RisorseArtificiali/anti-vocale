@@ -834,7 +834,8 @@ class TranscriptionSessionResumeTest : TranscriptionOrchestratorTestBase() {
             com.antivocale.app.transcription.diarization.WindowedDiarization(
                 listOf(com.antivocale.app.transcription.diarization.DiarizedSegment(
                     0f, (chunkCount * chunkSeconds).toFloat(), 0, null)),
-                emptyMap())
+                emptyMap(),
+                com.antivocale.app.transcription.diarization.WindowedDiarizationStats(0, 0, 0, 0, 0.0, 0, 0.0, 0))
         }
         return totals
     }

@@ -5,6 +5,7 @@ import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.transcription.diarization.DiarizedSegment
 import com.antivocale.app.transcription.diarization.SpeakerLabelTail
 import com.antivocale.app.transcription.diarization.WindowedDiarization
+import com.antivocale.app.transcription.diarization.WindowedDiarizationStats
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.every
@@ -71,7 +72,7 @@ class TranscriptionOrchestratorSpeakerPassTest : TranscriptionOrchestratorTestBa
         }
         orchestrator.windowedDiarization = { _, filePath, totalSamples, _, _ ->
             windowedCalls += filePath to totalSamples
-            WindowedDiarization(listOf(DiarizedSegment(0f, 1f, 1, null)), emptyMap())
+            WindowedDiarization(listOf(DiarizedSegment(0f, 1f, 1, null)), emptyMap(), WindowedDiarizationStats(0, 0, 0, 0, 0.0, 0, 0.0, 0))
         }
     }
 

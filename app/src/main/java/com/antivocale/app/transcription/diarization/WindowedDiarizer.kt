@@ -97,7 +97,9 @@ class WindowedDiarizer(
         val windowSamples = PieceClustering.windowSamples(SAMPLE_RATE, params)
         val stride = windowSamples - PieceClustering.overlapSamples(SAMPLE_RATE, params)
         val pieces = ArrayList<Piece>()
-        var buffer = FloatArray(0)
+        // TASK-1060.7: allocated once at full size (this pass only runs on
+        // audio too long for the whole-file pass, so it always fills).
+        val buffer = FloatArray(windowSamples)
         var size = 0
         var bufferStart = 0L
         var done = 0
@@ -122,15 +124,14 @@ class WindowedDiarizer(
                     bufferStart += stride
                 }
                 val n = minOf(chunk.size - offset, windowSamples - size)
-                if (buffer.size < size + n) {
-                    buffer = buffer.copyOf(minOf(windowSamples, maxOf(size + n, buffer.size * 2)))
-                }
                 chunk.copyInto(buffer, size, offset, offset + n)
                 size += n
                 offset += n
             }
         }
-        if (size > 0) runWindow(if (size == buffer.size) buffer else buffer.copyOf(size), isLast = true)
+        // The diarizer takes the window as an exact array, so a partial last
+        // window is briefly held twice.
+        if (size > 0) runWindow(if (size == windowSamples) buffer else buffer.copyOf(size), isLast = true)
         return PieceClustering.diarize(pieces, params)
     }
 

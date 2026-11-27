@@ -25,6 +25,7 @@ import com.antivocale.app.transcription.diarization.DiarizedSegment
 import com.antivocale.app.transcription.diarization.SpeakerIdentity
 import com.antivocale.app.transcription.diarization.WindowedDiarization
 import com.antivocale.app.transcription.diarization.WindowedDiarizer
+import com.antivocale.app.transcription.diarization.WindowedDiarizationParams
 import com.antivocale.app.transcription.diarization.SpeakerNamer
 import com.antivocale.app.audio.MemoryReadings
 import com.antivocale.app.audio.PreprocessingErrorMessages
@@ -2529,6 +2530,11 @@ class TranscriptionOrchestrator @Inject constructor(
                 listener.onProgress(status, percent, "", durationSeconds, startMs, 0)
             }
         }
+        with(diarization.stats) {
+            Log.i(TAG, "Speaker labels: windowed stats pieces=$piecesIn coarsened=$piecesAfterCoarsen " +
+                "rawClusters=$rawClusters absorbed=$absorbedClusters/${absorbedSec.toInt()}s " +
+                "dropped=$droppedClusters/${droppedSec.toInt()}s speakers=$speakers")
+        }
         diarization.segments to SpeakerNamer.nameCentroids(
             diarization.segments, diarization.centroids, namingIdentities())
     }
@@ -2599,20 +2605,29 @@ class TranscriptionOrchestrator @Inject constructor(
             fun report(inWindow: Float) {
                 windows?.let { onProgress((windowsDone + inWindow) / it) }
             }
+            // The pipeline's memory readings, or the STREAMING ceiling logs a
+            // misleading fail-open warning on every pass.
+            val availableRamBytes = runCatching { MemoryReadings.availableRamBytes(context) }.getOrNull()
+            val maxHeapBytes = MemoryReadings.maxHeapBytes()
+            // TASK-1060.7: the window buffer and the clustering matrix scale
+            // with the same raw budget the retention guard reads.
+            val params = WindowedDiarizationParams.forRetentionBudget(
+                AudioDurationPolicy.retentionBudgetBytes(availableRamBytes, maxHeapBytes))
+            Log.d(TAG, "Speaker labels: windowed params window=${params.windowSec.toInt()}s " +
+                "maxPieces=${params.maxPieces}")
             val diarizer = WindowedDiarizer.native(
                 segmentationModel = DiarizationModels.segmentationFile(context),
                 embeddingModel = DiarizationModels.embeddingFile(context),
                 numThreads = threads,
+                params = params,
                 onSegmentProgress = { done, total -> if (total > 0) report(done.toFloat() / total) },
             )
             windows = totalSamples?.let(diarizer::windowCount)
-            // The pipeline's memory readings, or the STREAMING ceiling logs a
-            // misleading fail-open warning on every pass.
             val chunks = audioPreprocessor.prepareAudioStream(
                 inputPath = filePath,
                 enableVad = false,
-                availableRamBytes = runCatching { MemoryReadings.availableRamBytes(context) }.getOrNull(),
-                maxHeapBytes = MemoryReadings.maxHeapBytes())
+                availableRamBytes = availableRamBytes,
+                maxHeapBytes = maxHeapBytes)
                 .filterIsInstance<StreamEvent.Chunk>()
                 .map { event ->
                     check(event.chunk.sampleRate == WindowedDiarizer.SAMPLE_RATE) {
@@ -2620,7 +2635,11 @@ class TranscriptionOrchestrator @Inject constructor(
                     }
                     event.chunk.samples
                 }
+            var windowStartMs = System.currentTimeMillis()
             diarizer.diarize(chunks, totalSamples) { done, total ->
+                val nowMs = System.currentTimeMillis()
+                Log.d(TAG, "Speaker labels: window $done/${total ?: "?"} took ${nowMs - windowStartMs}ms")
+                windowStartMs = nowMs
                 windowsDone = done
                 windows = total
                 report(0f)

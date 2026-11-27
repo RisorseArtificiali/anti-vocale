@@ -144,15 +144,108 @@ class PieceClusteringTest {
             piece(40.0, 43.0, 0.9f, 0.1f, 0f),
             piece(43.0, 46.0, 0.1f, 0.9f, 0.2f),
         )
-        val absorbed = PieceClustering.absorbSmall(intArrayOf(0, 1, 2, 3), pieces, floorSec = 15.0)
-        assertArrayEquals(intArrayOf(0, 1, 0, 1), absorbed)
+        val absorbed = PieceClustering.absorbSmall(
+            intArrayOf(0, 1, 2, 3), pieces, floorSec = 15.0, maxDistance = 0.45)
+        assertEquals(listOf(0, 1, 0, 1), absorbed.labels)
+        assertEquals(2, absorbed.absorbedClusters)
+        assertEquals(6.0, absorbed.absorbedSec, 1e-9)
+        assertEquals(0, absorbed.droppedClusters)
     }
 
     @Test
     fun `labels stay unchanged when no cluster reaches the floor`() {
         val pieces = listOf(piece(0.0, 3.0, 1f, 0f), piece(3.0, 6.0, 0f, 1f))
-        assertArrayEquals(intArrayOf(0, 1),
-            PieceClustering.absorbSmall(intArrayOf(0, 1), pieces, floorSec = 30.0))
+        assertEquals(listOf(0, 1),
+            PieceClustering.absorbSmall(intArrayOf(0, 1), pieces, floorSec = 30.0, maxDistance = 0.45).labels)
+    }
+
+    @Test
+    fun `a small cluster far from every big one is dropped instead of absorbed`() {
+        // Two big speakers on x and y; a short z voice is orthogonal to both
+        // (cosine distance 1), a short x-leaning one sits within 0.45 of x.
+        val pieces = listOf(
+            piece(0.0, 40.0, 1f, 0f, 0f),
+            piece(40.0, 80.0, 0f, 1f, 0f),
+            piece(80.0, 83.0, 0f, 0f, 1f),
+            piece(83.0, 86.0, 1f, 0.3f, 0f),
+        )
+        val absorbed = PieceClustering.absorbSmall(
+            intArrayOf(0, 1, 2, 3), pieces, floorSec = 30.0, maxDistance = 0.45)
+        assertEquals(listOf(0, 1, null, 0), absorbed.labels)
+        assertEquals(1, absorbed.absorbedClusters)
+        assertEquals(1, absorbed.droppedClusters)
+        assertEquals(3.0, absorbed.droppedSec, 1e-9)
+    }
+
+    @Test
+    fun `dropped pieces leave no segment and no centroid while the rest stay intact`() {
+        // 203 s of talk puts the floor at 4.06 s: the 3 s z voice is small and far.
+        val pieces = listOf(
+            piece(0.0, 100.0, 1f, 0f, 0f),
+            piece(100.0, 200.0, 0f, 1f, 0f),
+            piece(200.0, 203.0, 0f, 0f, 1f),
+        )
+        val result = PieceClustering.diarize(pieces, params.copy(threshold = 0.2f))
+
+        assertEquals(
+            listOf(DiarizedSegment(0f, 100f, 0, null), DiarizedSegment(100f, 200f, 1, null)),
+            result.segments)
+        assertEquals(setOf(0, 1), result.centroids.keys)
+        // A cue over the dropped instants overlaps no segment: it stays unlabeled.
+        val cues = listOf(com.antivocale.app.transcription.TimedSegment(200_500L, 202_500L, "ciao"))
+        assertEquals(listOf<Int?>(null), SpeakerLabeler.label(cues, result.segments))
+    }
+
+    @Test
+    fun `the relative floor keeps a short real speaker in a short recording`() {
+        // 120 s of talk: the 2 percent floor is 2.4 s, well under the 30 s
+        // absolute one, so a 10 s speaker far from the other survives.
+        val pieces = (0 until 10).map { piece(it * 11.0, it * 11.0 + 11, 1f, 0f) } +
+            (0 until 5).map { piece(200 + it * 2.0, 202 + it * 2.0, 0f, 1f) }
+        val result = PieceClustering.diarize(pieces, params.copy(threshold = 0.2f))
+
+        assertEquals(2, result.stats.speakers)
+        assertEquals(DiarizedSegment(200f, 210f, 1, null), result.segments.last())
+        assertEquals(0, result.stats.droppedClusters)
+    }
+
+    @Test
+    fun `stats count pieces, clusters, absorbed and dropped talk`() {
+        // Six contiguous x pieces coarsen pairwise into three to fit 5.
+        // 185 s of talk puts the floor at 3.7 s: the 3 s x-leaning cluster
+        // is close (absorbed), the 2 s z cluster is far (dropped).
+        val pieces = (0 until 6).map { piece(it * 30.0, it * 30.0 + 30, 1f, 0f, 0f) } + listOf(
+            piece(200.0, 203.0, 1f, 0.5f, 0f),
+            piece(210.0, 212.0, 0f, 0f, 1f),
+        )
+        val stats = PieceClustering.diarize(
+            pieces, params.copy(threshold = 0.05f, maxPieces = 5)).stats
+
+        assertEquals(
+            WindowedDiarizationStats(
+                piecesIn = 8, piecesAfterCoarsen = 5, rawClusters = 3,
+                absorbedClusters = 1, absorbedSec = 3.0,
+                droppedClusters = 1, droppedSec = 2.0, speakers = 1),
+            stats)
+    }
+
+    @Test
+    fun `budget-derived bounds hit their floors on a small budget and caps on a large one`() {
+        val small = WindowedDiarizationParams.forRetentionBudget(512L * 1024)
+        assertEquals(500, small.maxPieces)
+        assertEquals(300.0, small.windowSec, 1e-9)
+
+        val large = WindowedDiarizationParams.forRetentionBudget(1024L * 1024 * 1024)
+        assertEquals(5000, large.maxPieces)
+        assertEquals(600.0, large.windowSec, 1e-9)
+
+        // 64 MiB: sqrt(16 Mi) pieces, whose float matrix fits half the budget.
+        val budget = 64L * 1024 * 1024
+        val mid = WindowedDiarizationParams.forRetentionBudget(budget)
+        assertEquals(4096, mid.maxPieces)
+        assertTrue(mid.maxPieces.toLong() * (mid.maxPieces - 1) / 2 * 4 <= budget / 2)
+        // 100 MB: the window buffer (64000 B/s) gets a quarter of the budget.
+        assertEquals(390.0, WindowedDiarizationParams.forRetentionBudget(100_000_000L).windowSec, 1e-9)
     }
 
     @Test
@@ -258,7 +351,7 @@ class PieceClusteringTest {
             piece(6.0, 7.0, 1f, 0.8f),
             piece(10.0, 40.0, 0f, 1f),
         )
-        val result = PieceClustering.diarize(pieces, params.copy(threshold = 0.2f, absorbFloorSec = 5.0))
+        val result = PieceClustering.diarize(pieces, params.copy(threshold = 0.2f, absorbFloorSec = 5.0, absorbFloorFraction = 1.0))
 
         assertEquals(setOf(0, 1), result.centroids.keys)
         val x = result.centroids.getValue(0)
