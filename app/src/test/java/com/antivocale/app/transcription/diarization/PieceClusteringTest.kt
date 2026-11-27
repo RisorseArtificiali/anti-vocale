@@ -295,6 +295,95 @@ class PieceClusteringTest {
         assertEquals(1, result.farClusters)
     }
 
+    /** The rows clusterBounded's seeded subsample takes for [n] rows: it depends only on the count. */
+    private fun sampledRows(n: Int, maxPieces: Int): Set<Int> {
+        val probe = (0 until n).map { floatArrayOf(it.toFloat(), 1f) }
+        val sampled = HashSet<Int>()
+        PieceClustering.clusterBounded(probe, 0.5f, maxPieces) { rows, threshold ->
+            rows.forEach { row -> sampled += probe.indexOfFirst { it === row } }
+            PieceClustering.completeLinkage(rows, threshold)
+        }
+        return sampled
+    }
+
+    /** Alternating A and B rows with [placed] embeddings put in unsampled rows, in index order. */
+    private fun withUnsampled(n: Int, maxPieces: Int, placed: List<FloatArray>): Pair<List<FloatArray>, List<Int>> {
+        val dim = placed.first().size
+        val a = FloatArray(dim).also { it[0] = 1f }
+        val b = FloatArray(dim).also { it[1] = 1f }
+        val sampled = sampledRows(n, maxPieces)
+        val rows = (0 until n).filter { it !in sampled }.take(placed.size)
+        val embeddings = (0 until n).map { i ->
+            val k = rows.indexOf(i)
+            if (k >= 0) placed[k] else if (i % 2 == 0) a.copyOf() else b.copyOf()
+        }
+        return embeddings to rows
+    }
+
+    @Test
+    fun `a missed voice split by a row between it and noise comes out as one cluster`() {
+        // At threshold 0.5 in index order v1, noise, v2: noise is 0.6 from
+        // v1 and opens a second far cluster, and v2 (0.25 from v1, 0.095
+        // from noise) joins the noise one, so the greedy pass splits the
+        // voice; read in the order v1, v2, noise it would not.
+        val v1 = floatArrayOf(0f, 0f, 1f, 0f)
+        val noise = floatArrayOf(0f, 0f, 0.4f, 0.9165f)
+        val v2 = floatArrayOf(0f, 0f, 0.75f, 0.6614f)
+        val (embeddings, rows) = withUnsampled(30, 10, listOf(v1, noise, v2))
+        val labels = PieceClustering.clusterBounded(embeddings, 0.5f, maxPieces = 10).labels
+
+        assertEquals("v1 and v2 share a label", labels[rows[0]], labels[rows[2]])
+    }
+
+    @Test
+    fun `two orthogonal missed voices stay two far clusters`() {
+        val c = floatArrayOf(0f, 0f, 1f, 0f)
+        val d = floatArrayOf(0f, 0f, 0f, 1f)
+        val (embeddings, rows) = withUnsampled(30, 10, listOf(c, d, c, d, c, d))
+        val result = PieceClustering.clusterBounded(embeddings, 0.5f, maxPieces = 10)
+
+        val cLabels = rows.filterIndexed { k, _ -> k % 2 == 0 }.map { result.labels[it] }.toSet()
+        val dLabels = rows.filterIndexed { k, _ -> k % 2 == 1 }.map { result.labels[it] }.toSet()
+        assertEquals(1, cLabels.size)
+        assertEquals(1, dLabels.size)
+        assertTrue("the two voices keep distinct labels", cLabels != dLabels)
+        assertEquals(2, result.linkageClusters)
+        assertEquals(2, result.farClusters)
+    }
+
+    @Test
+    fun `a missed voice's row within the threshold of a sampled speaker joins its own nearer far cluster`() {
+        // At threshold 0.8 the row is 0.75 from A, so it is not far, but
+        // 0.1 from the far voice's centroid.
+        val c = floatArrayOf(0f, 0f, 1f, 0f)
+        val row = floatArrayOf(0.25f, 0f, 0.9f, 0.3571f)
+        val (embeddings, rows) = withUnsampled(30, 10, listOf(row, c, c, c, c))
+        val labels = PieceClustering.clusterBounded(embeddings, 0.8f, maxPieces = 10).labels
+
+        assertEquals(labels[rows[1]], labels[rows[0]])
+    }
+
+    @Test
+    fun `diarize reports the far clusters of a missed voice in its stats`() {
+        // Two rows of one voice 35 degrees either side of its center are
+        // 0.66 apart, so a leader pass reading v1, v2, c, c splits them
+        // while their merged centroids sit 0.31 apart.
+        val v1 = floatArrayOf(0f, 0f, 0.8192f, 0.5736f)
+        val v2 = floatArrayOf(0f, 0f, 0.8192f, -0.5736f)
+        val c = floatArrayOf(0f, 0f, 1f, 0f)
+        val (embeddings, rows) = withUnsampled(30, 10, listOf(v1, v2, c, c))
+        val pieces = embeddings.mapIndexed { i, e -> piece(i * 10.0, i * 10.0 + 5, *e) }
+        val result = PieceClustering.diarize(pieces, params.copy(threshold = 0.5f, maxPieces = 10))
+
+        assertEquals(2, result.stats.rawClusters)
+        assertEquals(1, result.stats.farClusters)
+        val speakerAt = result.segments.associate { it.startSec to it.speaker }
+        val voice = rows.map { speakerAt[it * 10f] }.toSet()
+        assertEquals(1, voice.size)
+        assertTrue("the voice is a speaker of its own", voice.single() != null &&
+            result.segments.count { it.speaker == voice.single() } == rows.size)
+    }
+
     @Test
     fun `stats count pieces, clusters, absorbed and dropped talk`() {
         // Six contiguous x pieces coarsen pairwise into three to fit 5.

@@ -61,8 +61,8 @@ data class WindowedDiarizationParams(
      * that cannot reach it (alternating short turns), a seeded random
      * subsample of exactly [maxPieces] pieces is clustered and every other
      * piece joins its nearest cluster centroid; pieces [threshold] or more
-     * from every sampled centroid are grouped among themselves by a leader
-     * pass (see PieceClustering.clusterBounded).
+     * from every sampled centroid form far clusters of their own (see
+     * PieceClustering.clusterBounded).
      */
     val maxPieces: Int = MAX_PIECES,
 ) {
@@ -97,9 +97,11 @@ data class WindowedDiarizationParams(
          * [MIN_PIECES] and [MIN_WINDOW_SEC] floors override a tiny budget so
          * the pass still clusters at a usable resolution. The buffer itself
          * never exceeds one window; two transients briefly hold an old and
-         * a new array, each under 2 windows: growing the buffer (doubling
-         * while the decode length is unknown or undercounted, capped at the
-         * window) and the final partial window's exact-size copy. The
+         * a new array: growing the buffer (doubling while the decode length
+         * is unknown or undercounted, straight to the window past half of
+         * it) holds at most 1.5 windows, or under 2 when the first buffer
+         * was sized to an undercounted estimate above half a window, and
+         * the final partial window's exact-size copy under 2 windows. The
          * window clamps to 5..10 min (the TASK-1060.2 spike measured 5-min
          * and 10-min windows equivalent at threshold 0.8).
          */
@@ -161,10 +163,9 @@ class WindowedDiarization(
  * TASK-1060.7: what the global clustering did, so a bad device result can
  * be diagnosed from the log. Seconds are piece talk time. [rawClusters]
  * counts complete linkage's clusters (of the subsample past maxPieces), so
- * a high value is over-segmentation; [farClusters] counts the clusters the
- * leader pass opened for unsampled rows far from every sampled one, so a
- * nonzero value is a voice or noise the subsample missed. Absorption sees
- * both kinds.
+ * a high value is over-segmentation; [farClusters] counts the consolidated
+ * clusters of unsampled rows far from every sampled one, so a nonzero value
+ * is a voice or noise the subsample missed. Absorption sees both kinds.
  */
 data class WindowedDiarizationStats(
     val piecesIn: Int,
@@ -179,7 +180,7 @@ data class WindowedDiarizationStats(
 
 /**
  * TASK-1060.7: [clusterBounded]'s per-row labels, plus how many came from
- * complete linkage and how many from the far-row leader pass.
+ * complete linkage and how many are consolidated far clusters.
  */
 class BoundedClusters(val labels: IntArray, val linkageClusters: Int, val farClusters: Int)
 
@@ -513,18 +514,34 @@ object PieceClustering {
     }
 
     /**
-     * [completeLinkage] over at most [maxPieces] rows: past the cap, a
-     * seeded random subsample of exactly [maxPieces] embeddings is clustered
-     * (an evenly spaced one phase-locks to alternating turns and can miss a
-     * voice entirely) and every other row takes the label of the sampled
-     * cluster whose normalized centroid is closest by cosine. A row whose
-     * closest sampled centroid is [threshold] or more away (complete linkage
-     * would not have merged it into that cluster either) is a far row: a
-     * greedy leader pass in index order puts it in the nearest far cluster
-     * whose running centroid is within [threshold], else opens a new one, so
-     * one voice the subsample missed comes out as one cluster that
-     * [absorbSmall] gates like any other. [link] is the clustering, a seam
-     * so a test can observe the rows it receives.
+     * [completeLinkage] over at most [maxPieces] rows. Past the cap, which
+     * only happens when [coarsen] cannot reach it (at default budgets a
+     * file yields about 1200 pieces an hour against a cap of up to 5000, so
+     * rarely under the 4 h ceiling), a seeded random subsample of exactly
+     * [maxPieces] rows is clustered (an evenly spaced one phase-locks to
+     * alternating turns and can miss a voice entirely) and the unsampled
+     * rows are labeled in three steps:
+     *
+     * 1. Seeding: an unsampled row [threshold] or more from every sampled
+     *    cluster's normalized centroid is a far row; a leader pass in index
+     *    order puts it in the nearest far cluster within [threshold], else
+     *    opens a new one.
+     * 2. Consolidation: the closest two far clusters whose centroids are
+     *    within [threshold] merge, until no pair is, so the seeding order no
+     *    longer splits one voice. Sampled clusters never merge here.
+     * 3. Reassignment: every unsampled row takes the nearest centroid among
+     *    the far clusters and the sampled clusters within [threshold] of it,
+     *    so a missed voice's row near a sampled speaker still goes to its
+     *    own far cluster when that is closer.
+     *
+     * This approximates complete linkage over all rows with centroid
+     * distances: one voice the subsample missed comes out as one cluster
+     * that [absorbSmall] gates like any other, but a far cluster is held
+     * together by its centroid, not by every pairwise distance. Cost, with U
+     * unsampled rows, K sampled and F far clusters: O(U * (K + F) * dim)
+     * for seeding and reassignment, O(F^3 * dim) worst case for
+     * consolidation. [link] is the clustering, a seam so a test can observe
+     * the rows it receives.
      */
     internal fun clusterBounded(
         embeddings: List<FloatArray>,
@@ -551,29 +568,79 @@ object PieceClustering {
         val centroids = sums.values.map(::normalized)
         val labels = IntArray(n) { -1 }
         sampled.forEachIndexed { j, row -> labels[row] = sampleLabels[j] }
-        val firstFarLabel = (sampleLabels.maxOrNull() ?: -1) + 1
+        val unsampled = (0 until n).filter { labels[it] == -1 }
+        val row = FloatArray(embeddings[0].size)
+
         val farSums = ArrayList<FloatArray>()
         val farCentroids = ArrayList<FloatArray>()
-        for (i in 0 until n) {
-            if (labels[i] != -1) continue
-            val row = normalized(embeddings[i])
-            val nearest = centroids.indices.maxBy { dot(centroids[it], row) }
-            if (1.0 - dot(centroids[nearest], row) < threshold) {
-                labels[i] = clusterIds[nearest]
-                continue
-            }
+        for (i in unsampled) {
+            normalizeInto(embeddings[i], row)
+            if (centroids.any { 1.0 - dot(it, row) < threshold }) continue
             val far = farCentroids.indices.maxByOrNull { dot(farCentroids[it], row) }
                 ?.takeIf { 1.0 - dot(farCentroids[it], row) < threshold }
-            val joined = far ?: farSums.size.also {
-                farSums += FloatArray(row.size)
-                farCentroids += row
+            if (far == null) {
+                farSums += embeddings[i].copyOf()
+                farCentroids += row.copyOf()
+            } else {
+                val sum = farSums[far]
+                for (k in sum.indices) sum[k] += embeddings[i][k]
+                normalizeInto(sum, farCentroids[far])
             }
-            val sum = farSums[joined]
-            for (k in sum.indices) sum[k] += embeddings[i][k]
-            farCentroids[joined] = normalized(sum)
-            labels[i] = firstFarLabel + joined
         }
-        return BoundedClusters(labels, sums.size, farSums.size)
+
+        while (true) {
+            var bestSim = Double.NEGATIVE_INFINITY
+            var keep = -1
+            var gone = -1
+            for (a in farCentroids.indices) for (b in a + 1 until farCentroids.size) {
+                val sim = dot(farCentroids[a], farCentroids[b])
+                if (sim > bestSim) {
+                    bestSim = sim
+                    keep = a
+                    gone = b
+                }
+            }
+            if (keep < 0 || 1.0 - bestSim >= threshold) break
+            val sum = farSums[keep]
+            for (k in sum.indices) sum[k] += farSums[gone][k]
+            normalizeInto(sum, farCentroids[keep])
+            farSums.removeAt(gone)
+            farCentroids.removeAt(gone)
+        }
+
+        val farOf = IntArray(n) { -1 }
+        for (i in unsampled) {
+            normalizeInto(embeddings[i], row)
+            var best = -1
+            var bestSim = Double.NEGATIVE_INFINITY
+            for (c in centroids.indices) {
+                val sim = dot(centroids[c], row)
+                if (1.0 - sim < threshold && sim > bestSim) {
+                    best = c
+                    bestSim = sim
+                }
+            }
+            for (f in farCentroids.indices) {
+                val sim = dot(farCentroids[f], row)
+                if (sim > bestSim) {
+                    best = centroids.size + f
+                    bestSim = sim
+                }
+            }
+            // A row no sampled cluster takes was far at seeding, so it is in some far cluster.
+            check(best >= 0)
+            if (best < centroids.size) labels[i] = clusterIds[best] else farOf[i] = best - centroids.size
+        }
+        val firstFarLabel = (sampleLabels.maxOrNull() ?: -1) + 1
+        val farLabel = IntArray(farCentroids.size) { -1 }
+        var farClusters = 0
+        for (i in unsampled) {
+            val f = farOf[i]
+            if (f < 0) continue
+            if (farLabel[f] < 0) farLabel[f] = firstFarLabel + farClusters++
+            labels[i] = farLabel[f]
+        }
+        return BoundedClusters(labels, sums.size, farClusters)
     }
 
     /**
@@ -628,9 +695,11 @@ object PieceClustering {
         return sorted.indices.count { it == 0 || sorted[it] != sorted[it - 1] }
     }
 
-    fun normalized(vector: FloatArray): FloatArray {
-        val norm = sqrt(dot(vector, vector)).toFloat()
-        return FloatArray(vector.size) { vector[it] / (norm + 1e-9f) }
+    fun normalized(vector: FloatArray): FloatArray = FloatArray(vector.size).also { normalizeInto(vector, it) }
+
+    private fun normalizeInto(vector: FloatArray, out: FloatArray) {
+        val norm = sqrt(dot(vector, vector)).toFloat() + 1e-9f
+        for (i in vector.indices) out[i] = vector[i] / norm
     }
 
     private fun dot(a: FloatArray, b: FloatArray): Double {

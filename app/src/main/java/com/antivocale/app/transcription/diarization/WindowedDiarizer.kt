@@ -131,11 +131,13 @@ class WindowedDiarizer(
                 }
                 val n = minOf(chunk.size - offset, windowSamples - size)
                 if (size + n > buffer.size) {
-                    // Doubling stops at the window, so the buffer never
-                    // exceeds one window; the copy briefly holds the old
-                    // buffer too, under two windows in all.
+                    // Past half the window, grow straight to it, so a
+                    // doubled buffer is at most half a window when it is
+                    // copied into the full one: 1.5 windows at the peak. A
+                    // first buffer sized to an undercounted estimate can be
+                    // larger, so that one growth stays under 2 windows.
                     val grown = maxOf(buffer.size * 2, size + n)
-                    buffer = buffer.copyOf(if (grown >= windowSamples) windowSamples else grown)
+                    buffer = buffer.copyOf(if (grown > windowSamples / 2) windowSamples else grown)
                 }
                 chunk.copyInto(buffer, size, offset, offset + n)
                 size += n

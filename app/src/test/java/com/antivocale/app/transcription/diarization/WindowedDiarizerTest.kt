@@ -124,9 +124,11 @@ class WindowedDiarizerTest {
     }
 
     @Test
-    fun `a window larger than the initial buffer grows from an unknown length to the known-length cut`() = runTest {
+    fun `an unknown length on a window larger than the initial buffer cuts the known-length windows and segments`() = runTest {
         // A 150 s window starts an unknown-length buffer at 60 s, below it,
-        // so the doubling (60, 120, then capped at 150) is exercised.
+        // so the buffer must grow (60, then straight to 150). The test
+        // guards window and segment equivalence only; buffer sizes are not
+        // observable here.
         val wide = params.copy(windowSec = 150.0)
         val samples = audio(330,
             Triple(0, 70, 1f), Triple(71, 160, 2f), Triple(161, 250, 1f), Triple(251, 330, 2f))
