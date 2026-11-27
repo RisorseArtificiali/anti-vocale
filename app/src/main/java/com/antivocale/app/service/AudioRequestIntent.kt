@@ -111,6 +111,18 @@ object AudioRequestIntent {
             taskId?.let { putExtra(InferenceService.EXTRA_PAUSE_TASK_ID, it) }
         }
 
+    /**
+     * Per-task cancel (GH #52 follow-up), the ONE builder of the intent the
+     * History row and the debug SPI op deliver: drops one queued request or
+     * aborts the in-flight one, leaving the rest of the queue intact. A
+     * control delivery: startService, never the enqueue path.
+     */
+    fun cancelTask(context: Context, taskId: String): Intent =
+        Intent(context, InferenceService::class.java).apply {
+            action = InferenceService.ACTION_CANCEL_TASK
+            putExtra(InferenceService.EXTRA_CANCEL_TASK_ID, taskId)
+        }
+
     private fun make(
         context: Context,
         source: String,

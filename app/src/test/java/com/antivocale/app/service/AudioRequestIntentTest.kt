@@ -100,4 +100,12 @@ class AudioRequestIntentTest {
             context, InferenceService.SOURCE_VOICE_NOTE, "t7", "/local/e.opus")
         assertEquals(false, live.getBooleanExtra(InferenceService.EXTRA_CATCHUP, false))
     }
+
+    @Test
+    fun `the per-task cancel names its task for the service's cancel handler`() {
+        val intent = AudioRequestIntent.cancelTask(context, "t8")
+        assertEquals(InferenceService.ACTION_CANCEL_TASK, intent.action)
+        assertEquals("t8", intent.getStringExtra(InferenceService.EXTRA_CANCEL_TASK_ID))
+        assertEquals(InferenceService::class.java.name, intent.component?.className)
+    }
 }

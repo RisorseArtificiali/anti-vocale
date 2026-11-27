@@ -161,6 +161,7 @@ internal class TestSpiOps(
             OP_SESSION_STATE -> sessionState()
             OP_SESSION_RESUME -> sessionResume(value)
             OP_SESSION_PAUSE -> sessionPause(value)
+            OP_SESSION_CANCEL -> sessionCancel(value)
             OP_TRANSCRIBE_FILE -> transcribeFile(value)
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
@@ -1117,12 +1118,7 @@ internal class TestSpiOps(
      * no-op). The pause itself lands at the next chunk boundary; verify
      * via session_state (PAUSED_USER) and the row (PAUSED).
      */
-    private suspend fun sessionPause(taskId: String?): String {
-        val context = appContext
-            ?: throw IllegalArgumentException("pause dispatch needs the app context")
-        if (taskId.isNullOrBlank()) {
-            throw IllegalArgumentException("missing 'value' extra (the session taskId)")
-        }
+    private fun sessionPause(taskId: String?): String =
         // TASK-1037 phase 4: the op rides the SAME production delivery the
         // History row and the notification button use (the control-service
         // intent), so a device proof exercises the real path; the
@@ -1130,17 +1126,41 @@ internal class TestSpiOps(
         // inside the service. The start is only restricted when no service
         // is running (nothing pausable anyway), reported as dispatched
         // false with the reason instead of failing the broadcast.
-        val intent = com.antivocale.app.service.AudioRequestIntent.pauseTask(context, taskId)
+        dispatchControl(OP_SESSION_PAUSE, taskId,
+            com.antivocale.app.service.AudioRequestIntent::pauseTask)
+
+    /**
+     * op=session_cancel, value=&lt;taskId&gt;: dispatches the production
+     * ACTION_CANCEL_TASK control delivery (the History row's cancel), so a
+     * device proof can time how fast a running pass stops (TASK-1060.5's
+     * cancel latency). Same ack shape as session_pause; the outcome lands on
+     * the log row (CANCELLED) and in session_state.
+     */
+    private fun sessionCancel(taskId: String?): String =
+        dispatchControl(OP_SESSION_CANCEL, taskId,
+            com.antivocale.app.service.AudioRequestIntent::cancelTask)
+
+    /** The shared control-delivery body of session_pause and session_cancel. */
+    private fun dispatchControl(
+        op: String,
+        taskId: String?,
+        build: (android.content.Context, String) -> android.content.Intent,
+    ): String {
+        val context = appContext
+            ?: throw IllegalArgumentException("$op dispatch needs the app context")
+        if (taskId.isNullOrBlank()) {
+            throw IllegalArgumentException("missing 'value' extra (the session taskId)")
+        }
         var failure: String? = null
         val dispatched = try {
-            context.startService(intent)
+            context.startService(build(context, taskId))
             true
         } catch (e: Exception) {
             failure = e.javaClass.simpleName
             false
         }
         val reply = JSONObject()
-            .put("op", OP_SESSION_PAUSE)
+            .put("op", op)
             .put("taskId", taskId)
             .put("dispatched", dispatched)
         failure?.let { reply.put("error", it) }
@@ -1909,6 +1929,7 @@ internal class TestSpiOps(
         const val OP_SESSION_STATE = "session_state"
         const val OP_SESSION_RESUME = "session_resume"
         const val OP_SESSION_PAUSE = "session_pause"
+        const val OP_SESSION_CANCEL = "session_cancel"
         const val OP_TRANSCRIBE_FILE = "transcribe_file"
 
         /** search op rendered-row cap (full count rides beside it). */
@@ -1935,7 +1956,7 @@ internal class TestSpiOps(
          * both are intercepted receiver-side before handle() runs, so they
          * live in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_RAM_TIER, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_DECODE_PROBE, OP_DECODE_PROBE2, OP_DECODE_PROBE2_STATE, OP_SESSION_STATE, OP_SESSION_RESUME, OP_SESSION_PAUSE, OP_TRANSCRIBE_FILE, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_RECORD_DELETE, OP_IDENTITY_CACHE, OP_IMPORT, OP_IMPORT_STATE, OP_IMPORT_CANCEL, OP_IMPORT_RETRY, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_RAM_TIER, OP_UNLOAD, OP_VOICE_NOTE_STATE, OP_MODEL_DOWNLOAD, OP_CLEAR_ORPHANED, OP_BUNDLE_EXPORT, OP_BUNDLE_IMPORT, OP_MODEL_PRESENT, OP_SEARCH, OP_LOG, OP_LOG_READ, OP_LOG_DELETE, OP_VOICE_NOTE_WATERMARK_RESET, OP_VOICE_NOTE_SIMULATE, OP_NOTIFY_TEXT, OP_DECODE_PROBE, OP_DECODE_PROBE2, OP_DECODE_PROBE2_STATE, OP_SESSION_STATE, OP_SESSION_RESUME, OP_SESSION_PAUSE, OP_SESSION_CANCEL, OP_TRANSCRIBE_FILE, OP_HELP)
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024
 

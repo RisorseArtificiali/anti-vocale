@@ -69,7 +69,6 @@ import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.util.TranscriptLanguageHeuristic
 import com.antivocale.app.util.formatProcessingTime
 import com.antivocale.app.data.PreferencesManager
-import com.antivocale.app.service.InferenceService
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.animation.Crossfade
 import com.antivocale.app.ui.components.SkeletonTranscriptionCard
@@ -349,11 +348,7 @@ private fun copyTranscriptionToClipboard(
  * request or abort the in-flight one, leaving the rest of the queue intact.
  */
 private fun cancelTask(context: Context, taskId: String) {
-    val intent = Intent(context, InferenceService::class.java).apply {
-        action = InferenceService.ACTION_CANCEL_TASK
-        putExtra(InferenceService.EXTRA_CANCEL_TASK_ID, taskId)
-    }
-    context.startService(intent)
+    context.startService(com.antivocale.app.service.AudioRequestIntent.cancelTask(context, taskId))
 }
 
 /**
