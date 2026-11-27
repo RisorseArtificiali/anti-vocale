@@ -3,12 +3,14 @@ package com.antivocale.app.transcription.diarization
 import kotlin.math.sqrt
 
 /**
- * TASK-1060.3: the parameters of the windowed diarization pass. Every
- * default is the TASK-1060.2 spike's recommendation (zero merges on all
- * six window x composite cells at threshold 0.8; the first merge appears
- * a full 0.1 step higher), so change them only against new spike numbers.
- * TASK-1060.7: the orchestrator derives [windowSec] and [maxPieces] from
- * the device's memory budget through [forRetentionBudget].
+ * TASK-1060.3: the parameters of the windowed diarization pass. The
+ * [windowSec] range, [overlapSec], [pieceSec] and [threshold] are the
+ * TASK-1060.2 spike's recommendation (zero merges on all six window x
+ * composite cells at threshold 0.8; the first merge appears a full 0.1 step
+ * higher) and [absorbMaxDistance] is measured on the same composites; the
+ * KDoc of each other knob says where it comes from. TASK-1060.7: the
+ * orchestrator derives [windowSec] and [maxPieces] from the device's memory
+ * budget through [forRetentionBudget].
  */
 data class WindowedDiarizationParams(
     val windowSec: Double = MAX_WINDOW_SEC,
@@ -16,29 +18,44 @@ data class WindowedDiarizationParams(
     val pieceSec: Double = 3.0,
     val threshold: Float = SpeakerDiarizer.AUTO_THRESHOLD,
     /**
-     * A cluster with less talk than [absorbFloorSec], or than
-     * [absorbFloorFraction] of the file's total piece talk when that is
-     * smaller (TASK-1060.7: a short two-person note must not lose a real
-     * speaker to the absolute floor), is absorbed or dropped.
+     * A cluster with less talk than the floor [absorbFloorFor] derives is
+     * absorbed or dropped. This is the floor's cap (TASK-1061).
      */
     val absorbFloorSec: Double = 30.0,
+    /**
+     * TASK-1060.7: the floor scales with the file's total piece talk, so a
+     * short two-person note does not lose a real speaker to the 30 s cap.
+     * UNMEASURED: no spike number stands behind 0.02; the TASK-1060.8
+     * real-audio ground truth measures it.
+     */
     val absorbFloorFraction: Double = 0.02,
+    /**
+     * TASK-1060.7: the floor never drops below this, so complete-linkage
+     * fragments of one voice (3 to 6 s on a short run) still face the
+     * [absorbMaxDistance] gate instead of becoming speakers of their own,
+     * while a real 10 s speaker in a short note survives. UNMEASURED: no
+     * spike number stands behind 10 s; TASK-1060.8 measures it.
+     */
+    val absorbFloorMinSec: Double = 10.0,
     /**
      * TASK-1060.7: a sub-floor cluster joins its nearest big cluster only
      * within this cosine distance of the two normalized centroids;
      * otherwise its pieces are dropped and carry no speaker. On the
-     * TASK-1060.2 VoxPopuli composites, ungated absorption put 33 of 71
-     * small clusters on the wrong speaker; at 0.45 only 2 of 24 accepted
-     * were wrong, agreement rose from 0.9928/0.9934/0.9921 to
-     * 0.996/0.9971/0.9954 for 0.5 pt of coverage, merges stayed 0.
+     * TASK-1060.2 VoxPopuli composites with a 30 s floor, ungated
+     * absorption put 33 of 71 small clusters on the wrong speaker; at 0.45
+     * only 2 of 24 accepted were wrong, agreement rose from
+     * 0.9928/0.9934/0.9921 to 0.996/0.9971/0.9954 for 0.5 pt of coverage,
+     * merges stayed 0.
      */
     val absorbMaxDistance: Double = 0.45,
     /**
-     * Bound on the clustering's condensed distance matrix (n(n-1)/2 floats:
-     * 5000 pieces is about 50 MB). Above it, adjacent pieces of one segment
-     * are merged pairwise (embeddings averaged) until the count fits; at
-     * about 1200 pieces per hour of speech (TASK-1060.2 composites) the
-     * 4 h streaming ceiling stays under it at full resolution.
+     * Bound on the rows of the clustering's condensed distance matrix
+     * (n(n-1)/2 floats, about 50 MB at the 5000 cap). [forRetentionBudget]
+     * derives it from the memory budget, 500..5000. Above it, adjacent
+     * pieces of one segment are merged pairwise (embeddings averaged); when
+     * that cannot reach it (alternating short turns), an evenly spaced
+     * subsample of exactly [maxPieces] pieces is clustered and every other
+     * piece joins its nearest cluster centroid.
      */
     val maxPieces: Int = MAX_PIECES,
 ) {
@@ -50,10 +67,16 @@ data class WindowedDiarizationParams(
         }
         require(pieceSec >= 1.0) { "pieces under 1 s would all be dropped as too short" }
         require(maxPieces >= 2) { "maxPieces must allow a clustering" }
+        require(absorbMaxDistance in 0.0..2.0) { "cosine distance lies in 0..2" }
+        require(absorbFloorFraction in 0.0..1.0) { "the floor fraction lies in 0..1" }
+        require(absorbFloorMinSec >= 0 && absorbFloorMinSec <= absorbFloorSec) {
+            "the floor's minimum must lie in 0..absorbFloorSec"
+        }
     }
 
     /** The talk floor for a file whose pieces total [talkSec]. */
-    fun absorbFloorFor(talkSec: Double): Double = minOf(absorbFloorSec, absorbFloorFraction * talkSec)
+    fun absorbFloorFor(talkSec: Double): Double =
+        minOf(absorbFloorSec, maxOf(absorbFloorMinSec, absorbFloorFraction * talkSec))
 
     companion object {
         const val MAX_PIECES = 5000
@@ -61,22 +84,22 @@ data class WindowedDiarizationParams(
         const val MAX_WINDOW_SEC = 600.0
         const val MIN_WINDOW_SEC = 300.0
 
-        /** A window's float buffer: 16 kHz of 4-byte samples. */
-        private const val WINDOW_BYTES_PER_SEC = 16000 * 4L
-
         /**
          * TASK-1060.7: bounds from the raw retention budget
          * (AudioDurationPolicy.retentionBudgetBytes). The piece cap keeps
          * the condensed float matrix (about 2 n^2 bytes) within half the
-         * budget, floored at [MIN_PIECES] so a tiny budget still clusters
-         * at a usable resolution; the window buffer gets a quarter of it,
-         * clamped to 5..10 min (the TASK-1060.2 spike measured 5-min and
-         * 10-min windows equivalent at threshold 0.8).
+         * budget and the window's float buffer gets a quarter of it, but the
+         * [MIN_PIECES] and [MIN_WINDOW_SEC] floors override a tiny budget so
+         * the pass still clusters at a usable resolution, and the final
+         * partial window's exact-size copy transiently doubles the window
+         * buffer. The window clamps to 5..10 min (the TASK-1060.2 spike
+         * measured 5-min and 10-min windows equivalent at threshold 0.8).
          */
-        fun forRetentionBudget(budgetBytes: Long): WindowedDiarizationParams {
+        fun forRetentionBudget(budgetBytes: Long, sampleRate: Int): WindowedDiarizationParams {
             val budget = budgetBytes.coerceAtLeast(0L)
+            val windowBytesPerSec = sampleRate * Float.SIZE_BYTES.toLong()
             return WindowedDiarizationParams(
-                windowSec = (budget / (4 * WINDOW_BYTES_PER_SEC)).toDouble()
+                windowSec = (budget / (4 * windowBytesPerSec)).toDouble()
                     .coerceIn(MIN_WINDOW_SEC, MAX_WINDOW_SEC),
                 maxPieces = sqrt(budget / 4.0).toInt().coerceIn(MIN_PIECES, MAX_PIECES),
             )
@@ -137,7 +160,6 @@ data class WindowedDiarizationStats(
     val absorbedSec: Double,
     val droppedClusters: Int,
     val droppedSec: Double,
-    val speakers: Int,
 )
 
 /**
@@ -467,20 +489,59 @@ object PieceClustering {
     }
 
     /**
+     * [completeLinkage] over at most [maxPieces] rows: past the cap, an
+     * evenly spaced subsample of exactly [maxPieces] embeddings is clustered
+     * and every other row takes the label of the cluster whose normalized
+     * centroid is closest by cosine. [link] is the clustering, a seam so a
+     * test can observe the rows it receives.
+     */
+    internal fun clusterBounded(
+        embeddings: List<FloatArray>,
+        threshold: Float,
+        maxPieces: Int,
+        link: (List<FloatArray>, Float) -> IntArray = ::completeLinkage,
+    ): IntArray {
+        val n = embeddings.size
+        if (n <= maxPieces) return link(embeddings, threshold)
+        val sampled = IntArray(maxPieces) { (it.toLong() * n / maxPieces).toInt() }
+        val sampleLabels = link(sampled.map { embeddings[it] }, threshold)
+        val sums = LinkedHashMap<Int, FloatArray>()
+        sampled.forEachIndexed { j, row ->
+            val sum = sums.getOrPut(sampleLabels[j]) { FloatArray(embeddings[row].size) }
+            for (k in sum.indices) sum[k] += embeddings[row][k]
+        }
+        val clusterIds = sums.keys.toIntArray()
+        val centroids = sums.values.map(::normalized)
+        val labels = IntArray(n) { -1 }
+        sampled.forEachIndexed { j, row -> labels[row] = sampleLabels[j] }
+        for (i in 0 until n) {
+            if (labels[i] != -1) continue
+            labels[i] = clusterIds[centroids.indices.maxBy { dot(centroids[it], embeddings[i]) }]
+        }
+        return labels
+    }
+
+    /**
      * Global clustering, absorption and assembly over every piece of the
      * file, plus each final speaker's centroid keyed by its dense id. A
      * dropped piece (see [absorbSmall]) leaves no segment and no centroid.
      */
     fun diarize(pieces: List<Piece>, params: WindowedDiarizationParams): WindowedDiarization {
         val bounded = coarsen(pieces, params.maxPieces)
-        val clusters = completeLinkage(bounded.map { it.embedding }, params.threshold)
+        val clusters = clusterBounded(bounded.map { it.embedding }, params.threshold, params.maxPieces)
         val absorption = absorbSmall(
             clusters, bounded,
             floorSec = params.absorbFloorFor(bounded.sumOf { it.span.durationSec }),
             maxDistance = params.absorbMaxDistance)
-        val keptIndices = bounded.indices.filter { absorption.labels[it] != null }
-        val kept = keptIndices.map { bounded[it] }
-        val labels = IntArray(kept.size) { absorption.labels[keptIndices[it]]!! }
+        val kept = ArrayList<Piece>(bounded.size)
+        val keptLabels = ArrayList<Int>(bounded.size)
+        absorption.labels.forEachIndexed { i, label ->
+            if (label != null) {
+                kept += bounded[i]
+                keptLabels += label
+            }
+        }
+        val labels = keptLabels.toIntArray()
         val raw = assembleRaw(kept, labels)
         // denseSegments owns the numbering; the centroid keys read its
         // raw->dense map instead of re-deriving it inline.
@@ -497,14 +558,18 @@ object PieceClustering {
             WindowedDiarizationStats(
                 piecesIn = pieces.size,
                 piecesAfterCoarsen = bounded.size,
-                rawClusters = clusters.toSet().size,
+                rawClusters = distinctCount(clusters),
                 absorbedClusters = absorption.absorbedClusters,
                 absorbedSec = absorption.absorbedSec,
                 droppedClusters = absorption.droppedClusters,
                 droppedSec = absorption.droppedSec,
-                speakers = sums.size,
             ),
         )
+    }
+
+    private fun distinctCount(labels: IntArray): Int {
+        val sorted = labels.sortedArray()
+        return sorted.indices.count { it == 0 || sorted[it] != sorted[it - 1] }
     }
 
     fun normalized(vector: FloatArray): FloatArray {

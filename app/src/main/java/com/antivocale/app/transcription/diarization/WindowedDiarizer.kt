@@ -29,6 +29,9 @@ class WindowedDiarizer(
     companion object {
         const val SAMPLE_RATE = 16000
 
+        /** The buffer's first size when the decode length is unknown: one minute. */
+        private const val INITIAL_BUFFER_SAMPLES = 60L * SAMPLE_RATE
+
         /**
          * The native pass. Each window creates, uses and releases its own
          * diarizer, then its own embedding extractor, so two titanet
@@ -97,9 +100,12 @@ class WindowedDiarizer(
         val windowSamples = PieceClustering.windowSamples(SAMPLE_RATE, params)
         val stride = windowSamples - PieceClustering.overlapSamples(SAMPLE_RATE, params)
         val pieces = ArrayList<Piece>()
-        // TASK-1060.7: allocated once at full size (this pass only runs on
-        // audio too long for the whole-file pass, so it always fills).
-        val buffer = FloatArray(windowSamples)
+        // TASK-1060.7: sized to the decode when it is known, so a resumed or
+        // retention-abandoned short file does not pay for a whole window; it
+        // doubles up to the window when the decode is unknown or longer than
+        // estimated.
+        var buffer = FloatArray(
+            minOf(windowSamples.toLong(), totalSamples ?: INITIAL_BUFFER_SAMPLES).coerceAtLeast(1L).toInt())
         var size = 0
         var bufferStart = 0L
         var done = 0
@@ -124,6 +130,9 @@ class WindowedDiarizer(
                     bufferStart += stride
                 }
                 val n = minOf(chunk.size - offset, windowSamples - size)
+                if (size + n > buffer.size) {
+                    buffer = buffer.copyOf(minOf(windowSamples, maxOf(buffer.size * 2, size + n)))
+                }
                 chunk.copyInto(buffer, size, offset, offset + n)
                 size += n
                 offset += n
@@ -131,7 +140,7 @@ class WindowedDiarizer(
         }
         // The diarizer takes the window as an exact array, so a partial last
         // window is briefly held twice.
-        if (size > 0) runWindow(if (size == windowSamples) buffer else buffer.copyOf(size), isLast = true)
+        if (size > 0) runWindow(if (size == buffer.size) buffer else buffer.copyOf(size), isLast = true)
         return PieceClustering.diarize(pieces, params)
     }
 

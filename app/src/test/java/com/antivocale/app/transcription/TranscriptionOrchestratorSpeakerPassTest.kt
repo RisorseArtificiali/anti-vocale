@@ -72,7 +72,7 @@ class TranscriptionOrchestratorSpeakerPassTest : TranscriptionOrchestratorTestBa
         }
         orchestrator.windowedDiarization = { _, filePath, totalSamples, _, _ ->
             windowedCalls += filePath to totalSamples
-            WindowedDiarization(listOf(DiarizedSegment(0f, 1f, 1, null)), emptyMap(), WindowedDiarizationStats(0, 0, 0, 0, 0.0, 0, 0.0, 0))
+            WindowedDiarization(listOf(DiarizedSegment(0f, 1f, 1, null)), emptyMap(), WindowedDiarizationStats(0, 0, 0, 0, 0.0, 0, 0.0))
         }
     }
 

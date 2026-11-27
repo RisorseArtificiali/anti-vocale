@@ -2533,7 +2533,7 @@ class TranscriptionOrchestrator @Inject constructor(
         with(diarization.stats) {
             Log.i(TAG, "Speaker labels: windowed stats pieces=$piecesIn coarsened=$piecesAfterCoarsen " +
                 "rawClusters=$rawClusters absorbed=$absorbedClusters/${absorbedSec.toInt()}s " +
-                "dropped=$droppedClusters/${droppedSec.toInt()}s speakers=$speakers")
+                "dropped=$droppedClusters/${droppedSec.toInt()}s speakers=${diarization.centroids.size}")
         }
         diarization.segments to SpeakerNamer.nameCentroids(
             diarization.segments, diarization.centroids, namingIdentities())
@@ -2612,7 +2612,8 @@ class TranscriptionOrchestrator @Inject constructor(
             // TASK-1060.7: the window buffer and the clustering matrix scale
             // with the same raw budget the retention guard reads.
             val params = WindowedDiarizationParams.forRetentionBudget(
-                AudioDurationPolicy.retentionBudgetBytes(availableRamBytes, maxHeapBytes))
+                AudioDurationPolicy.retentionBudgetBytes(availableRamBytes, maxHeapBytes),
+                WindowedDiarizer.SAMPLE_RATE)
             Log.d(TAG, "Speaker labels: windowed params window=${params.windowSec.toInt()}s " +
                 "maxPieces=${params.maxPieces}")
             val diarizer = WindowedDiarizer.native(
