@@ -122,7 +122,7 @@ class WindowedDiarizer(
         val offsetSec = plan.startSample.toDouble() / SAMPLE_RATE
         val spans = segmentWindow(samples)
             .map { TimeSpan(offsetSec + it.startSec, offsetSec + it.endSec) }
-            .filter(plan::owns)
+            .mapNotNull(plan::clip)
             .flatMap { PieceClustering.cutPieces(it, params.pieceSec) }
         val ranges = spans.map { span ->
             val from = ((span.startSec * SAMPLE_RATE).toLong() - plan.startSample)

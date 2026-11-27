@@ -26,14 +26,15 @@ data class WindowedDiarizationParams(
 /** A time span in absolute seconds from the audio's start. */
 data class TimeSpan(val startSec: Double, val endSec: Double) {
     val durationSec: Double get() = endSec - startSec
-    val midSec: Double get() = (startSec + endSec) / 2
 }
 
 /**
  * One window of the decode timeline. The window owns its core region
- * [coreLoSec, coreHiSec): the overlap halves belong to its neighbours, so
- * every segment is kept by exactly one window, the one whose core holds
- * its midpoint.
+ * [coreLoSec, coreHiSec): the overlap halves belong to its neighbours, and
+ * every segment is clipped to the core, so a turn crossing an overlap is
+ * covered exactly once, its two halves embedded by the two windows (the
+ * midpoint ownership the spike first measured could keep a truncated turn
+ * in both windows; clipping measured equal or better, TASK-1060.3 notes).
  */
 data class WindowPlan(
     val startSample: Long,
@@ -41,7 +42,11 @@ data class WindowPlan(
     val coreLoSec: Double,
     val coreHiSec: Double,
 ) {
-    fun owns(segment: TimeSpan): Boolean = segment.midSec >= coreLoSec && segment.midSec < coreHiSec
+    fun clip(segment: TimeSpan): TimeSpan? {
+        val start = maxOf(segment.startSec, coreLoSec)
+        val end = minOf(segment.endSec, coreHiSec)
+        return if (end > start) TimeSpan(start, end) else null
+    }
 }
 
 /** One embedded piece of a segment; [embedding] is L2-normalized. */

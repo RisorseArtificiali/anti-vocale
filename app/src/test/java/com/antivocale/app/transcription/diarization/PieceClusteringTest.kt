@@ -127,12 +127,13 @@ class PieceClusteringTest {
     }
 
     @Test
-    fun `a segment belongs to the one window whose core holds its midpoint`() {
+    fun `a segment crossing a core boundary is split between the two windows`() {
         val plans = PieceClustering.planWindows(25L * 60 * rate, rate, params)
-        val straddling = span(580.0, 589.0) // midpoint 584.5: first window's core
-        assertEquals(listOf(true, false, false), plans.map { it.owns(straddling) })
-        val onBoundary = span(580.0, 590.0) // midpoint 585.0: the core is half-open
-        assertEquals(listOf(false, true, false), plans.map { it.owns(onBoundary) })
+        // The first core ends at 585 (600 - overlap/2); the core is half-open.
+        assertEquals(
+            listOf(span(580.0, 585.0), span(585.0, 589.0), null),
+            plans.map { it.clip(span(580.0, 589.0)) })
+        assertEquals(listOf(span(570.0, 584.0), null, null), plans.map { it.clip(span(570.0, 584.0)) })
     }
 
     @Test

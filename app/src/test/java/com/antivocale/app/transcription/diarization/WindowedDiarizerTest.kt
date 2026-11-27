@@ -90,7 +90,7 @@ class WindowedDiarizerTest {
     @Test
     fun `a segment in an overlap is kept once`() = runTest {
         // 51-58 sits in the first overlap (50-60): both windows see it whole,
-        // the first window's core (up to 55) holds its midpoint 54.5.
+        // each keeps only its core half (51-55, 55-58) and assembly rejoins them.
         val samples = audio(100, Triple(10, 40, 1f), Triple(51, 58, 2f), Triple(70, 95, 2f))
         val windows = ArrayList<Int>()
         val counting: (FloatArray) -> List<TimeSpan> = { windows += it.size; segmentBySpeech(it) }
