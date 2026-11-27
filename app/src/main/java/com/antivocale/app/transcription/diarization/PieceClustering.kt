@@ -58,12 +58,8 @@ data class WindowedDiarizationParams(
      * (n(n-1)/2 floats, about 50 MB at the 5000 cap). [forRetentionBudget]
      * derives it from the memory budget, 500..5000. Above it, adjacent
      * pieces of one segment are merged pairwise (embeddings averaged); when
-     * that cannot reach it (alternating short turns), a seeded random
-     * subsample of exactly [maxPieces] pieces is clustered and every other
-     * piece joins its nearest cluster centroid; pieces [threshold] or more
-     * from every sampled centroid seed far clusters of their own, which
-     * after reassignment can also hold rows near a sampled speaker (see
-     * PieceClustering.clusterBounded).
+     * that cannot reach it, PieceClustering.clusterBounded subsamples up to
+     * twice the cap and leaves every piece unlabeled past that.
      */
     val maxPieces: Int = MAX_PIECES,
 ) {
@@ -164,33 +160,39 @@ class WindowedDiarization(
  * TASK-1060.7: what the global clustering did, so a bad device result can
  * be diagnosed from the log. Seconds are piece talk time. [rawClusters]
  * counts complete linkage's clusters (of the subsample past maxPieces), so
- * a high value is over-segmentation; [farClusters] counts the consolidated
- * clusters seeded by unsampled rows far from every sampled one that still
- * hold a row after reassignment, so a nonzero value is a voice or noise the
- * subsample missed. Absorption sees both kinds.
+ * a high value is over-segmentation.
  */
 data class WindowedDiarizationStats(
     val piecesIn: Int,
     val piecesAfterCoarsen: Int,
     val rawClusters: Int,
-    val farClusters: Int,
     val absorbedClusters: Int,
     val absorbedSec: Double,
     val droppedClusters: Int,
     val droppedSec: Double,
     /** Pieces whose embedding was non-finite or unnormalizable, dropped before clustering. */
     val unusableEmbeddings: Int = 0,
+    /**
+     * TASK-1060.9: pieces the subsample fallback left without a speaker
+     * (unsampled and past the gate of every sampled voice, or every piece
+     * when [subsampleRefused]), and their talk: the fallback's cost.
+     */
+    val unlabeledUnsampled: Int = 0,
+    val unlabeledUnsampledSec: Double = 0.0,
+    /** TASK-1060.9: more than twice maxPieces after coarsen, so nothing was clustered. */
+    val subsampleRefused: Boolean = false,
 )
 
 /**
- * TASK-1060.7: [clusterBounded]'s per-row labels, plus how many came from
- * complete linkage and how many are consolidated far clusters.
+ * TASK-1060.7: [clusterBounded]'s per-row labels (null for a row the
+ * fallback leaves unlabeled) and how many clusters complete linkage found.
  */
-class BoundedClusters(val labels: IntArray, val linkageClusters: Int, val farClusters: Int)
+class BoundedClusters(val labels: List<Int?>, val linkageClusters: Int, val refused: Boolean = false)
 
 /**
  * TASK-1060.7: [labels] holds each piece's cluster after absorption, null
- * for a piece whose small cluster was too far from every big one.
+ * for a piece whose small cluster was too far from every big one or that
+ * the subsample fallback left unlabeled.
  */
 class Absorption(
     val labels: List<Int?>,
@@ -423,19 +425,21 @@ object PieceClustering {
      * normalized centroid is closest by cosine to its own, but only within
      * [maxDistance]; otherwise its pieces get no speaker (an unlabeled cue
      * is honest, a wrong speaker is not). When no cluster reaches the
-     * floor, every label is kept.
+     * floor, every label is kept. A null label stays null and counts toward
+     * no cluster.
      */
-    fun absorbSmall(labels: IntArray, pieces: List<Piece>, floorSec: Double, maxDistance: Double): Absorption {
+    fun absorbSmall(labels: List<Int?>, pieces: List<Piece>, floorSec: Double, maxDistance: Double): Absorption {
         val talk = LinkedHashMap<Int, Double>()
         val sums = HashMap<Int, FloatArray>()
         labels.forEachIndexed { i, label ->
+            if (label == null) return@forEachIndexed
             talk[label] = (talk[label] ?: 0.0) + pieces[i].span.durationSec
             val sum = sums.getOrPut(label) { FloatArray(pieces[i].embedding.size) }
             val e = pieces[i].embedding
             for (k in sum.indices) sum[k] += e[k]
         }
         val big = talk.filterValues { it >= floorSec }.keys.toList()
-        if (big.isEmpty()) return Absorption(labels.toList(), 0, 0.0, 0, 0.0)
+        if (big.isEmpty()) return Absorption(labels, 0, 0.0, 0, 0.0)
         val centroids = big.map { normalized(sums.getValue(it)) }
         val target = HashMap<Int, Int?>()
         var absorbedSec = 0.0
@@ -450,7 +454,7 @@ object PieceClustering {
         }
         val absorbed = target.values.count { it != null }
         return Absorption(
-            labels = labels.map { if (it in target) target[it] else it },
+            labels = labels.map { if (it != null && it in target) target[it] else it },
             absorbedClusters = absorbed,
             absorbedSec = absorbedSec,
             droppedClusters = target.size - absorbed,
@@ -521,47 +525,41 @@ object PieceClustering {
 
     /**
      * [completeLinkage] over at most [maxPieces] rows. Past the cap, which
-     * only happens when [coarsen] cannot reach it (about 1200 pieces an
-     * hour; at the 5000 cap rarely under the 4 h ceiling, but a low-RAM
-     * budget derives a cap down to 500, where hour-long alternating-turn
-     * audio takes this path routinely), a seeded random subsample of exactly
-     * [maxPieces] rows is clustered (an evenly spaced one phase-locks to
-     * alternating turns and can miss a voice entirely) and the unsampled
-     * rows are labeled in three steps:
+     * only happens when [coarsen] cannot reach it (clipped segments
+     * outnumber [maxPieces]: at the 5000 cap, a speaker change about every
+     * 2.9 s for 4 h), a seeded random subsample of exactly [maxPieces] rows
+     * is clustered (an evenly spaced one phase-locks to alternating turns
+     * and can miss a voice entirely). Every unsampled row takes the sampled
+     * cluster whose normalized centroid is nearest by cosine, but only
+     * within [maxDistance] (the absorption gate, the one measured bound);
+     * otherwise it stays unlabeled, like a dropped piece in [absorbSmall]:
+     * a voice the subsample missed gets no speaker rather than a wrong one.
      *
-     * 1. Seeding: an unsampled row [threshold] or more from every sampled
-     *    cluster's normalized centroid is a far row; a leader pass in index
-     *    order puts it in the nearest far cluster within [threshold], else
-     *    opens a new one.
-     * 2. Consolidation: the closest two far clusters whose centroids are
-     *    within [threshold] merge, until no pair is. This reduces, but does
-     *    not remove, the seeding order's influence: halves of one voice
-     *    whose centroids drift [threshold] apart stay split. Sampled
-     *    clusters never merge here.
-     * 3. Reassignment: every unsampled row takes the nearest centroid among
-     *    the far clusters and the sampled clusters within [threshold] of it,
-     *    so a missed voice's row near a sampled speaker still goes to its
-     *    own far cluster when that is closer. A far cluster can only win
-     *    over a within-threshold sampled one by being closer still, so no
-     *    gate is needed on the far side.
+     * Past twice [maxPieces] nothing is clustered and every row is
+     * unlabeled. eval/diarization_windowed.py score-subsample (TASK-1060.9;
+     * VoxPopuli composites, 5 seeds, threshold 0.8, gate 0.45, 30 s floor,
+     * 10-min windows) measured a half subsample at agreement 0.992 to 0.997
+     * against 0.995 to 0.997 for full linkage with 0 merges on every seed and
+     * file, and a quarter subsample merging 1 to 2 speakers per file on some
+     * seeds (agreement down to 0.85 to 0.89). That measurement is the
+     * fallback's only validation.
      *
-     * This approximates complete linkage over all rows with centroid
-     * distances: one voice the subsample missed comes out as one cluster
-     * that [absorbSmall] gates like any other, but a far cluster is held
-     * together by its centroid, not by every pairwise distance. Cost, with U
-     * unsampled rows, K sampled and F far clusters: O(U * (K + F) * dim)
-     * for seeding and reassignment, O(F^3 * dim) worst case for
-     * consolidation. [link] is the clustering, a seam so a test can observe
-     * the rows it receives.
+     * Reachability: [WindowedDiarizationParams.forRetentionBudget] gives
+     * sqrt(budget / 4) clamped to 500..5000, so 5000 on a 256 MB heap, 4096
+     * on 128 MB and 3135 on the fail-open budget (600 s x 64 KiB); the 500
+     * floor needs a budget near 1 MB. [link] is the clustering, a seam so a
+     * test can observe the rows it receives.
      */
     internal fun clusterBounded(
         embeddings: List<FloatArray>,
         threshold: Float,
         maxPieces: Int,
+        maxDistance: Double,
         link: (List<FloatArray>, Float) -> IntArray = ::completeLinkage,
     ): BoundedClusters {
         val n = embeddings.size
-        if (n <= maxPieces) return link(embeddings, threshold).let { BoundedClusters(it, distinctCount(it), 0) }
+        if (n <= maxPieces) return link(embeddings, threshold).let { BoundedClusters(it.toList(), distinctCount(it)) }
+        if (n > 2L * maxPieces) return BoundedClusters(List(n) { null }, 0, refused = true)
         val random = java.util.Random(SUBSAMPLE_SEED)
         val order = IntArray(n) { it }
         for (i in 0 until maxPieces) {
@@ -577,83 +575,17 @@ object PieceClustering {
         }
         val clusterIds = sums.keys.toIntArray()
         val centroids = sums.values.map(::normalized)
-        val labels = IntArray(n) { -1 }
+        val labels = arrayOfNulls<Int>(n)
         sampled.forEachIndexed { j, row -> labels[row] = sampleLabels[j] }
-        val unsampled = (0 until n).filter { labels[it] == -1 }
+        val sampledRows = sampled.toHashSet()
         val row = FloatArray(embeddings[0].size)
-
-        val farSums = ArrayList<FloatArray>()
-        val farCentroids = ArrayList<FloatArray>()
-        for (i in unsampled) {
+        for (i in 0 until n) {
+            if (i in sampledRows) continue
             normalizeInto(embeddings[i], row)
-            if (centroids.any { 1.0 - dot(it, row) < threshold }) continue
-            val far = farCentroids.indices.maxByOrNull { dot(farCentroids[it], row) }
-                ?.takeIf { 1.0 - dot(farCentroids[it], row) < threshold }
-            if (far == null) {
-                farSums += embeddings[i].copyOf()
-                farCentroids += row.copyOf()
-            } else {
-                val sum = farSums[far]
-                for (k in sum.indices) sum[k] += embeddings[i][k]
-                normalizeInto(sum, farCentroids[far])
-            }
+            val nearest = centroids.indices.maxBy { dot(centroids[it], row) }
+            if (1.0 - dot(centroids[nearest], row) <= maxDistance) labels[i] = clusterIds[nearest]
         }
-
-        while (true) {
-            var bestSim = Double.NEGATIVE_INFINITY
-            var keep = -1
-            var gone = -1
-            for (a in farCentroids.indices) for (b in a + 1 until farCentroids.size) {
-                val sim = dot(farCentroids[a], farCentroids[b])
-                if (sim > bestSim) {
-                    bestSim = sim
-                    keep = a
-                    gone = b
-                }
-            }
-            if (keep < 0 || 1.0 - bestSim >= threshold) break
-            val sum = farSums[keep]
-            for (k in sum.indices) sum[k] += farSums[gone][k]
-            normalizeInto(sum, farCentroids[keep])
-            farSums.removeAt(gone)
-            farCentroids.removeAt(gone)
-        }
-
-        val farOf = IntArray(n) { -1 }
-        for (i in unsampled) {
-            normalizeInto(embeddings[i], row)
-            var best = -1
-            var bestSim = Double.NEGATIVE_INFINITY
-            for (c in centroids.indices) {
-                val sim = dot(centroids[c], row)
-                if (1.0 - sim < threshold && sim > bestSim) {
-                    best = c
-                    bestSim = sim
-                }
-            }
-            for (f in farCentroids.indices) {
-                val sim = dot(farCentroids[f], row)
-                if (sim > bestSim) {
-                    best = centroids.size + f
-                    bestSim = sim
-                }
-            }
-            // A row no sampled cluster takes was far at seeding, so far
-            // clusters exist; non-finite rows never get here (dropped where
-            // pieces are built), so this only fails on a broken invariant.
-            check(best >= 0)
-            if (best < centroids.size) labels[i] = clusterIds[best] else farOf[i] = best - centroids.size
-        }
-        val firstFarLabel = (sampleLabels.maxOrNull() ?: -1) + 1
-        val farLabel = IntArray(farCentroids.size) { -1 }
-        var farClusters = 0
-        for (i in unsampled) {
-            val f = farOf[i]
-            if (f < 0) continue
-            if (farLabel[f] < 0) farLabel[f] = firstFarLabel + farClusters++
-            labels[i] = farLabel[f]
-        }
-        return BoundedClusters(labels, sums.size, farClusters)
+        return BoundedClusters(labels.asList(), sums.size)
     }
 
     /**
@@ -663,7 +595,8 @@ object PieceClustering {
      */
     fun diarize(pieces: List<Piece>, params: WindowedDiarizationParams): WindowedDiarization {
         val bounded = coarsen(pieces, params.maxPieces)
-        val clusters = clusterBounded(bounded.map { it.embedding }, params.threshold, params.maxPieces)
+        val clusters = clusterBounded(
+            bounded.map { it.embedding }, params.threshold, params.maxPieces, params.absorbMaxDistance)
         val absorption = absorbSmall(
             clusters.labels, bounded,
             floorSec = params.absorbFloorFor(bounded.sumOf { it.span.durationSec }),
@@ -694,11 +627,15 @@ object PieceClustering {
                 piecesIn = pieces.size,
                 piecesAfterCoarsen = bounded.size,
                 rawClusters = clusters.linkageClusters,
-                farClusters = clusters.farClusters,
                 absorbedClusters = absorption.absorbedClusters,
                 absorbedSec = absorption.absorbedSec,
                 droppedClusters = absorption.droppedClusters,
                 droppedSec = absorption.droppedSec,
+                unlabeledUnsampled = clusters.labels.count { it == null },
+                unlabeledUnsampledSec = bounded.indices.sumOf {
+                    if (clusters.labels[it] == null) bounded[it].span.durationSec else 0.0
+                },
+                subsampleRefused = clusters.refused,
             ),
         )
     }
