@@ -20,7 +20,8 @@ class WindowedDiarizerTest {
 
     /** Small windows keep the arrays light: 60 s windows, 10 s overlap. */
     private val params = WindowedDiarizationParams(
-        windowSec = 60.0, overlapSec = 10.0, pieceSec = 3.0, threshold = 0.8f, absorbFloorSec = 5.0)
+        windowSec = 60.0, overlapSec = 10.0, pieceSec = 3.0, threshold = 0.8f, absorbFloorSec = 5.0,
+        absorbFloorMinSec = 0.0)
 
     /** Speaker turns as (startSec, endSec, value) over [totalSec] of audio. */
     private fun audio(totalSec: Int, vararg turns: Triple<Int, Int, Float>): FloatArray {
@@ -120,6 +121,26 @@ class WindowedDiarizerTest {
         assertEquals(listOf(60 * rate, 60 * rate, 50 * rate), exact.first)
         assertEquals(exact, cut(null))
         assertEquals(exact, cut(10L * rate))
+    }
+
+    @Test
+    fun `a window larger than the initial buffer grows from an unknown length to the known-length cut`() = runTest {
+        // A 150 s window starts an unknown-length buffer at 60 s, below it,
+        // so the doubling (60, 120, then capped at 150) is exercised.
+        val wide = params.copy(windowSec = 150.0)
+        val samples = audio(330,
+            Triple(0, 70, 1f), Triple(71, 160, 2f), Triple(161, 250, 1f), Triple(251, 330, 2f))
+        suspend fun cut(totalSamples: Long?): Pair<List<Int>, List<DiarizedSegment>> {
+            val windows = ArrayList<Int>()
+            val counting: (FloatArray) -> List<TimeSpan> = { windows += it.size; segmentBySpeech(it) }
+            val segments = WindowedDiarizer(wide, counting, embedByValue)
+                .diarize(flowOf(*chunked(samples, 7.3).toTypedArray()), totalSamples).segments
+            return windows to segments
+        }
+        val known = cut(samples.size.toLong())
+        assertEquals(listOf(150 * rate, 150 * rate, 50 * rate), known.first)
+        assertEquals(setOf(0, 1), known.second.map { it.speaker }.toSet())
+        assertEquals(known, cut(null))
     }
 
     @Test

@@ -60,8 +60,9 @@ data class WindowedDiarizationParams(
      * pieces of one segment are merged pairwise (embeddings averaged); when
      * that cannot reach it (alternating short turns), a seeded random
      * subsample of exactly [maxPieces] pieces is clustered and every other
-     * piece joins its nearest cluster centroid, or gets a label of its own
-     * when even that centroid is [threshold] or more away.
+     * piece joins its nearest cluster centroid; pieces [threshold] or more
+     * from every sampled centroid are grouped among themselves by a leader
+     * pass (see PieceClustering.clusterBounded).
      */
     val maxPieces: Int = MAX_PIECES,
 ) {
@@ -94,15 +95,13 @@ data class WindowedDiarizationParams(
          * the condensed float matrix (about 2 n^2 bytes) within half the
          * budget and the window's float buffer gets a quarter of it, but the
          * [MIN_PIECES] and [MIN_WINDOW_SEC] floors override a tiny budget so
-         * the pass still clusters at a usable resolution. Three transients
-         * exceed the window buffer, each briefly holding an old and a new
-         * array: doubling it while the decode length is unknown (at most 1.5
-         * windows, since a buffer past half the window grows straight to
-         * it), growing a buffer sized to an undercounted decode estimate
-         * (under 2 windows), and the final partial window's exact-size copy
-         * (under 2 windows). The window clamps to 5..10 min (the TASK-1060.2
-         * spike measured 5-min and 10-min windows equivalent at threshold
-         * 0.8).
+         * the pass still clusters at a usable resolution. The buffer itself
+         * never exceeds one window; two transients briefly hold an old and
+         * a new array, each under 2 windows: growing the buffer (doubling
+         * while the decode length is unknown or undercounted, capped at the
+         * window) and the final partial window's exact-size copy. The
+         * window clamps to 5..10 min (the TASK-1060.2 spike measured 5-min
+         * and 10-min windows equivalent at threshold 0.8).
          */
         fun forRetentionBudget(budgetBytes: Long, sampleRate: Int): WindowedDiarizationParams {
             require(sampleRate > 0) { "the sample rate must be positive" }
@@ -160,17 +159,29 @@ class WindowedDiarization(
 
 /**
  * TASK-1060.7: what the global clustering did, so a bad device result can
- * be diagnosed from the log. Seconds are piece talk time.
+ * be diagnosed from the log. Seconds are piece talk time. [rawClusters]
+ * counts complete linkage's clusters (of the subsample past maxPieces), so
+ * a high value is over-segmentation; [farClusters] counts the clusters the
+ * leader pass opened for unsampled rows far from every sampled one, so a
+ * nonzero value is a voice or noise the subsample missed. Absorption sees
+ * both kinds.
  */
 data class WindowedDiarizationStats(
     val piecesIn: Int,
     val piecesAfterCoarsen: Int,
     val rawClusters: Int,
+    val farClusters: Int,
     val absorbedClusters: Int,
     val absorbedSec: Double,
     val droppedClusters: Int,
     val droppedSec: Double,
 )
+
+/**
+ * TASK-1060.7: [clusterBounded]'s per-row labels, plus how many came from
+ * complete linkage and how many from the far-row leader pass.
+ */
+class BoundedClusters(val labels: IntArray, val linkageClusters: Int, val farClusters: Int)
 
 /**
  * TASK-1060.7: [labels] holds each piece's cluster after absorption, null
@@ -505,21 +516,24 @@ object PieceClustering {
      * [completeLinkage] over at most [maxPieces] rows: past the cap, a
      * seeded random subsample of exactly [maxPieces] embeddings is clustered
      * (an evenly spaced one phase-locks to alternating turns and can miss a
-     * voice entirely) and every other row takes the label of the cluster
-     * whose normalized centroid is closest by cosine. A row whose closest
-     * centroid is [threshold] or more away, which complete linkage would not
-     * have merged either, gets a fresh label of its own, so [absorbSmall]
-     * gates it like any other small cluster. [link] is the clustering, a
-     * seam so a test can observe the rows it receives.
+     * voice entirely) and every other row takes the label of the sampled
+     * cluster whose normalized centroid is closest by cosine. A row whose
+     * closest sampled centroid is [threshold] or more away (complete linkage
+     * would not have merged it into that cluster either) is a far row: a
+     * greedy leader pass in index order puts it in the nearest far cluster
+     * whose running centroid is within [threshold], else opens a new one, so
+     * one voice the subsample missed comes out as one cluster that
+     * [absorbSmall] gates like any other. [link] is the clustering, a seam
+     * so a test can observe the rows it receives.
      */
     internal fun clusterBounded(
         embeddings: List<FloatArray>,
         threshold: Float,
         maxPieces: Int,
         link: (List<FloatArray>, Float) -> IntArray = ::completeLinkage,
-    ): IntArray {
+    ): BoundedClusters {
         val n = embeddings.size
-        if (n <= maxPieces) return link(embeddings, threshold)
+        if (n <= maxPieces) return link(embeddings, threshold).let { BoundedClusters(it, distinctCount(it), 0) }
         val random = java.util.Random(SUBSAMPLE_SEED)
         val order = IntArray(n) { it }
         for (i in 0 until maxPieces) {
@@ -537,14 +551,29 @@ object PieceClustering {
         val centroids = sums.values.map(::normalized)
         val labels = IntArray(n) { -1 }
         sampled.forEachIndexed { j, row -> labels[row] = sampleLabels[j] }
-        var freshLabel = (sampleLabels.maxOrNull() ?: -1) + 1
+        val firstFarLabel = (sampleLabels.maxOrNull() ?: -1) + 1
+        val farSums = ArrayList<FloatArray>()
+        val farCentroids = ArrayList<FloatArray>()
         for (i in 0 until n) {
             if (labels[i] != -1) continue
             val row = normalized(embeddings[i])
             val nearest = centroids.indices.maxBy { dot(centroids[it], row) }
-            labels[i] = if (1.0 - dot(centroids[nearest], row) < threshold) clusterIds[nearest] else freshLabel++
+            if (1.0 - dot(centroids[nearest], row) < threshold) {
+                labels[i] = clusterIds[nearest]
+                continue
+            }
+            val far = farCentroids.indices.maxByOrNull { dot(farCentroids[it], row) }
+                ?.takeIf { 1.0 - dot(farCentroids[it], row) < threshold }
+            val joined = far ?: farSums.size.also {
+                farSums += FloatArray(row.size)
+                farCentroids += row
+            }
+            val sum = farSums[joined]
+            for (k in sum.indices) sum[k] += embeddings[i][k]
+            farCentroids[joined] = normalized(sum)
+            labels[i] = firstFarLabel + joined
         }
-        return labels
+        return BoundedClusters(labels, sums.size, farSums.size)
     }
 
     /**
@@ -556,7 +585,7 @@ object PieceClustering {
         val bounded = coarsen(pieces, params.maxPieces)
         val clusters = clusterBounded(bounded.map { it.embedding }, params.threshold, params.maxPieces)
         val absorption = absorbSmall(
-            clusters, bounded,
+            clusters.labels, bounded,
             floorSec = params.absorbFloorFor(bounded.sumOf { it.span.durationSec }),
             maxDistance = params.absorbMaxDistance)
         val kept = ArrayList<Piece>(bounded.size)
@@ -584,7 +613,8 @@ object PieceClustering {
             WindowedDiarizationStats(
                 piecesIn = pieces.size,
                 piecesAfterCoarsen = bounded.size,
-                rawClusters = distinctCount(clusters),
+                rawClusters = clusters.linkageClusters,
+                farClusters = clusters.farClusters,
                 absorbedClusters = absorption.absorbedClusters,
                 absorbedSec = absorption.absorbedSec,
                 droppedClusters = absorption.droppedClusters,
