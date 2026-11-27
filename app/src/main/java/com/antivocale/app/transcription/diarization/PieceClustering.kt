@@ -33,8 +33,13 @@ data class WindowedDiarizationParams(
      * TASK-1060.7: the floor never drops below this, so complete-linkage
      * fragments of one voice (3 to 6 s on a short run) still face the
      * [absorbMaxDistance] gate instead of becoming speakers of their own,
-     * while a real 10 s speaker in a short note survives. UNMEASURED: no
-     * spike number stands behind 10 s; TASK-1060.8 measures it.
+     * while a real 10 s speaker in a short note survives. A real speaker
+     * with less than 10 s of talk in a short note is dropped: its cues stay
+     * unlabeled, never put on another speaker. That is the deliberate
+     * split-over-merge trade (an unlabeled cue beats a phantom or wrong
+     * speaker). UNMEASURED: no spike number stands behind 10 s; the
+     * TASK-1060.8 real-audio ground truth decides the value. A value above
+     * [absorbFloorSec] is legal: the cap wins.
      */
     val absorbFloorMinSec: Double = 10.0,
     /**
@@ -53,9 +58,10 @@ data class WindowedDiarizationParams(
      * (n(n-1)/2 floats, about 50 MB at the 5000 cap). [forRetentionBudget]
      * derives it from the memory budget, 500..5000. Above it, adjacent
      * pieces of one segment are merged pairwise (embeddings averaged); when
-     * that cannot reach it (alternating short turns), an evenly spaced
+     * that cannot reach it (alternating short turns), a seeded random
      * subsample of exactly [maxPieces] pieces is clustered and every other
-     * piece joins its nearest cluster centroid.
+     * piece joins its nearest cluster centroid, or gets a label of its own
+     * when even that centroid is [threshold] or more away.
      */
     val maxPieces: Int = MAX_PIECES,
 ) {
@@ -69,9 +75,7 @@ data class WindowedDiarizationParams(
         require(maxPieces >= 2) { "maxPieces must allow a clustering" }
         require(absorbMaxDistance in 0.0..2.0) { "cosine distance lies in 0..2" }
         require(absorbFloorFraction in 0.0..1.0) { "the floor fraction lies in 0..1" }
-        require(absorbFloorMinSec >= 0 && absorbFloorMinSec <= absorbFloorSec) {
-            "the floor's minimum must lie in 0..absorbFloorSec"
-        }
+        require(absorbFloorMinSec >= 0) { "the floor's minimum cannot be negative" }
     }
 
     /** The talk floor for a file whose pieces total [talkSec]. */
@@ -90,12 +94,18 @@ data class WindowedDiarizationParams(
          * the condensed float matrix (about 2 n^2 bytes) within half the
          * budget and the window's float buffer gets a quarter of it, but the
          * [MIN_PIECES] and [MIN_WINDOW_SEC] floors override a tiny budget so
-         * the pass still clusters at a usable resolution, and the final
-         * partial window's exact-size copy transiently doubles the window
-         * buffer. The window clamps to 5..10 min (the TASK-1060.2 spike
-         * measured 5-min and 10-min windows equivalent at threshold 0.8).
+         * the pass still clusters at a usable resolution. Three transients
+         * exceed the window buffer, each briefly holding an old and a new
+         * array: doubling it while the decode length is unknown (at most 1.5
+         * windows, since a buffer past half the window grows straight to
+         * it), growing a buffer sized to an undercounted decode estimate
+         * (under 2 windows), and the final partial window's exact-size copy
+         * (under 2 windows). The window clamps to 5..10 min (the TASK-1060.2
+         * spike measured 5-min and 10-min windows equivalent at threshold
+         * 0.8).
          */
         fun forRetentionBudget(budgetBytes: Long, sampleRate: Int): WindowedDiarizationParams {
+            require(sampleRate > 0) { "the sample rate must be positive" }
             val budget = budgetBytes.coerceAtLeast(0L)
             val windowBytesPerSec = sampleRate * Float.SIZE_BYTES.toLong()
             return WindowedDiarizationParams(
@@ -188,6 +198,9 @@ object PieceClustering {
 
     /** Pieces shorter than this are dropped (too short to embed reliably). */
     private const val MIN_PIECE_SEC = 0.5
+
+    /** Fixed, so one input always yields one subsample and one labeling. */
+    private const val SUBSAMPLE_SEED = 1060L
 
     fun window(
         startSample: Long,
@@ -489,11 +502,15 @@ object PieceClustering {
     }
 
     /**
-     * [completeLinkage] over at most [maxPieces] rows: past the cap, an
-     * evenly spaced subsample of exactly [maxPieces] embeddings is clustered
-     * and every other row takes the label of the cluster whose normalized
-     * centroid is closest by cosine. [link] is the clustering, a seam so a
-     * test can observe the rows it receives.
+     * [completeLinkage] over at most [maxPieces] rows: past the cap, a
+     * seeded random subsample of exactly [maxPieces] embeddings is clustered
+     * (an evenly spaced one phase-locks to alternating turns and can miss a
+     * voice entirely) and every other row takes the label of the cluster
+     * whose normalized centroid is closest by cosine. A row whose closest
+     * centroid is [threshold] or more away, which complete linkage would not
+     * have merged either, gets a fresh label of its own, so [absorbSmall]
+     * gates it like any other small cluster. [link] is the clustering, a
+     * seam so a test can observe the rows it receives.
      */
     internal fun clusterBounded(
         embeddings: List<FloatArray>,
@@ -503,7 +520,13 @@ object PieceClustering {
     ): IntArray {
         val n = embeddings.size
         if (n <= maxPieces) return link(embeddings, threshold)
-        val sampled = IntArray(maxPieces) { (it.toLong() * n / maxPieces).toInt() }
+        val random = java.util.Random(SUBSAMPLE_SEED)
+        val order = IntArray(n) { it }
+        for (i in 0 until maxPieces) {
+            val j = i + random.nextInt(n - i)
+            order[i] = order[j].also { order[j] = order[i] }
+        }
+        val sampled = order.copyOf(maxPieces).apply { sort() }
         val sampleLabels = link(sampled.map { embeddings[it] }, threshold)
         val sums = LinkedHashMap<Int, FloatArray>()
         sampled.forEachIndexed { j, row ->
@@ -514,9 +537,12 @@ object PieceClustering {
         val centroids = sums.values.map(::normalized)
         val labels = IntArray(n) { -1 }
         sampled.forEachIndexed { j, row -> labels[row] = sampleLabels[j] }
+        var freshLabel = (sampleLabels.maxOrNull() ?: -1) + 1
         for (i in 0 until n) {
             if (labels[i] != -1) continue
-            labels[i] = clusterIds[centroids.indices.maxBy { dot(centroids[it], embeddings[i]) }]
+            val row = normalized(embeddings[i])
+            val nearest = centroids.indices.maxBy { dot(centroids[it], row) }
+            labels[i] = if (1.0 - dot(centroids[nearest], row) < threshold) clusterIds[nearest] else freshLabel++
         }
         return labels
     }

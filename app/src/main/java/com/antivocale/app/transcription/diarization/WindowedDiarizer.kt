@@ -131,7 +131,10 @@ class WindowedDiarizer(
                 }
                 val n = minOf(chunk.size - offset, windowSamples - size)
                 if (size + n > buffer.size) {
-                    buffer = buffer.copyOf(minOf(windowSamples, maxOf(buffer.size * 2, size + n)))
+                    // Past half the window, grow straight to it, so doubling
+                    // from an unknown length never holds over 1.5 windows.
+                    val grown = maxOf(buffer.size * 2, size + n)
+                    buffer = buffer.copyOf(if (grown > windowSamples / 2) windowSamples else grown)
                 }
                 chunk.copyInto(buffer, size, offset, offset + n)
                 size += n

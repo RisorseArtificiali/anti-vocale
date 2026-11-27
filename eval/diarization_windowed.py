@@ -25,6 +25,11 @@ Usage:
       --thresholds 0.8 --talk-floor 30
       (the app's absorption; --absorb-max-distance 2.0 is the ungated original,
       --absorb-floor-fraction 1 --absorb-floor-min 30 the absolute 30 s floor)
+
+score-pieces defaults mirror WindowedDiarizationParams: the gated absorption
+and the relative floor min(cap, max(min, fraction x talk)). TASK-1060.7 moved
+its --talk-floor default (now the floor's cap) from 10 to 30, so a run that
+relied on the old default must pass --talk-floor 10.
 """
 from __future__ import annotations
 

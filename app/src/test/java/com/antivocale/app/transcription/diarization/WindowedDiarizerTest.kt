@@ -20,8 +20,7 @@ class WindowedDiarizerTest {
 
     /** Small windows keep the arrays light: 60 s windows, 10 s overlap. */
     private val params = WindowedDiarizationParams(
-        windowSec = 60.0, overlapSec = 10.0, pieceSec = 3.0, threshold = 0.8f, absorbFloorSec = 5.0,
-        absorbFloorMinSec = 0.0)
+        windowSec = 60.0, overlapSec = 10.0, pieceSec = 3.0, threshold = 0.8f, absorbFloorSec = 5.0)
 
     /** Speaker turns as (startSec, endSec, value) over [totalSec] of audio. */
     private fun audio(totalSec: Int, vararg turns: Triple<Int, Int, Float>): FloatArray {

@@ -221,6 +221,8 @@ class PieceClusteringTest {
         assertEquals(10.0, params.absorbFloorFor(120.0), 1e-9)
         assertEquals(20.0, params.absorbFloorFor(1000.0), 1e-9)
         assertEquals(30.0, params.absorbFloorFor(10_000.0), 1e-9)
+        // A minimum above the cap: the cap wins.
+        assertEquals(5.0, WindowedDiarizationParams(absorbFloorSec = 5.0).absorbFloorFor(120.0), 1e-9)
     }
 
     @Test
@@ -238,21 +240,56 @@ class PieceClusteringTest {
     @Test
     fun `alternating turns coarsen cannot shrink are subsampled and each piece keeps its voice`() {
         // Six separate 5 s turns alternate x and y, so no contiguous pair
-        // merges. maxPieces 4 clusters rows 0, 1, 3 and 4; rows 2 (x) and
-        // 5 (y) join their nearest centroid.
+        // merges. maxPieces 4 clusters a subsample of four rows, which holds
+        // both voices (only three rows are x); the other two rows join their
+        // nearest centroid.
         val pieces = (0 until 6).map {
             if (it % 2 == 0) piece(it * 10.0, it * 10.0 + 5, 1f, 0.05f) else piece(it * 10.0, it * 10.0 + 5, 0.05f, 1f)
         }
-        val result = PieceClustering.diarize(pieces, params.copy(maxPieces = 4, absorbFloorMinSec = 0.0))
+        val result = PieceClustering.diarize(pieces, params.copy(maxPieces = 4))
 
         assertEquals(6, result.stats.piecesAfterCoarsen)
         assertEquals(2, result.stats.rawClusters)
         assertEquals(listOf(0, 1, 0, 1, 0, 1), result.segments.map { it.speaker })
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun `a floor minimum above the cap is rejected`() {
-        WindowedDiarizationParams(absorbFloorSec = 5.0)
+    @Test
+    fun `a subsample of half the rows keeps both voices of strictly alternating turns`() {
+        // n = 2 x maxPieces: an evenly spaced subsample would take only the
+        // even rows, so one voice would never reach the clustering.
+        val embeddings = (0 until 100).map { if (it % 2 == 0) floatArrayOf(1f, 0f) else floatArrayOf(0f, 1f) }
+        val labels = PieceClustering.clusterBounded(embeddings, 0.5f, maxPieces = 50)
+
+        val even = labels.filterIndexed { i, _ -> i % 2 == 0 }.toSet()
+        val odd = labels.filterIndexed { i, _ -> i % 2 == 1 }.toSet()
+        assertEquals(1, even.size)
+        assertEquals(1, odd.size)
+        assertTrue("both voices survive", even != odd)
+    }
+
+    @Test
+    fun `an unsampled row far from every cluster is labeled neither A nor B`() {
+        val a = floatArrayOf(1f, 0f, 0f)
+        val b = floatArrayOf(0f, 1f, 0f)
+        val c = floatArrayOf(0f, 0f, 1f)
+        val n = 30
+        val ab = (0 until n).map { if (it % 2 == 0) a.copyOf() else b.copyOf() }
+        val sampled = HashSet<Int>()
+        PieceClustering.clusterBounded(ab, 0.5f, maxPieces = 10) { rows, threshold ->
+            rows.forEach { row -> sampled += ab.indexOfFirst { it === row } }
+            PieceClustering.completeLinkage(rows, threshold)
+        }
+        // The subsample depends only on the row count, so a third voice
+        // placed in two unsampled rows never reaches the clustering.
+        val third = (0 until n).filter { it !in sampled }.take(2)
+        val embeddings = ab.mapIndexed { i, row -> if (i in third) c else row }
+        val labels = PieceClustering.clusterBounded(embeddings, 0.5f, maxPieces = 10)
+
+        val aLabel = labels[(0 until n).first { it in sampled && it % 2 == 0 }]
+        val bLabel = labels[(0 until n).first { it in sampled && it % 2 == 1 }]
+        for (i in third) {
+            assertTrue("row $i of the third voice is not A or B", labels[i] != aLabel && labels[i] != bLabel)
+        }
     }
 
     @Test
@@ -379,7 +416,7 @@ class PieceClusteringTest {
             piece(10.0, 13.0, 1f, 0f),
             piece(13.0, 16.0, 1f, 0f),
         )
-        val result = PieceClustering.diarize(pieces, params.copy(absorbFloorSec = 1.0, absorbFloorMinSec = 0.0))
+        val result = PieceClustering.diarize(pieces, params.copy(absorbFloorSec = 1.0))
 
         assertEquals(listOf(0, 1), result.segments.map { it.speaker })
         assertEquals(setOf(0, 1), result.centroids.keys)
@@ -397,8 +434,7 @@ class PieceClusteringTest {
             piece(6.0, 7.0, 1f, 0.8f),
             piece(10.0, 40.0, 0f, 1f),
         )
-        val result = PieceClustering.diarize(pieces, params.copy(threshold = 0.2f, absorbFloorSec = 5.0, absorbFloorFraction = 1.0,
-            absorbFloorMinSec = 5.0))
+        val result = PieceClustering.diarize(pieces, params.copy(threshold = 0.2f, absorbFloorSec = 5.0))
 
         assertEquals(setOf(0, 1), result.centroids.keys)
         val x = result.centroids.getValue(0)
