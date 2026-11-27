@@ -19,7 +19,7 @@ import com.antivocale.app.transcription.diarization.SpeakerDiarizer
 import com.antivocale.app.transcription.diarization.SpeakerEmbeddings
 import com.antivocale.app.transcription.diarization.SpeakerResplit
 import com.antivocale.app.transcription.diarization.SpeakerIdentityStore
-import com.antivocale.app.transcription.diarization.SpeakerLabeler
+import com.antivocale.app.transcription.diarization.SpeakerLabelTail
 import com.antivocale.app.transcription.diarization.SpeakerTimeline
 import com.antivocale.app.transcription.diarization.DiarizedSegment
 import com.antivocale.app.transcription.diarization.SpeakerIdentity
@@ -129,41 +129,6 @@ class TranscriptionOrchestrator @Inject constructor(
          */
         internal const val SESSION_SAMPLE_RATE = 16000
 
-        /**
-         * GH #83: the speaker-labeling tail both arms share. Each cue gets
-         * the speaker whose segments overlap it most; TASK-678: a cue
-         * straddling two voices is re-split at the word nearest the speaker
-         * boundary (tier chain: tokens, proportional, honest mixed). Split
-         * halves carry their OWN re-voted speakers; unsplit cues take the
-         * labeler's label by ORIGINAL index (the split changes the cue
-         * count, so the two lists must never be re-zipped). The transient
-         * tokens are consumed here and dropped. TASK-670: [names] maps a
-         * dense cluster id to its enrolled person's name.
-         */
-        internal fun withSpeakerLabels(
-            transcription: TranscriptionResult,
-            segments: List<DiarizedSegment>,
-            names: Map<Int, String>,
-        ): TranscriptionResult {
-            val labels = SpeakerLabeler.label(transcription.segments, segments)
-            val outcomes = transcription.segments.mapIndexed { index, cue ->
-                SpeakerResplit.resplit(cue, cue.tokens, segments, labels[index])
-            }
-            val tierCounts = outcomes.mapNotNull { it.tier }.groupingBy { it }.eachCount()
-            val resplitSummary = if (tierCounts.isEmpty()) null else
-                tierCounts.entries.joinToString(",") { (tier, count) ->
-                    "${tier.name.lowercase()}=$count"
-                }
-            // TASK-678 review: map the RESPLIT segments (outcomes carry the
-            // labeled/re-split cues; mapping the original result discarded
-            // them and every label with them).
-            return transcription.copy(
-                segments = outcomes.flatMap { it.cues }.map { cue ->
-                    cue.copy(speakerName = cue.speaker?.let(names::get))
-                },
-                processing = transcription.processing?.copy(speakerResplit = resplitSummary),
-            )
-        }
         /** TASK-520: map -> reduce recursion budget; partials shrink hard per level. */
         private const val MAX_SUMMARY_LEVELS = 3
 
@@ -804,8 +769,12 @@ class TranscriptionOrchestrator @Inject constructor(
                     ?.let { total -> (resumePrefixRows.lastOrNull()?.endSample ?: 0L) >= total } == true ->
                     completedSessionFromStore(taskId, resumeSession, resumePrefixRows, context).also {
                         // TASK-1060.4: no decode runs here, so the pass re-decodes the file.
+                        // A session only ever engages an audio run (the
+                        // candidacy gate requires a source path), so the
+                        // check stays at this one creation boundary.
                         if (collectSpeakers) speakerTimeline = SpeakerTimeline.Windowed(
-                            SpeakerTimeline.Reason.RESUMED_SESSION, resumeSession.totalOutputSamples)
+                            SpeakerTimeline.Reason.RESUMED_SESSION,
+                            resumeSession.totalOutputSamples, checkNotNull(filePath))
                     }
                 requestType == "audio" -> if (f4LoadFailure != null) {
                     recoverFirstPass(fastFirstPass!!, f4LoadFailure,
@@ -981,8 +950,9 @@ class TranscriptionOrchestrator @Inject constructor(
                     is SpeakerTimeline.Retained ->
                         applySpeakerLabels(context, delivered, timeline, listener)
                     is SpeakerTimeline.Windowed ->
-                        // A timeline exists only for a file decode.
-                        applyWindowedSpeakerLabels(context, checkNotNull(filePath), delivered, timeline, listener)
+                        // A timeline exists only for a file decode; the
+                        // source path rides on the timeline itself.
+                        applyWindowedSpeakerLabels(context, delivered, timeline, listener)
                     null -> delivered
                 }
             // The retained chunks must not outlive the pass.
@@ -2525,7 +2495,6 @@ class TranscriptionOrchestrator @Inject constructor(
      */
     private suspend fun applyWindowedSpeakerLabels(
         context: Context,
-        filePath: String,
         result: Result<TranscriptionResult>,
         timeline: SpeakerTimeline.Windowed,
         listener: TranscriptionListener,
@@ -2535,7 +2504,7 @@ class TranscriptionOrchestrator @Inject constructor(
         val startMs = System.currentTimeMillis()
         val durationSeconds = timeline.totalSamples?.let { (it / SESSION_SAMPLE_RATE).toInt() } ?: 0
         var lastPercent = -1
-        val diarization = windowedDiarization(context, filePath, timeline.totalSamples, threads) { fraction ->
+        val diarization = windowedDiarization(context, timeline.filePath, timeline.totalSamples, threads) { fraction ->
             // The native callback fires per embedded chunk: post only percent changes.
             val percent = (fraction * 100).toInt().coerceIn(0, 99)
             if (percent != lastPercent) {
@@ -2572,7 +2541,7 @@ class TranscriptionOrchestrator @Inject constructor(
             listener.onStatusUpdate(context.getString(R.string.speaker_labels_status))
             ensureDiarizationModels(context).getOrThrow()
             val (segments, names) = diarize(preferencesManager.threadCount.first())
-            withSpeakerLabels(transcription, segments, names)
+            SpeakerLabelTail.withSpeakerLabels(transcription, segments, names)
         }.fold(
             onSuccess = { Result.success(it) },
             onFailure = { failure ->
@@ -4292,9 +4261,14 @@ class TranscriptionOrchestrator @Inject constructor(
         // speaker pass then takes the TASK-1060.4 windowed arm, which
         // re-decodes the file. A resumed session never retains either: its
         // earlier stints' audio is gone.
-        var speakerWindowedReason: SpeakerTimeline.Reason? = when {
+        // One state var carries the arm: Retained while the chunks stay in
+        // memory, replaced wholesale by Windowed at either gate, null when
+        // this decode collects nothing.
+        val speakerRetainedChunks = mutableListOf<FloatArray>()
+        var speakerTimeline: SpeakerTimeline? = when {
             collectSamples == null -> null
-            resumeSession != null -> SpeakerTimeline.Reason.RESUMED_SESSION
+            resumeSession != null -> SpeakerTimeline.Windowed(
+                SpeakerTimeline.Reason.RESUMED_SESSION, totalSamples = null, filePath)
             else -> {
                 // Both budgets derive from the same reads; taken INSIDE the
                 // branch so labels-off runs (the default) pay nothing.
@@ -4310,8 +4284,9 @@ class TranscriptionOrchestrator @Inject constructor(
                 ) {
                     Log.i(TAG, "Speaker labels: windowed pass, audio ${sourceDurationSec?.toInt()}s exceeds the " +
                         "memory budget ${speakerCeilingSec}s (TASK-597 gate)")
-                    SpeakerTimeline.Reason.OVER_BUDGET
-                } else null
+                    SpeakerTimeline.Windowed(
+                        SpeakerTimeline.Reason.OVER_BUDGET, totalSamples = null, filePath)
+                } else SpeakerTimeline.Retained(speakerRetainedChunks, 16000)
             }
         }
         // TASK-728: the TASK-597 gate above is metadata-based and fail-opens
@@ -4319,12 +4294,10 @@ class TranscriptionOrchestrator @Inject constructor(
         // class (Moto G55, 256MB heap) dies mid-stream at the per-chunk
         // allocation. The runtime guard at the add site measures what is
         // ACTUALLY retained and drops the collection at the raw byte budget
-        // (switching the pass to the windowed arm).
+        // (replacing the state with the windowed arm).
         // /PCM_PEAK_COPIES: the same divisor the whole-file ceiling applies,
         // so the guard trips at the same effective point as the metadata gate.
-        var speakerChunks = if (collectSamples != null && speakerWindowedReason == null)
-            mutableListOf<FloatArray>() else null
-        val speakerRetentionBudgetBytes = if (speakerChunks != null)
+        val speakerRetentionBudgetBytes = if (speakerTimeline is SpeakerTimeline.Retained)
             AudioDurationPolicy.retentionBudgetBytes(
                 availableMemoryBytes(context).takeIf { it > 0 },
                 MemoryReadings.maxHeapBytes().takeIf { it > 0 }) / AudioDurationPolicy.PCM_PEAK_COPIES
@@ -4732,8 +4705,7 @@ class TranscriptionOrchestrator @Inject constructor(
                             pauseSentinel = sessionPausedNow()
                             throw CancellationException("session-pause-boundary")
                         }
-                        val collected = speakerChunks
-                        if (collected != null) {
+                        if (speakerTimeline is SpeakerTimeline.Retained) {
                             // TASK-728 runtime guard: drop the collection at
                             // the budget instead of OOM-ing mid-stream; the
                             // pass takes the windowed arm (same as the
@@ -4741,12 +4713,13 @@ class TranscriptionOrchestrator @Inject constructor(
                             // durations are covered too).
                             val chunkBytes = chunk.samples.size * Float.SIZE_BYTES.toLong()
                             if (speakerRetainedBytes + chunkBytes > speakerRetentionBudgetBytes) {
-                                speakerChunks = null
-                                speakerWindowedReason = SpeakerTimeline.Reason.RETENTION_ABANDONED
+                                speakerTimeline = SpeakerTimeline.Windowed(
+                                    SpeakerTimeline.Reason.RETENTION_ABANDONED,
+                                    totalSamples = null, filePath)
                                 Log.i(TAG, "Speaker labels: windowed pass, retention dropped at ${speakerRetainedBytes / MB}MB: " +
                                     "over the ${speakerRetentionBudgetBytes / MB}MB memory budget (TASK-728 guard)")
                             } else {
-                                collected.add(chunk.samples)
+                                speakerRetainedChunks.add(chunk.samples)
                                 speakerRetainedBytes += chunkBytes
                                 speakerSampleRate = chunk.sampleRate
                             }
@@ -5075,10 +5048,14 @@ class TranscriptionOrchestrator @Inject constructor(
         // lazily inside the pass. The windowed arm gets the exact decoded
         // length (the whole file's, resumed prefix included).
         if (collectSamples != null) {
-            val retained = speakerChunks
-            collectSamples(
-                if (retained != null) SpeakerTimeline.Retained(retained, speakerSampleRate)
-                else SpeakerTimeline.Windowed(checkNotNull(speakerWindowedReason), decodedSamplesGlobal))
+            when (val timeline = speakerTimeline) {
+                is SpeakerTimeline.Retained ->
+                    collectSamples(SpeakerTimeline.Retained(timeline.chunks, speakerSampleRate))
+                is SpeakerTimeline.Windowed ->
+                    collectSamples(
+                        SpeakerTimeline.Windowed(timeline.reason, decodedSamplesGlobal, filePath))
+                null -> {}
+            }
         }
 
         // TASK-622: logged BEFORE the blank fail-fast so an all-blank run

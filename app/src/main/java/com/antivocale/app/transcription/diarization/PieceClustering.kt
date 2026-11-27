@@ -385,15 +385,17 @@ object PieceClustering {
             completeLinkage(bounded.map { it.embedding }, params.threshold),
             bounded, params.absorbFloorSec)
         val raw = assembleRaw(bounded, labels)
-        // denseSegments numbers speakers by first appearance in this same list.
-        val dense = raw.map { it.speaker }.distinct().withIndex().associate { (i, label) -> label to i }
+        // denseSegments owns the numbering; the centroid keys read its
+        // raw->dense map instead of re-deriving it inline.
+        val dense = SpeakerLabeler.denseSegments(raw)
+        val denseIdByRaw = raw.map { it.speaker }.zip(dense.map { it.speaker }).toMap()
         val sums = HashMap<Int, FloatArray>()
         bounded.forEachIndexed { i, piece ->
-            val sum = sums.getOrPut(dense.getValue(labels[i])) { FloatArray(piece.embedding.size) }
+            val sum = sums.getOrPut(denseIdByRaw.getValue(labels[i])) { FloatArray(piece.embedding.size) }
             for (k in sum.indices) sum[k] += piece.embedding[k]
         }
         return WindowedDiarization(
-            SpeakerLabeler.denseSegments(raw),
+            dense,
             sums.mapValues { (_, sum) -> normalized(sum) },
         )
     }

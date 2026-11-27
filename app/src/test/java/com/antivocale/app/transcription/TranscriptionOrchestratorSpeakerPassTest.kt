@@ -3,6 +3,7 @@ package com.antivocale.app.transcription
 import android.content.Context
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.transcription.diarization.DiarizedSegment
+import com.antivocale.app.transcription.diarization.SpeakerLabelTail
 import com.antivocale.app.transcription.diarization.WindowedDiarization
 import io.mockk.coEvery
 import io.mockk.every
@@ -178,7 +179,7 @@ class TranscriptionOrchestratorSpeakerPassTest : TranscriptionOrchestratorTestBa
         // The second voice takes over at 0.8 s, nearest the "good"/"day" gap.
         val segments = listOf(DiarizedSegment(0f, 0.8f, 0, null), DiarizedSegment(0.8f, 1.4f, 1, null))
 
-        val labeled = TranscriptionOrchestrator.withSpeakerLabels(transcription, segments, mapOf(1 to "Bob"))
+        val labeled = SpeakerLabelTail.withSpeakerLabels(transcription, segments, mapOf(1 to "Bob"))
 
         assertEquals(listOf("Hello world good", "day"), labeled.segments.map { it.text })
         assertEquals(listOf(0, 1), labeled.segments.map { it.speaker })

@@ -12,12 +12,17 @@ sealed interface SpeakerTimeline {
 
     /**
      * Holding the chunks was not possible, so the pass re-decodes the file
-     * and runs window by window.
+     * and runs window by window. A windowed timeline exists only for a
+     * file decode, so the type carries the source path itself.
      *
      * @param totalSamples the decode's exact 16 kHz length when the run
      *        knows it, for an honest window count; null when unknown
      */
-    data class Windowed(val reason: Reason, val totalSamples: Long?) : SpeakerTimeline
+    data class Windowed(
+        val reason: Reason,
+        val totalSamples: Long?,
+        val filePath: String,
+    ) : SpeakerTimeline
 
     enum class Reason(val logText: String) {
         /** The TASK-597 metadata gate: the source is longer than the whole-file budget. */
